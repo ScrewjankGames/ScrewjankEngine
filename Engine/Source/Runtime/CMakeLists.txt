@@ -1,0 +1,32 @@
+################################################################################
+# Define project: Engine
+################################################################################
+project(Engine C CXX)
+option(ENGINE_BUILD_SAMPLE "Build the Engine's sample project" ON)
+
+file(GLOB_RECURSE RUNTIME_HEADERS CONFIGURE_DEPENDS "*.hpp")
+file(GLOB_RECURSE RUNTIME_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_HEADERS})
+add_library(Engine ${RUNTIME_HEADERS} ${RUNTIME_SOURCE})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_SOURCE})
+
+set_target_properties(Engine 
+    PROPERTIES 
+        FOLDER Engine/
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+)
+
+################################################################################
+# Configure include directories
+################################################################################
+target_include_directories(Engine 
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/math/include
+)
+
+if(ENGINE_BUILD_SAMPLE)
+    add_subdirectory(${SAMPLE_PROJECT_DIR} ${CMAKE_BINARY_DIR}/SampleProject)
+endif()
