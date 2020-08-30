@@ -2,10 +2,12 @@
 #include <iostream>
 
 // Engine Headers
-#include "math/Vector.hpp"
+#include "core/Game.hpp"
 
-int main() {
-	math::Vector3 test{ 1,2,3 };
-	std::cout << "Test: " << test * 2 << std::endl;
-
+int main(int arc, char** argv) 
+{
+	auto game = Screwjank::CreateGame();
+	game->Run();
+	delete game;
 }
+

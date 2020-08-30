@@ -23,6 +23,7 @@ set_target_properties(Engine
 ################################################################################
 target_include_directories(Engine 
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/math/include
 )
