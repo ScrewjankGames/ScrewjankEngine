@@ -7,8 +7,8 @@ option(ENGINE_BUILD_SAMPLE "Build the Engine's sample project" ON)
 file(GLOB_RECURSE RUNTIME_HEADERS CONFIGURE_DEPENDS "*.hpp")
 file(GLOB_RECURSE RUNTIME_SOURCE CONFIGURE_DEPENDS "*.cpp")
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_HEADERS})
 add_library(Engine ${RUNTIME_HEADERS} ${RUNTIME_SOURCE})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_SOURCE})
 
 set_target_properties(Engine 
@@ -23,8 +23,8 @@ set_target_properties(Engine
 ################################################################################
 target_include_directories(Engine 
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/math/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/math/include
 )
 
 if(ENGINE_BUILD_SAMPLE)

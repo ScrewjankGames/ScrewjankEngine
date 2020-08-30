@@ -34,6 +34,10 @@ namespace math {
 		return this->Equals(other);
 	}
 
+	bool Rotator::operator!=(const Rotator& other) const {
+		return !(*this == other);
+	}
+
 	bool Rotator::Equals(const Rotator& other, float epsilon) const {
 		auto lhs = Quaternion(Normalize(*this));
 		auto rhs = Quaternion(Normalize(other));

@@ -1,2 +1,3 @@
 add_subdirectory(Source)
-add_subdirectory(Tests)
+
+### CMAKE COPY ASSETS LOGIC GOES HERE, PLEASE

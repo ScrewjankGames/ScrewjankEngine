@@ -64,6 +64,11 @@ namespace math {
 		bool operator== (const Rotator& other) const;
 
 		/**
+		 * Inequality comparison operator
+		 */
+		bool operator!= (const Rotator& other) const;
+
+		/**
 		 * Custom-epsilon equality comparison
 		 * @param epsilon The per angle tolerance for equality
 		 */
