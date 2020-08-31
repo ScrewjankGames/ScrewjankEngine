@@ -11,6 +11,7 @@ set(CMAKE_CONFIGURATION_TYPES
 )
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+set(ENGINE_DEPENDENCIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies)
 set(SAMPLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SampleProject)
 
 ################################################################################

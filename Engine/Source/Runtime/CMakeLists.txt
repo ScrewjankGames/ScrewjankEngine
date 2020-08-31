@@ -19,6 +19,20 @@ set_target_properties(Engine
 )
 
 ################################################################################
+# Find Vulkan
+################################################################################
+find_package(Vulkan REQUIRED)
+
+################################################################################
+# Link dependencies
+################################################################################
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE 
+        glfw
+         ${Vulkan_LIBRARIES}
+)
+
+################################################################################
 # Configure include directories
 ################################################################################
 target_include_directories(Engine 
@@ -26,7 +40,11 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/math/include
-)
+    PRIVATE
+        ${ENGINE_DEPENDENCIES_DIR}/glfw/include
+        ${ENGINE_DEPENDENCIES_DIR}/glm/
+        ${Vulkan_INCLUDE_DIRS}
+    )
 
 if(ENGINE_BUILD_SAMPLE)
     add_subdirectory(${SAMPLE_PROJECT_DIR} ${CMAKE_BINARY_DIR}/SampleProject)
