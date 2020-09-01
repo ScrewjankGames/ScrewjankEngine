@@ -7,28 +7,29 @@
 
 namespace Screwjank {
 
-	class Game {
-	public:
-		/**
-		 * Constructor
-		 */
-		Game();
+    class Game
+    {
+      public:
+        /**
+         * Constructor
+         */
+        Game();
 
-		/**
-		 * Destructor 
-		 */
-		virtual ~Game();
+        /**
+         * Destructor
+         */
+        virtual ~Game();
 
-		/**
-		 * Main game loop
-		 */
-		void Run();
+        /**
+         * Main game loop
+         */
+        void Run();
 
-	protected:
-		/** Current frame time */
-		float m_DeltaTime;
-	};
+      protected:
+        /** Current frame time */
+        float m_DeltaTime;
+    };
 
-	// API function externed to allow users to create custom game classes for main
-	extern Game* CreateGame();
-}
+    // API function externed to allow users to create custom game classes for main
+    extern Game* CreateGame();
+} // namespace Screwjank

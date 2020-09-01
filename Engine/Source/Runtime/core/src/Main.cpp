@@ -4,10 +4,9 @@
 // Engine Headers
 #include "core/Game.hpp"
 
-int main(int arc, char** argv) 
+int main(int arc, char** argv)
 {
-	auto game = Screwjank::CreateGame();
-	game->Run();
-	delete game;
+    auto game = Screwjank::CreateGame();
+    game->Run();
+    delete game;
 }
-
