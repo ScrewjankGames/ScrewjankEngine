@@ -1,6 +1,5 @@
 // STD Headers
 #include <chrono>
-#include <iostream>
 
 // Library Headers
 #define GLFW_INCLUDE_VULKAN
@@ -9,70 +8,72 @@
 
 // Engine Headers
 #include "core/Game.hpp"
+#include "core/Log.hpp"
 
-namespace Screwjank
-{
+namespace Screwjank {
 
-Game::Game()
-{
-}
+    Game::Game() {}
 
-Game::~Game()
-{
-}
+    Game::~Game() {}
 
-void Game::Run()
-{
-    using Timer = std::chrono::high_resolution_clock;
-    auto previousTime = Timer::now();
-    auto currentTime = Timer::now();
-
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
-
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pNext = nullptr;
-    appInfo.pApplicationName = "Screwjank Engine Game";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_2;
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    // createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledLayerCount = 0;
-
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    createInfo.enabledExtensionCount = glfwExtensionCount;
-    createInfo.ppEnabledExtensionNames = glfwExtensions;
-
-    VkInstance vulkanInstance;
-    if (vkCreateInstance(&createInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
-        std::cout << "Vulkan instance failed to create.";
-        return;
+    void Game::Start()
+    {
+        SJ_ENGINE_LOG_INFO("Game initialized");
+        Run();
     }
 
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::cout << "Vulkan loaded with " << extensionCount << " extensions supported\n";
+    void Game::Run()
+    {
+        using Timer = std::chrono::high_resolution_clock;
+        auto previousTime = Timer::now();
+        auto currentTime = Timer::now();
 
-    while (!glfwWindowShouldClose(window)) {
-        currentTime = Timer::now();
-        m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
-        // Update
-        glfwPollEvents();
+        VkApplicationInfo appInfo = {};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pNext = nullptr;
+        appInfo.pApplicationName = "Screwjank Engine Game";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion = VK_API_VERSION_1_2;
 
-        previousTime = currentTime;
+        VkInstanceCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        // createInfo.pApplicationInfo = &appInfo;
+        createInfo.enabledLayerCount = 0;
+
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        createInfo.enabledExtensionCount = glfwExtensionCount;
+        createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+        VkInstance vulkanInstance;
+        if (vkCreateInstance(&createInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
+            SJ_ENGINE_LOG_ERROR("Failed to create Vulkan instance.");
+            return;
+        }
+
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        SJ_ENGINE_LOG_INFO("Vulkan loaded with %d extensions supported", extensionCount);
+
+        while (!glfwWindowShouldClose(window)) {
+            currentTime = Timer::now();
+            m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
+
+            // Update
+            glfwPollEvents();
+
+            previousTime = currentTime;
+        }
+
+        vkDestroyInstance(vulkanInstance, nullptr);
+        glfwDestroyWindow(window);
+        glfwTerminate();
     }
-
-    vkDestroyInstance(vulkanInstance, nullptr);
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
 } // namespace Screwjank

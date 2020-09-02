@@ -21,11 +21,16 @@ namespace Screwjank {
         virtual ~Game();
 
         /**
+         * Launches engine subsystems and starts game
+         */
+        void Start();
+
+      protected:
+        /**
          * Main game loop
          */
         void Run();
 
-      protected:
         /** Current frame time */
         float m_DeltaTime;
     };

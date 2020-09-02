@@ -1,16 +1,15 @@
 // STD Headers
-#include <iostream>
+#include <memory>
 #include <cassert>
 
 // Library Headers
+#include "core/Log.hpp"
 
 // Screwjank Headers
 
 void* operator new(size_t num_bytes) noexcept(false)
 {
-#ifndef NDEBUG
-    std::cout << "Heap allocating " << num_bytes << " bytes\n";
-#endif // !NDEBUG
+    SJ_ENGINE_LOG_INFO("Heap allocating %zd bytes", num_bytes);
 
     void* memory = malloc(num_bytes);
     return memory;
@@ -18,9 +17,7 @@ void* operator new(size_t num_bytes) noexcept(false)
 
 void operator delete(void* memory) throw()
 {
-#ifndef NDEBUG
-    std::cout << "Freeing memory at address 0x" << std::hex << memory << "\n";
-#endif // !NDEBUG
+    SJ_ENGINE_LOG_INFO("Freeing memory at address 0x%p", memory);
 
     free(memory);
 }
