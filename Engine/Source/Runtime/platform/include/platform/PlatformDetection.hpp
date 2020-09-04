@@ -33,7 +33,7 @@
  * Detect build configuration
  */
 #ifdef NDEBUG
-// Do not define SJ_DEBUG
+    #define SJ_RELEASE
 #else
     #define SJ_DEBUG
     #define SJ_ENABLE_ASSERTS
