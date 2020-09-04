@@ -22,9 +22,11 @@ namespace Screwjank {
     void* LinearAllocator::Allocate(const size_t size, const size_t alignment)
     {
         size_t space = uintptr_t(m_Buffer) + m_Capacity - uintptr_t(m_CurrFrameStart);
+        assert(space != 0, "Allocator is out of memory");
+
         auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, space);
 
-        m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size + 1);
+        m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);
 
         return allocated_memory;
     }

@@ -54,35 +54,4 @@ namespace system_tests {
         ASSERT_EQ(std_aligned, sj_aligned);
     }
 
-    TEST(MemoryTests, LinearAllocatorTest)
-    {
-        // Create a stack allocator with a 128 byte buffer
-        LinearAllocator allocator(128);
-
-        void* dummyMemory = allocator.Allocate<DummyClass>();
-        ASSERT_NE(nullptr, dummyMemory);
-
-        void* alignedDummyMemory = dummyMemory;
-        size_t space = sizeof(DummyClass) + alignof(DummyClass) - 1;
-        std::align(alignof(DummyClass), sizeof(DummyClass), alignedDummyMemory, space);
-
-        ASSERT_EQ(dummyMemory, alignedDummyMemory);
-    }
-
-    TEST(MemoryTests, StackAllocatorTest)
-    {
-        // Create a stack allocator with a 128 byte buffer
-        StackAllocator allocator(128);
-
-        DummyClass* dummy1 =
-            (DummyClass*)allocator.Allocate(sizeof(DummyClass), alignof(DummyClass));
-
-        ASSERT_NE(nullptr, dummy1);
-
-        void* aligned = dummy1;
-        size_t space = 128;
-        std::align(alignof(DummyClass), sizeof(DummyClass), aligned, space);
-
-        ASSERT_EQ(dummy1, aligned);
-    }
 } // namespace system_tests
