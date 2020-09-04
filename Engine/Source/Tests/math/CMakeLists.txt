@@ -5,7 +5,12 @@ add_executable(MathTestSuite ${MATH_HEADERS} ${MATH_SOURCE})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCE})
 
-set_target_properties(MathTestSuite PROPERTIES FOLDER Engine/Testing)
+set_target_properties(MathTestSuite 
+	PROPERTIES 
+		FOLDER Engine/Testing
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+)
 
 ################################################################################
 # Link GTest and Engine Modules
