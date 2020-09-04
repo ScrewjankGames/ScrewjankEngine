@@ -26,6 +26,15 @@ namespace Screwjank {
         template <typename... Args>
         void LogInfo(const char* format, Args... args);
 
+        template <typename... Args>
+        void LogWarn(const char* format, Args... args);
+
+        template <typename... Args>
+        void LogError(const char* format, Args... args);
+
+        template <typename... Args>
+        void LogFatal(const char* format, Args... args);
+
       private:
         const char* m_Name;
     };
@@ -41,29 +50,51 @@ namespace Screwjank {
     {
         spdlog::info(format, args...);
     }
+
+    template <typename... Args>
+    inline void Logger::LogWarn(const char* format, Args... args)
+    {
+        spdlog::warn(format, args...);
+    }
+
+    template <typename... Args>
+    inline void Logger::LogError(const char* format, Args... args)
+    {
+        spdlog::error(format, args...);
+    }
+
+    template <typename... Args>
+    inline void Logger::LogFatal(const char* format, Args... args)
+    {
+        spdlog::critical(format, args...);
+    }
 } // namespace Screwjank
 
 #ifdef NDEBUG
-#define SJ_ENGINE_LOG_TRACE(...)
-#define SJ_ENGINE_LOG_INFO(format, ...) Screwjank::Logger::GetEngineLogger()
-#define SJ_ENGINE_LOG_WARN(...)
-#define SJ_ENGINE_LOG_ERROR(...)
+    #define SJ_ENGINE_LOG_TRACE(...)
+    #define SJ_ENGINE_LOG_INFO(format, ...) Screwjank::Logger::GetEngineLogger()
+    #define SJ_ENGINE_LOG_WARN(...)
+    #define SJ_ENGINE_LOG_ERROR(...)
 
-#define SJ_LOG_TRACE(...)
-#define SJ_LOG_INFO(...)
-#define SJ_LOG_WARN(...)
-#define SJ_LOG_ERROR(...)
+    #define SJ_LOG_TRACE(...)
+    #define SJ_LOG_INFO(...)
+    #define SJ_LOG_WARN(...)
+    #define SJ_LOG_ERROR(...)
 #else
-#define SJ_ENGINE_LOG_TRACE(format, ...)                                                           \
-    Screwjank::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
-#define SJ_ENGINE_LOG_INFO(format, ...)                                                            \
-    Screwjank::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__);
-#define SJ_ENGINE_LOG_WARN(...) // Screwjank::Logger::GetEngineLogger().warn(__VA_ARGS__)
-#define SJ_ENGINE_LOG_ERROR(...) // Screwjank::Logger::GetEngineLogger().error(__VA_ARGS__)
+    #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
+        Screwjank::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
+    #define SJ_ENGINE_LOG_INFO(format, ...)                                                        \
+        Screwjank::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
+    #define SJ_ENGINE_LOG_WARN(format, ...)                                                        \
+        Screwjank::Logger::GetEngineLogger()->LogWarn(format, __VA_ARGS__)
+    #define SJ_ENGINE_LOG_ERROR(format, ...)                                                       \
+        Screwjank::Logger::GetEngineLogger()->LogError(format, __VA_ARGS__)
+    #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
+        Screwjank::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
 
-#define SJ_LOG_TRACE(...)
-#define SJ_LOG_INFO(...)
-#define SJ_LOG_WARN(...)
-#define SJ_LOG_ERROR(...)
+    #define SJ_LOG_TRACE(...)
+    #define SJ_LOG_INFO(...)
+    #define SJ_LOG_WARN(...)
+    #define SJ_LOG_ERROR(...)
 
 #endif

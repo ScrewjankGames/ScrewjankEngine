@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
+#include "platform/PlatformDetection.hpp"
 #include "system/Allocator.hpp"
 #include "system/Memory.hpp"
 #include "system/allocators/StackAllocator.hpp"
@@ -65,8 +66,11 @@ namespace system_tests {
     {
         LinearAllocator allocator(sizeof(SBS) * 10);
         allocator.Allocate(sizeof(SBS) * 10);
-        allocator.Allocate<SBS>();
-        ASSERT_DEATH(allocator.Allocate<SBS>(), ".");
+#ifdef SJ_DEBUG
+        ASSERT_DEATH(allocator.Allocate<SBS>(), ".*");
+#else
+        ASSERT_EQ(nullptr, allocator.Allocate<SBS>());
+#endif //
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
@@ -74,6 +78,6 @@ namespace system_tests {
         LinearAllocator allocator(sizeof(SBS) * 10);
         allocator.Allocate(sizeof(SBS) * 9);
 
-        ASSERT_DEATH(allocator.Allocate(sizeof(SBS) * 2);, ".");
+        ASSERT_DEATH(allocator.Allocate(sizeof(SBS) * 2);, ".*");
     }
 } // namespace system_tests

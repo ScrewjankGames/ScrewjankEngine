@@ -3,6 +3,7 @@
 #include <cassert>
 
 // Library Headers
+#include "core/Assert.hpp"
 #include "core/Log.hpp"
 #include "system/Memory.hpp"
 
@@ -30,6 +31,10 @@ namespace Screwjank {
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
     {
+        if (align_of == 0) {
+            return buffer_start;
+        }
+
         // try to carve out _Size bytes on boundary _Bound
         size_t offset = (size_t)((uintptr_t)(buffer_start) & (align_of - 1));
 

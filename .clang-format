@@ -48,6 +48,7 @@ IncludeCategories:
   - Regex: '.*'
     Priority: 1
 IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
 IndentWidth : 4
 KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep : 1

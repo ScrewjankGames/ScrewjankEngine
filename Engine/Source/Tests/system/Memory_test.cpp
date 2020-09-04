@@ -50,7 +50,6 @@ namespace system_tests {
         sj_aligned = AlignMemory(
             alignof(DummyClass), sizeof(DummyClass), sj_aligned, (sizeof(DummyClass) * 2) - 1);
         ASSERT_NE(unaligned, sj_aligned);
-
         ASSERT_EQ(std_aligned, sj_aligned);
     }
 
