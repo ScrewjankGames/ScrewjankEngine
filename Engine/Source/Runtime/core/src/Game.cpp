@@ -12,9 +12,13 @@
 
 namespace Screwjank {
 
-    Game::Game() {}
+    Game::Game() : m_DeltaTime(0)
+    {
+    }
 
-    Game::~Game() {}
+    Game::~Game()
+    {
+    }
 
     void Game::Start()
     {
@@ -60,7 +64,7 @@ namespace Screwjank {
 
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        SJ_ENGINE_LOG_INFO("Vulkan loaded with %d extensions supported", extensionCount);
+        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
 
         while (!glfwWindowShouldClose(window)) {
             currentTime = Timer::now();
