@@ -77,7 +77,10 @@ namespace system_tests {
     {
         LinearAllocator allocator(sizeof(SBS) * 10);
         allocator.Allocate(sizeof(SBS) * 9);
-
-        ASSERT_DEATH(allocator.Allocate(sizeof(SBS) * 2);, ".*");
+#ifdef SJ_DEBUG
+        ASSERT_DEATH(allocator.Allocate(sizeof(SBS) * 2), ".*");
+#else
+        ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
+#endif //
     }
 } // namespace system_tests
