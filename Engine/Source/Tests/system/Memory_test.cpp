@@ -12,6 +12,7 @@
 using namespace Screwjank;
 
 namespace system_tests {
+    bool dummy_dtor_called = false;
     class DummyClass
     {
       public:
@@ -19,6 +20,11 @@ namespace system_tests {
         {
             m_num = num;
             m_double = num2;
+        }
+
+        ~DummyClass()
+        {
+            dummy_dtor_called = true;
         }
 
         int m_num;
@@ -33,6 +39,17 @@ namespace system_tests {
         ASSERT_EQ(5.0, dummy->m_double);
 
         delete dummy;
+    }
+
+    TEST(MemoryTests, DefaultAllocatorNewDeleteTest)
+    {
+        auto dummy = Screwjank::GlobalAllocator()->New<DummyClass>(5, 5.0);
+        ASSERT_NE(nullptr, dummy);
+        ASSERT_EQ(5, dummy->m_num);
+
+        Screwjank::GlobalAllocator()->Delete(dummy);
+        ASSERT_EQ(nullptr, dummy);
+        ASSERT_TRUE(dummy_dtor_called);
     }
 
     TEST(MemoryTests, AlignTest)

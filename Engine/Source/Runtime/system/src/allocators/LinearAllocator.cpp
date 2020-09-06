@@ -8,31 +8,49 @@
 #include "system/Memory.hpp"
 
 namespace Screwjank {
-    LinearAllocator::LinearAllocator(size_t buffer_size) : m_Capacity(buffer_size)
+    LinearAllocator::LinearAllocator(size_t buffer_size, const char* debug_name)
+        : Allocator(debug_name), m_Capacity(buffer_size)
     {
-        m_Buffer = GlobalAllocator()->Allocate(buffer_size);
-        m_CurrFrameStart = m_Buffer;
+        m_BufferStart = GlobalAllocator()->Allocate(buffer_size);
+        m_CurrFrameStart = m_BufferStart;
     }
 
     LinearAllocator::~LinearAllocator()
     {
-        GlobalAllocator()->Free(m_Buffer);
+        // While other allocators should assert, linear allocators are perfectly capable of freeing
+        // all of their allocations on destruction
+        if (!(m_NumActiveAllocations == 0 && m_FreeSpace == m_Capacity)) {
+            SJ_LOG_WARN("Linear allocator {} was not properly reset before destruction.");
+        }
+
+        Reset();
+        GlobalAllocator()->Free(m_BufferStart);
     }
 
     void* LinearAllocator::Allocate(const size_t size, const size_t alignment)
     {
-        size_t space = uintptr_t(m_Buffer) + m_Capacity - uintptr_t(m_CurrFrameStart);
-        SJ_ASSERT(space != 0, "Allocator is out of memory");
-        SJ_ASSERT(space >= size, "Allocator has insufficient memory for allocation");
-
-        auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, space);
-
-        if ((uintptr_t)allocated_memory + size > (uintptr_t)m_Buffer + m_Capacity) {
-            SJ_ASSERT(false, "Allocator has insufficient memory to align allocation!");
+        // Ensure there is enough space to satisfy allocation
+        if (m_Capacity - m_FreeSpace < size) {
+            SJ_LOG_ERROR("{} is out of space!", m_DebugName);
             return nullptr;
         }
 
+        auto allocated_memory =
+            AlignMemory(alignment, size, m_CurrFrameStart, m_Capacity - m_FreeSpace);
+
+        // Ensure there is enogh space to properly align the memory
+        if ((uintptr_t)allocated_memory + size > (uintptr_t)m_BufferStart + m_Capacity) {
+            SJ_LOG_ERROR("{} has insufficient memory to align allocation", m_DebugName);
+            return nullptr;
+        }
+
+        // Bump allocation pointer to the first free byte after the current allocation
         m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);
+
+        // Track allocation data
+        m_NumActiveAllocations++;
+        m_FreeSpace = (uintptr_t)m_BufferStart + m_Capacity - (uintptr_t)m_CurrFrameStart;
+
         return allocated_memory;
     }
 
@@ -43,6 +61,9 @@ namespace Screwjank {
 
     void LinearAllocator::Reset()
     {
-        m_CurrFrameStart = m_Buffer;
+        // Track allocation data
+        m_NumActiveAllocations = 0;
+        m_FreeSpace = m_Capacity;
+        m_CurrFrameStart = m_BufferStart;
     }
 } // namespace Screwjank

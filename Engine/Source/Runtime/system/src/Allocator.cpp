@@ -18,8 +18,7 @@ namespace Screwjank {
         free(memory);
     }
 
-    void Allocator::Log()
+    Allocator::Allocator(const char* debug_name) : m_DebugName(debug_name)
     {
-        SJ_LOG_INFO("No memory stats available for requested allocator");
     }
 } // namespace Screwjank

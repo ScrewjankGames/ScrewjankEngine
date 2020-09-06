@@ -14,15 +14,20 @@ namespace Screwjank {
 
     Game::Game() : m_DeltaTime(0)
     {
+        SJ_ENGINE_LOG_INFO("Initializing core engine systems...");
+        // Initialize engine sytems
+        SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
     }
 
     Game::~Game()
     {
+        SJ_ENGINE_LOG_INFO("Game terminated");
     }
 
     void Game::Start()
     {
-        SJ_ENGINE_LOG_INFO("Game initialized");
+        SJ_ENGINE_LOG_INFO("Game started");
+
         Run();
     }
 

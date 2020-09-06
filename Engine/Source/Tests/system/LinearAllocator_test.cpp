@@ -36,7 +36,7 @@ namespace system_tests {
         // Create a stack allocator with a 128 byte buffer
         LinearAllocator allocator(128);
 
-        void* dummyMemory = allocator.Allocate<LinearAllocatorDummy>();
+        void* dummyMemory = allocator.AllocateType<LinearAllocatorDummy>();
         ASSERT_NE(nullptr, dummyMemory);
 
         void* alignedDummyMemory = dummyMemory;
@@ -45,6 +45,8 @@ namespace system_tests {
             alignof(LinearAllocatorDummy), sizeof(LinearAllocatorDummy), alignedDummyMemory, space);
 
         ASSERT_EQ(dummyMemory, alignedDummyMemory);
+
+        allocator.Reset();
     }
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
@@ -58,7 +60,7 @@ namespace system_tests {
         // You should be able to fit ten individual single byte structures into a linear allocator
         // of buffer size 10
         for (int i = 0; i < 10; i++) {
-            packingTest.Allocate<SBS>();
+            packingTest.AllocateType<SBS>();
         }
     }
 
@@ -66,21 +68,31 @@ namespace system_tests {
     {
         LinearAllocator allocator(sizeof(SBS) * 10);
         allocator.Allocate(sizeof(SBS) * 10);
-#ifdef SJ_DEBUG
-        ASSERT_DEATH(allocator.Allocate<SBS>(), ".*");
-#else
-        ASSERT_EQ(nullptr, allocator.Allocate<SBS>());
-#endif //
+        ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
         LinearAllocator allocator(sizeof(SBS) * 10);
         allocator.Allocate(sizeof(SBS) * 9);
-#ifdef SJ_DEBUG
-        ASSERT_DEATH(allocator.Allocate(sizeof(SBS) * 2), ".*");
-#else
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
-#endif //
+    }
+
+    TEST(LinearAllocatorTests, MemoryStompTest)
+    {
+        // Ensure allocations don't stomp each other's memory
+        // Reserve 256 bytes
+        LinearAllocator allocator(256);
+
+        LinearAllocatorDummy* dummy1 = allocator.New<LinearAllocatorDummy>(1, 1.0);
+        auto dummy2 = allocator.New<LinearAllocatorDummy>(2, 2.0);
+        auto dummy3 = allocator.New<LinearAllocatorDummy>(3, 3.0);
+
+        ASSERT_EQ(1, dummy1->m_num);
+        ASSERT_EQ(1.0, dummy1->m_double);
+        ASSERT_EQ(2, dummy2->m_num);
+        ASSERT_EQ(2.0, dummy2->m_double);
+        ASSERT_EQ(3, dummy3->m_num);
+        ASSERT_EQ(3.0, dummy3->m_double);
     }
 } // namespace system_tests
