@@ -49,4 +49,17 @@ namespace Screwjank {
         return buffer_start;
     }
 
+    char MemorySystem::s_GlobalAllocatorBuffer[sizeof(BasicAllocator)];
+    Allocator* MemorySystem::s_GlobalAllocator;
+
+    void MemorySystem::Initialize()
+    {
+        s_GlobalAllocator = new (s_GlobalAllocatorBuffer) BasicAllocator();
+    }
+
+    void MemorySystem::LogStatus()
+    {
+        SJ_LOG_INFO("TODO Memory system status:")
+    }
+
 } // namespace Screwjank

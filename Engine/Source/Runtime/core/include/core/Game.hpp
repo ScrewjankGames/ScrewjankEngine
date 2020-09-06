@@ -4,6 +4,7 @@
 // Library Headers
 
 // Engine Headers
+#include "system/Memory.hpp"
 
 namespace Screwjank {
 
@@ -26,13 +27,16 @@ namespace Screwjank {
         void Start();
 
       protected:
+        /** Current frame time */
+        float m_DeltaTime;
+
+        /** Engine memory sub-system */
+        MemorySystem m_MemorySystem;
+
         /**
          * Main game loop
          */
         void Run();
-
-        /** Current frame time */
-        float m_DeltaTime;
     };
 
     // API function externed to allow users to create custom game classes for main
