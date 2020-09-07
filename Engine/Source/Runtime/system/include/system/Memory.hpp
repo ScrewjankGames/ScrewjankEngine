@@ -21,4 +21,9 @@ namespace Screwjank {
      */
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size);
 
+    /**
+     * Calculates offset needed to properly align memory
+     * @param align_of The alignment requirement of the memory being aligned
+     */
+    uintptr_t GetAlignmentOffset(size_t align_of, const void* const ptr);
 } // namespace Screwjank

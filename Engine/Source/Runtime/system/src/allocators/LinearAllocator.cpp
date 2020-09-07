@@ -30,19 +30,13 @@ namespace Screwjank {
     void* LinearAllocator::Allocate(const size_t size, const size_t alignment)
     {
         // Ensure there is enough space to satisfy allocation
-        if (m_Capacity - m_FreeSpace < size) {
-            SJ_LOG_ERROR("{} is out of space!", m_DebugName);
+        if (m_FreeSpace < size + GetAlignmentOffset(alignment, m_CurrFrameStart)) {
+            SJ_LOG_ERROR("{} has insufficient memory to perform requested allocation", m_DebugName);
             return nullptr;
         }
 
         auto allocated_memory =
             AlignMemory(alignment, size, m_CurrFrameStart, m_Capacity - m_FreeSpace);
-
-        // Ensure there is enogh space to properly align the memory
-        if ((uintptr_t)allocated_memory + size > (uintptr_t)m_BufferStart + m_Capacity) {
-            SJ_LOG_ERROR("{} has insufficient memory to align allocation", m_DebugName);
-            return nullptr;
-        }
 
         // Bump allocation pointer to the first free byte after the current allocation
         m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);

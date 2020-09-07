@@ -38,17 +38,26 @@ namespace Screwjank {
         }
 
         // try to carve out _Size bytes on boundary _Bound
-        size_t offset = (size_t)((uintptr_t)(buffer_start) & (align_of - 1));
+        uintptr_t offset = GetAlignmentOffset(align_of, buffer_start);
 
         if (offset != 0) {
             offset = align_of - offset; // number of bytes to skip
         }
 
-        assert(!(buffer_size < offset) || !(buffer_size - offset < size));
+        if (buffer_size < offset || buffer_size - offset < size) {
+            SJ_LOG_ERROR("Memory alignment cannot be satisfied in provided space.");
+            return nullptr;
+        }
 
         // enough room, update
         buffer_start = (void*)((uintptr_t)buffer_start + offset);
         return buffer_start;
+    }
+
+    uintptr_t GetAlignmentOffset(size_t align_of, const void* const ptr)
+    {
+        SJ_ASSERT(align_of != 0, "Zero is not a valid memory alignment requirement.");
+        return (uintptr_t)(ptr) & (align_of - 1);
     }
 
 } // namespace Screwjank
