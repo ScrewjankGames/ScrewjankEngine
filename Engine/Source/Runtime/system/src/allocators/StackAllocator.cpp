@@ -1,5 +1,4 @@
 // STD Headers
-#include <cassert>
 
 // Library Headers
 
@@ -9,18 +8,18 @@
 
 namespace Screwjank {
 
-    StackAllocator::StackAllocator(size_t buffer_size)
-        : m_CurrFrameHeader(nullptr), m_Capacity(buffer_size), m_Used(0)
+    StackAllocator::StackAllocator(size_t buffer_size,
+                                   Allocator* backing_allocator,
+                                   const char* debug_name)
+        : Allocator(backing_allocator, debug_name), m_BackingAllocator(backing_allocator),
+          m_CurrFrameHeader(nullptr), m_Capacity(buffer_size)
     {
-        m_Buffer = (std::byte*)GlobalAllocator()->Allocate(buffer_size);
-
-        // Place a header at the start of the buffer
-        m_CurrFrameHeader = new (m_Buffer) StackAllocatorHeader {nullptr};
+        m_BackingAllocator->Allocate(buffer_size);
     }
 
     StackAllocator::~StackAllocator()
     {
-        GlobalAllocator()->Free(m_Buffer);
+        m_BackingAllocator->Free(m_Buffer);
     }
 
     void* Screwjank::StackAllocator::Allocate(const size_t size, const size_t alignment)
@@ -31,7 +30,6 @@ namespace Screwjank {
 
     void StackAllocator::Free(void* memory)
     {
-        assert(memory == nullptr);
     }
 
     void StackAllocator::Pop()
@@ -40,7 +38,6 @@ namespace Screwjank {
 
     void StackAllocator::Reset()
     {
-        m_CurrFrameHeader = new (m_Buffer) StackAllocatorHeader {nullptr};
     }
 
 } // namespace Screwjank

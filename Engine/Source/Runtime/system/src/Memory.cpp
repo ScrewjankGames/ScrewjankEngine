@@ -9,27 +9,21 @@
 
 #include "core/Assert.hpp"
 #include "core/Log.hpp"
-#include "system/allocators/UnmanagedAllocator.hpp"
+#include "core/MemorySystem.hpp"
 
 using namespace Screwjank;
 
 void* operator new(size_t num_bytes) noexcept(false)
 {
-    return GlobalAllocator()->Allocate(num_bytes);
+    return MemorySystem::GetDefaultUnmanagedAllocator()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) throw()
 {
-    GlobalAllocator()->Free(memory);
+    MemorySystem::GetDefaultUnmanagedAllocator()->Free(memory);
 }
 
 namespace Screwjank {
-
-    Allocator* GlobalAllocator()
-    {
-        static Screwjank::UnmanagedAllocator s_Allocator;
-        return &s_Allocator;
-    }
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
     {

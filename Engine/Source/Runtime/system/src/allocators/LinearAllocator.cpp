@@ -8,10 +8,14 @@
 #include "system/Memory.hpp"
 
 namespace Screwjank {
-    LinearAllocator::LinearAllocator(size_t buffer_size, const char* debug_name)
-        : Allocator(debug_name), m_Capacity(buffer_size)
+    LinearAllocator::LinearAllocator(size_t buffer_size,
+                                     Allocator* backing_allocator,
+                                     const char* debug_name)
+        : Allocator(backing_allocator, debug_name), m_BackingAllocator(backing_allocator),
+          m_Capacity(buffer_size)
     {
-        m_BufferStart = GlobalAllocator()->Allocate(buffer_size);
+
+        m_BufferStart = m_BackingAllocator->Allocate(buffer_size);
         m_CurrFrameStart = m_BufferStart;
     }
 
@@ -24,7 +28,7 @@ namespace Screwjank {
         }
 
         Reset();
-        GlobalAllocator()->Free(m_BufferStart);
+        m_BackingAllocator->Free(m_BufferStart);
     }
 
     void* LinearAllocator::Allocate(const size_t size, const size_t alignment)

@@ -11,12 +11,14 @@ namespace Screwjank {
       public:
         /**
          * Constructor
-         * @param buffer_size
+         * @param backing_allocator Allocator from which this allocator should request it's memory
+         * @param debug_name Name of the allocator used for debugging purposes
          */
-        Allocator(const char* debug_name = "");
+        Allocator(Allocator* backing_allocator = nullptr, const char* debug_name = "");
 
         /** Destructor */
         virtual ~Allocator() = default;
+
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate

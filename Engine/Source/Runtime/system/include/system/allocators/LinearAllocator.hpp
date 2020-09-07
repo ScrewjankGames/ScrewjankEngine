@@ -5,13 +5,16 @@
 
 // Engine Headers
 #include "system/Allocator.hpp"
+#include "core/MemorySystem.hpp"
 
 namespace Screwjank {
 
     class LinearAllocator : public Allocator
     {
       public:
-        LinearAllocator(size_t buffer_size, const char* debug_name = "");
+        LinearAllocator(size_t buffer_size,
+                        Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
+                        const char* debug_name = "");
 
         ~LinearAllocator();
 
@@ -22,6 +25,8 @@ namespace Screwjank {
         void Reset();
 
       private:
+        Allocator* m_BackingAllocator;
+
         /** Pointer to the start of the allocator's managed memory */
         void* m_BufferStart;
 

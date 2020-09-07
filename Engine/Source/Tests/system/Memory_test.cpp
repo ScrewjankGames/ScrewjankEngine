@@ -41,13 +41,14 @@ namespace system_tests {
         delete dummy;
     }
 
-    TEST(MemoryTests, DefaultAllocatorNewDeleteTest)
+    TEST(MemoryTests, UnmanagedAllocatorNewDeleteTest)
     {
-        auto dummy = Screwjank::GlobalAllocator()->New<DummyClass>(5, 5.0);
+        auto defaultAllocator = MemorySystem::GetDefaultUnmanagedAllocator();
+        auto dummy = defaultAllocator->New<DummyClass>(5, 5.0);
         ASSERT_NE(nullptr, dummy);
         ASSERT_EQ(5, dummy->m_num);
 
-        Screwjank::GlobalAllocator()->Delete(dummy);
+        defaultAllocator->Delete(dummy);
         ASSERT_EQ(nullptr, dummy);
         ASSERT_TRUE(dummy_dtor_called);
     }

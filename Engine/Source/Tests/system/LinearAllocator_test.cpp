@@ -34,7 +34,7 @@ namespace system_tests {
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
         // Create a stack allocator with a 128 byte buffer
-        LinearAllocator allocator(128);
+        LinearAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
 
         void* dummyMemory = allocator.AllocateType<LinearAllocatorDummy>();
         ASSERT_NE(nullptr, dummyMemory);
@@ -52,7 +52,7 @@ namespace system_tests {
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
 
-        LinearAllocator packingTest(sizeof(SBS) * 10);
+        LinearAllocator packingTest(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
 
         packingTest.Allocate(sizeof(SBS) * 10);
         packingTest.Reset();
@@ -66,14 +66,14 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10);
+        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
         allocator.Allocate(sizeof(SBS) * 10);
         ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10);
+        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
         allocator.Allocate(sizeof(SBS) * 9);
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
     }
@@ -82,7 +82,7 @@ namespace system_tests {
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        LinearAllocator allocator(256);
+        LinearAllocator allocator(256, MemorySystem::GetDefaultUnmanagedAllocator());
 
         LinearAllocatorDummy* dummy1 = allocator.New<LinearAllocatorDummy>(1, 1.0);
         auto dummy2 = allocator.New<LinearAllocatorDummy>(2, 2.0);

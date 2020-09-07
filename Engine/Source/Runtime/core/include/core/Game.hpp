@@ -7,6 +7,8 @@
 #include "system/Memory.hpp"
 
 namespace Screwjank {
+    // Forward declare system classes
+    class MemorySystem;
 
     class Game
     {
@@ -27,6 +29,9 @@ namespace Screwjank {
         void Start();
 
       protected:
+        /** Engine's memory system */
+        MemorySystem* m_MemorySystem;
+
         /** Current frame time */
         float m_DeltaTime;
 

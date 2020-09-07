@@ -5,13 +5,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include "system/Allocator.hpp"
 
 namespace Screwjank {
-
-    /** Returns a reference to the statically allocated Global Allocator */
-    Allocator* GlobalAllocator();
-
     /**
      * Function that returns the first aligned memory address given certain constraints
      * @param align_of The alignment of the memory being allocated
