@@ -3,11 +3,13 @@
 #include <cassert>
 
 // Library Headers
-#include "core/Assert.hpp"
-#include "core/Log.hpp"
-#include "system/Memory.hpp"
 
 // Screwjank Headers
+#include "system/Memory.hpp"
+
+#include "core/Assert.hpp"
+#include "core/Log.hpp"
+#include "system/allocators/UnmanagedAllocator.hpp"
 
 using namespace Screwjank;
 
@@ -25,7 +27,7 @@ namespace Screwjank {
 
     Allocator* GlobalAllocator()
     {
-        static Screwjank::BasicAllocator s_Allocator;
+        static Screwjank::UnmanagedAllocator s_Allocator;
         return &s_Allocator;
     }
 
@@ -47,19 +49,6 @@ namespace Screwjank {
         // enough room, update
         buffer_start = (void*)((uintptr_t)buffer_start + offset);
         return buffer_start;
-    }
-
-    char MemorySystem::s_GlobalAllocatorBuffer[sizeof(BasicAllocator)];
-    Allocator* MemorySystem::s_GlobalAllocator;
-
-    void MemorySystem::Initialize()
-    {
-        s_GlobalAllocator = new (s_GlobalAllocatorBuffer) BasicAllocator();
-    }
-
-    void MemorySystem::LogStatus()
-    {
-        SJ_LOG_INFO("TODO Memory system status:")
     }
 
 } // namespace Screwjank

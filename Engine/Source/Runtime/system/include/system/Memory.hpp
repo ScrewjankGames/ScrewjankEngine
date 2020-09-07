@@ -21,22 +21,4 @@ namespace Screwjank {
      */
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size);
 
-    class MemorySystem
-    {
-      public:
-        MemorySystem() = default;
-        ~MemorySystem() = default;
-
-        void Initialize();
-
-        void LogStatus();
-
-      private:
-        friend void* ::operator new(size_t num_bytes);
-        friend void ::operator delete(void* memory);
-
-        static char s_GlobalAllocatorBuffer[sizeof(BasicAllocator)];
-        static Allocator* s_GlobalAllocator;
-    };
-
 } // namespace Screwjank

@@ -29,35 +29,33 @@ namespace Screwjank {
          */
         virtual void Free(void* memory = nullptr) = 0;
 
+        /**
+         * Allocate enough aligned memory for the provided type
+         * @tparam T the type to allocate memory for
+         */
         template <class T>
         void* AllocateType();
 
         /**
          * Helper function to allocate and construct object using any allocator
+         * @tparam T The type to allocate and construct
+         * @tparam ...Args The constructor arguments to send to the allocated object
+         * @return A pointer to the allocated and constructed object
          */
         template <class T, class... Args>
         T* New(Args&&... args);
 
         /**
          * Helper function to deallocate and deconstruct object using any allocator
+         * @tparam T The type of the pointer being supplied
+         * @param ptr Pointer to the memory address to free
+         * @note ptr will be nulled after deletion.
          */
         template <class T>
         void Delete(T*& ptr);
 
       protected:
         const char* m_DebugName;
-    };
-
-    /**
-     * @class BasicAllocator
-     * @brief A simple wrapper for standard malloc and free calls
-     */
-    class BasicAllocator : public Allocator
-    {
-      public:
-        BasicAllocator() = default;
-        void* Allocate(const size_t size, const size_t alignment = 0) override;
-        void Free(void* memory) override;
     };
 
     template <class T>

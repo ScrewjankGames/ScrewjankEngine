@@ -14,11 +14,6 @@ namespace Screwjank {
 
     Game::Game() : m_DeltaTime(0)
     {
-        SJ_ENGINE_LOG_INFO("Initializing core engine systems...");
-
-        // Initialize engine sytems
-        m_MemorySystem.Initialize();
-        SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
     }
 
     Game::~Game()
@@ -28,7 +23,9 @@ namespace Screwjank {
 
     void Game::Start()
     {
-        SJ_ENGINE_LOG_INFO("Game started");
+        SJ_ENGINE_LOG_INFO("Initializing core engine systems...");
+
+        SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
 
         Run();
     }

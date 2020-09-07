@@ -30,9 +30,6 @@ namespace Screwjank {
         /** Current frame time */
         float m_DeltaTime;
 
-        /** Engine memory sub-system */
-        MemorySystem m_MemorySystem;
-
         /**
          * Main game loop
          */
