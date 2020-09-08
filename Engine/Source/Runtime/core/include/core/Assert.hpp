@@ -1,6 +1,6 @@
 #pragma once
 // STD Headers
-#include <exception>
+
 // Library Headers
 
 // Screwjank Headers
@@ -15,7 +15,7 @@
         #define HZ_DEBUGBREAK() raise(SIGTRAP)
     #else
         #error "Platform does not support debug breaking"
-    #endif // SJ_MSVC
+    #endif // SJ_PLATFORM_WINDOWS
 #else
     #define SJ_DEBUGBREAK()
 #endif // SJ_DEBUG
@@ -28,4 +28,4 @@
         }
 #else
     #define SJ_ASSERT(...)
-#endif //
+#endif // SJ_ENABLE_ASSERTS
