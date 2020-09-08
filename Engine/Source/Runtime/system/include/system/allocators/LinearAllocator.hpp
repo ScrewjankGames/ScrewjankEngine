@@ -32,15 +32,6 @@ namespace Screwjank {
 
         /** Pointer to the first free byte in the linear allocator */
         void* m_CurrFrameStart;
-
-        /** The number of active allocations in this allocator */
-        size_t m_NumActiveAllocations;
-
-        /** The amount of memory free in this allocator */
-        size_t m_FreeSpace;
-
-        /** This allocator's capacity in bytes */
-        size_t m_Capacity;
     };
 
 } // namespace Screwjank

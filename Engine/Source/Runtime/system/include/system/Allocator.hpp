@@ -6,6 +6,20 @@
 // Engine Headers
 
 namespace Screwjank {
+    struct AllocatorStatus
+    {
+        size_t Capacity;
+        size_t ActiveAllocationCount;
+        size_t ActiveBytesAllocated;
+        size_t TotalAllocationCount;
+        size_t TotalBytesAllocated;
+
+        size_t FreeSpace()
+        {
+            return Capacity - ActiveBytesAllocated;
+        }
+    };
+
     class Allocator
     {
       public:
@@ -58,6 +72,7 @@ namespace Screwjank {
 
       protected:
         const char* m_DebugName;
+        AllocatorStatus m_MemoryStats;
     };
 
     template <class T>

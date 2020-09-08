@@ -27,9 +27,7 @@ namespace Screwjank {
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
     {
-        if (align_of == 0) {
-            return buffer_start;
-        }
+        SJ_ASSERT(align_of != 0, "Zero is not a valid alignment!");
 
         // try to carve out _Size bytes on boundary _Bound
         uintptr_t offset = GetAlignmentOffset(align_of, buffer_start);
