@@ -70,16 +70,48 @@ namespace system_tests {
         allocator.Pop();
         allocator.Pop();
 
-        auto mem5 = allocator.AllocateType<StackAllocatorDummy>();
-        auto sd5 = new (mem5) StackAllocatorDummy {5, 5, 5};
+        auto mem5 = allocator.PushType<int>();
+        auto sd5 = new (mem5) int(5);
         // mem5 should re-use mem1's freed space exactly
         ASSERT_EQ(mem1, mem5);
-        // Make sure 4th allocation worked
-        ASSERT_EQ(5, sd5->a);
-        ASSERT_EQ(5, sd5->b);
-        ASSERT_EQ(5, sd5->c);
+
+        // Make sure 5th allocation worked
+        ASSERT_EQ(1, *sd5);
+
+        auto mem6 = allocator.PushType<double>();
+        auto sd6 = new (mem6) double(6.0f);
+
+        auto mem7 = allocator.PushType<StackAllocatorDummy>();
+        auto sd7 = new StackAllocatorDummy {7, 7, 7};
+
+        ASSERT_EQ(6.0, *sd6);
+
+        ASSERT_EQ(7, sd4->a);
+        ASSERT_EQ(7, sd4->b);
+        ASSERT_EQ(7, sd4->c);
 
         allocator.Pop();
+        allocator.Pop();
+        allocator.Pop();
+    }
+
+    TEST(StackAllocatorTests, InvalidPopTest)
+    {
+        StackAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+
+#ifdef SJ_DEBUG
+        ASSERT_DEATH(allocator.Pop(), ".*");
+#endif
+
+        StackAllocator allocator2(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        auto mem1 = allocator2.PushType<char>();
+        auto mem2 = allocator2.PushType<double>();
+
+#ifdef SJ_DEBUG
+        ASSERT_DEATH(allocator2.Free(mem1), ".*");
+#endif
+        allocator2.Pop();
+        allocator2.Pop();
     }
 
     TEST(StackAllocatorTests, MemoryLeakDetectionTest)

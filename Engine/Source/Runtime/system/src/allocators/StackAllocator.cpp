@@ -57,6 +57,13 @@ namespace Screwjank {
             return nullptr;
         }
 
+        if (header_offset + sizeof(StackAllocatorHeader) + allocation_offset > size) {
+            SJ_LOG_WARN("Padding and header size {} (bytes) is greater than the requested memory "
+                        "allocation {} (bytes) ",
+                        header_offset + sizeof(StackAllocatorHeader) + allocation_offset,
+                        size);
+        }
+
         // Allocate the header
         auto header_memory = (uintptr_t)m_Offset + header_offset;
         auto old_header = m_CurrentHeader;
