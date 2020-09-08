@@ -34,17 +34,17 @@ namespace system_tests {
         auto sd3 = new (mem3) StackAllocatorDummy {3, 3, 3};
 
         // Make sure no data got stomped on or corrupted
-        ASSERT_EQ(1, sd1->a);
-        ASSERT_EQ(1, sd1->b);
-        ASSERT_EQ(1, sd1->c);
+        EXPECT_EQ(1, sd1->a);
+        EXPECT_EQ(1, sd1->b);
+        EXPECT_EQ(1, sd1->c);
 
-        ASSERT_EQ(2, sd2->a);
-        ASSERT_EQ(2, sd2->b);
-        ASSERT_EQ(2, sd2->c);
+        EXPECT_EQ(2, sd2->a);
+        EXPECT_EQ(2, sd2->b);
+        EXPECT_EQ(2, sd2->c);
 
-        ASSERT_EQ(3, sd3->a);
-        ASSERT_EQ(3, sd3->b);
-        ASSERT_EQ(3, sd3->c);
+        EXPECT_EQ(3, sd3->a);
+        EXPECT_EQ(3, sd3->b);
+        EXPECT_EQ(3, sd3->c);
 
         // free mem3
         allocator.Pop();
@@ -53,17 +53,17 @@ namespace system_tests {
         auto sd4 = new (mem4) StackAllocatorDummy {4, 4, 4};
 
         // mem4 should re-use mem3's space
-        ASSERT_EQ(mem3, mem4);
+        EXPECT_EQ(mem3, mem4);
 
         // Make sure 2nd allocation isn't disturbed
-        ASSERT_EQ(2, sd2->a);
-        ASSERT_EQ(2, sd2->b);
-        ASSERT_EQ(2, sd2->c);
+        EXPECT_EQ(2, sd2->a);
+        EXPECT_EQ(2, sd2->b);
+        EXPECT_EQ(2, sd2->c);
 
         // Make sure 4th allocation worked
-        ASSERT_EQ(4, sd4->a);
-        ASSERT_EQ(4, sd4->b);
-        ASSERT_EQ(4, sd4->c);
+        EXPECT_EQ(4, sd4->a);
+        EXPECT_EQ(4, sd4->b);
+        EXPECT_EQ(4, sd4->c);
 
         // There are now three allocations on the stack. Pop them all
         allocator.Pop();
@@ -73,10 +73,10 @@ namespace system_tests {
         auto mem5 = allocator.PushType<int>();
         auto sd5 = new (mem5) int(5);
         // mem5 should re-use mem1's freed space exactly
-        ASSERT_EQ(mem1, mem5);
+        EXPECT_EQ(mem1, mem5);
 
         // Make sure 5th allocation worked
-        ASSERT_EQ(1, *sd5);
+        EXPECT_EQ(5, *sd5);
 
         auto mem6 = allocator.PushType<double>();
         auto sd6 = new (mem6) double(6.0f);
@@ -84,11 +84,11 @@ namespace system_tests {
         auto mem7 = allocator.PushType<StackAllocatorDummy>();
         auto sd7 = new StackAllocatorDummy {7, 7, 7};
 
-        ASSERT_EQ(6.0, *sd6);
+        EXPECT_EQ(6.0, *sd6);
 
-        ASSERT_EQ(7, sd4->a);
-        ASSERT_EQ(7, sd4->b);
-        ASSERT_EQ(7, sd4->c);
+        EXPECT_EQ(7, sd7->a);
+        EXPECT_EQ(7, sd7->b);
+        EXPECT_EQ(7, sd7->c);
 
         allocator.Pop();
         allocator.Pop();
