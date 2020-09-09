@@ -13,6 +13,11 @@ namespace Screwjank {
     {
     }
 
+    MemorySystem::~MemorySystem()
+    {
+        delete m_DefaultAllocator;
+    }
+
     MemorySystem* MemorySystem::Get()
     {
         static MemorySystem memSys;

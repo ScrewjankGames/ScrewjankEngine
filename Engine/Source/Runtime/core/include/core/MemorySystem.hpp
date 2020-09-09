@@ -31,6 +31,6 @@ namespace Screwjank {
         void Initialize();
 
         MemorySystem();
-        ~MemorySystem() = default;
+        ~MemorySystem();
     };
 } // namespace Screwjank
