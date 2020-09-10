@@ -1,6 +1,7 @@
 #pragma once
 // STD Headers
 #include <cstddef>
+#include <memory>
 
 // Library Headers
 
@@ -21,4 +22,24 @@ namespace Screwjank {
      * @param align_of The alignment requirement of the memory being aligned
      */
     uintptr_t GetAlignmentOffset(size_t align_of, const void* const ptr);
+
+    // Placeholder UniquePtr alias
+    template <typename T>
+    using UniquePtr = std::unique_ptr<T>;
+
+    template <typename T, typename... Args>
+    constexpr UniquePtr<T> MakeUnique(Args&&... args)
+    {
+        return std::make_unique<T>(std::forward<Args>(args)...);
+    }
+
+    // Placeholder SharedPtr alias
+    template <typename T>
+    using SharedPtr = std::shared_ptr<T>;
+
+    template <typename T, typename... Args>
+    constexpr SharedPtr<T> MakeShared(Args&&... args)
+    {
+        return std::make_shared<T>(std::forward<Args>(args)...);
+    }
 } // namespace Screwjank

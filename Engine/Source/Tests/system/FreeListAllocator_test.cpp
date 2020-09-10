@@ -13,7 +13,7 @@
 using namespace Screwjank;
 
 namespace system_tests {
-    TEST(FreeListAllocatorTests, AllocationTest)
+    /*TEST(FreeListAllocatorTests, AllocationTest)
     {
         ASSERT_TRUE(false);
     }
@@ -21,5 +21,5 @@ namespace system_tests {
     TEST(FreeListAllocatorTests, MemoryAlignmentTest)
     {
         ASSERT_TRUE(false);
-    }
+    }*/
 } // namespace system_tests
