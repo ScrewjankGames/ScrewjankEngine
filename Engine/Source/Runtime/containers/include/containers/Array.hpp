@@ -1,6 +1,7 @@
 #pragma once
 // STD Headers
 #include <cstddef>
+#include <concepts>
 
 // Library Headers
 
@@ -14,7 +15,7 @@ namespace Screwjank {
     class Array
     {
       public:
-        // STL-like type aliases
+        // STL type aliases
         using value_type = T;
         using size_type = size_t;
         using difference_type = std::ptrdiff_t;
@@ -23,7 +24,19 @@ namespace Screwjank {
         using pointer = value_type*;
         using const_pointer = const value_type*;
 
-        Array() = default;
+        using iterator_concept = std::contiguous_iterator_tag;
+
+        /**
+         * Constructor
+         */
+        constexpr Array() = default;
+
+        /**
+         * Constructor
+         * Allows Arrays to be braced-list initialized
+         */
+        template <class... Args>
+        constexpr Array(Args... list);
 
         /**
          * Array index operator
@@ -70,6 +83,11 @@ namespace Screwjank {
         constexpr const_reference Back() const;
 
         /**
+         * @return Size of the array
+         */
+        constexpr size_type Size() const;
+
+        /**
          * Returns pointer to backing raw C array, allows modification of elements
          */
         constexpr T* Data();
@@ -79,22 +97,44 @@ namespace Screwjank {
          */
         constexpr const T* Data() const;
 
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        auto begin()
+        {
+            return std::begin(m_Array);
+        }
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        auto end()
+        {
+            return std::end(m_Array);
+        }
+
       private:
         /** C style array this datastructure encapsulates */
         T m_Array[N];
     };
 
     template <class T, size_t N>
+    template <class... Args>
+    inline constexpr Array<T, N>::Array(Args... list) : m_Array {list...}
+    {
+    }
+
+    template <class T, size_t N>
     constexpr typename Array<T, N>::reference Array<T, N>::operator[](Array<T, N>::size_type index)
     {
-        return &m_Array[index];
+        return m_Array[index];
     }
 
     template <class T, size_t N>
     constexpr typename Array<T, N>::const_reference
     Array<T, N>::operator[](Array<T, N>::size_type index) const
     {
-        return &m_Array[index];
+        return m_Array[index];
     }
 
     template <class T, size_t N>
@@ -134,6 +174,12 @@ namespace Screwjank {
     constexpr typename Array<T, N>::const_reference Array<T, N>::Back() const
     {
         return m_Array[N - 1];
+    }
+
+    template <class T, size_t N>
+    inline constexpr typename Array<T, N>::size_type Array<T, N>::Size() const
+    {
+        return N;
     }
 
     template <class T, size_t N>
