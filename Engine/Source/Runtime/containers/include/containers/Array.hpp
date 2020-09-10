@@ -1,13 +1,13 @@
 #pragma once
 // STD Headers
 #include <cstddef>
-#include <concepts>
 
 // Library Headers
 
 // Screwjank Headers
 #include "core/Assert.hpp"
 #include "core/MemorySystem.hpp"
+#include "utils/Concepts.hpp"
 
 namespace Screwjank {
 
@@ -19,11 +19,10 @@ namespace Screwjank {
         using value_type = T;
         using size_type = size_t;
         using difference_type = std::ptrdiff_t;
-        using reference = value_type&;
-        using const_reference = const reference;
-        using pointer = value_type*;
-        using const_pointer = const value_type*;
-
+        using reference = T&;
+        using const_reference = const T&;
+        using pointer = T*;
+        using const_pointer = const T*;
         using iterator_concept = std::contiguous_iterator_tag;
 
         /**
@@ -51,6 +50,14 @@ namespace Screwjank {
          * @return reference to element at spot index in array
          */
         constexpr const_reference operator[](size_type index) const;
+
+        /**
+         * Inequality comparison operator
+         */
+        friend inline bool operator!=(const Array<T, N>& lhs, const Array<T, N>& rhs)
+        {
+            return !(lhs == rhs);
+        }
 
         /**
          * Bounds-checked element index operator
@@ -97,26 +104,36 @@ namespace Screwjank {
          */
         constexpr const T* Data() const;
 
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto begin()
-        {
-            return std::begin(m_Array);
-        }
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto end()
-        {
-            return std::end(m_Array);
-        }
-
       private:
         /** C style array this datastructure encapsulates */
         T m_Array[N];
+
+      public:
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        auto begin() -> decltype(std::begin(m_Array));
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        auto end() -> decltype(std::end(m_Array));
     };
+
+    /**
+     * Equality comparison operator
+     */
+    template <class T, size_t N>
+    inline bool operator==(const Array<T, N>& lhs, const Array<T, N>& rhs)
+    {
+        for (size_t i = 0; i < N; i++) {
+            if (lhs[i] != rhs[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     template <class T, size_t N>
     template <class... Args>
@@ -192,6 +209,18 @@ namespace Screwjank {
     constexpr const T* Array<T, N>::Data() const
     {
         return m_Array;
+    }
+
+    template <class T, size_t N>
+    inline auto Array<T, N>::begin() -> decltype(std::begin(m_Array))
+    {
+        return std::begin(m_Array);
+    }
+
+    template <class T, size_t N>
+    inline auto Array<T, N>::end() -> decltype(std::end(m_Array))
+    {
+        return std::end(m_Array);
     }
 
 } // namespace Screwjank

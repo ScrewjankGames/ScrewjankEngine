@@ -1,4 +1,5 @@
 // STD Headers
+#include <array>
 
 // Library Headers
 #include "gtest/gtest.h"
@@ -51,6 +52,15 @@ namespace container_tests {
 
     TEST(ArrayTests, AssignmentOperatorTest)
     {
+        Array<int, 3> arr = {1, 2, 3};
+        Array<int, 3> arr2 = {4, 5, 6};
+
+        arr = arr2;
+        ASSERT_EQ(4, arr[0]);
+
+        // Ensure copy is a deep copy
+        arr[0] = 5;
+        ASSERT_EQ(4, arr2[0]);
     }
 
     TEST(ArrayTests, EqualityComparisonTest)
@@ -60,13 +70,22 @@ namespace container_tests {
         Array<float, 3> arr3 = {1.0f, 2.0f, 3.0f};
         Array<int, 3> arr4 = {1, 2, 3};
 
-        // ASSERT_TRUE(arr1 == arr3);
+        ASSERT_FALSE(arr1 == arr2);
+        ASSERT_TRUE(arr1 == arr4);
+        ASSERT_TRUE(arr1 != arr2);
     }
 
-    TEST(ArrayTests, StdAlgorithmSupport)
+    TEST(ArrayTests, FindTest)
     {
-        // Array<int, 5> test = {1, 2, 3, 4, 5};
-        // std::find(test.begin(), test.end(), item);
+        Array<int, 5> arr = {1, 2, 3, 4, 5};
+
+        auto res = std::find(arr.begin(), arr.end(), 6);
+
+        ASSERT_TRUE(res == arr.end());
+
+        res = std::find(arr.begin(), arr.end(), 2);
+        ASSERT_TRUE(res != arr.end());
+        ASSERT_EQ(arr[1], *res);
     }
 
 } // namespace container_tests
