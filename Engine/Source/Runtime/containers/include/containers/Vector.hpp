@@ -6,6 +6,7 @@
 // Library Headers
 
 // Scewjank Headers
+#include "core/Assert.hpp"
 #include "core/MemorySystem.hpp"
 
 namespace Screwjank {
@@ -27,6 +28,9 @@ namespace Screwjank {
         Vector(Allocator* allocator = MemorySystem::GetDefaultAllocator(),
                size_t capacity_hint = 0);
 
+        Vector(std::initializer_list<T> list,
+               Allocator* allocator = MemorySystem::GetDefaultAllocator());
+
         ~Vector();
 
         /** Array Index Operator */
@@ -34,6 +38,32 @@ namespace Screwjank {
 
         /** Array Index Operator */
         const T& operator[](size_t index) const;
+
+        /** Bounds-checked element access */
+        T& At(size_t index);
+
+        /** Bounds-checked element access */
+        const T& At(size_t index) const;
+
+        /**
+         * @return The first element in the vector
+         */
+        T& Front();
+
+        /**
+         * @return The first element in the vector
+         */
+        const T& Front() const;
+
+        /**
+         * @return The first element in the vector
+         */
+        T& Back();
+
+        /**
+         * @return The first element in the vector
+         */
+        const T& Back() const;
 
         /**
          * Inserts a new element onto the end of the array
@@ -48,6 +78,16 @@ namespace Screwjank {
         template <class... Args>
         T& EmplaceBack(Args&&... args);
 
+        /**
+         * @return The number of elements actively stored in the array
+         */
+        size_t Size() const;
+
+        /**
+         * @return The number of elements the vector can currently contain
+         */
+        size_t Capacity() const;
+
       private:
         size_t m_Size;
         size_t m_Capacity;
@@ -56,6 +96,17 @@ namespace Screwjank {
 
         /** Doubles the size of the data buffer, and copies the old data over */
         void GrowVector();
+
+      public:
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        T* begin();
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        T* end();
     };
 
     template <class T>
@@ -65,6 +116,14 @@ namespace Screwjank {
         if (capacity_hint != 0) {
             m_Data = (T*)(m_Allocator->Allocate(sizeof(T) * capacity_hint, alignof(T)));
         }
+    }
+
+    template <class T>
+    inline Vector<T>::Vector(std::initializer_list<T> list, Allocator* allocator)
+        : Vector(allocator, list.size())
+    {
+        std::copy(list.begin(), list.end(), m_Data);
+        m_Size = list.size();
     }
 
     template <class T>
@@ -87,6 +146,52 @@ namespace Screwjank {
     }
 
     template <class T>
+    inline T& Vector<T>::At(size_t index)
+    {
+        SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
+
+        return m_Data[index];
+    }
+
+    template <class T>
+    inline const T& Vector<T>::At(size_t index) const
+    {
+        SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
+
+        return m_Data[index];
+    }
+
+    template <class T>
+    inline T& Vector<T>::Front()
+    {
+        SJ_ASSERT(m_Size > 0, "Cannot access front of an empty vector");
+        return m_Data[0];
+    }
+
+    template <class T>
+    inline const T& Vector<T>::Front() const
+    {
+        SJ_ASSERT(m_Size > 0, "Cannot access front of an empty vector");
+        return m_Data[0];
+    }
+
+    template <class T>
+    inline T& Vector<T>::Back()
+    {
+        SJ_ASSERT(m_Size > 0, "Cannot access back of empty vector");
+
+        return m_Data[m_Size - 1];
+    }
+
+    template <class T>
+    inline const T& Vector<T>::Back() const
+    {
+        SJ_ASSERT(m_Size > 0, "Cannot access back of empty vector");
+
+        return m_Data[m_Size - 1];
+    }
+
+    template <class T>
     inline void Vector<T>::PushBack(const T& value)
     {
 
@@ -100,6 +205,18 @@ namespace Screwjank {
 
         // Increment size of vector
         ++m_Size;
+    }
+
+    template <class T>
+    inline size_t Vector<T>::Size() const
+    {
+        return m_Size;
+    }
+
+    template <class T>
+    inline size_t Vector<T>::Capacity() const
+    {
+        return m_Capacity;
     }
 
     template <class T>
@@ -144,6 +261,19 @@ namespace Screwjank {
 
         // Allocate new buffer
         m_Data = new_buffer;
+    }
+
+    template <class T>
+    inline T* Vector<T>::begin()
+    {
+        return m_Data;
+    }
+
+    template <class T>
+    inline T* Vector<T>::end()
+    {
+        // return one past the last element
+        return m_Data + m_Size;
     }
 
 } // namespace Screwjank

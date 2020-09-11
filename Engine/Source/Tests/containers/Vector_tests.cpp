@@ -65,7 +65,15 @@ namespace container_tests {
         int m_Data;
     };
 
-    TEST(VectorTests, ElementAccessTest)
+    TEST(VectorTests, ListInitializationTest)
+    {
+        Vector<int> vec1({1, 2, 3, 4, 5}, MemorySystem::GetDefaultUnmanagedAllocator());
+
+        ASSERT_EQ(5, vec1.Size());
+        ASSERT_EQ(5, vec1.Capacity());
+    }
+
+    TEST(VectorTests, ElementInsertionTest)
     {
         Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
         VectorTestDummy dummy;
@@ -78,6 +86,35 @@ namespace container_tests {
 
         ASSERT_EQ(dummy2, vec[1]);
         ASSERT_EQ(100, vec[1].Value());
+    }
+
+    TEST(VectorTests, ElementAccessTest)
+    {
+        Vector<int> vec1({1, 2, 3}, MemorySystem::GetDefaultUnmanagedAllocator());
+
+        ASSERT_EQ(1, vec1[0]);
+
+        ASSERT_EQ(vec1[0], vec1.At(0));
+        ASSERT_EQ(vec1[0], vec1.Front());
+        ASSERT_EQ(vec1[2], vec1.Back());
+
+#ifdef SJ_DEBUG
+        ASSERT_DEATH(vec1.At(-1), ".*");
+#endif // SJ_DEBUG
+    }
+
+    TEST(VectorTests, IterationTest)
+    {
+        Vector<int> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+        int i = 0;
+
+        for (auto& element : vec) {
+            i++;
+        }
+        ASSERT_EQ(0, i);
+
+        vec.PushBack(2);
+        vec.EmplaceBack(4);
     }
 
 } // namespace container_tests
