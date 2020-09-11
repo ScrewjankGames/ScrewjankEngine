@@ -1,5 +1,4 @@
 // STD Headers
-#include <array>
 
 // Library Headers
 #include "gtest/gtest.h"
