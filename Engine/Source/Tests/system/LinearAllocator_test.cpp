@@ -41,8 +41,10 @@ namespace system_tests {
 
         void* alignedDummyMemory = dummyMemory;
         size_t space = sizeof(LinearAllocatorDummy) + alignof(LinearAllocatorDummy) - 1;
-        std::align(
-            alignof(LinearAllocatorDummy), sizeof(LinearAllocatorDummy), alignedDummyMemory, space);
+        std::align(alignof(LinearAllocatorDummy),
+                   sizeof(LinearAllocatorDummy),
+                   alignedDummyMemory,
+                   space);
 
         ASSERT_EQ(dummyMemory, alignedDummyMemory);
 
@@ -54,27 +56,27 @@ namespace system_tests {
 
         LinearAllocator packingTest(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
 
-        packingTest.Allocate(sizeof(SBS) * 10);
+        auto mem = packingTest.Allocate(sizeof(SBS) * 10);
         packingTest.Reset();
 
         // You should be able to fit ten individual single byte structures into a linear allocator
         // of buffer size 10
         for (int i = 0; i < 10; i++) {
-            packingTest.AllocateType<SBS>();
+            mem = packingTest.AllocateType<SBS>();
         }
     }
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
         LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
-        allocator.Allocate(sizeof(SBS) * 10);
+        auto mem = allocator.Allocate(sizeof(SBS) * 10);
         ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
         LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
-        allocator.Allocate(sizeof(SBS) * 9);
+        auto mem = allocator.Allocate(sizeof(SBS) * 9);
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
     }
 

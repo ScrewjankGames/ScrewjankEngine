@@ -21,7 +21,7 @@ namespace Screwjank {
         ~UnmanagedAllocator();
 
         /** Allocate system memory from the heap */
-        void* Allocate(const size_t size, const size_t alignment = 0) override;
+        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment = 0) override;
 
         /** Free system memory from the heap */
         void Free(void* memory) override;

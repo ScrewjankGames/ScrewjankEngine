@@ -19,14 +19,14 @@ namespace Screwjank {
 
         ~StackAllocator();
 
-        void* Allocate(const size_t size, const size_t alignment) override;
+        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment) override;
 
-        void Free(void* memory = nullptr) override;
+        [[nodiscard]] void Free(void* memory = nullptr) override;
 
         template <typename T>
-        void* PushType();
+        [[nodiscard]] void* PushType();
 
-        void* Push(size_t size, size_t alignment = 1);
+        [[nodiscard]] void* Push(size_t size, size_t alignment = 1);
 
         void Pop();
 

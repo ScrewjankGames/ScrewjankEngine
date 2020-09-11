@@ -18,7 +18,7 @@ namespace Screwjank {
         ProxyAllocator(Allocator* backing_allocator, const char* debug_name);
         ~ProxyAllocator();
 
-        void* Allocate(const size_t size, const size_t alignment = 1) override;
+        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment = 1) override;
 
         void Free(void* memory) override;
 

@@ -119,7 +119,7 @@ namespace system_tests {
         StackAllocator* allocator =
             new StackAllocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
 
-        allocator->PushType<StackAllocatorDummy>();
+        auto mem = allocator->PushType<StackAllocatorDummy>();
 
 #ifdef SJ_DEBUG
         ASSERT_DEATH(delete allocator, ".*");

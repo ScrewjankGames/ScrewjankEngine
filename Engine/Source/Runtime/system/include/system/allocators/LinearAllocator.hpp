@@ -18,7 +18,7 @@ namespace Screwjank {
 
         ~LinearAllocator();
 
-        void* Allocate(const size_t size, const size_t alignment = 1) override;
+        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment = 1) override;
 
         void Free(void* memory = nullptr) override;
 

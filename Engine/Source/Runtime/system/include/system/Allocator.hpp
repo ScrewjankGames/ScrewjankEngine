@@ -37,7 +37,7 @@ namespace Screwjank {
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
          */
-        virtual void* Allocate(const size_t size, const size_t alignment = 1) = 0;
+        [[nodiscard]] virtual void* Allocate(const size_t size, const size_t alignment = 1) = 0;
 
         /**
          * Marks memory as free
@@ -50,7 +50,7 @@ namespace Screwjank {
          * @tparam T the type to allocate memory for
          */
         template <class T>
-        void* AllocateType();
+        [[nodiscard]] void* AllocateType();
 
         /**
          * Helper function to allocate and construct object using any allocator
@@ -59,7 +59,7 @@ namespace Screwjank {
          * @return A pointer to the allocated and constructed object
          */
         template <class T, class... Args>
-        T* New(Args&&... args);
+        [[nodiscard]] T* New(Args&&... args);
 
         /**
          * Helper function to deallocate and deconstruct object using any allocator
