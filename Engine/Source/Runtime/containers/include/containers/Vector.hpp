@@ -11,6 +11,156 @@
 
 namespace Screwjank {
 
+    template <class Vector_t>
+    class VectorConstIterator
+    {
+      public:
+        // Using declarations for STL compatibility
+        using iterator_category = std::contiguous_iterator_tag;
+        using value_type = typename Vector_t::value_type;
+        using difference_type = typename Vector_t::difference_type;
+        using pointer = typename Vector_t::const_pointer;
+        using reference = const value_type&;
+
+      private:
+        pointer m_CurrElement;
+
+      public:
+        /** Constructor */
+        VectorConstIterator(pointer element) noexcept : m_CurrElement(element)
+        {
+        }
+
+        /** Dereference operator overload */
+        [[nodiscard]] reference operator*() const
+        {
+            return *m_CurrElement;
+        }
+
+        /** Arrow operator overload */
+        [[nodiscard]] pointer operator->() const
+        {
+            return m_CurrElement;
+        }
+
+        /** Equality comparison operator */
+        bool operator==(const VectorConstIterator& other) const
+        {
+            return m_CurrElement == other.m_CurrElement;
+        }
+
+        /** Inequality comparison operator */
+        bool operator!=(const VectorConstIterator& other) const
+        {
+            return !(*this == other);
+        }
+
+        /** Pre-increment operator overload */
+        VectorConstIterator& operator++()
+        {
+            ++m_CurrElement;
+            return *this;
+        }
+
+        /** Post-increment operator overload */
+        VectorConstIterator& operator++(int)
+        {
+            VectorConstIterator tmp(*this);
+            ++*this;
+            return tmp;
+        }
+
+        /** Pre-decrement operator overload */
+        VectorConstIterator& operator--()
+        {
+            --m_CurrElement;
+            return *this;
+        }
+
+        /** Post-decrement operator overload */
+        VectorConstIterator& operator--(int)
+        {
+            VectorConstIterator tmp(*this);
+            --*this;
+            return tmp;
+        }
+    };
+
+    template <class Vector_t>
+    class VectorIterator
+    {
+      public:
+        // Using declarations for STL compatibility
+        using iterator_category = std::contiguous_iterator_tag;
+        using value_type = typename Vector_t::value_type;
+        using difference_type = typename Vector_t::difference_type;
+        using pointer = typename Vector_t::pointer;
+        using reference = value_type&;
+
+      private:
+        pointer m_CurrElement;
+
+      public:
+        /** Constructor */
+        VectorIterator(pointer element) noexcept : m_CurrElement(element)
+        {
+        }
+
+        /** Dereference operator overload */
+        [[nodiscard]] reference operator*() const
+        {
+            return *m_CurrElement;
+        }
+
+        /** Arrow operator overload */
+        [[nodiscard]] pointer operator->() const
+        {
+            return m_CurrElement;
+        }
+
+        /** Equality comparison operator */
+        bool operator==(const VectorIterator& other) const
+        {
+            return m_CurrElement == other.m_CurrElement;
+        }
+
+        /** Inequality comparison operator */
+        bool operator!=(const VectorIterator& other) const
+        {
+            return !(*this == other);
+        }
+
+        /** Pre-increment operator overload */
+        VectorIterator& operator++()
+        {
+            ++m_CurrElement;
+            return *this;
+        }
+
+        /** Post-increment operator overload */
+        VectorIterator& operator++(int)
+        {
+            VectorIterator tmp(*this);
+            this->operator++();
+            return tmp;
+        }
+
+        /** Pre-decrement operator overload */
+        VectorIterator& operator--()
+        {
+            --m_CurrElement;
+            return *this;
+        }
+
+        /** Post-decrement operator overload */
+        VectorIterator& operator--(int)
+        {
+            VectorIterator tmp(*this);
+            --*this;
+            return tmp;
+        }
+    };
+
     template <class T>
     class Vector
     {
@@ -23,7 +173,11 @@ namespace Screwjank {
         using const_reference = const T&;
         using pointer = T*;
         using const_pointer = const T*;
+
+        // Iterator info
         using iterator_concept = std::contiguous_iterator_tag;
+        using iterator = typename VectorIterator<Vector<T>>;
+        using const_iterator = typename VectorConstIterator<Vector<T>>;
 
         /**
          * Default Constructor
@@ -143,12 +297,22 @@ namespace Screwjank {
         /**
          * Function to allow use in ranged based for loops
          */
-        T* begin();
+        iterator begin();
 
         /**
          * Function to allow use in ranged based for loops
          */
-        T* end();
+        const_iterator begin() const;
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        iterator end();
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        const_iterator end() const;
     };
 
     template <class T>
@@ -492,16 +656,28 @@ namespace Screwjank {
     }
 
     template <class T>
-    inline T* Vector<T>::begin()
+    inline typename Vector<T>::iterator Vector<T>::begin()
     {
-        return m_Data;
+        return iterator(m_Data);
     }
 
     template <class T>
-    inline T* Vector<T>::end()
+    inline typename Vector<T>::const_iterator Vector<T>::begin() const
+    {
+        return const_iterator(m_Data);
+    }
+
+    template <class T>
+    inline typename Vector<T>::iterator Vector<T>::end()
     {
         // return one past the last element
-        return m_Data + m_Size;
+        return iterator(m_Data + m_Size);
+    }
+
+    template <class T>
+    inline typename Vector<T>::const_iterator Vector<T>::end() const
+    {
+        return const_iterator(m_Data + m_Size);
     }
 
 } // namespace Screwjank
