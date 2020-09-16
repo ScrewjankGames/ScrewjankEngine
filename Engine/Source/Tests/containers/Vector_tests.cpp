@@ -43,12 +43,16 @@ namespace container_tests {
         {
             SJ_ENGINE_LOG_INFO("copy assignment operator");
             m_Data = other.m_Data;
+
+            return *this;
         }
 
         VectorTestDummy& operator=(const VectorTestDummy&& other)
         {
             SJ_ENGINE_LOG_INFO("move assignment operator");
             m_Data = other.m_Data;
+
+            return *this;
         }
 
         int Value()
@@ -115,6 +119,91 @@ namespace container_tests {
 
         vec.PushBack(2);
         vec.EmplaceBack(4);
+    }
+
+    TEST(VectorTests, SingleInsertionTest)
+    {
+        Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+
+        vec.Insert(0, VectorTestDummy(3));
+        ASSERT_EQ(3, vec[0].Value());
+        ASSERT_EQ(1, vec.Size());
+        ASSERT_EQ(1, vec.Capacity());
+
+        vec.Insert(0, VectorTestDummy(0));
+        ASSERT_EQ(0, vec[0].Value());
+        ASSERT_EQ(3, vec[1].Value());
+        ASSERT_EQ(2, vec.Size());
+        ASSERT_EQ(2, vec.Capacity());
+
+        vec.Insert(1, VectorTestDummy(2));
+        ASSERT_EQ(0, vec[0].Value());
+        ASSERT_EQ(2, vec[1].Value());
+        ASSERT_EQ(3, vec[2].Value());
+        ASSERT_EQ(3, vec.Size());
+        ASSERT_EQ(4, vec.Capacity());
+
+        vec.Insert(1, VectorTestDummy(1));
+        ASSERT_EQ(0, vec[0].Value());
+        ASSERT_EQ(1, vec[1].Value());
+        ASSERT_EQ(2, vec[2].Value());
+        ASSERT_EQ(3, vec[3].Value());
+        ASSERT_EQ(4, vec.Size());
+        ASSERT_EQ(4, vec.Capacity());
+    }
+
+    TEST(VectorTests, VectorInsertionTest)
+    {
+        Vector<VectorTestDummy> vec1(MemorySystem::GetDefaultUnmanagedAllocator());
+
+        Vector<VectorTestDummy> vec2({1, 6}, MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec3({2, 5}, MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec4({7, 8}, MemorySystem::GetDefaultUnmanagedAllocator());
+
+        // Vector insertion requires grow
+        vec1.Insert(0, vec2);
+        ASSERT_EQ(1, vec1[0]);
+        ASSERT_EQ(6, vec1[1]);
+        ASSERT_EQ(vec1.Size(), 2);
+        ASSERT_EQ(vec1.Capacity(), 4);
+
+        // Vector insertion does not require grow
+        vec1.Insert(1, vec3);
+        ASSERT_EQ(1, vec1[0]);
+        ASSERT_EQ(2, vec1[1]);
+        ASSERT_EQ(5, vec1[2]);
+        ASSERT_EQ(6, vec1[3]);
+        ASSERT_EQ(vec1.Size(), 4);
+        ASSERT_EQ(vec1.Capacity(), 4);
+
+        // PushBack forwards to Insert(vec1.Size(), vec4)
+        vec1.PushBack(vec4);
+        ASSERT_EQ(1, vec1[0]);
+        ASSERT_EQ(2, vec1[1]);
+        ASSERT_EQ(5, vec1[2]);
+        ASSERT_EQ(6, vec1[3]);
+        ASSERT_EQ(7, vec1[4]);
+        ASSERT_EQ(8, vec1[5]);
+
+        ASSERT_EQ(vec1.Size(), 6);
+        ASSERT_EQ(vec1.Capacity(), 12);
+    }
+
+    TEST(VectorTests, EmplaceTest)
+    {
+        Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+
+        vec.Emplace(0, 3);
+        vec.Emplace(0, VectorTestDummy(0));
+        vec.Emplace(1, 2);
+        vec.Emplace(1, VectorTestDummy(1));
+
+        ASSERT_EQ(4, vec.Size());
+        ASSERT_EQ(4, vec.Capacity());
+
+        for (size_t i = 0; i < vec.Size(); i++) {
+            ASSERT_EQ(i, vec[i].Value());
+        }
     }
 
 } // namespace container_tests

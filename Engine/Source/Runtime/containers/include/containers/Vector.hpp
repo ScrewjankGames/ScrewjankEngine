@@ -25,25 +25,34 @@ namespace Screwjank {
         using const_pointer = const T*;
         using iterator_concept = std::contiguous_iterator_tag;
 
+        /**
+         * Default Constructor
+         */
         Vector(Allocator* allocator = MemorySystem::GetDefaultAllocator(),
                size_t capacity_hint = 0);
 
+        /**
+         * List initialization Constructor
+         */
         Vector(std::initializer_list<T> list,
                Allocator* allocator = MemorySystem::GetDefaultAllocator());
 
+        /**
+         * Destructor
+         */
         ~Vector();
 
         /** Array Index Operator */
-        T& operator[](size_t index);
+        T& operator[](const size_t index);
 
         /** Array Index Operator */
-        const T& operator[](size_t index) const;
+        const T& operator[](const size_t index) const;
 
         /** Bounds-checked element access */
-        T& At(size_t index);
+        T& At(const size_t index);
 
         /** Bounds-checked element access */
-        const T& At(size_t index) const;
+        const T& At(const size_t index) const;
 
         /**
          * @return The first element in the vector
@@ -72,11 +81,37 @@ namespace Screwjank {
         void PushBack(const T& value);
 
         /**
+         * Pushes another vector onto the back of this vector
+         */
+        void PushBack(const Vector<T>& other);
+
+        /**
          * Constructs an element into the array
          * @return A reference to the element inserted
          */
         template <class... Args>
         T& EmplaceBack(Args&&... args);
+
+        /**
+         * Removes and destructs element at the back of the array
+         */
+        void PopBack();
+
+        /**
+         * Removes and destructs element at the back of the array
+         */
+        void Insert(const size_t index, const T& value);
+
+        /**
+         * Removes and destructs element at the back of the array
+         */
+        template <class... Args>
+        void Emplace(const size_t index, Args&&... args);
+
+        /**
+         * Copies an entire other vector into this vector, starting at provided index
+         */
+        void Insert(const size_t index, const Vector& other);
 
         /**
          * @return The number of elements actively stored in the array
@@ -89,9 +124,16 @@ namespace Screwjank {
         size_t Capacity() const;
 
       private:
+        /** Current size of the dynamic array */
         size_t m_Size;
+
+        /** Current capacity of the dynamic array */
         size_t m_Capacity;
+
+        /** Allocator used to service this vector */
         Allocator* m_Allocator;
+
+        /** Pointer to the data buffer */
         T* m_Data;
 
         /** Doubles the size of the data buffer, and copies the old data over */
@@ -134,19 +176,19 @@ namespace Screwjank {
     }
 
     template <class T>
-    inline T& Vector<T>::operator[](size_t index)
+    inline T& Vector<T>::operator[](const size_t index)
     {
         return m_Data[index];
     }
 
     template <class T>
-    inline const T& Vector<T>::operator[](size_t index) const
+    inline const T& Vector<T>::operator[](const size_t index) const
     {
         return m_Data[index];
     }
 
     template <class T>
-    inline T& Vector<T>::At(size_t index)
+    inline T& Vector<T>::At(const size_t index)
     {
         SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
 
@@ -154,7 +196,7 @@ namespace Screwjank {
     }
 
     template <class T>
-    inline const T& Vector<T>::At(size_t index) const
+    inline const T& Vector<T>::At(const size_t index) const
     {
         SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
 
@@ -194,7 +236,6 @@ namespace Screwjank {
     template <class T>
     inline void Vector<T>::PushBack(const T& value)
     {
-
         if (m_Size >= m_Capacity) {
             GrowVector();
         }
@@ -205,6 +246,193 @@ namespace Screwjank {
 
         // Increment size of vector
         ++m_Size;
+    }
+
+    template <class T>
+    inline void Vector<T>::PushBack(const Vector<T>& other)
+    {
+        // Insert vector at end of this vector
+        Insert(m_Size, other);
+    }
+
+    template <class T>
+    inline void Vector<T>::PopBack()
+    {
+        SJ_ASSERT(m_Size > 0, "Cannot pop empty vector");
+
+        // Destruct the object at the back of the array and decrement size
+        m_Data[m_Size - 1].~T();
+        m_Size--;
+    }
+
+    template <class T>
+    inline void Vector<T>::Insert(const size_t index, const T& value)
+    {
+        SJ_ASSERT(index >= 0 && index <= m_Size, "Insertion index is invalid.");
+
+        // If you're pushing into the final spot, just resort to PushBack
+        if (index == m_Size) {
+            PushBack(value);
+            return;
+        }
+
+        if (m_Size < m_Capacity) {
+
+            // Move last element into the end spot (end may be unitialized data)
+
+            // Move every element to the right
+            for (auto i = m_Size; i >= index; i--) {
+                new (&m_Data[i]) T(m_Data[i - 1]);
+            }
+
+            // Insert value into buffer
+            m_Data[index] = value;
+        } else {
+            // Array needs to grow, place new element in during buffer copy process
+
+            // if size was zero, we'd have allready fallen back to PushBack
+            size_t new_capacity = m_Capacity * 2;
+
+            // Allocate a new buffer
+            T* new_buffer = (T*)(m_Allocator->Allocate(sizeof(T) * new_capacity, alignof(T)));
+
+            // Move old buffer into new buffer, up to index
+            for (size_t i = 0; i < index; ++i) {
+                new (&new_buffer[i]) T(m_Data[i]);
+            }
+
+            // Copy new element in to index position
+            new (&new_buffer[index]) T(value);
+
+            // Copy the rest of the old buffer into the new buffer
+            for (auto i = index + 1; i < new_capacity; i++) {
+                new (&new_buffer[i]) T(m_Data[i - 1]);
+            }
+
+            // Release old buffer
+            if (m_Data != nullptr) {
+                m_Allocator->Free(m_Data);
+            }
+
+            // Update capacity variable
+            m_Capacity = new_capacity;
+
+            // Allocate new buffer
+            m_Data = new_buffer;
+        }
+
+        m_Size++;
+    }
+
+    template <class T>
+    inline void Vector<T>::Insert(const size_t index, const Vector& other)
+    {
+        SJ_ASSERT(index >= 0 && index <= m_Size, "Insertion index is invalid.");
+
+        size_t shift = other.Size();
+        if (m_Capacity >= m_Size + other.Size()) {
+            // There is enough space in the vector to insert other without reallocating
+
+            // Move current data out of the way
+            for (size_t i = m_Size - 1; i >= index; i--) {
+                new (&m_Data[i + shift]) T(m_Data[i]);
+            }
+
+            // Move new data i
+            for (size_t i = 0; i < other.Size(); i++) {
+                new (&m_Data[i + index]) T(other[i]);
+            }
+
+            m_Size += other.Size();
+        } else {
+            // Allocate a new buffer with extra space
+            size_t new_capacity = (m_Capacity + other.Capacity()) * 2;
+
+            T* new_buffer = (T*)m_Allocator->Allocate(sizeof(T) * new_capacity, alignof(T));
+
+            // Move old values into new buffer
+            size_t i = 0;
+            for (/***/; i < index; i++) {
+                new (&new_buffer[i]) T(m_Data[i]);
+            }
+
+            // Copy new values into new buffer
+            for (size_t j = 0; j < other.Size(); i++, j++) {
+                new (&new_buffer[i]) T(other[j]);
+            }
+
+            // Copy remainder of old buffer into new buffer
+            for (size_t k = index; k < m_Size; i++, k++) {
+                new (&new_buffer[i]) T(m_Data[k]);
+            }
+
+            // Update container data
+            if (m_Data != nullptr) {
+                m_Allocator->Free(m_Data);
+            }
+
+            m_Data = new_buffer;
+            m_Size += other.Size();
+            m_Capacity = new_capacity;
+        }
+    }
+
+    template <class T>
+    template <class... Args>
+    inline void Vector<T>::Emplace(const size_t index, Args&&... args)
+    {
+        SJ_ASSERT(index >= 0 && index <= m_Size, "Emplacement index is invalid.");
+
+        // If you're pushing into the final spot, just resort to PushBack
+        if (index == m_Size) {
+            EmplaceBack(std::forward<Args>(args)...);
+            return;
+        }
+
+        if (m_Size < m_Capacity) {
+            // Move every element to the right
+            for (auto i = m_Size; i >= index; i--) {
+                new (&m_Data[i]) T(std::move(m_Data[i - 1]));
+            }
+
+            // Insert value into buffer
+            new (&m_Data[index]) T(std::forward<Args>(args)...);
+
+        } else {
+            // Array needs to grow, place new element in during buffer copy process
+
+            // if size was zero, we'd have allready fallen back to PushBack
+            size_t new_capacity = m_Capacity * 2;
+
+            // Allocate a new buffer
+            T* new_buffer = (T*)(m_Allocator->Allocate(sizeof(T) * new_capacity, alignof(T)));
+
+            // Move old buffer into new buffer, up to index
+            for (size_t i = 0; i < index; ++i) {
+                new (&new_buffer[i]) T(std::move(m_Data[i]));
+            }
+
+            // Copy new element in to index position
+            new (&new_buffer[index]) T(std::forward<Args>(args)...);
+
+            // Copy the rest of the old buffer into the new buffer
+            for (auto i = index + 1; i < new_capacity; i++) {
+                new (&new_buffer[i]) T(std::move(m_Data[i - 1]));
+            }
+
+            // Release old buffer
+            if (m_Data != nullptr) {
+                m_Allocator->Free(m_Data);
+            }
+
+            // Update capacity variable
+            m_Capacity = new_capacity;
+
+            // Allocate new buffer
+            m_Data = new_buffer;
+        }
+
+        m_Size++;
     }
 
     template <class T>

@@ -28,6 +28,7 @@ namespace Screwjank {
 
     void UnmanagedAllocator::Free(void* memory)
     {
+        SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
         free(memory);
         m_NumAllocations--;
     }

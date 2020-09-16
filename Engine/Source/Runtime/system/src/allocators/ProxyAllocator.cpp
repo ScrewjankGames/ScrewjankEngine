@@ -28,6 +28,8 @@ namespace Screwjank {
 
     void ProxyAllocator::Free(void* memory)
     {
+        SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
+
         m_MemoryStats.ActiveAllocationCount--;
         m_BackingAllocator->Free(memory);
     }
