@@ -138,7 +138,7 @@ namespace Screwjank {
         }
 
         /** Post-increment operator overload */
-        VectorIterator& operator++(int)
+        VectorIterator operator++(int)
         {
             VectorIterator tmp(*this);
             this->operator++();
