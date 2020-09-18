@@ -58,16 +58,6 @@ namespace container_tests {
 
     TEST(ForwardListsTests, InsertAfterTest)
     {
-        // std::forward_list<ListDummy> list;
-        // list.push_front(ListDummy(1));
-
-        // auto it = list.begin();
-
-        // auto dummy = *it;
-        // it->Value
-
-        // list.insert_after(it, ListDummy(2));
-
         ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
         list.EmplaceFront(1);
 
@@ -84,9 +74,9 @@ namespace container_tests {
         list.EmplaceFront(1);
 
         auto it = list.begin();
-        // auto next = list.EmplaceAfter(it, ListDummy(2));
+        auto next = list.EmplaceAfter(it, ListDummy(2));
         it++;
-        // ASSERT_EQ(next, it);
+        ASSERT_EQ(next, it);
         ASSERT_EQ(2, it->Value);
     }
 
@@ -100,7 +90,18 @@ namespace container_tests {
         list.PushFront(ListDummy {0});
 
         auto it = list.begin();
-        // list.EraseAfter(it);
+        auto next_node = list.EraseAfter(it);
+        it++;
+        ASSERT_EQ(it, next_node);
+        ASSERT_EQ(2, next_node->Value);
+        ASSERT_EQ(2, it->Value);
+
+        int i = 0;
+        for (auto& element : list) {
+            i++;
+        }
+
+        ASSERT_EQ(4, i);
     }
 
     TEST(ForwardListsTests, DestructionLeakTest)

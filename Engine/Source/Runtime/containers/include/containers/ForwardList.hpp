@@ -70,7 +70,6 @@ namespace Screwjank {
             return tmp;
         }
 
-      private:
         node_pointer m_Node;
     };
 
@@ -316,11 +315,7 @@ namespace Screwjank {
     inline typename ForwardList<T>::iterator ForwardList<T>::InsertAfter(iterator pos,
                                                                          const T& value)
     {
-        auto new_node = m_Allocator->New<ForwardList<T>::node_type>(value, pos.m_Node->Next);
-
-        pos.m_Node->Next = new_node;
-
-        return ForwardList<T>::iterator(new_node);
+        return InsertAfter(const_iterator(pos.m_Node), value);
     }
 
     template <class T>
@@ -328,40 +323,36 @@ namespace Screwjank {
     inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(const_iterator pos,
                                                                           Args&&... args)
     {
-        return ForwardList<T>::iterator(nullptr);
+        auto new_node = m_Allocator->New<ForwardList<T>::node_type>(T(std::forward<Args>(args)...),
+                                                                    pos.m_Node->Next);
+        pos.m_Node->Next = new_node;
+        return ForwardList<T>::iterator(new_node);
     }
 
     template <class T>
     template <class... Args>
-    inline iterator ForwardList<T>::EmplaceAfter(iterator pos, Args&&... args)
+    inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(iterator pos,
+                                                                          Args&&... args)
     {
-        return iterator();
+        return EmplaceAfter(const_iterator(pos.m_Node), std::forward<Args>(args)...);
     }
 
     template <class T>
     inline typename ForwardList<T>::iterator ForwardList<T>::EraseAfter(const_iterator pos)
     {
-        SJ_ASSERT(pos->m_Node->Next != nullptr, "Cannot erase after last element of list");
+        SJ_ASSERT(pos.m_Node->Next != nullptr, "Cannot erase after last element of list");
 
-        auto dead_node = pos->m_Node->Next;
-        auto new_next = dead_node->Next;
+        auto dead_node = pos.m_Node->Next;
+        pos.m_Node->Next = dead_node->Next;
 
         m_Allocator->Delete(dead_node);
-
-        return (new_next != nullptr) ? iterator(new_next) : end();
+        return iterator(pos.m_Node->Next);
     }
 
     template <class T>
     inline typename ForwardList<T>::iterator ForwardList<T>::EraseAfter(iterator pos)
     {
-        SJ_ASSERT(pos->Next != nullptr, "Cannot erase after last element of list");
-
-        auto dead_node = pos->Next;
-        auto new_next = dead_node->Next;
-
-        m_Allocator->Delete(dead_node);
-
-        return (new_next != nullptr) ? iterator(new_next) : end();
+        return EraseAfter(const_iterator(pos.m_Node));
     }
 
     template <class T>
