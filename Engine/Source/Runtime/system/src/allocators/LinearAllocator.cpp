@@ -4,8 +4,8 @@
 
 // Screwjank Headers
 #include "core/Assert.hpp"
-#include "system/allocators/LinearAllocator.hpp"
 #include "system/Memory.hpp"
+#include "system/allocators/LinearAllocator.hpp"
 
 namespace Screwjank {
     LinearAllocator::LinearAllocator(size_t buffer_size,

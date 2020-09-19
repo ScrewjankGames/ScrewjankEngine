@@ -5,21 +5,28 @@
 
 // Void Engine Headers
 #include "platform/PlatformDetection.hpp"
-#include "system/Allocator.hpp"
 #include "system/Memory.hpp"
-#include "system/allocators/StackAllocator.hpp"
-#include "system/allocators/LinearAllocator.hpp"
+#include "system/allocators/FreeListAllocator.hpp"
 
 using namespace Screwjank;
 
 namespace system_tests {
-    /*TEST(FreeListAllocatorTests, AllocationTest)
+
+    struct FreeListDummy
     {
-        ASSERT_TRUE(false);
+        char Label;
+        double Value;
+    };
+
+    TEST(FreeListAllocatorTests, AllocationTest)
+    {
+        FreeListAllocator allocator(sizeof(FreeListDummy) * 16,
+                                    MemorySystem::GetDefaultUnmanagedAllocator());
+
+        auto mem_loc = allocator.Allocate(sizeof(FreeListDummy), alignof(FreeListDummy));
+
+        ASSERT_NE(nullptr, mem_loc);
+        ASSERT_TRUE(IsMemoryAligned(mem_loc, alignof(FreeListDummy)));
     }
 
-    TEST(FreeListAllocatorTests, MemoryAlignmentTest)
-    {
-        ASSERT_TRUE(false);
-    }*/
 } // namespace system_tests
