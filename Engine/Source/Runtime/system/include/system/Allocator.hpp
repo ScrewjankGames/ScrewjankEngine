@@ -28,7 +28,7 @@ namespace Screwjank {
          * @param backing_allocator Allocator from which this allocator should request it's memory
          * @param debug_name Name of the allocator used for debugging purposes
          */
-        Allocator(Allocator* backing_allocator = nullptr, const char* debug_name = "");
+        Allocator(const char* debug_name = "");
 
         /** Destructor */
         virtual ~Allocator() = default;

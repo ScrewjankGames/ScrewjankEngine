@@ -11,7 +11,7 @@ namespace Screwjank {
     LinearAllocator::LinearAllocator(size_t buffer_size,
                                      Allocator* backing_allocator,
                                      const char* debug_name)
-        : Allocator(backing_allocator, debug_name), m_BackingAllocator(backing_allocator)
+        : Allocator(debug_name), m_BackingAllocator(backing_allocator)
     {
         m_MemoryStats.Capacity = buffer_size;
         m_BufferStart = m_BackingAllocator->Allocate(buffer_size);

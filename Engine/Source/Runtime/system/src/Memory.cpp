@@ -52,4 +52,9 @@ namespace Screwjank {
         return (uintptr_t)(ptr) & (align_of - 1);
     }
 
+    bool IsMemoryAligned(const void* const memory_address, const size_t align_of)
+    {
+        return GetAlignmentOffset(align_of, memory_address) == 0;
+    }
+
 } // namespace Screwjank

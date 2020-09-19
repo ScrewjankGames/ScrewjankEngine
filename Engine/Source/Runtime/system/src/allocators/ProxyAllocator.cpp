@@ -8,7 +8,7 @@
 
 namespace Screwjank {
     ProxyAllocator::ProxyAllocator(Allocator* backing_allocator, const char* debug_name)
-        : Allocator(backing_allocator, debug_name), m_BackingAllocator(backing_allocator)
+        : Allocator(debug_name), m_BackingAllocator(backing_allocator)
     {
     }
 

@@ -20,8 +20,11 @@ namespace Screwjank {
     /**
      * Calculates offset needed to properly align memory
      * @param align_of The alignment requirement of the memory being aligned
+     * @return the number of bytes needed to pad an alignment at ptr with requirement align_of
      */
     uintptr_t GetAlignmentOffset(size_t align_of, const void* const ptr);
+
+    bool IsMemoryAligned(const void* const memory_address, const size_t align_of);
 
     // Placeholder UniquePtr alias
     template <typename T>
