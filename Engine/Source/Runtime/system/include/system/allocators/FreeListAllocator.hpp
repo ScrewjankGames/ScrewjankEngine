@@ -39,21 +39,49 @@ namespace Screwjank {
             size_t Size;
             FreeBlock* Previous;
             FreeBlock* Next;
+
+            /** Constructor */
+            FreeBlock(size_t block_size = 0, FreeBlock* prev = nullptr, FreeBlock* next = nullptr)
+                : Size(block_size), Previous(prev), Next(next)
+            {
+            }
         };
 
+        /** Book-keeping structure to correctly de-allocate memory */
         struct AllocationHeader
         {
             /** The padding placed before this header in the free block during allocation */
             size_t Padding;
 
-            /** Size of the allocated block */
+            /** Number of bytes the user allocated in this block */
             size_t Size;
+
+            /** Constructor */
+            AllocationHeader(size_t padding = 0, size_t size = 0) : Padding(padding), Size(size)
+            {
+            }
         };
 
+        /**
+         * Searches the free list for a block that can satisfy the size and alignment requirements
+         * provided, in addition to the allocation header.
+         * @param size The size the user wishes to allocate
+         * @param the alignment restriction for the memory the user is requesting
+         * @return The most suitable free block, along with the amount of padding that needs to be
+         * placed before the allocation header to satisfy the allocation in that block
+         */
         [[nodiscard]] std::pair<FreeBlock*, size_t> FindFreeBlock(const size_t size,
                                                                   const size_t alignment);
 
-        void RegisterNewFreeBlock(FreeBlock* block);
+        /**
+         * Adds a free block to the free list
+         */
+        void AddFreeBlock(FreeBlock* new_block);
+
+        /**
+         * Removes a free block from the free list
+         */
+        void RemoveFreeBlock(FreeBlock* block);
 
         /** Allocator used by this allocator to get and free memory */
         Allocator* m_BackingAllocator;
