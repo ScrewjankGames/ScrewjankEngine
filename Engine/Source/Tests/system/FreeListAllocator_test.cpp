@@ -77,44 +77,56 @@ namespace system_tests {
 
         // This allocator should have enough room for exactly two individual allocations of size
         // sizeof(FreeListDummy)
-        FreeListAllocator allocator1(sizeof(FreeListDummy) * 4,
-                                     MemorySystem::GetDefaultUnmanagedAllocator());
+        FreeListAllocator allocator(sizeof(FreeListDummy) * 4,
+                                    MemorySystem::GetDefaultUnmanagedAllocator());
 
-        auto mem_loc1 = allocator1.AllocateType<FreeListDummy>();
+        auto mem_loc1 = allocator.AllocateType<FreeListDummy>();
+        auto mem_loc2 = allocator.AllocateType<FreeListDummy>();
         ASSERT_NE(nullptr, mem_loc1);
-
-        auto mem_loc2 = allocator1.AllocateType<FreeListDummy>();
         ASSERT_NE(nullptr, mem_loc2);
 
         // Assert that capacity is not lost when resolving allocation headers
-        allocator1.Free(mem_loc1);
-        mem_loc1 = allocator1.AllocateType<FreeListDummy>();
+        allocator.Free(mem_loc1);
+        mem_loc1 = allocator.AllocateType<FreeListDummy>();
         ASSERT_NE(nullptr, mem_loc1);
 
         // Free the first block, and try to allocate something larger (should fail)
-        allocator1.Free(mem_loc1);
-        mem_loc1 = allocator1.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
+        allocator.Free(mem_loc1);
+        mem_loc1 = allocator.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
         ASSERT_EQ(nullptr, mem_loc1);
 
         // Free the second block, the two blocks in the allocator should coaselce and allow for a
         // single larger allocation
-        allocator1.Free(mem_loc2);
+        allocator.Free(mem_loc2);
 
         // Allocator should be able to handle an allocation larger than the original allocation.
         // This implies that the memory blocks of the free list were coalesced correctly.
-        mem_loc1 = allocator1.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
+        mem_loc1 = allocator.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
         ASSERT_NE(nullptr, mem_loc1);
 
         // The allocator should be empty again
-        allocator1.Free(mem_loc1);
+        allocator.Free(mem_loc1);
 
         // Make sure we can still make the original two allocations
-        mem_loc1 = allocator1.AllocateType<FreeListDummy>();
-        mem_loc2 = allocator1.AllocateType<FreeListDummy>();
+        mem_loc1 = allocator.AllocateType<FreeListDummy>();
+        mem_loc2 = allocator.AllocateType<FreeListDummy>();
         ASSERT_NE(nullptr, mem_loc1);
         ASSERT_NE(nullptr, mem_loc2);
 
-        allocator1.Free(mem_loc1);
-        allocator1.Free(mem_loc2);
+        allocator.Free(mem_loc1);
+        allocator.Free(mem_loc2);
+    }
+
+    TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
+    {
+        FreeListAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+
+        auto mem_loc1 = allocator.AllocateType<int>();
+        auto mem_loc2 = allocator.AllocateType<char>();
+        auto mem_loc3 = allocator.AllocateType<double>();
+
+        allocator.Free(mem_loc1);
+        allocator.Free(mem_loc2);
+        allocator.Free(mem_loc3);
     }
 } // namespace system_tests

@@ -30,19 +30,16 @@ namespace Screwjank {
         SJ_ASSERT(align_of != 0, "Zero is not a valid alignment!");
 
         // try to carve out _Size bytes on boundary _Bound
-        uintptr_t offset = GetAlignmentOffset(align_of, buffer_start);
 
-        if (offset != 0) {
-            offset = align_of - offset; // number of bytes to skip
-        }
+        uintptr_t adjustment = GetAlignmentAdjustment(align_of, buffer_start);
 
-        if (buffer_size < offset || buffer_size - offset < size) {
+        if (buffer_size < adjustment || buffer_size - adjustment < size) {
             SJ_LOG_ERROR("Memory alignment cannot be satisfied in provided space.");
             return nullptr;
         }
 
         // enough room, update
-        buffer_start = (void*)((uintptr_t)buffer_start + offset);
+        buffer_start = (void*)((uintptr_t)buffer_start + adjustment);
         return buffer_start;
     }
 
@@ -50,6 +47,17 @@ namespace Screwjank {
     {
         SJ_ASSERT(align_of != 0, "Zero is not a valid memory alignment requirement.");
         return (uintptr_t)(ptr) & (align_of - 1);
+    }
+
+    uintptr_t GetAlignmentAdjustment(size_t align_of, const void* const ptr)
+    {
+        auto offset = GetAlignmentOffset(align_of, ptr);
+        if (offset == 0) {
+            return 0;
+        }
+
+        auto adjustment = align_of - offset;
+        return adjustment;
     }
 
     bool IsMemoryAligned(const void* const memory_address, const size_t align_of)

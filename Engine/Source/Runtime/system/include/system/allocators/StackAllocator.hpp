@@ -21,7 +21,7 @@ namespace Screwjank {
 
         [[nodiscard]] void* Allocate(const size_t size, const size_t alignment) override;
 
-        [[nodiscard]] void Free(void* memory = nullptr) override;
+        void Free(void* memory = nullptr) override;
 
         template <typename T>
         [[nodiscard]] void* PushType();

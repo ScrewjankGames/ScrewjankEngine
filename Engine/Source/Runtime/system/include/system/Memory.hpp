@@ -18,11 +18,16 @@ namespace Screwjank {
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size);
 
     /**
-     * Calculates offset needed to properly align memory
+     * Calculates how far the memory is from being aligned
      * @param align_of The alignment requirement of the memory being aligned
-     * @return the number of bytes needed to pad an alignment at ptr with requirement align_of
+     * @return How many bytes ptr is from the last aligned address
      */
     uintptr_t GetAlignmentOffset(size_t align_of, const void* const ptr);
+
+    /**
+     * Calculates how many bytes should be added to ptr to get an aligned address
+     */
+    uintptr_t GetAlignmentAdjustment(size_t align_of, const void* const ptr);
 
     bool IsMemoryAligned(const void* const memory_address, const size_t align_of);
 

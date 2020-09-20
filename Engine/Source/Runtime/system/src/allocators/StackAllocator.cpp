@@ -22,7 +22,7 @@ namespace Screwjank {
 
     StackAllocator::~StackAllocator()
     {
-        SJ_ASSERT(m_Offset == m_BufferStart, "Memory leak detected in memory allocator");
+        SJ_ASSERT(m_Offset == m_BufferStart, "Memory leak detected in stack allocator");
 
         m_BackingAllocator->Free(m_BufferStart);
     }
@@ -37,19 +37,17 @@ namespace Screwjank {
             return nullptr;
         }
 
-        // Do pointer math to create a new allocation header
-        uintptr_t header_offset = GetAlignmentOffset(alignof(StackAllocatorHeader), m_Offset);
+        // Calculate padding needed to align header and payload
+        size_t alignment_requirement = std::max(alignment, alignof(StackAllocatorHeader));
 
-        // Calculate address from which the allocation will be aligned
-        uintptr_t allocation_start =
-            (uintptr_t)m_Offset + header_offset + sizeof(StackAllocatorHeader);
+        // Get the padding required to align the header and payload in memory
+        void* fist_possible_payload_address =
+            (void*)((uintptr_t)m_Offset + sizeof(StackAllocatorHeader));
 
-        // Calculate number of bytes needed to align allocation from alocation_start
-        uintptr_t allocation_offset = GetAlignmentOffset(alignment, (void*)allocation_start);
+        size_t required_padding =
+            GetAlignmentAdjustment(alignment_requirement, fist_possible_payload_address);
 
-        // Cacluate total space needed for header, allocation, and padding
-        uintptr_t total_allocation_size =
-            header_offset + sizeof(StackAllocatorHeader) + allocation_offset + size;
+        size_t total_allocation_size = required_padding + sizeof(StackAllocatorHeader) + size;
 
         if (free_space < total_allocation_size) {
             SJ_LOG_ERROR("Allocator {} has insufficient memory to perform requested allocation.",
@@ -57,24 +55,22 @@ namespace Screwjank {
             return nullptr;
         }
 
-        if (header_offset + sizeof(StackAllocatorHeader) + allocation_offset > size) {
-            SJ_LOG_WARN("Padding and header size {} (bytes) is greater than the requested memory "
-                        "allocation {} (bytes) ",
-                        header_offset + sizeof(StackAllocatorHeader) + allocation_offset,
-                        size);
-        }
-
         // Allocate the header
-        auto header_memory = (uintptr_t)m_Offset + header_offset;
+        void* header_memory = (void*)((uintptr_t)m_Offset + required_padding);
+
+        SJ_ASSERT(IsMemoryAligned(header_memory, alignof(StackAllocatorHeader)),
+                  "Attempting to place allocation header at unaligned address!");
+
         auto old_header = m_CurrentHeader;
+
         m_CurrentHeader =
-            new ((void*)header_memory) StackAllocatorHeader {old_header, header_offset};
+            new ((void*)header_memory) StackAllocatorHeader {old_header, required_padding};
 
         // Update m_offset
         m_Offset = (void*)(uintptr_t(m_Offset) + total_allocation_size);
 
         // Return pointer to the start of the allocation
-        return (void*)(allocation_start + allocation_offset);
+        return (void*)((uintptr_t)header_memory + sizeof(StackAllocatorHeader));
     }
 
     void StackAllocator::Free(void* memory)

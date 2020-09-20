@@ -22,9 +22,9 @@ namespace system_tests {
     TEST(StackAllocatorTests, PushPopTest)
     {
         StackAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
-        auto mem1 = allocator.AllocateType<StackAllocatorDummy>();
 
         // Assign memory and construct test data in the addresses
+        auto mem1 = allocator.AllocateType<StackAllocatorDummy>();
         auto sd1 = new (mem1) StackAllocatorDummy {1, 1, 1};
 
         auto mem2 = allocator.Allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));

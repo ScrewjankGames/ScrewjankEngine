@@ -62,8 +62,8 @@ namespace Screwjank {
 
         // Place the header into memory just before the user's data
         auto header = new (header_loc) AllocationHeader();
-        header->Size = old_block_info.Size - sizeof(AllocationHeader);
         header->Padding = header_padding;
+        header->Size = old_block_info.Size - sizeof(AllocationHeader) - header_padding;
 
         // Calculate the memory location returned to the user
         void* payload_loc = (void*)((uintptr_t)header_loc + sizeof(AllocationHeader));
@@ -72,10 +72,15 @@ namespace Screwjank {
         SJ_ASSERT(IsMemoryAligned(payload_loc, alignment),
                   "Allocation payload memory is misaligned");
 
-        // Determine how much space in the block is unused after allocation
+        // See if we can fit a memory-aligned free block after the end of the payload in this
+        // current block
         uintptr_t payload_end = (uintptr_t)payload_loc + size;
         uintptr_t block_end = uintptr_t(best_fit_block) + old_block_info.Size;
-        auto unused_space = block_end - payload_end;
+
+        // Find the amount of padding we need after the payload to align a new free block
+        auto new_block_adjustment = GetAlignmentAdjustment(alignof(FreeBlock), (void*)payload_end);
+
+        auto unused_space = block_end - (payload_end + new_block_adjustment);
 
         // If the remaining space is big enough to host a free block and later an allocation, create
         // a new free block out of it
@@ -83,8 +88,13 @@ namespace Screwjank {
             // Remove unused_space from the allocation header's representation of the block
             header->Size -= unused_space;
 
+            void* new_block_location = (void*)(payload_end + new_block_adjustment);
+
+            SJ_ASSERT(IsMemoryAligned(new_block_location, alignof(FreeBlock)),
+                      "New freeblock improperly aligned.");
+
             // payload_end is the first byte **AFTER** the user's data
-            FreeBlock* new_block = new ((void*)payload_end) FreeBlock(unused_space);
+            FreeBlock* new_block = new (new_block_location) FreeBlock(unused_space);
             AddFreeBlock(new_block);
         }
 
@@ -147,7 +157,7 @@ namespace Screwjank {
 
             // Get the padding needed to align payload from first possible playload addresss
             size_t required_padding =
-                GetAlignmentOffset(alignment_requirement, fist_possible_payload_address);
+                GetAlignmentAdjustment(alignment_requirement, fist_possible_payload_address);
             size_t total_allocation_size = header_and_payload_size + required_padding;
 
             // If the current free block is large enough to support allocation
