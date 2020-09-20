@@ -53,7 +53,7 @@ namespace Screwjank {
             /** The padding placed before this header in the free block during allocation */
             size_t Padding;
 
-            /** Number of bytes the user allocated in this block */
+            /** Number of bytes remaining in the current allocation */
             size_t Size;
 
             /** Constructor */
@@ -82,6 +82,11 @@ namespace Screwjank {
          * Removes a free block from the free list
          */
         void RemoveFreeBlock(FreeBlock* block);
+
+        /**
+         * Given a block in the free list, attempt to merge it with it's neighbors
+         */
+        void AttemptCoalesceBlock(FreeBlock* block);
 
         /** Allocator used by this allocator to get and free memory */
         Allocator* m_BackingAllocator;

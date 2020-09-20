@@ -25,6 +25,8 @@ namespace Screwjank {
 
     FreeListAllocator::~FreeListAllocator()
     {
+        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0,
+                  "Memory leak detected in FreeListAllocator!");
         m_BackingAllocator->Free(m_BufferStart);
     }
 
@@ -60,7 +62,7 @@ namespace Screwjank {
 
         // Place the header into memory just before the user's data
         auto header = new (header_loc) AllocationHeader();
-        header->Size = size;
+        header->Size = old_block_info.Size - sizeof(AllocationHeader);
         header->Padding = header_padding;
 
         // Calculate the memory location returned to the user
@@ -78,20 +80,25 @@ namespace Screwjank {
         // If the remaining space is big enough to host a free block and later an allocation, create
         // a new free block out of it
         if (unused_space > sizeof(FreeBlock) && unused_space > sizeof(AllocationHeader)) {
+            // Remove unused_space from the allocation header's representation of the block
+            header->Size -= unused_space;
+
             // payload_end is the first byte **AFTER** the user's data
             FreeBlock* new_block = new ((void*)payload_end) FreeBlock(unused_space);
             AddFreeBlock(new_block);
         }
 
         m_MemoryStats.TotalAllocationCount++;
-        m_MemoryStats.TotalBytesAllocated += size;
+        m_MemoryStats.TotalBytesAllocated += header->Size;
         m_MemoryStats.ActiveAllocationCount++;
-        m_MemoryStats.ActiveBytesAllocated += size;
+        m_MemoryStats.ActiveBytesAllocated += header->Size;
         return payload_loc;
     }
 
     void FreeListAllocator::Free(void* memory)
     {
+        SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
+
         // Allocation Header
         AllocationHeader* block_header =
             (AllocationHeader*)((uintptr_t)memory - sizeof(AllocationHeader));
@@ -101,6 +108,9 @@ namespace Screwjank {
         void* block_start = (void*)((uintptr_t)block_header - block_header->Padding);
 
         SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)), "Free block is mis-aligned");
+
+        m_MemoryStats.ActiveAllocationCount--;
+        m_MemoryStats.ActiveBytesAllocated -= block_header->Size;
 
         // Potentially stomps on memory useb by block_header!
         FreeBlock* new_block = new (block_start) FreeBlock(block_size);
@@ -158,6 +168,7 @@ namespace Screwjank {
 
     void FreeListAllocator::AddFreeBlock(FreeBlock* new_block)
     {
+        // If there no free list, new_block becomes the new head
         if (m_FreeBlocks == nullptr) {
             m_FreeBlocks = new_block;
             return;
@@ -168,6 +179,7 @@ namespace Screwjank {
             new_block->Next = m_FreeBlocks;
             m_FreeBlocks->Previous = new_block;
             m_FreeBlocks = new_block;
+            AttemptCoalesceBlock(new_block);
             return;
         }
 
@@ -184,6 +196,7 @@ namespace Screwjank {
                 curr_block->Next->Previous = new_block;
                 new_block->Previous = curr_block;
                 curr_block->Next = new_block;
+                AttemptCoalesceBlock(new_block);
                 return;
             }
         }
@@ -192,6 +205,7 @@ namespace Screwjank {
         // free list
         curr_block->Next = new_block;
         new_block->Previous = curr_block;
+        AttemptCoalesceBlock(new_block);
     }
 
     void FreeListAllocator::RemoveFreeBlock(FreeBlock* block)
@@ -212,6 +226,39 @@ namespace Screwjank {
 
         if (block->Next != nullptr) {
             block->Next->Previous = block->Previous;
+        }
+    }
+
+    void FreeListAllocator::AttemptCoalesceBlock(FreeBlock* block)
+    {
+        // Attempt to coalesce with left neighbor, moving block pointer back if necessary
+        if (block->Previous != nullptr) {
+            uintptr_t left_end = (uintptr_t)block->Previous + block->Previous->Size;
+
+            // If this block starts exactly where the previous block ends, coalesce
+            if ((uintptr_t)block == left_end) {
+                block->Previous->Next = block->Next;
+                if (block->Next != nullptr) {
+                    block->Next->Previous = block->Previous;
+                }
+
+                block->Previous->Size += block->Size;
+                block = block->Previous;
+            }
+        }
+
+        // Attempt to coalesce with right neighbor
+        if (block->Next != nullptr) {
+            uintptr_t block_end = (uintptr_t)block + block->Size;
+
+            // If the end of this block is the start of the next block, coalesce
+            if (block_end == (uintptr_t)block->Next) {
+                block->Size += block->Next->Size;
+                block->Next = block->Next->Next;
+                if (block->Next != nullptr) {
+                    block->Next->Previous = block;
+                }
+            }
         }
     }
 

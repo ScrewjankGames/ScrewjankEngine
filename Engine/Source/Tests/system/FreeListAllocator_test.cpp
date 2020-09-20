@@ -18,8 +18,9 @@ namespace system_tests {
         double Value;
     };
 
-    TEST(FreeListAllocatorTests, AllocationTest)
+    TEST(FreeListAllocatorTests, BasicAllocationTest)
     {
+        // Test basic allocations and frees that shouldn't hit many edge cases
         FreeListAllocator allocator(sizeof(FreeListDummy) * 16,
                                     MemorySystem::GetDefaultUnmanagedAllocator());
 
@@ -64,8 +65,56 @@ namespace system_tests {
         ASSERT_EQ('b', Dummy2->Label);
         ASSERT_EQ(Dummy4->Value, Dummy2->Value);
 
-        // TODO (MrLever) Verify block coalescing
-        ASSERT_TRUE(false);
+        allocator.Delete(Dummy2);
+        allocator.Delete(Dummy3);
+        allocator.Delete(Dummy4);
     }
 
+    TEST(FreeListAllocatorTests, AdvancedAllocationTest)
+    {
+        // This test attempts to test block coalescing behaviors, but is sensitive to
+        // implementation details of the Allocator (such as allocation header size)
+
+        // This allocator should have enough room for exactly two individual allocations of size
+        // sizeof(FreeListDummy)
+        FreeListAllocator allocator1(sizeof(FreeListDummy) * 4,
+                                     MemorySystem::GetDefaultUnmanagedAllocator());
+
+        auto mem_loc1 = allocator1.AllocateType<FreeListDummy>();
+        ASSERT_NE(nullptr, mem_loc1);
+
+        auto mem_loc2 = allocator1.AllocateType<FreeListDummy>();
+        ASSERT_NE(nullptr, mem_loc2);
+
+        // Assert that capacity is not lost when resolving allocation headers
+        allocator1.Free(mem_loc1);
+        mem_loc1 = allocator1.AllocateType<FreeListDummy>();
+        ASSERT_NE(nullptr, mem_loc1);
+
+        // Free the first block, and try to allocate something larger (should fail)
+        allocator1.Free(mem_loc1);
+        mem_loc1 = allocator1.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
+        ASSERT_EQ(nullptr, mem_loc1);
+
+        // Free the second block, the two blocks in the allocator should coaselce and allow for a
+        // single larger allocation
+        allocator1.Free(mem_loc2);
+
+        // Allocator should be able to handle an allocation larger than the original allocation.
+        // This implies that the memory blocks of the free list were coalesced correctly.
+        mem_loc1 = allocator1.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
+        ASSERT_NE(nullptr, mem_loc1);
+
+        // The allocator should be empty again
+        allocator1.Free(mem_loc1);
+
+        // Make sure we can still make the original two allocations
+        mem_loc1 = allocator1.AllocateType<FreeListDummy>();
+        mem_loc2 = allocator1.AllocateType<FreeListDummy>();
+        ASSERT_NE(nullptr, mem_loc1);
+        ASSERT_NE(nullptr, mem_loc2);
+
+        allocator1.Free(mem_loc1);
+        allocator1.Free(mem_loc2);
+    }
 } // namespace system_tests
