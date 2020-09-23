@@ -82,7 +82,7 @@ namespace system_tests {
     TEST(PoolAllocatorTests, ObjectPoolTest)
     {
         ObjectPoolAllocator<PoolAllocatorDummy> allocator(
-            2,
+            4,
             MemorySystem::GetDefaultUnmanagedAllocator());
 
         auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
