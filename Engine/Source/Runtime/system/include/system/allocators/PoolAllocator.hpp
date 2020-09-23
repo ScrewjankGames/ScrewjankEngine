@@ -56,6 +56,13 @@ namespace Screwjank {
         size_t m_NumBlocks;
     };
 
+    template <class T>
+    class ObjectPoolAllocator : public PoolAllocator<sizeof(T)>
+    {
+        // Inherit constructor
+        using PoolAllocator<sizeof(T)>::PoolAllocator;
+    };
+
     template <size_t t_BlockSize>
     inline PoolAllocator<t_BlockSize>::PoolAllocator(size_t num_blocks,
                                                      Allocator* backing_allocator)
@@ -65,19 +72,24 @@ namespace Screwjank {
         static_assert(t_BlockSize > sizeof(FreeBlock),
                       "Block size is not large enough to maintain free list");
 
-        SJ_ASSERT(num_blocks > 0, "");
+        SJ_ASSERT(num_blocks > 0, "Cannot create a pool allocator with zero blocks");
 
         m_BufferStart =
             m_BackingAllocator->Allocate(num_blocks * t_BlockSize, alignof(std::max_align_t));
 
+        // Create first free block at start of buffer
         uintptr_t block_address = (uintptr_t)m_BufferStart;
+
+        SJ_ASSERT(IsMemoryAligned(m_BufferStart, alignof(FreeBlock)),
+                  "Memory misalignment detected");
+
         m_FreeList = new ((void*)block_address) FreeBlock {nullptr};
         FreeBlock* curr_block = m_FreeList;
 
-        // Build free list
+        // Build free list in the buffer
         for (size_t i = 1; i < num_blocks; i++) {
             // Calculate the block address of the next block
-            block_address += (i * t_BlockSize);
+            block_address += t_BlockSize;
 
             // Create new free-list block
             curr_block->Next = new ((void*)block_address) FreeBlock();
@@ -98,18 +110,22 @@ namespace Screwjank {
             return nullptr;
         }
 
-        // Pull the first block off the free list, and update and remove it from the free list
-        void* free_block = m_FreeList;
-        m_FreeList = m_FreeList->Next;
-
-        // Get required adjustment to align allocation in block
+        // Take the first available free block
+        auto free_block = m_FreeList;
         auto adjustment = GetAlignmentAdjustment(alignment, free_block);
 
         if (size + adjustment > t_BlockSize) {
-            SJ_ENGINE_LOG_ERROR("Pool allocator {} cannot satisfy alignment requirement",
-                                m_DebugName);
+            SJ_ENGINE_LOG_ERROR(
+                "Pool allocator {} has cannot service allocation of size {} with alignof {}",
+                m_DebugName,
+                size,
+                alignment);
+
             return nullptr;
         }
+
+        // Remove the free block from the free list
+        m_FreeList = m_FreeList->Next;
 
         return (void*)((uintptr_t)free_block + adjustment);
     }
@@ -123,14 +139,18 @@ namespace Screwjank {
         SJ_ASSERT((uintptr_t)memory <= (uintptr_t)m_BufferStart + (t_BlockSize * m_NumBlocks),
                   "Memory is not managed by this allocator");
 
-        // Find out how far memory is from the start of a block
+        // Find out how far memory address is from the block start
         auto offset = GetAlignmentOffset(t_BlockSize, memory);
 
-        // Create new free block
-        auto new_block = new ((void*)((uintptr_t)memory - offset)) FreeBlock {nullptr};
+        // Get the starting address of the block
+        void* block_address = (void*)((uintptr_t)memory - offset);
 
-        // Add new free block to head of list
-        new_block->Next = m_FreeList;
+        SJ_ASSERT(GetAlignmentOffset(t_BlockSize, block_address) == 0,
+                  "Block start not found correctly");
+
+        auto new_block = new (block_address) FreeBlock {m_FreeList};
+
+        // Push block onto head of free list
         m_FreeList = new_block;
     }
 
