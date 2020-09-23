@@ -25,8 +25,5 @@ namespace Screwjank {
 
         /** Free system memory from the heap */
         void Free(void* memory) override;
-
-      private:
-        size_t m_NumAllocations;
     };
 } // namespace Screwjank

@@ -23,7 +23,13 @@ namespace Screwjank {
          * @param block_count The number of blocks of size t_BlockSize
          */
         PoolAllocator(size_t block_count,
-                      Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
+                      Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
+                      const char* debug_name = "");
+
+        /**
+         * Destructor
+         */
+        ~PoolAllocator();
 
         /**
          * Allocates size bites from the heap
@@ -65,8 +71,9 @@ namespace Screwjank {
 
     template <size_t t_BlockSize>
     inline PoolAllocator<t_BlockSize>::PoolAllocator(size_t num_blocks,
-                                                     Allocator* backing_allocator)
-        : m_BackingAllocator(backing_allocator), m_NumBlocks(num_blocks)
+                                                     Allocator* backing_allocator,
+                                                     const char* debug_name)
+        : Allocator(debug_name), m_BackingAllocator(backing_allocator), m_NumBlocks(num_blocks)
     {
         // Ensure block size is large enough to store an allocation header
         static_assert(t_BlockSize > sizeof(FreeBlock),
@@ -100,6 +107,14 @@ namespace Screwjank {
     }
 
     template <size_t t_BlockSize>
+    inline PoolAllocator<t_BlockSize>::~PoolAllocator()
+    {
+        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0, "Memory leak detected");
+
+        m_BackingAllocator->Free(m_BufferStart);
+    }
+
+    template <size_t t_BlockSize>
     inline void* PoolAllocator<t_BlockSize>::Allocate(const size_t size, const size_t alignment)
     {
         SJ_ASSERT(size <= t_BlockSize,
@@ -127,6 +142,11 @@ namespace Screwjank {
         // Remove the free block from the free list
         m_FreeList = m_FreeList->Next;
 
+        m_MemoryStats.TotalAllocationCount++;
+        m_MemoryStats.TotalBytesAllocated += t_BlockSize;
+        m_MemoryStats.ActiveAllocationCount++;
+        m_MemoryStats.ActiveBytesAllocated += t_BlockSize;
+
         return (void*)((uintptr_t)free_block + adjustment);
     }
 
@@ -152,6 +172,9 @@ namespace Screwjank {
 
         // Push block onto head of free list
         m_FreeList = new_block;
+
+        m_MemoryStats.ActiveAllocationCount--;
+        m_MemoryStats.ActiveBytesAllocated -= t_BlockSize;
     }
 
 } // namespace Screwjank

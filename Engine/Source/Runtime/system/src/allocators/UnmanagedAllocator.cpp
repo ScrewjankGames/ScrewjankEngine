@@ -7,21 +7,21 @@
 #include "system/allocators/UnmanagedAllocator.hpp"
 
 namespace Screwjank {
-    UnmanagedAllocator::UnmanagedAllocator() : m_NumAllocations(0)
+    UnmanagedAllocator::UnmanagedAllocator()
     {
         m_DebugName = "System Allocator";
     }
 
     UnmanagedAllocator::~UnmanagedAllocator()
     {
-        SJ_ASSERT(m_NumAllocations == 0,
+        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0,
                   "Memory leak detected in system allocator. Check your raw new and deletes");
     }
 
     void* UnmanagedAllocator::Allocate(const size_t size, const size_t alignment)
     {
         void* memory = malloc(size);
-        m_NumAllocations++;
+        m_MemoryStats.ActiveAllocationCount++;
 
         return memory;
     }
@@ -30,6 +30,6 @@ namespace Screwjank {
     {
         SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
         free(memory);
-        m_NumAllocations--;
+        m_MemoryStats.ActiveAllocationCount--;
     }
 } // namespace Screwjank

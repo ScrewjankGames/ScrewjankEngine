@@ -77,6 +77,11 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy2->Value);
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
+
+        allocator.Free(mem_loc1);
+        allocator.Free(mem_loc2);
+        allocator.Free(mem_loc3);
+        allocator.Free(mem_loc4);
     }
 
     TEST(PoolAllocatorTests, ObjectPoolTest)
@@ -138,6 +143,11 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy2->Value);
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
+
+        allocator.Free(mem_loc1);
+        allocator.Free(mem_loc2);
+        allocator.Free(mem_loc3);
+        allocator.Free(mem_loc4);
     }
 
 } // namespace system_tests
