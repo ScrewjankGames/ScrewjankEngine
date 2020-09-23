@@ -7,6 +7,7 @@
 
 #include "core/Assert.hpp"
 #include "system/allocators/UnmanagedAllocator.hpp"
+#include "system/allocators/FreeListAllocator.hpp"
 
 namespace Screwjank {
     MemorySystem::MemorySystem() : m_DefaultAllocator(nullptr)
@@ -39,6 +40,7 @@ namespace Screwjank {
 
     void MemorySystem::Initialize()
     {
-        m_DefaultAllocator = new UnmanagedAllocator();
+        // Reserve 64MB of free space by default
+        m_DefaultAllocator = new FreeListAllocator(67108864, GetDefaultUnmanagedAllocator());
     }
 } // namespace Screwjank

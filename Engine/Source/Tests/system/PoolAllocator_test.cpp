@@ -108,7 +108,7 @@ namespace system_tests {
         ASSERT_EQ('a', dummy1->Label);
         ASSERT_EQ('b', dummy2->Label);
         ASSERT_EQ('c', dummy3->Label);
-        ASSERT_EQ('d', dummy4->Label); // WHAT THE FUCK IS WRONG WITH THIS
+        ASSERT_EQ('d', dummy4->Label);
         ASSERT_EQ(3.14, dummy1->Value);
         ASSERT_EQ(dummy1->Value, dummy2->Value);
         ASSERT_EQ(dummy2->Value, dummy3->Value);
