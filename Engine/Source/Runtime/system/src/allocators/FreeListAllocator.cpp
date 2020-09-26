@@ -7,9 +7,7 @@
 #include "system/allocators/FreeListAllocator.hpp"
 
 namespace Screwjank {
-    FreeListAllocator::FreeListAllocator(size_t buffer_size,
-                                         Allocator* backing_allocator,
-                                         const char* debug_name)
+    FreeListAllocator::FreeListAllocator(size_t buffer_size, Allocator* backing_allocator)
         : m_BackingAllocator(backing_allocator), m_FreeBlocks(nullptr)
     {
         SJ_ASSERT(buffer_size > sizeof(FreeBlock) && buffer_size > sizeof(AllocationHeader),
@@ -25,7 +23,7 @@ namespace Screwjank {
 
     FreeListAllocator::~FreeListAllocator()
     {
-        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0,
+        SJ_ASSERT(m_AllocatorStats.ActiveAllocationCount == 0,
                   "Memory leak detected in FreeListAllocator!");
         m_BackingAllocator->Free(m_BufferStart);
     }
@@ -41,8 +39,7 @@ namespace Screwjank {
         // If no best fit block was found, log an error
         if (best_fit_block == nullptr) {
             SJ_ENGINE_LOG_ERROR(
-                "FreeListAllocator {} has insufficient memory to perform allocation of {} bytes",
-                m_DebugName,
+                "FreeListAllocator has insufficient memory to perform allocation of {} bytes",
                 size);
             return nullptr;
         }
@@ -98,10 +95,10 @@ namespace Screwjank {
             AddFreeBlock(new_block);
         }
 
-        m_MemoryStats.TotalAllocationCount++;
-        m_MemoryStats.TotalBytesAllocated += header->Size;
-        m_MemoryStats.ActiveAllocationCount++;
-        m_MemoryStats.ActiveBytesAllocated += header->Size;
+        m_AllocatorStats.TotalAllocationCount++;
+        m_AllocatorStats.TotalBytesAllocated += header->Size;
+        m_AllocatorStats.ActiveAllocationCount++;
+        m_AllocatorStats.ActiveBytesAllocated += header->Size;
         return payload_loc;
     }
 
@@ -119,8 +116,8 @@ namespace Screwjank {
 
         SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)), "Free block is mis-aligned");
 
-        m_MemoryStats.ActiveAllocationCount--;
-        m_MemoryStats.ActiveBytesAllocated -= block_header->Size;
+        m_AllocatorStats.ActiveAllocationCount--;
+        m_AllocatorStats.ActiveBytesAllocated -= block_header->Size;
 
         // Potentially stomps on memory useb by block_header!
         FreeBlock* new_block = new (block_start) FreeBlock(block_size);

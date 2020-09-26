@@ -14,6 +14,15 @@ namespace Screwjank {
         size_t TotalAllocationCount;
         size_t TotalBytesAllocated;
 
+        AllocatorStatus()
+        {
+            Capacity = 0;
+            ActiveAllocationCount = 0;
+            ActiveBytesAllocated = 0;
+            TotalAllocationCount = 0;
+            TotalBytesAllocated = 0;
+        }
+
         size_t FreeSpace()
         {
             return Capacity - ActiveBytesAllocated;
@@ -25,12 +34,12 @@ namespace Screwjank {
       public:
         /**
          * Constructor
-         * @param backing_allocator Allocator from which this allocator should request it's memory
-         * @param debug_name Name of the allocator used for debugging purposes
          */
-        Allocator(const char* debug_name = "");
+        Allocator() = default;
 
-        /** Destructor */
+        /**
+         * Destructor
+         */
         virtual ~Allocator() = default;
 
         /**
@@ -69,10 +78,6 @@ namespace Screwjank {
          */
         template <class T>
         void Delete(T*& ptr);
-
-      protected:
-        const char* m_DebugName;
-        AllocatorStatus m_MemoryStats;
     };
 
     template <class T>

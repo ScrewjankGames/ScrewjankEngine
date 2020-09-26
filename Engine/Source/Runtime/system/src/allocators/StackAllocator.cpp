@@ -10,11 +10,9 @@
 
 namespace Screwjank {
 
-    StackAllocator::StackAllocator(size_t buffer_size,
-                                   Allocator* backing_allocator,
-                                   const char* debug_name)
-        : Allocator(debug_name), m_BackingAllocator(backing_allocator), m_CurrentHeader(nullptr),
-          m_Offset(nullptr), m_Capacity(buffer_size)
+    StackAllocator::StackAllocator(size_t buffer_size, Allocator* backing_allocator)
+        : m_BackingAllocator(backing_allocator), m_CurrentHeader(nullptr), m_Offset(nullptr),
+          m_Capacity(buffer_size)
     {
         m_BufferStart = m_BackingAllocator->Allocate(buffer_size);
         m_Offset = m_BufferStart;
@@ -50,8 +48,8 @@ namespace Screwjank {
         size_t total_allocation_size = required_padding + sizeof(StackAllocatorHeader) + size;
 
         if (free_space < total_allocation_size) {
-            SJ_LOG_ERROR("Allocator {} has insufficient memory to perform requested allocation.",
-                         m_DebugName);
+            SJ_LOG_ERROR(
+                "Stack allocator has insufficient memory to perform requested allocation.");
             return nullptr;
         }
 

@@ -15,8 +15,7 @@ namespace Screwjank {
     {
       public:
         FreeListAllocator(size_t buffer_size,
-                          Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
-                          const char* debug_name = "");
+                          Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
         ~FreeListAllocator();
 
@@ -96,5 +95,8 @@ namespace Screwjank {
 
         /** Pointer to the start of the allocator's memory block */
         void* m_BufferStart;
+
+        /** Structure used to track and report the state of this allocator */
+        AllocatorStatus m_AllocatorStats;
     };
 } // namespace Screwjank

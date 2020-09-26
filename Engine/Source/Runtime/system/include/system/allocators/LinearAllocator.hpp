@@ -13,8 +13,7 @@ namespace Screwjank {
     {
       public:
         LinearAllocator(size_t buffer_size,
-                        Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
-                        const char* debug_name = "");
+                        Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
         ~LinearAllocator();
 
@@ -32,6 +31,9 @@ namespace Screwjank {
 
         /** Pointer to the first free byte in the linear allocator */
         void* m_CurrFrameStart;
+
+        /** Structure used to track and report the state of this allocator */
+        AllocatorStatus m_AllocatorStats;
     };
 
 } // namespace Screwjank

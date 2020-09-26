@@ -24,6 +24,10 @@ namespace Screwjank {
 
       private:
         Allocator* m_BackingAllocator;
+        const char* m_Name;
+
+        /** Structure used to track and report the state of this allocator */
+        AllocatorStatus m_AllocatorStats;
     };
 
 } // namespace Screwjank

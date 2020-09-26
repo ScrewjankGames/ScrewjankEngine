@@ -14,8 +14,7 @@ namespace Screwjank {
     {
       public:
         StackAllocator(size_t buffer_size,
-                       Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
-                       const char* debug_name = "");
+                       Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
         ~StackAllocator();
 
@@ -29,8 +28,6 @@ namespace Screwjank {
         [[nodiscard]] void* Push(size_t size, size_t alignment = 1);
 
         void Pop();
-
-        void Reset();
 
       private:
         /** Data structure used to manage allocations the stack */
@@ -57,6 +54,9 @@ namespace Screwjank {
 
         /** Pointer to the first free byte in the stack */
         void* m_Offset;
+
+        /** Structure used to track and report the state of this allocator */
+        AllocatorStatus m_AllocatorStats;
     };
 
     template <typename T>

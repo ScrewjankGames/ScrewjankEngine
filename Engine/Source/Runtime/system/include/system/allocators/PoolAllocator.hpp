@@ -23,8 +23,7 @@ namespace Screwjank {
          * @param block_count The number of blocks of size t_BlockSize
          */
         PoolAllocator(size_t block_count,
-                      Allocator* backing_allocator = MemorySystem::GetDefaultAllocator(),
-                      const char* debug_name = "");
+                      Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
         /**
          * Destructor
@@ -60,6 +59,9 @@ namespace Screwjank {
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks;
+
+        /** Structure used to track and report the state of this allocator */
+        AllocatorStatus m_AllocatorStats;
     };
 
     template <class T>
@@ -71,9 +73,8 @@ namespace Screwjank {
 
     template <size_t t_BlockSize>
     inline PoolAllocator<t_BlockSize>::PoolAllocator(size_t num_blocks,
-                                                     Allocator* backing_allocator,
-                                                     const char* debug_name)
-        : Allocator(debug_name), m_BackingAllocator(backing_allocator), m_NumBlocks(num_blocks)
+                                                     Allocator* backing_allocator)
+        : m_BackingAllocator(backing_allocator), m_NumBlocks(num_blocks)
     {
         // Ensure block size is large enough to store an allocation header
         static_assert(t_BlockSize > sizeof(FreeBlock),
@@ -109,7 +110,7 @@ namespace Screwjank {
     template <size_t t_BlockSize>
     inline PoolAllocator<t_BlockSize>::~PoolAllocator()
     {
-        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0, "Memory leak detected");
+        SJ_ASSERT(m_AllocatorStats.ActiveAllocationCount == 0, "Memory leak detected");
 
         m_BackingAllocator->Free(m_BufferStart);
     }
@@ -121,7 +122,7 @@ namespace Screwjank {
                   "Pool allocator cannot satisfy allocation of size > block size");
 
         if (m_FreeList == nullptr) {
-            SJ_ENGINE_LOG_ERROR("Pool allocator {} has run out of blocks", m_DebugName);
+            SJ_ENGINE_LOG_ERROR("Pool allocator has run out of blocks");
             return nullptr;
         }
 
@@ -131,8 +132,7 @@ namespace Screwjank {
 
         if (size + adjustment > t_BlockSize) {
             SJ_ENGINE_LOG_ERROR(
-                "Pool allocator {} has cannot service allocation of size {} with alignof {}",
-                m_DebugName,
+                "Pool allocator cannot service allocation of size {} with alignof {}",
                 size,
                 alignment);
 
@@ -142,10 +142,10 @@ namespace Screwjank {
         // Remove the free block from the free list
         m_FreeList = m_FreeList->Next;
 
-        m_MemoryStats.TotalAllocationCount++;
-        m_MemoryStats.TotalBytesAllocated += t_BlockSize;
-        m_MemoryStats.ActiveAllocationCount++;
-        m_MemoryStats.ActiveBytesAllocated += t_BlockSize;
+        m_AllocatorStats.TotalAllocationCount++;
+        m_AllocatorStats.TotalBytesAllocated += t_BlockSize;
+        m_AllocatorStats.ActiveAllocationCount++;
+        m_AllocatorStats.ActiveBytesAllocated += t_BlockSize;
 
         return (void*)((uintptr_t)free_block + adjustment);
     }
@@ -173,8 +173,8 @@ namespace Screwjank {
         // Push block onto head of free list
         m_FreeList = new_block;
 
-        m_MemoryStats.ActiveAllocationCount--;
-        m_MemoryStats.ActiveBytesAllocated -= t_BlockSize;
+        m_AllocatorStats.ActiveAllocationCount--;
+        m_AllocatorStats.ActiveBytesAllocated -= t_BlockSize;
     }
 
 } // namespace Screwjank

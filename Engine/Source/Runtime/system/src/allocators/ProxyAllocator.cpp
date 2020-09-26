@@ -8,21 +8,21 @@
 
 namespace Screwjank {
     ProxyAllocator::ProxyAllocator(Allocator* backing_allocator, const char* debug_name)
-        : Allocator(debug_name), m_BackingAllocator(backing_allocator)
+        : m_BackingAllocator(backing_allocator), m_Name(debug_name)
     {
     }
 
     ProxyAllocator::~ProxyAllocator()
     {
-        SJ_ASSERT(m_MemoryStats.ActiveAllocationCount == 0,
+        SJ_ASSERT(m_AllocatorStats.ActiveAllocationCount == 0,
                   "Memory leak detected in proxy allocator");
     }
 
     void* ProxyAllocator::Allocate(const size_t size, const size_t alignment)
     {
-        m_MemoryStats.TotalAllocationCount++;
-        m_MemoryStats.ActiveAllocationCount++;
-        m_MemoryStats.TotalBytesAllocated += size;
+        m_AllocatorStats.TotalAllocationCount++;
+        m_AllocatorStats.ActiveAllocationCount++;
+        m_AllocatorStats.TotalBytesAllocated += size;
         return m_BackingAllocator->Allocate(size, alignment);
     }
 
@@ -30,7 +30,7 @@ namespace Screwjank {
     {
         SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
 
-        m_MemoryStats.ActiveAllocationCount--;
+        m_AllocatorStats.ActiveAllocationCount--;
         m_BackingAllocator->Free(memory);
     }
 } // namespace Screwjank
