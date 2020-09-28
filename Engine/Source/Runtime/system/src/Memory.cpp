@@ -15,12 +15,12 @@ using namespace Screwjank;
 
 void* operator new(size_t num_bytes) noexcept(false)
 {
-    return MemorySystem::GetDefaultUnmanagedAllocator()->Allocate(num_bytes);
+    return MemorySystem::GetUnmanagedAllocator()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) throw()
 {
-    MemorySystem::GetDefaultUnmanagedAllocator()->Free(memory);
+    MemorySystem::GetUnmanagedAllocator()->Free(memory);
 }
 
 namespace Screwjank {

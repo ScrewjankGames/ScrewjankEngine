@@ -4,7 +4,9 @@
 // Library Headers
 
 // Engine Headers
+
 #include "system/Memory.hpp"
+#include "event_system/EventSystem.hpp"
 
 namespace Screwjank {
     // Forward declare system classes
@@ -29,16 +31,20 @@ namespace Screwjank {
         void Start();
 
       protected:
-        /** Engine's memory system */
-        MemorySystem* m_MemorySystem;
-
-        /** Current frame time */
-        float m_DeltaTime;
-
         /**
          * Main game loop
          */
         void Run();
+
+      private:
+        /** Engine's memory system */
+        MemorySystem* m_MemorySystem;
+
+        /** Engine's event system */
+        EventSystem* m_EventSystem;
+
+        /** Current frame time */
+        float m_DeltaTime;
     };
 
     // API function externed to allow users to create custom game classes for main

@@ -32,7 +32,7 @@ namespace Screwjank {
         return Get()->m_DefaultAllocator;
     }
 
-    Allocator* MemorySystem::GetDefaultUnmanagedAllocator()
+    Allocator* MemorySystem::GetUnmanagedAllocator()
     {
         static Screwjank::UnmanagedAllocator s_Allocator;
         return &s_Allocator;
@@ -41,6 +41,6 @@ namespace Screwjank {
     void MemorySystem::Initialize()
     {
         // Reserve 64MB of free space by default
-        m_DefaultAllocator = new FreeListAllocator(67108864, GetDefaultUnmanagedAllocator());
+        m_DefaultAllocator = new FreeListAllocator(67108864, GetUnmanagedAllocator());
     }
 } // namespace Screwjank

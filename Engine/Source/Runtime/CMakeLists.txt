@@ -40,6 +40,7 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/containers/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/event_system/include
         ${CMAKE_CURRENT_SOURCE_DIR}/math/include
         ${CMAKE_CURRENT_SOURCE_DIR}/system/include
         ${CMAKE_CURRENT_SOURCE_DIR}/platform/include

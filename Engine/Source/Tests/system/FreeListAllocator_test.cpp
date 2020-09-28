@@ -22,7 +22,7 @@ namespace system_tests {
     {
         // Test basic allocations and frees that shouldn't hit many edge cases
         FreeListAllocator allocator(sizeof(FreeListDummy) * 16,
-                                    MemorySystem::GetDefaultUnmanagedAllocator());
+                                    MemorySystem::GetUnmanagedAllocator());
 
         // Allocate and construct three dummies sequentially
         auto mem_loc1 = allocator.Allocate(sizeof(FreeListDummy), alignof(FreeListDummy));
@@ -51,7 +51,7 @@ namespace system_tests {
         ASSERT_EQ(Dummy1->Value, Dummy2->Value);
         ASSERT_EQ(Dummy2->Value, Dummy3->Value);
 
-        allocator.Delete<FreeListDummy>(Dummy1);
+        Delete(allocator, Dummy1);
 
         auto mem_loc4 = allocator.AllocateType<FreeListDummy>();
 
@@ -65,9 +65,9 @@ namespace system_tests {
         ASSERT_EQ('b', Dummy2->Label);
         ASSERT_EQ(Dummy4->Value, Dummy2->Value);
 
-        allocator.Delete(Dummy2);
-        allocator.Delete(Dummy3);
-        allocator.Delete(Dummy4);
+        Delete(allocator, Dummy2);
+        Delete(allocator, Dummy3);
+        Delete(allocator, Dummy4);
     }
 
     TEST(FreeListAllocatorTests, AdvancedAllocationTest)
@@ -78,7 +78,7 @@ namespace system_tests {
         // This allocator should have enough room for exactly two individual allocations of size
         // sizeof(FreeListDummy)
         FreeListAllocator allocator(sizeof(FreeListDummy) * 4,
-                                    MemorySystem::GetDefaultUnmanagedAllocator());
+                                    MemorySystem::GetUnmanagedAllocator());
 
         auto mem_loc1 = allocator.AllocateType<FreeListDummy>();
         auto mem_loc2 = allocator.AllocateType<FreeListDummy>();
@@ -119,7 +119,7 @@ namespace system_tests {
 
     TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
     {
-        FreeListAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        FreeListAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
 
         auto mem_loc1 = allocator.AllocateType<int>();
         auto mem_loc2 = allocator.AllocateType<char>();

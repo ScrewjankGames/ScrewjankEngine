@@ -13,7 +13,7 @@
 
 namespace Screwjank {
 
-    Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr)
+    Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr), m_EventSystem(nullptr)
     {
     }
 
@@ -24,10 +24,11 @@ namespace Screwjank {
 
     void Game::Start()
     {
-        SJ_ENGINE_LOG_INFO("Initializing core engine systems...");
         m_MemorySystem = MemorySystem::Get();
         m_MemorySystem->Initialize();
-        SJ_ENGINE_LOG_INFO("\tMemory System Initialized");
+        SJ_ENGINE_LOG_INFO("Memory System Initialized");
+
+        // m_EventSystem = New<EventSystem>();
 
         SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
 

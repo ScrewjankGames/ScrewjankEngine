@@ -21,7 +21,7 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, PushPopTest)
     {
-        StackAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        StackAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
 
         // Assign memory and construct test data in the addresses
         auto mem1 = allocator.AllocateType<StackAllocatorDummy>();
@@ -97,13 +97,13 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, InvalidPopTest)
     {
-        StackAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        StackAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
 
 #ifdef SJ_DEBUG
         ASSERT_DEATH(allocator.Pop(), ".*");
 #endif
 
-        StackAllocator allocator2(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        StackAllocator allocator2(128, MemorySystem::GetUnmanagedAllocator());
         auto mem1 = allocator2.PushType<char>();
         auto mem2 = allocator2.PushType<double>();
 
@@ -116,8 +116,7 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, MemoryLeakDetectionTest)
     {
-        StackAllocator* allocator =
-            new StackAllocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        StackAllocator* allocator = new StackAllocator(128, MemorySystem::GetUnmanagedAllocator());
 
         auto mem = allocator->PushType<StackAllocatorDummy>();
 

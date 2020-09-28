@@ -7,6 +7,7 @@
 // Screwjank Headers
 #include "core/Assert.hpp"
 #include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"
 
 namespace Screwjank {
 
@@ -278,7 +279,7 @@ namespace Screwjank {
     template <class T>
     inline void ForwardList<T>::PushFront(const T& value)
     {
-        m_Head = m_Allocator->New<ForwardList<T>::node_type>(value, m_Head);
+        m_Head = New<ForwardList<T>::node_type>(m_Allocator, value, m_Head);
     }
 
     template <class T>
@@ -297,14 +298,14 @@ namespace Screwjank {
     inline void ForwardList<T>::EmplaceFront(Args&&... args)
     {
         m_Head =
-            m_Allocator->New<ForwardList<T>::node_type>(T(std::forward<Args>(args)...), m_Head);
+            New<ForwardList<T>::node_type>(m_Allocator, T(std::forward<Args>(args)...), m_Head);
     }
 
     template <class T>
     inline typename ForwardList<T>::iterator ForwardList<T>::InsertAfter(const_iterator pos,
                                                                          const T& value)
     {
-        auto new_node = m_Allocator->New<ForwardList<T>::node_type>(value, pos.m_Node->Next);
+        auto new_node = New<ForwardList<T>::node_type>(m_Allocator, value, pos.m_Node->Next);
 
         pos.m_Node->Next = new_node;
 
@@ -323,8 +324,9 @@ namespace Screwjank {
     inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(const_iterator pos,
                                                                           Args&&... args)
     {
-        auto new_node = m_Allocator->New<ForwardList<T>::node_type>(T(std::forward<Args>(args)...),
-                                                                    pos.m_Node->Next);
+        auto new_node = New<ForwardList<T>::node_type>(m_Allocator,
+                                                       T(std::forward<Args>(args)...),
+                                                       pos.m_Node->Next);
         pos.m_Node->Next = new_node;
         return ForwardList<T>::iterator(new_node);
     }
@@ -345,7 +347,7 @@ namespace Screwjank {
         auto dead_node = pos.m_Node->Next;
         pos.m_Node->Next = dead_node->Next;
 
-        m_Allocator->Delete(dead_node);
+        Delete(m_Allocator, dead_node);
         return iterator(pos.m_Node->Next);
     }
 

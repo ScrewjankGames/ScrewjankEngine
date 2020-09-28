@@ -70,7 +70,7 @@ namespace container_tests {
 
     TEST(VectorTests, ListInitializationTest)
     {
-        Vector<int> vec1({1, 2, 3, 4, 5}, MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<int> vec1({1, 2, 3, 4, 5}, MemorySystem::GetUnmanagedAllocator());
 
         ASSERT_EQ(5, vec1.Size());
         ASSERT_EQ(5, vec1.Capacity());
@@ -78,7 +78,7 @@ namespace container_tests {
 
     TEST(VectorTests, ElementInsertionTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
         VectorTestDummy dummy;
 
         // Copy construct dummy into vec
@@ -93,7 +93,7 @@ namespace container_tests {
 
     TEST(VectorTests, ElementAccessTest)
     {
-        Vector<int> vec1({1, 2, 3}, MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<int> vec1({1, 2, 3}, MemorySystem::GetUnmanagedAllocator());
 
         ASSERT_EQ(1, vec1[0]);
 
@@ -108,7 +108,7 @@ namespace container_tests {
 
     TEST(VectorTests, IterationTest)
     {
-        Vector<int> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
         int i = 0;
 
         for (auto& element : vec) {
@@ -122,7 +122,7 @@ namespace container_tests {
 
     TEST(VectorTests, SingleInsertionTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
 
         vec.Insert(0, VectorTestDummy(3));
         ASSERT_EQ(3, vec[0].Value());
@@ -153,11 +153,11 @@ namespace container_tests {
 
     TEST(VectorTests, VectorInsertionTest)
     {
-        Vector<VectorTestDummy> vec1(MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec1(MemorySystem::GetUnmanagedAllocator());
 
-        Vector<VectorTestDummy> vec2({1, 6}, MemorySystem::GetDefaultUnmanagedAllocator());
-        Vector<VectorTestDummy> vec3({2, 5}, MemorySystem::GetDefaultUnmanagedAllocator());
-        Vector<VectorTestDummy> vec4({7, 8}, MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec2({1, 6}, MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec3({2, 5}, MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec4({7, 8}, MemorySystem::GetUnmanagedAllocator());
 
         // Vector insertion requires grow
         vec1.Insert(0, vec2);
@@ -190,7 +190,7 @@ namespace container_tests {
 
     TEST(VectorTests, EmplaceTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetDefaultUnmanagedAllocator());
+        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
 
         vec.Emplace(0, 3);
         vec.Emplace(0, VectorTestDummy(0));

@@ -6,6 +6,29 @@
 // Engine Headers
 
 namespace Screwjank {
+
+    /**
+     * Concept for template deduction required when supplying allocators to containers
+     */
+    template <class T>
+    concept AllocatorConcept = requires(T obj)
+    {
+        // These statements must compile for something to be considered an allocator
+        {obj.Allocate(size_t())};
+        {obj.Free(nullptr)};
+    };
+
+    /**
+     * Concept for template deduction required when supplying allocators to containers
+     */
+    template <class T>
+    concept AllocatorPtrConcept = requires(T obj)
+    {
+        // These statements must compile for something to be considered an allocator pointer
+        {obj->Allocate(size_t())};
+        {obj->Free(nullptr)};
+    };
+
     struct AllocatorStatus
     {
         size_t Capacity;
@@ -60,49 +83,12 @@ namespace Screwjank {
          */
         template <class T>
         [[nodiscard]] void* AllocateType();
-
-        /**
-         * Helper function to allocate and construct object using any allocator
-         * @tparam T The type to allocate and construct
-         * @tparam ...Args The constructor arguments to send to the allocated object
-         * @return A pointer to the allocated and constructed object
-         */
-        template <class T, class... Args>
-        [[nodiscard]] T* New(Args&&... args);
-
-        /**
-         * Helper function to deallocate and deconstruct object using any allocator
-         * @tparam T The type of the pointer being supplied
-         * @param ptr Pointer to the memory address to free
-         * @note ptr will be nulled after deletion.
-         */
-        template <class T>
-        void Delete(T*& ptr);
     };
 
     template <class T>
     void* Allocator::AllocateType()
     {
         return Allocate(sizeof(T), alignof(T));
-    }
-
-    template <class T, class... Args>
-    inline T* Allocator::New(Args&&... args)
-    {
-        return new (AllocateType<T>()) T(std::forward<Args>(args)...);
-    }
-
-    template <class T>
-    inline void Allocator::Delete(T*& ptr)
-    {
-        // Call object destructor
-        ptr->~T();
-
-        // Deallocate object
-        Free(ptr);
-
-        // Null out supplied pointer
-        ptr = nullptr;
     }
 
 } // namespace Screwjank

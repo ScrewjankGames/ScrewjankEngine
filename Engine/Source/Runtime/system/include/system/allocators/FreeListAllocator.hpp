@@ -23,7 +23,8 @@ namespace Screwjank {
          * Allocates size bites with given alignment in a best-fit manner
          * @param size The number of bytes to allocate
          */
-        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment = 1) override;
+        [[nodiscard]] void* Allocate(const size_t size,
+                                     const size_t alignment = alignof(std::max_align_t)) override;
 
         /**
          * Marks memory as free

@@ -34,7 +34,7 @@ namespace system_tests {
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
         // Create a stack allocator with a 128 byte buffer
-        LinearAllocator allocator(128, MemorySystem::GetDefaultUnmanagedAllocator());
+        LinearAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
 
         void* dummyMemory = allocator.AllocateType<LinearAllocatorDummy>();
         ASSERT_NE(nullptr, dummyMemory);
@@ -54,7 +54,7 @@ namespace system_tests {
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
 
-        LinearAllocator packingTest(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
+        LinearAllocator packingTest(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
 
         auto mem = packingTest.Allocate(sizeof(SBS) * 10);
         packingTest.Reset();
@@ -68,14 +68,14 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
+        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
         auto mem = allocator.Allocate(sizeof(SBS) * 10);
         ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetDefaultUnmanagedAllocator());
+        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
         auto mem = allocator.Allocate(sizeof(SBS) * 9);
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
     }
@@ -84,11 +84,11 @@ namespace system_tests {
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        LinearAllocator allocator(256, MemorySystem::GetDefaultUnmanagedAllocator());
+        LinearAllocator allocator(256, MemorySystem::GetUnmanagedAllocator());
 
-        LinearAllocatorDummy* dummy1 = allocator.New<LinearAllocatorDummy>(1, 1.0);
-        auto dummy2 = allocator.New<LinearAllocatorDummy>(2, 2.0);
-        auto dummy3 = allocator.New<LinearAllocatorDummy>(3, 3.0);
+        LinearAllocatorDummy* dummy1 = New<LinearAllocatorDummy>(allocator, 1, 1.0);
+        auto dummy2 = New<LinearAllocatorDummy>(allocator, 2, 2.0);
+        auto dummy3 = New<LinearAllocatorDummy>(allocator, 3, 3.0);
 
         ASSERT_EQ(1, dummy1->m_num);
         ASSERT_EQ(1.0, dummy1->m_double);

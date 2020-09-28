@@ -22,7 +22,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, PushPopFrontTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
 
         list.PushFront(ListDummy {1});
         ASSERT_EQ(1, list.Front().Value);
@@ -48,7 +48,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, EmplaceFrontTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(ListDummy {1});
         ASSERT_EQ(1, list.Front().Value);
 
@@ -58,7 +58,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, InsertAfterTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(1);
 
         auto it = list.begin();
@@ -70,7 +70,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, EmplaceAfterTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(1);
 
         auto it = list.begin();
@@ -82,7 +82,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, EraseAfterTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.PushFront(ListDummy {4});
         list.PushFront(ListDummy {3});
         list.PushFront(ListDummy {2});
@@ -106,7 +106,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, DestructionLeakTest)
     {
-        auto list = new ForwardList<ListDummy>(MemorySystem::GetDefaultUnmanagedAllocator());
+        auto list = new ForwardList<ListDummy>(MemorySystem::GetUnmanagedAllocator());
         list->PushFront(ListDummy {1});
         list->PushFront(ListDummy {1});
         list->PushFront(ListDummy {1});
@@ -121,7 +121,7 @@ namespace container_tests {
 
     TEST(ForwardListsTests, IterationTest)
     {
-        ForwardList<ListDummy> list(MemorySystem::GetDefaultUnmanagedAllocator());
+        ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
 
         list.PushFront(ListDummy {4});
         list.PushFront(ListDummy {3});
