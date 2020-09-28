@@ -8,6 +8,6 @@
 
 // Screwjank Headers
 
-namespace Screwjank {
+namespace sj {
 
-} // namespace Screwjank
+} // namespace sj

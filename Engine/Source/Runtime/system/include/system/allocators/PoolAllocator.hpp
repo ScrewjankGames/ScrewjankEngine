@@ -9,7 +9,7 @@
 #include "system/Allocator.hpp"
 #include "system/Memory.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     /**
      * Allocates memory in fixed size chunks
@@ -177,4 +177,4 @@ namespace Screwjank {
         m_AllocatorStats.ActiveBytesAllocated -= t_BlockSize;
     }
 
-} // namespace Screwjank
+} // namespace sj

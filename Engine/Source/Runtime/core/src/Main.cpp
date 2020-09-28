@@ -6,7 +6,7 @@
 
 int main(int arc, char** argv)
 {
-    auto game = Screwjank::CreateGame();
+    auto game = sj::CreateGame();
     game->Start();
     delete game;
 }

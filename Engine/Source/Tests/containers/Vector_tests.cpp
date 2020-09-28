@@ -7,7 +7,7 @@
 #include "containers/Vector.hpp"
 #include "core/Log.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 namespace container_tests {
 

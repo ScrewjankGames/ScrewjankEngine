@@ -5,6 +5,6 @@
 // Screwjank Headers
 #include "event_system/EventSystem.hpp"
 
-namespace Screwjank {
+namespace sj {
 
-} // namespace Screwjank
+} // namespace sj

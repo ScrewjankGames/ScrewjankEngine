@@ -8,7 +8,7 @@
 #include "system/Allocator.hpp"
 #include "core/MemorySystem.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     class StackAllocator : public Allocator
     {
@@ -64,4 +64,4 @@ namespace Screwjank {
     {
         return Allocate(sizeof(T), alignof(T));
     }
-} // namespace Screwjank
+} // namespace sj

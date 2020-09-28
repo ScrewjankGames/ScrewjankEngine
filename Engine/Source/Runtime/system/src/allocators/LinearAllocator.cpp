@@ -7,7 +7,7 @@
 #include "system/Memory.hpp"
 #include "system/allocators/LinearAllocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     LinearAllocator::LinearAllocator(size_t buffer_size, Allocator* backing_allocator)
         : m_BackingAllocator(backing_allocator)
     {
@@ -66,4 +66,4 @@ namespace Screwjank {
         m_AllocatorStats.ActiveBytesAllocated = 0;
         m_CurrFrameStart = m_BufferStart;
     }
-} // namespace Screwjank
+} // namespace sj

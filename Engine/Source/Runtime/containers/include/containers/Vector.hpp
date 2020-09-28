@@ -9,7 +9,7 @@
 #include "core/Assert.hpp"
 #include "core/MemorySystem.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     template <class Vector_t>
     class VectorConstIterator
@@ -680,4 +680,4 @@ namespace Screwjank {
         return const_iterator(m_Data + m_Size);
     }
 
-} // namespace Screwjank
+} // namespace sj

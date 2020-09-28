@@ -7,7 +7,7 @@
 #include "core/MemorySystem.hpp"
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     class LinearAllocator : public Allocator
     {
@@ -36,4 +36,4 @@ namespace Screwjank {
         AllocatorStatus m_AllocatorStats;
     };
 
-} // namespace Screwjank
+} // namespace sj

@@ -3,14 +3,14 @@
 // Engine Headers
 #include <ScrewjankEngine.hpp>
 
-class SampleGame : public Screwjank::Game
+class SampleGame : public sj::Game
 {
   public:
     SampleGame() = default;
     ~SampleGame() = default;
 };
 
-Screwjank::Game* Screwjank::CreateGame()
+sj::Game* sj::CreateGame()
 {
     return new SampleGame();
 }

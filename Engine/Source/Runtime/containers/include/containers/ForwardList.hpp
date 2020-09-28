@@ -9,7 +9,7 @@
 #include "core/MemorySystem.hpp"
 #include "system/Memory.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     template <class ForwardList_t>
     class ForwardListConstIterator
@@ -395,4 +395,4 @@ namespace Screwjank {
         return iterator(nullptr);
     }
 
-} // namespace Screwjank
+} // namespace sj

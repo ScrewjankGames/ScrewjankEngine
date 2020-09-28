@@ -6,7 +6,7 @@
 #include "system/Memory.hpp"
 #include "system/allocators/FreeListAllocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     FreeListAllocator::FreeListAllocator(size_t buffer_size, Allocator* backing_allocator)
         : m_BackingAllocator(backing_allocator), m_FreeBlocks(nullptr)
     {
@@ -269,4 +269,4 @@ namespace Screwjank {
         }
     }
 
-} // namespace Screwjank
+} // namespace sj

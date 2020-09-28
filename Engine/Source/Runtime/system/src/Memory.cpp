@@ -11,7 +11,7 @@
 #include "core/Log.hpp"
 #include "core/MemorySystem.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 void* operator new(size_t num_bytes) noexcept(false)
 {
@@ -23,7 +23,7 @@ void operator delete(void* memory) throw()
     MemorySystem::GetUnmanagedAllocator()->Free(memory);
 }
 
-namespace Screwjank {
+namespace sj {
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
     {
@@ -65,4 +65,4 @@ namespace Screwjank {
         return GetAlignmentOffset(align_of, memory_address) == 0;
     }
 
-} // namespace Screwjank
+} // namespace sj

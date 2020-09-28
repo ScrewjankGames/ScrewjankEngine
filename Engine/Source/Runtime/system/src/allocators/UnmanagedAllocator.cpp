@@ -6,7 +6,7 @@
 #include "core/Assert.hpp"
 #include "system/allocators/UnmanagedAllocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     UnmanagedAllocator::UnmanagedAllocator() : m_ActiveAllocationCount(0)
     {
     }
@@ -31,4 +31,4 @@ namespace Screwjank {
         free(memory);
         m_ActiveAllocationCount--;
     }
-} // namespace Screwjank
+} // namespace sj

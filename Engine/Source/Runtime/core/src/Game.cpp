@@ -11,7 +11,7 @@
 #include "core/Log.hpp"
 #include "core/MemorySystem.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr), m_EventSystem(nullptr)
     {
@@ -88,4 +88,4 @@ namespace Screwjank {
         glfwDestroyWindow(window);
         glfwTerminate();
     }
-} // namespace Screwjank
+} // namespace sj

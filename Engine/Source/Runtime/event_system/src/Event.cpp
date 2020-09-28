@@ -5,8 +5,8 @@
 // Screwjank Headers
 #include "event_system/Event.hpp"
 
-namespace Screwjank {
+namespace sj {
     Event::Event() : EventConsumed(false)
     {
     }
-} // namespace Screwjank
+} // namespace sj

@@ -7,7 +7,7 @@
 // Screwjank Header
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     /**
      * Class that forwards all of it's allocation logic to it's backing allocator, but stores it's
      * own allocator metrics
@@ -30,4 +30,4 @@ namespace Screwjank {
         AllocatorStatus m_AllocatorStats;
     };
 
-} // namespace Screwjank
+} // namespace sj

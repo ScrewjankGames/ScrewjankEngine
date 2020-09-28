@@ -9,7 +9,7 @@
 #include "containers/ForwardList.hpp"
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     class FreeListAllocator : public Allocator
     {
@@ -100,4 +100,4 @@ namespace Screwjank {
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;
     };
-} // namespace Screwjank
+} // namespace sj

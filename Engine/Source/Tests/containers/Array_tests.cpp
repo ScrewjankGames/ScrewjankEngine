@@ -6,7 +6,7 @@
 // Void Engine Headers
 #include "containers/Array.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 namespace container_tests {
 

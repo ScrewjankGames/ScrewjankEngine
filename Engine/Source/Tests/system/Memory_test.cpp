@@ -9,7 +9,7 @@
 #include "system/allocators/StackAllocator.hpp"
 #include "system/allocators/LinearAllocator.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 namespace system_tests {
     bool dummy_dtor_called = false;

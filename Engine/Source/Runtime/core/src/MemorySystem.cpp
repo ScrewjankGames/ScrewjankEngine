@@ -9,7 +9,7 @@
 #include "system/allocators/UnmanagedAllocator.hpp"
 #include "system/allocators/FreeListAllocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     MemorySystem::MemorySystem() : m_DefaultAllocator(nullptr)
     {
     }
@@ -34,7 +34,7 @@ namespace Screwjank {
 
     Allocator* MemorySystem::GetUnmanagedAllocator()
     {
-        static Screwjank::UnmanagedAllocator s_Allocator;
+        static sj::UnmanagedAllocator s_Allocator;
         return &s_Allocator;
     }
 
@@ -43,4 +43,4 @@ namespace Screwjank {
         // Reserve 64MB of free space by default
         m_DefaultAllocator = new FreeListAllocator(67108864, GetUnmanagedAllocator());
     }
-} // namespace Screwjank
+} // namespace sj

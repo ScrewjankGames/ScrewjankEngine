@@ -8,7 +8,7 @@
 #include "system/Memory.hpp"
 #include "event_system/EventSystem.hpp"
 
-namespace Screwjank {
+namespace sj {
     // Forward declare system classes
     class MemorySystem;
 
@@ -49,4 +49,4 @@ namespace Screwjank {
 
     // API function externed to allow users to create custom game classes for main
     extern Game* CreateGame();
-} // namespace Screwjank
+} // namespace sj

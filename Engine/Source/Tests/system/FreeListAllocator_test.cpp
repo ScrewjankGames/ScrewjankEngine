@@ -8,7 +8,7 @@
 #include "system/Memory.hpp"
 #include "system/allocators/FreeListAllocator.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 namespace system_tests {
 

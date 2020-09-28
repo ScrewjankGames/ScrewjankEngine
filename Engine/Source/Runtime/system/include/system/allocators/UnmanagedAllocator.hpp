@@ -6,7 +6,7 @@
 // Screwjank Headers
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     /**
      * @class UnmanagedAllocator
      * @brief A simple wrapper for standard malloc and free calls
@@ -29,4 +29,4 @@ namespace Screwjank {
       private:
         size_t m_ActiveAllocationCount;
     };
-} // namespace Screwjank
+} // namespace sj

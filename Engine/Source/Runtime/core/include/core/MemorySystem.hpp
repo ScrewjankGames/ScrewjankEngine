@@ -6,7 +6,7 @@
 // Screwjank Headers
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     /**
      * Class that manage's engines default memory allocator and provides access to system memory
      * info
@@ -47,4 +47,4 @@ namespace Screwjank {
         MemorySystem();
         ~MemorySystem();
     };
-} // namespace Screwjank
+} // namespace sj

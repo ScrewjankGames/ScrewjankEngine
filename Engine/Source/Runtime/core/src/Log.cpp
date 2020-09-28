@@ -5,7 +5,7 @@
 // Screwjank Headers
 #include "core/Log.hpp"
 
-namespace Screwjank {
+namespace sj {
     Logger::Logger(const char* name) : m_Name(name)
     {
         ;
@@ -22,4 +22,4 @@ namespace Screwjank {
         static Logger s_GameLogger("Game");
         return &s_GameLogger;
     }
-} // namespace Screwjank
+} // namespace sj

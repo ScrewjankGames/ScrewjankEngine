@@ -9,7 +9,7 @@
 #include "core/Assert.hpp"
 #include "system/Allocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     /**
      * Function that returns the first aligned memory address given certain constraints
      * @param align_of The alignment of the memory being allocated
@@ -178,4 +178,4 @@ namespace Screwjank {
         return std::make_shared<T>(std::forward<Args>(args)...);
     }
 
-} // namespace Screwjank
+} // namespace sj

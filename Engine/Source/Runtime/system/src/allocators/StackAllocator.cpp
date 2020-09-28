@@ -8,7 +8,7 @@
 #include "system/allocators/StackAllocator.hpp"
 #include "system/Memory.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     StackAllocator::StackAllocator(size_t buffer_size, Allocator* backing_allocator)
         : m_BackingAllocator(backing_allocator), m_CurrentHeader(nullptr), m_Offset(nullptr),
@@ -105,4 +105,4 @@ namespace Screwjank {
         return;
     }
 
-} // namespace Screwjank
+} // namespace sj

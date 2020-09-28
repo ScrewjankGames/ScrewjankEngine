@@ -5,7 +5,7 @@
 
 // Screwjank Headers
 
-namespace Screwjank {
+namespace sj {
 
     struct Event
     {
@@ -18,4 +18,4 @@ namespace Screwjank {
         Event();
     };
 
-} // namespace Screwjank
+} // namespace sj

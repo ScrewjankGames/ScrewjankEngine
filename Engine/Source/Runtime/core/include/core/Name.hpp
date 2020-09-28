@@ -8,7 +8,7 @@
 
 // Void Engine Headers
 
-namespace Screwjank {
+namespace sj {
     constexpr uint32_t FNV1aSeed = 0x811c9dc5;
 
     /**
@@ -119,15 +119,15 @@ namespace Screwjank {
     {
         return ID <=> other.ID;
     }
-} // namespace Screwjank
+} // namespace sj
 
-// Make Screwjank::Name usable as a key in hashed containers
+// Make sj::Name usable as a key in hashed containers
 namespace std {
     template <>
-    struct hash<Screwjank::Name>
+    struct hash<sj::Name>
     { // Class to define hash function for Keyboard Input
         // Hash functor
-        std::size_t operator()(const Screwjank::Name& t) const
+        std::size_t operator()(const sj::Name& t) const
         {
             return t.ID;
         }

@@ -7,7 +7,7 @@
 // Void Engine Headers
 #include "containers/ForwardList.hpp"
 
-using namespace Screwjank;
+using namespace sj;
 
 namespace container_tests {
 

@@ -9,7 +9,7 @@
 // Screwjank Headers
 #include "core/Name.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     class Logger
     {
@@ -68,11 +68,11 @@ namespace Screwjank {
     {
         spdlog::critical(format, args...);
     }
-} // namespace Screwjank
+} // namespace sj
 
 #ifdef NDEBUG
     #define SJ_ENGINE_LOG_TRACE(...)
-    #define SJ_ENGINE_LOG_INFO(format, ...) Screwjank::Logger::GetEngineLogger()
+    #define SJ_ENGINE_LOG_INFO(format, ...) sj::Logger::GetEngineLogger()
     #define SJ_ENGINE_LOG_WARN(...)
     #define SJ_ENGINE_LOG_ERROR(...)
 
@@ -82,15 +82,15 @@ namespace Screwjank {
     #define SJ_LOG_ERROR(...)
 #else
     #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
-        Screwjank::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_INFO(format, ...)                                                        \
-        Screwjank::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_WARN(format, ...)                                                        \
-        Screwjank::Logger::GetEngineLogger()->LogWarn(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogWarn(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_ERROR(format, ...)                                                       \
-        Screwjank::Logger::GetEngineLogger()->LogError(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogError(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
-        Screwjank::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
 
     #define SJ_LOG_TRACE(...)
     #define SJ_LOG_INFO(...)

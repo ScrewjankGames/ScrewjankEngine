@@ -9,7 +9,7 @@
 #include "core/MemorySystem.hpp"
 #include "utils/Concepts.hpp"
 
-namespace Screwjank {
+namespace sj {
 
     template <class T, size_t N>
     class Array
@@ -223,4 +223,4 @@ namespace Screwjank {
         return std::end(m_Array);
     }
 
-} // namespace Screwjank
+} // namespace sj

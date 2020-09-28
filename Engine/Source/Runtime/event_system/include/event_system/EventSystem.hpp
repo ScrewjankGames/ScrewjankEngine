@@ -5,7 +5,7 @@
 
 // Screwjank Headers
 
-namespace Screwjank {
+namespace sj {
     class EventSystem
     {
       public:
@@ -19,4 +19,4 @@ namespace Screwjank {
          */
         ~EventSystem() = default;
     };
-} // namespace Screwjank
+} // namespace sj

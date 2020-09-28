@@ -6,7 +6,7 @@
 #include "core/Assert.hpp"
 #include "system/allocators/ProxyAllocator.hpp"
 
-namespace Screwjank {
+namespace sj {
     ProxyAllocator::ProxyAllocator(Allocator* backing_allocator, const char* debug_name)
         : m_BackingAllocator(backing_allocator), m_Name(debug_name)
     {
@@ -33,4 +33,4 @@ namespace Screwjank {
         m_AllocatorStats.ActiveAllocationCount--;
         m_BackingAllocator->Free(memory);
     }
-} // namespace Screwjank
+} // namespace sj

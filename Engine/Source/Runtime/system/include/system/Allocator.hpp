@@ -5,7 +5,7 @@
 
 // Engine Headers
 
-namespace Screwjank {
+namespace sj {
 
     /**
      * Concept for template deduction required when supplying allocators to containers
@@ -91,4 +91,4 @@ namespace Screwjank {
         return Allocate(sizeof(T), alignof(T));
     }
 
-} // namespace Screwjank
+} // namespace sj
