@@ -28,8 +28,7 @@ namespace Screwjank {
         m_MemorySystem->Initialize();
         SJ_ENGINE_LOG_INFO("Memory System Initialized");
 
-        // m_EventSystem = New<EventSystem>();
-
+        m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
         SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
 
         Run();

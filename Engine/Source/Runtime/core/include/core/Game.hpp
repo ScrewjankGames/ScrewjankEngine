@@ -37,11 +37,11 @@ namespace Screwjank {
         void Run();
 
       private:
+        /** Engine's event system */
+        UniquePtr<EventSystem> m_EventSystem;
+
         /** Engine's memory system */
         MemorySystem* m_MemorySystem;
-
-        /** Engine's event system */
-        EventSystem* m_EventSystem;
 
         /** Current frame time */
         float m_DeltaTime;

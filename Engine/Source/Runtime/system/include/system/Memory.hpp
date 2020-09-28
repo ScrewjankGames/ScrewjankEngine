@@ -60,19 +60,19 @@ namespace Screwjank {
      * @param allocator The allocator to use
      * @param args Arguments to forward to T's constructor
      */
-    template <class T, AllocatorConcept AllocatorType, class... Args>
-    T* New(AllocatorType& allocator, Args&&... args)
+    template <class T, AllocatorConcept Alloc_t, class... Args>
+    T* New(Alloc_t& allocator, Args&&... args)
     {
         return new (allocator.AllocateType<T>()) T(std::forward<Args>(args)...);
     }
 
     /**
      * Global utility function to allocate and construct and object
-     * @param allocator The allocator to use
+     * @param allocator Pointer to the allocator to use
      * @param args Arguments to forward to T's constructor
      */
-    template <class T, AllocatorPtrConcept AllocatorType, class... Args>
-    T* New(AllocatorType& allocator, Args&&... args)
+    template <class T, AllocatorPtrConcept Alloc_t, class... Args>
+    T* New(Alloc_t& allocator, Args&&... args)
     {
         SJ_ASSERT(allocator != nullptr, "Allocator is invalid.");
         return new (allocator->AllocateType<T>()) T(std::forward<Args>(args)...);
@@ -83,8 +83,8 @@ namespace Screwjank {
      * @param allocator Pointer to the allocator to use
      * @param memory The memory address to free
      */
-    template <class T, class... Args>
-    void Delete(Allocator* allocator, T*& memory)
+    template <class T, AllocatorPtrConcept Alloc_t, class... Args>
+    void Delete(Alloc_t allocator, T*& memory)
     {
         // Call object destructor
         memory->~T();
@@ -101,8 +101,8 @@ namespace Screwjank {
      * @param allocator Pointer to the allocator to use
      * @param memory The memory address to free
      */
-    template <class T, class... Args>
-    void Delete(Allocator& allocator, T*& memory)
+    template <class T, AllocatorConcept Alloc_t, class... Args>
+    void Delete(Alloc_t& allocator, T*& memory)
     {
         // Call object destructor
         memory->~T();
@@ -130,12 +130,42 @@ namespace Screwjank {
 
     // Placeholder UniquePtr alias
     template <typename T>
-    using UniquePtr = std::unique_ptr<T>;
+    using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
+
+    template <typename T, AllocatorConcept Alloc_t, typename... Args>
+    constexpr UniquePtr<T> MakeUnique(Alloc_t& allocator, Args&&... args)
+    {
+        // Allocate the memory using the desired allocator
+        auto memory = New<T>(allocator, std::forward<Args>(args)...);
+
+        //  Pass ownership of memory to the unique_ptr
+        //  Supply a custom deletion function that uses the correct allocator
+        return std::unique_ptr<T, std::function<void(T*)>>(memory, [&allocator](T* mem) {
+            allocator.Free(mem);
+        });
+    }
+
+    template <typename T, AllocatorPtrConcept Alloc_t, typename... Args>
+    constexpr UniquePtr<T> MakeUnique(Alloc_t allocator, Args&&... args)
+    {
+        // Allocate the memory using the desired allocator
+        auto memory = New<T>(allocator, std::forward<Args>(args)...);
+
+        //  Pass ownership of memory to the unique_ptr
+        //  Supply a custom deletion function that uses the correct allocator
+        return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
+            SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
+            allocator->Free(mem);
+        });
+    }
 
     template <typename T, typename... Args>
     constexpr UniquePtr<T> MakeUnique(Args&&... args)
     {
-        return std::make_unique<T>(std::forward<Args>(args)...);
+        // Leverages global new and delete
+        return std::unique_ptr<T>(std::forward<Args>(args)..., [](T* mem) {
+            delete mem
+        });
     }
 
     // Placeholder SharedPtr alias
