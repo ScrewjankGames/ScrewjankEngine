@@ -181,6 +181,7 @@ namespace sj {
 
         /**
          * Default Constructor
+         *
          */
         Vector(Allocator* allocator = MemorySystem::GetDefaultAllocator(),
                size_t capacity_hint = 0);
@@ -188,13 +189,37 @@ namespace sj {
         /**
          * List initialization Constructor
          */
-        Vector(std::initializer_list<T> list,
-               Allocator* allocator = MemorySystem::GetDefaultAllocator());
+        Vector(Allocator* allocator, std::initializer_list<T> list);
+
+        /**
+         * Copy Constructor
+         */
+        Vector(const Vector<T>& other);
+
+        /**
+         * Move Constructor
+         */
+        Vector(Vector<T>&& other) noexcept;
 
         /**
          * Destructor
          */
         ~Vector();
+
+        /**
+         * Copy assignment from initializer list
+         */
+        Vector<T>& operator=(const Vector<T>& other);
+
+        /**
+         * Copy assignment from other vector
+         */
+        Vector<T>& operator=(Vector<T>&& other);
+
+        /**
+         * Move assignment from initializer list
+         */
+        Vector<T>& operator=(std::initializer_list<T>&& list);
 
         /** Array Index Operator */
         T& operator[](const size_t index);
@@ -268,6 +293,12 @@ namespace sj {
         void Insert(const size_t index, const Vector& other);
 
         /**
+         * Grows vector to requrested new_capacity and copies any current data over
+         * @param new_capacity The new size of the vector
+         */
+        void Resize(size_t new_capacity);
+
+        /**
          * @return The number of elements actively stored in the array
          */
         size_t Size() const;
@@ -276,6 +307,11 @@ namespace sj {
          * @return The number of elements the vector can currently contain
          */
         size_t Capacity() const;
+
+        /**
+         * Clear the contents of this vector
+         */
+        void Clear();
 
       private:
         /** Current size of the dynamic array */
@@ -289,9 +325,6 @@ namespace sj {
 
         /** Pointer to the data buffer */
         T* m_Data;
-
-        /** Doubles the size of the data buffer, and copies the old data over */
-        void GrowVector();
 
       public:
         /**
@@ -325,18 +358,121 @@ namespace sj {
     }
 
     template <class T>
-    inline Vector<T>::Vector(std::initializer_list<T> list, Allocator* allocator)
+    inline Vector<T>::Vector(Allocator* allocator, std::initializer_list<T> list)
         : Vector(allocator, list.size())
     {
-        std::copy(list.begin(), list.end(), m_Data);
+        size_t i = 0;
+        for (auto& element : list) {
+            new (&m_Data[i]) T(std::move(element));
+            i++;
+        }
+
         m_Size = list.size();
+    }
+
+    template <class T>
+    inline Vector<T>::Vector(const Vector<T>& other)
+    {
+        m_Allocator = other.m_Allocator;
+        m_Data = nullptr;
+        m_Size = 0;
+        Resize(other.m_Capacity);
+
+        size_t i = 0;
+        for (auto& elem : other) {
+            new (&m_Data[i]) T(elem);
+            i++;
+        }
+
+        m_Size = other.Size();
+    }
+
+    template <class T>
+    inline Vector<T>::Vector(Vector<T>&& other) noexcept
+    {
+        m_Allocator = other.m_Allocator;
+        m_Data = other.m_Data;
+        m_Size = other.m_Size;
+        m_Capacity = other.m_Capacity;
+
+        // The "other" vector was trashed by the move operations. Reduce it to an empty state
+        other.m_Data = nullptr;
+        other.m_Size = 0;
+        other.m_Capacity = 0;
     }
 
     template <class T>
     inline Vector<T>::~Vector()
     {
+        // Call the destructor of each contained object
+        Clear();
+
         // Please don't leak memory
-        m_Allocator->Free(m_Data);
+        if (m_Data != nullptr) {
+            m_Allocator->Free(m_Data);
+        }
+    }
+
+    template <class T>
+    inline Vector<T>& Vector<T>::operator=(const Vector<T>& other)
+    {
+        Clear();
+
+        if (other.Size() > m_Capacity) {
+            Resize(other.Size());
+        }
+
+        size_t i = 0;
+        for (auto& element : other) {
+            new (&m_Data[i]) T(element);
+            i++;
+        }
+
+        m_Size = other.Size();
+
+        return *this;
+    }
+
+    template <class T>
+    inline Vector<T>& Vector<T>::operator=(Vector<T>&& other)
+    {
+        Clear();
+
+        if (other.Size() > m_Capacity) {
+            Resize(other.Size());
+        }
+
+        size_t i = 0;
+        for (auto& element : other) {
+            new (&m_Data[i]) T(std::move(element));
+            i++;
+        }
+
+        m_Size = other.Size();
+
+        return *this;
+    }
+
+    template <class T>
+    inline Vector<T>& Vector<T>::operator=(std::initializer_list<T>&& list)
+    {
+        // Destroy all the elements currently in the list
+        Clear();
+
+        // Ensure the vector is large enough to fit the new list
+        if (list.size() > m_Capacity) {
+            Resize(list.size());
+        }
+
+        size_t i = 0;
+        for (auto& element : list) {
+            new (&m_Data[i]) T(std::move(element));
+            i++;
+        }
+
+        m_Size = list.size();
+
+        return *this;
     }
 
     template <class T>
@@ -401,7 +537,9 @@ namespace sj {
     inline void Vector<T>::PushBack(const T& value)
     {
         if (m_Size >= m_Capacity) {
-            GrowVector();
+            // Array needs to grow
+            size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
+            Resize(new_capacity);
         }
 
         // Copy element into array
@@ -600,23 +738,12 @@ namespace sj {
     }
 
     template <class T>
-    inline size_t Vector<T>::Size() const
-    {
-        return m_Size;
-    }
-
-    template <class T>
-    inline size_t Vector<T>::Capacity() const
-    {
-        return m_Capacity;
-    }
-
-    template <class T>
     template <class... Args>
     inline T& Vector<T>::EmplaceBack(Args&&... args)
     {
         if (m_Size >= m_Capacity) {
-            GrowVector();
+            size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
+            Resize(new_capacity);
         }
 
         // Construct element in allocated space
@@ -630,29 +757,65 @@ namespace sj {
     }
 
     template <class T>
-    inline void Vector<T>::GrowVector()
+    inline void Vector<T>::Resize(size_t new_capacity)
     {
-        // Array needs to grow
-        size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
+        if (new_capacity == m_Capacity) {
+            return;
+        }
+
+        // Determine how many elements will be in the new vector
+        size_t new_size = std::min(m_Size, new_capacity);
+
+        if (new_size < m_Size) {
+            // If the vector is shrinking, destroy the elements that aren't getting copied
+            for (size_t i = new_size; i < m_Size; i++) {
+                m_Data[i].~T();
+            }
+        }
 
         // Allocate a new buffer
         T* new_buffer = (T*)(m_Allocator->Allocate(sizeof(T) * new_capacity, alignof(T)));
 
         // Move old buffer into new buffer
-        for (size_t i = 0; i < m_Capacity; ++i) {
+        for (size_t i = 0; i < new_size; i++) {
             new (&new_buffer[i]) T(std::move(m_Data[i]));
-        }
-
-        // Release old buffer
-        if (m_Data != nullptr) {
-            m_Allocator->Free(m_Data);
         }
 
         // Update capacity variable
         m_Capacity = new_capacity;
 
-        // Allocate new buffer
+        // Update size of vector
+        m_Size = new_size;
+
+        // Swap buffer pointers
+
+        if (m_Data != nullptr) {
+            m_Allocator->Free(m_Data);
+        }
+
         m_Data = new_buffer;
+    }
+
+    template <class T>
+    inline size_t Vector<T>::Size() const
+    {
+        return m_Size;
+    }
+
+    template <class T>
+    inline size_t Vector<T>::Capacity() const
+    {
+        return m_Capacity;
+    }
+
+    template <class T>
+    inline void Vector<T>::Clear()
+    {
+        for (auto& element : *this) {
+            element.~T();
+        }
+
+        m_Size = 0;
     }
 
     template <class T>
