@@ -19,7 +19,7 @@ namespace sj {
 
         // Node type definitions
         using node_type = typename const ForwardList_t::node_type;
-        using node_pointer = typename const ForwardList_t::node_pointer;
+        using node_pointer = typename const ForwardList_t::node_type*;
         using node_reference = const node_type&;
 
         // Value type definitions
@@ -66,7 +66,7 @@ namespace sj {
         /** Post-increment operator overload */
         ForwardListConstIterator operator++(int)
         {
-            ForwardListIterator tmp(*this);
+            ForwardListConstIterator tmp(*this);
             this->operator++();
             return tmp;
         }
@@ -178,18 +178,54 @@ namespace sj {
         using iterator = typename ForwardListIterator<ForwardList<T>>;
         using const_iterator = typename ForwardListConstIterator<ForwardList<T>>;
 
-        /** Constructor */
+        /**
+         * Constructor
+         */
         ForwardList(Allocator* allocator = MemorySystem::GetDefaultAllocator());
 
-        /** Destructor */
+        /**
+         * Initializer List Construction
+         */
+        ForwardList(Allocator* allocator, std::initializer_list<T> list);
+
+        /**
+         * Copy Constructor
+         */
+        ForwardList(const ForwardList<T>& other);
+
+        /**
+         * Move Constructor
+         */
+        ForwardList(ForwardList<T>&& other) noexcept;
+
+        /**
+         * Destructor
+         */
         ~ForwardList();
 
-        /** Place a new element at the head of the list */
+        /**
+         * List assignment operator
+         */
+        ForwardList<T>& operator=(std::initializer_list<T> list);
+
+        /**
+         * Copy assignment operator
+         */
+        ForwardList<T>& operator=(const ForwardList<T>& other);
+
+        /**
+         * Move assignment operator
+         */
+        ForwardList<T>& operator=(ForwardList<T>&& other);
+
+        /*
+         * Place a new element at the head of the list
+         */
         void PushFront(const T& value);
 
         /**
          * Removes element at the front of the list
-         * @note Element's destructor is not called if this is a list with a pointer data type
+         * @note Element's real destructor is not called if this is a list with a pointer data type
          */
         void PopFront();
 
@@ -204,32 +240,13 @@ namespace sj {
          * Inserts a value into the linked list after the given position (pos->Next = value)
          * @return Iterator to the newly inserted value
          */
-        iterator InsertAfter(const_iterator pos, const T& value);
-
-        /**
-         * Inserts a value into the linked list after the given position (pos->Next = value)
-         * @return Iterator to the newly inserted value
-         */
         iterator InsertAfter(iterator pos, const T& value);
 
         /**
          * Constructs and inserts a value into the linked list after the given position
          */
         template <class... Args>
-        iterator EmplaceAfter(const_iterator pos, Args&&... args);
-
-        /**
-         * Constructs and inserts a value into the linked list after the given position
-         */
-        template <class... Args>
         iterator EmplaceAfter(iterator pos, Args&&... args);
-
-        /**
-         * Erases the element after pos
-         * @return Iterator to the element following the erased one, or end() if no such element
-         * exists.
-         */
-        iterator EraseAfter(const_iterator pos);
 
         /**
          * Erases the element after pos
@@ -244,7 +261,13 @@ namespace sj {
         void Clear();
 
         /**
-         * Access the front of the linked-list
+         * Read-only access the front of the linked-list
+         * @return A reference to the first data value in the list
+         */
+        const T& Front() const;
+
+        /**
+         * Non-const access the front of the linked-list
          * @return A reference to the first data value in the list
          */
         T& Front();
@@ -260,8 +283,20 @@ namespace sj {
         /** Begin function to allow range-based loop iterator */
         iterator begin();
 
+        /** Begin function to allow range-based loop iterator */
+        const_iterator begin() const;
+
+        /** Begin function to allow range-based loop iterator */
+        const_iterator cbegin() const;
+
         /** End function to allow range-based loop iteration */
         iterator end();
+
+        /** End function to allow range-based loop iteration */
+        const_iterator end() const;
+
+        /** Begin function to allow range-based loop iterator */
+        const_iterator cend() const;
     };
 
     template <class T>
@@ -271,9 +306,93 @@ namespace sj {
     }
 
     template <class T>
+    inline ForwardList<T>::ForwardList(Allocator* allocator, std::initializer_list<T> list)
+        : ForwardList<T>(allocator)
+    {
+        for (auto it = list.end() - 1; it >= list.begin(); it--) {
+            PushFront(*it);
+        }
+    }
+
+    template <class T>
+    inline ForwardList<T>::ForwardList(const ForwardList<T>& other)
+    {
+        m_Allocator = other.m_Allocator;
+        m_Head = nullptr;
+
+        PushFront(other.Front());
+
+        auto it = begin();
+        auto other_it = other.cbegin();
+        other_it++;
+
+        for (; other_it != other.cend(); other_it++, it++) {
+            InsertAfter(it, *other_it);
+        }
+    }
+
+    template <class T>
+    inline ForwardList<T>::ForwardList(ForwardList<T>&& other) noexcept
+    {
+        m_Allocator = other.m_Allocator;
+
+        // Take ownership of the other list's head element
+        m_Head = other.m_Head;
+        other.m_Head = nullptr;
+    }
+
+    template <class T>
     inline ForwardList<T>::~ForwardList()
     {
         Clear();
+    }
+
+    template <class T>
+    inline ForwardList<T>& ForwardList<T>::operator=(std::initializer_list<T> list)
+    {
+        Clear();
+
+        for (auto it = list.end() - 1; it >= list.begin(); it--) {
+            PushFront(*it);
+        }
+
+        return *this;
+    }
+
+    template <class T>
+    inline ForwardList<T>& ForwardList<T>::operator=(const ForwardList<T>& other)
+    {
+        Clear();
+
+        PushFront(other.Front());
+
+        auto it = begin();
+        auto other_it = other.cbegin();
+        other_it++;
+
+        for (; other_it != other.cend(); other_it++, it++) {
+            InsertAfter(it, *other_it);
+        }
+
+        return *this;
+    }
+
+    template <class T>
+    inline ForwardList<T>& ForwardList<T>::operator=(ForwardList<T>&& other)
+    {
+        Clear();
+
+        PushFront(other.Front());
+
+        auto it = begin();
+        auto other_it = other.begin();
+        other_it++;
+
+        for (; other_it != other.cend(); other_it++, it++) {
+            InsertAfter(it, std::move(*other_it));
+        }
+
+        return *this;
     }
 
     template <class T>
@@ -302,7 +421,7 @@ namespace sj {
     }
 
     template <class T>
-    inline typename ForwardList<T>::iterator ForwardList<T>::InsertAfter(const_iterator pos,
+    inline typename ForwardList<T>::iterator ForwardList<T>::InsertAfter(iterator pos,
                                                                          const T& value)
     {
         auto new_node = New<ForwardList<T>::node_type>(m_Allocator, value, pos.m_Node->Next);
@@ -313,15 +432,8 @@ namespace sj {
     }
 
     template <class T>
-    inline typename ForwardList<T>::iterator ForwardList<T>::InsertAfter(iterator pos,
-                                                                         const T& value)
-    {
-        return InsertAfter(const_iterator(pos.m_Node), value);
-    }
-
-    template <class T>
     template <class... Args>
-    inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(const_iterator pos,
+    inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(iterator pos,
                                                                           Args&&... args)
     {
         auto new_node = New<ForwardList<T>::node_type>(m_Allocator,
@@ -332,15 +444,7 @@ namespace sj {
     }
 
     template <class T>
-    template <class... Args>
-    inline typename ForwardList<T>::iterator ForwardList<T>::EmplaceAfter(iterator pos,
-                                                                          Args&&... args)
-    {
-        return EmplaceAfter(const_iterator(pos.m_Node), std::forward<Args>(args)...);
-    }
-
-    template <class T>
-    inline typename ForwardList<T>::iterator ForwardList<T>::EraseAfter(const_iterator pos)
+    inline typename ForwardList<T>::iterator ForwardList<T>::EraseAfter(iterator pos)
     {
         SJ_ASSERT(pos.m_Node->Next != nullptr, "Cannot erase after last element of list");
 
@@ -349,12 +453,6 @@ namespace sj {
 
         Delete(m_Allocator, dead_node);
         return iterator(pos.m_Node->Next);
-    }
-
-    template <class T>
-    inline typename ForwardList<T>::iterator ForwardList<T>::EraseAfter(iterator pos)
-    {
-        return EraseAfter(const_iterator(pos.m_Node));
     }
 
     template <class T>
@@ -376,6 +474,14 @@ namespace sj {
     }
 
     template <class T>
+    inline const T& ForwardList<T>::Front() const
+    {
+        SJ_ASSERT(m_Head != nullptr, "Cannot call Front() on empty list");
+
+        return m_Head->Data;
+    }
+
+    template <class T>
     inline T& ForwardList<T>::Front()
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot call Front() on empty list");
@@ -390,9 +496,33 @@ namespace sj {
     }
 
     template <class T>
+    inline typename ForwardList<T>::const_iterator ForwardList<T>::begin() const
+    {
+        return const_iterator(m_Head);
+    }
+
+    template <class T>
+    inline typename ForwardList<T>::const_iterator ForwardList<T>::cbegin() const
+    {
+        return const_iterator(m_Head);
+    }
+
+    template <class T>
     inline typename ForwardList<T>::iterator ForwardList<T>::end()
     {
         return iterator(nullptr);
+    }
+
+    template <class T>
+    inline typename ForwardList<T>::const_iterator ForwardList<T>::end() const
+    {
+        return const_iterator(nullptr);
+    }
+
+    template <class T>
+    inline typename ForwardList<T>::const_iterator ForwardList<T>::cend() const
+    {
+        return const_iterator(nullptr);
     }
 
 } // namespace sj

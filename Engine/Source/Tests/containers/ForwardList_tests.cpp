@@ -20,7 +20,141 @@ namespace container_tests {
         int Value;
     };
 
-    TEST(ForwardListsTests, PushPopFrontTest)
+    TEST(ForwardListTests, InitializerListConstructionTest)
+    {
+        ForwardList<std::string> list(MemorySystem::GetUnmanagedAllocator(),
+                                      {"Foo", "Bar", "Biz", "Baz"});
+
+        ASSERT_EQ("Foo", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Bar", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Biz", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Baz", list.Front());
+    }
+
+    TEST(ForwardListTests, InitializerListAssignmentTest)
+    {
+        ForwardList<std::string> list(MemorySystem::GetUnmanagedAllocator());
+        list = {"Foo", "Bar", "Biz", "Baz"};
+
+        ASSERT_EQ("Foo", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Bar", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Biz", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Baz", list.Front());
+    }
+
+    TEST(ForwardListTests, CopyConstructionTest)
+    {
+        ForwardList<std::string> list1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        ForwardList<std::string> list2(list1);
+
+        ASSERT_EQ("Foo", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Bar", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Biz", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Baz", list2.Front());
+
+        // Make sure the copy was a deep copy
+        ASSERT_EQ("Foo", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Bar", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Biz", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Baz", list1.Front());
+    }
+
+    TEST(ForwardListTests, CopyAssignmentTest)
+    {
+        ForwardList<std::string> list1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        ForwardList<std::string> list2(MemorySystem::GetUnmanagedAllocator());
+        list2 = list1;
+
+        ASSERT_EQ("Foo", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Bar", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Biz", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Baz", list2.Front());
+
+        // Make sure the copy was a deep copy
+        ASSERT_EQ("Foo", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Bar", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Biz", list1.Front());
+        list1.PopFront();
+
+        ASSERT_EQ("Baz", list1.Front());
+    }
+
+    TEST(ForwardListTests, MoveConstructionTest)
+    {
+        ForwardList<std::string> list1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        ForwardList<std::string> list2(std::move(list1));
+
+        ASSERT_EQ("Foo", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Bar", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Biz", list2.Front());
+        list2.PopFront();
+
+        ASSERT_EQ("Baz", list2.Front());
+    }
+
+    TEST(ForwardListTests, MoveAssignmentTest)
+    {
+        ForwardList<std::string> list =
+            ForwardList<std::string>(MemorySystem::GetUnmanagedAllocator(),
+                                     {"Foo", "Bar", "Biz", "Baz"});
+
+        ASSERT_EQ("Foo", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Bar", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Biz", list.Front());
+        list.PopFront();
+
+        ASSERT_EQ("Baz", list.Front());
+    }
+
+    TEST(ForwardListTests, PushPopFrontTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
 
@@ -46,7 +180,7 @@ namespace container_tests {
 #endif // SJ_DEBUG
     }
 
-    TEST(ForwardListsTests, EmplaceFrontTest)
+    TEST(ForwardListTests, EmplaceFrontTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(ListDummy {1});
@@ -56,7 +190,7 @@ namespace container_tests {
         ASSERT_EQ(2, list.Front().Value);
     }
 
-    TEST(ForwardListsTests, InsertAfterTest)
+    TEST(ForwardListTests, InsertAfterTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(1);
@@ -68,7 +202,7 @@ namespace container_tests {
         ASSERT_EQ(2, it->Value);
     }
 
-    TEST(ForwardListsTests, EmplaceAfterTest)
+    TEST(ForwardListTests, EmplaceAfterTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.EmplaceFront(1);
@@ -80,7 +214,7 @@ namespace container_tests {
         ASSERT_EQ(2, it->Value);
     }
 
-    TEST(ForwardListsTests, EraseAfterTest)
+    TEST(ForwardListTests, EraseAfterTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
         list.PushFront(ListDummy {4});
@@ -104,7 +238,7 @@ namespace container_tests {
         ASSERT_EQ(4, i);
     }
 
-    TEST(ForwardListsTests, DestructionLeakTest)
+    TEST(ForwardListTests, DestructionLeakTest)
     {
         auto list = new ForwardList<ListDummy>(MemorySystem::GetUnmanagedAllocator());
         list->PushFront(ListDummy {1});
@@ -119,7 +253,7 @@ namespace container_tests {
         // Memory allocator will assert if there was a memory leak
     }
 
-    TEST(ForwardListsTests, IterationTest)
+    TEST(ForwardListTests, IterationTest)
     {
         ForwardList<ListDummy> list(MemorySystem::GetUnmanagedAllocator());
 

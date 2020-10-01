@@ -49,17 +49,44 @@ namespace container_tests {
         ASSERT_EQ(5, i);
     }
 
-    TEST(ArrayTests, AssignmentOperatorTest)
+    TEST(ArrayTests, CopyConstructionTest)
     {
-        Array<int, 3> arr = {1, 2, 3};
-        Array<int, 3> arr2 = {4, 5, 6};
+        Array<int, 3> arr({1, 2, 3});
+        Array<int, 3> arr2(arr);
 
-        arr = arr2;
-        ASSERT_EQ(4, arr[0]);
+        for (size_t i = 0; i < arr.Size(); i++) {
+            ASSERT_EQ(i + 1, arr[i]);
+            ASSERT_EQ(i + 1, arr2[i]);
+        }
+    }
 
-        // Ensure copy is a deep copy
-        arr[0] = 5;
-        ASSERT_EQ(4, arr2[0]);
+    TEST(ArrayTests, CopyAssignmentOperatorTest)
+    {
+        Array<int, 3> arr({1, 2, 3});
+        Array<int, 3> arr2 = arr;
+
+        for (size_t i = 0; i < arr.Size(); i++) {
+            ASSERT_EQ(i + 1, arr[i]);
+            ASSERT_EQ(i + 1, arr2[i]);
+        }
+    }
+
+    TEST(ArrayTests, MoveConstructionTest)
+    {
+        Array<int, 3> arr(Array<int, 3>({1, 2, 3}));
+
+        for (size_t i = 0; i < arr.Size(); i++) {
+            ASSERT_EQ(i + 1, arr[i]);
+        }
+    }
+
+    TEST(ArrayTests, MoveAssignmentOperatorTest)
+    {
+        Array<int, 3> arr = Array<int, 3>({1, 2, 3});
+
+        for (size_t i = 0; i < arr.Size(); i++) {
+            ASSERT_EQ(i + 1, arr[i]);
+        }
     }
 
     TEST(ArrayTests, EqualityComparisonTest)

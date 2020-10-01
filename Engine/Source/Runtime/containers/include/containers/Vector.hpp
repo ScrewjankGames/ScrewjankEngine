@@ -363,7 +363,7 @@ namespace sj {
     {
         size_t i = 0;
         for (auto& element : list) {
-            new (&m_Data[i]) T(std::move(element));
+            new (&m_Data[i]) T(element);
             i++;
         }
 
