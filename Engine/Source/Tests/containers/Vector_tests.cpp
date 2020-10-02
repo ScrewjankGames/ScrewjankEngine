@@ -243,8 +243,17 @@ namespace container_tests {
         ASSERT_EQ(5, vec[3]);
 
         // Erase 3
+        Vector<int>::iterator middle(&vec[1]);
+        middle = vec.Erase(middle);
+        ASSERT_EQ(3, vec.Size());
+        ASSERT_EQ(4, *middle);
 
         // Iterate
+        size_t sum = 0;
+        for (auto& element : vec) {
+            sum += element;
+        }
+        ASSERT_EQ(11, sum);
     }
 
     TEST(VectorTests, EmplaceTest)

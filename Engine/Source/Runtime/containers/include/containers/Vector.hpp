@@ -71,17 +71,15 @@ namespace sj {
         auto operator<=>(const VectorIterator_t& other) const = default;
 
         /** Addition operator overload */
-        VectorIterator_t& operator+(size_t num)
+        VectorIterator_t operator+(size_t num) const
         {
-            m_CurrElement = m_CurrElement + num;
-            return *this;
+            return VectorIterator_t(m_CurrElement + num);
         }
 
         /** Addition operator overload */
-        VectorIterator_t& operator-(size_t num)
+        VectorIterator_t& operator-(size_t num) const
         {
-            m_CurrElement = m_CurrElement - num;
-            return *this;
+            return VectorIterator_t(m_CurrElement - num);
         }
 
         /** Pre-increment operator overload */
@@ -742,7 +740,21 @@ namespace sj {
     template <class T>
     inline typename Vector<T>::iterator Vector<T>::Erase(iterator pos)
     {
-        return iterator(nullptr);
+        // Destroy contained element
+        auto element = *pos;
+        element.~T();
+
+        // Move everything one to the left
+        void* dest = &(*pos);
+        void* first = &(*(pos + 1));
+        void* last = &(*end());
+        auto count = uintptr_t(last) - uintptr_t(first);
+
+        std::memmove(dest, first, count);
+
+        // Reduce size
+        m_Size--;
+        return iterator(pos);
     }
 
     template <class T>
