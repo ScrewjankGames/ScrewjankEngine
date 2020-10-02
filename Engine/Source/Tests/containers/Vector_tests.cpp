@@ -225,6 +225,28 @@ namespace container_tests {
         ASSERT_EQ(vec1.Capacity(), 12);
     }
 
+    TEST(VectorTests, VectorEraseElementTest)
+    {
+        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
+        vec = {1, 2, 3, 4, 5, 6};
+
+        // Erase 1
+        auto it = vec.Erase(vec.begin());
+        ASSERT_EQ(5, vec.Size());
+        ASSERT_EQ(2, vec[0]);
+        ASSERT_EQ(vec[0], *it);
+
+        // Erase 6
+        auto end_it = vec.end() - 1;
+        end_it = vec.Erase(end_it);
+        ASSERT_EQ(vec.end(), end_it);
+        ASSERT_EQ(5, vec[3]);
+
+        // Erase 3
+
+        // Iterate
+    }
+
     TEST(VectorTests, EmplaceTest)
     {
         Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());

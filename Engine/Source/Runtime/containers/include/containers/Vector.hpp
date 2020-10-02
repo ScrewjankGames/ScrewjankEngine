@@ -178,19 +178,19 @@ namespace sj {
         ~Vector();
 
         /**
-         * Copy assignment from initializer list
+         * Copy assignment from other vector
          */
         Vector<T>& operator=(const Vector<T>& other);
 
         /**
-         * Copy assignment from other vector
+         * Move assignment from other vector
          */
         Vector<T>& operator=(Vector<T>&& other);
 
         /**
-         * Move assignment from initializer list
+         * Assignment from initializer list
          */
-        Vector<T>& operator=(std::initializer_list<T>&& list);
+        Vector<T>& operator=(std::initializer_list<T> list);
 
         /** Array Index Operator */
         T& operator[](const size_t index);
@@ -253,15 +253,22 @@ namespace sj {
         iterator Insert(const size_t index, const T& value);
 
         /**
+         * Copies an entire other vector into this vector, starting at provided index
+         */
+        void Insert(const size_t index, const Vector& other);
+
+        /**
          * Removes and destructs element at the back of the array
          */
         template <class... Args>
         void Emplace(const size_t index, Args&&... args);
 
         /**
-         * Copies an entire other vector into this vector, starting at provided index
+         * Removes an element from the vector
+         * @param pos An iterator to the elment to be erased
+         * @return An iterator to the next element after pos
          */
-        void Insert(const size_t index, const Vector& other);
+        iterator Erase(iterator pos);
 
         /**
          * Grows vector to requrested new_capacity and copies any current data over
@@ -425,7 +432,7 @@ namespace sj {
     }
 
     template <class T>
-    inline Vector<T>& Vector<T>::operator=(std::initializer_list<T>&& list)
+    inline Vector<T>& Vector<T>::operator=(std::initializer_list<T> list)
     {
         // Destroy all the elements currently in the list
         Clear();
@@ -437,7 +444,7 @@ namespace sj {
 
         size_t i = 0;
         for (auto& element : list) {
-            new (&m_Data[i]) T(std::move(element));
+            new (&m_Data[i]) T(element);
             i++;
         }
 
@@ -730,6 +737,12 @@ namespace sj {
         ++m_Size;
 
         return *element;
+    }
+
+    template <class T>
+    inline typename Vector<T>::iterator Vector<T>::Erase(iterator pos)
+    {
+        return iterator(nullptr);
     }
 
     template <class T>
