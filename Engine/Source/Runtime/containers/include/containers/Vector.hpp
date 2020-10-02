@@ -250,7 +250,7 @@ namespace sj {
         /**
          * Removes and destructs element at the back of the array
          */
-        void Insert(const size_t index, const T& value);
+        iterator Insert(const size_t index, const T& value);
 
         /**
          * Removes and destructs element at the back of the array
@@ -539,15 +539,17 @@ namespace sj {
     }
 
     template <class T>
-    inline void Vector<T>::Insert(const size_t index, const T& value)
+    inline typename Vector<T>::iterator Vector<T>::Insert(const size_t index, const T& value)
     {
         SJ_ASSERT(index >= 0 && index <= m_Size, "Insertion index is invalid.");
 
         // If you're pushing into the final spot, just resort to PushBack
         if (index == m_Size) {
             PushBack(value);
-            return;
+            return end() - 1;
         }
+
+        Vector<T>::iterator it(nullptr);
 
         if (m_Size < m_Capacity) {
 
@@ -560,6 +562,7 @@ namespace sj {
 
             // Insert value into buffer
             m_Data[index] = value;
+            it = &m_Data[index];
         } else {
             // Array needs to grow, place new element in during buffer copy process
 
@@ -576,6 +579,7 @@ namespace sj {
 
             // Copy new element in to index position
             new (&new_buffer[index]) T(value);
+            it = &m_Data[index];
 
             // Copy the rest of the old buffer into the new buffer
             for (auto i = index + 1; i < new_capacity; i++) {
@@ -595,6 +599,7 @@ namespace sj {
         }
 
         m_Size++;
+        return it;
     }
 
     template <class T>
