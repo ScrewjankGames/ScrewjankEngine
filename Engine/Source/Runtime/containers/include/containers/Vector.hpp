@@ -1,6 +1,7 @@
 #pragma once
 
 // STD Headers
+#include <compare>
 #include <utility>
 
 // Library Headers
@@ -67,6 +68,22 @@ namespace sj {
             return !(*this == other);
         }
 
+        auto operator<=>(const VectorIterator_t& other) const = default;
+
+        /** Addition operator overload */
+        VectorIterator_t& operator+(size_t num)
+        {
+            m_CurrElement = m_CurrElement + num;
+            return *this;
+        }
+
+        /** Addition operator overload */
+        VectorIterator_t& operator-(size_t num)
+        {
+            m_CurrElement = m_CurrElement - num;
+            return *this;
+        }
+
         /** Pre-increment operator overload */
         VectorIterator_t& operator++()
         {
@@ -95,6 +112,20 @@ namespace sj {
             VectorIterator_t tmp(*this);
             --*this;
             return tmp;
+        }
+
+        /** Compound assignment operator overload */
+        VectorIterator_t& operator+=(size_t val)
+        {
+            m_CurrElement += val;
+            return *this;
+        }
+
+        /** Compound assignment operator overload */
+        VectorIterator_t& operator-=(size_t val)
+        {
+            m_CurrElement -= val;
+            return *this;
         }
 
       private:

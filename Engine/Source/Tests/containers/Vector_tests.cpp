@@ -129,8 +129,32 @@ namespace container_tests {
         }
         ASSERT_EQ(0, i);
 
-        vec.PushBack(2);
+        vec.PushBack(1);
+        vec.EmplaceBack(2);
+        vec.PushBack(3);
         vec.EmplaceBack(4);
+        vec.PushBack(5);
+        vec.EmplaceBack(6);
+
+        // Iterate through all the odd elements
+        for (auto it = vec.begin(); it < vec.end(); it = it + 2) {
+            ASSERT_NE(0, *it % 2);
+        }
+
+        // Iterate through all the even elements
+        for (auto it = vec.begin() + 1; it < vec.end(); it += 2) {
+            ASSERT_EQ(0, *it % 2);
+        }
+
+        // Iterate through all the odd elements backwards
+        for (auto it = vec.end(); it > vec.begin(); it -= 2) {
+            ASSERT_NE(0, *it % 2);
+        }
+
+        // Iterate through all the even elements backwards
+        for (auto it = vec.end() - 1; it > vec.begin(); it -= 2) {
+            ASSERT_EQ(0, *it % 2);
+        }
     }
 
     TEST(VectorTests, SingleInsertionTest)
