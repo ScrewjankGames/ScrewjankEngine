@@ -11,23 +11,35 @@
 
 namespace sj {
 
+    /**
+     * Class to define both const and non-const iterators over vectors
+     *  @tparam Vector_t The cv-qualified type of vector being iterated over
+     */
     template <class Vector_t>
-    class VectorConstIterator
+    class VectorIterator_t
     {
       public:
         // Using declarations for STL compatibility
         using iterator_category = std::contiguous_iterator_tag;
-        using value_type = typename Vector_t::value_type;
-        using difference_type = typename Vector_t::difference_type;
-        using pointer = typename Vector_t::const_pointer;
-        using reference = const value_type&;
+        using value_type = std::conditional_t<std::is_const<Vector_t>::value,
+                                              typename const Vector_t::value_type,
+                                              typename Vector_t::value_type>;
+        using pointer = std::conditional_t<std::is_const<Vector_t>::value,
+                                           typename Vector_t::const_pointer,
+                                           typename Vector_t::pointer>;
+        using const_pointer = typename Vector_t::const_pointer;
 
-      private:
-        pointer m_CurrElement;
+        using reference = std::conditional_t<std::is_const<Vector_t>::value,
+                                             typename Vector_t::const_reference,
+                                             typename Vector_t::reference>;
+
+        using const_reference = typename Vector_t::const_reference;
+
+        using difference_type = typename Vector_t::difference_type;
 
       public:
         /** Constructor */
-        VectorConstIterator(pointer element) noexcept : m_CurrElement(element)
+        VectorIterator_t(pointer element) noexcept : m_CurrElement(element)
         {
         }
 
@@ -44,121 +56,49 @@ namespace sj {
         }
 
         /** Equality comparison operator */
-        bool operator==(const VectorConstIterator& other) const
+        bool operator==(const VectorIterator_t& other) const
         {
             return m_CurrElement == other.m_CurrElement;
         }
 
         /** Inequality comparison operator */
-        bool operator!=(const VectorConstIterator& other) const
+        bool operator!=(const VectorIterator_t& other) const
         {
             return !(*this == other);
         }
 
         /** Pre-increment operator overload */
-        VectorConstIterator& operator++()
+        VectorIterator_t& operator++()
         {
             ++m_CurrElement;
             return *this;
         }
 
         /** Post-increment operator overload */
-        VectorConstIterator& operator++(int)
+        VectorIterator_t operator++(int)
         {
-            VectorConstIterator tmp(*this);
-            ++*this;
-            return tmp;
-        }
-
-        /** Pre-decrement operator overload */
-        VectorConstIterator& operator--()
-        {
-            --m_CurrElement;
-            return *this;
-        }
-
-        /** Post-decrement operator overload */
-        VectorConstIterator& operator--(int)
-        {
-            VectorConstIterator tmp(*this);
-            --*this;
-            return tmp;
-        }
-    };
-
-    template <class Vector_t>
-    class VectorIterator
-    {
-      public:
-        // Using declarations for STL compatibility
-        using iterator_category = std::contiguous_iterator_tag;
-        using value_type = typename Vector_t::value_type;
-        using difference_type = typename Vector_t::difference_type;
-        using pointer = typename Vector_t::pointer;
-        using reference = value_type&;
-
-      private:
-        pointer m_CurrElement;
-
-      public:
-        /** Constructor */
-        VectorIterator(pointer element) noexcept : m_CurrElement(element)
-        {
-        }
-
-        /** Dereference operator overload */
-        [[nodiscard]] reference operator*() const
-        {
-            return *m_CurrElement;
-        }
-
-        /** Arrow operator overload */
-        [[nodiscard]] pointer operator->() const
-        {
-            return m_CurrElement;
-        }
-
-        /** Equality comparison operator */
-        bool operator==(const VectorIterator& other) const
-        {
-            return m_CurrElement == other.m_CurrElement;
-        }
-
-        /** Inequality comparison operator */
-        bool operator!=(const VectorIterator& other) const
-        {
-            return !(*this == other);
-        }
-
-        /** Pre-increment operator overload */
-        VectorIterator& operator++()
-        {
-            ++m_CurrElement;
-            return *this;
-        }
-
-        /** Post-increment operator overload */
-        VectorIterator operator++(int)
-        {
-            VectorIterator tmp(*this);
+            VectorIterator_t tmp(*this);
             this->operator++();
             return tmp;
         }
 
         /** Pre-decrement operator overload */
-        VectorIterator& operator--()
+        VectorIterator_t& operator--()
         {
             --m_CurrElement;
             return *this;
         }
 
         /** Post-decrement operator overload */
-        VectorIterator& operator--(int)
+        VectorIterator_t& operator--(int)
         {
-            VectorIterator tmp(*this);
+            VectorIterator_t tmp(*this);
             --*this;
             return tmp;
         }
+
+      private:
+        pointer m_CurrElement;
     };
 
     template <class T>
@@ -176,8 +116,8 @@ namespace sj {
 
         // Iterator info
         using iterator_concept = std::contiguous_iterator_tag;
-        using iterator = typename VectorIterator<Vector<T>>;
-        using const_iterator = typename VectorConstIterator<Vector<T>>;
+        using iterator = typename VectorIterator_t<Vector<T>>;
+        using const_iterator = typename VectorIterator_t<const Vector<T>>;
 
         /**
          * Default Constructor
