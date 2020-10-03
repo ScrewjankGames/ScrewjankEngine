@@ -299,6 +299,11 @@ namespace container_tests {
 
         delete vec;
 
+        // std::vector<DtorDummy> vec;
+        // for (int i = 0; i < 10; i++) {
+        //    vec.emplace_back(&destroyed);
+        //}
+
         ASSERT_EQ(10, destroyed);
     }
 
@@ -346,6 +351,53 @@ namespace container_tests {
             Vector<std::string>(MemorySystem::GetUnmanagedAllocator(), {"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
         ASSERT_EQ("Baz", vec3[1]);
+    }
+
+    TEST(VectorTests, ResizeTest)
+    {
+        Vector<int> vec(MemorySystem::GetUnmanagedAllocator(), 10);
+        ASSERT_EQ(10, vec.Capacity());
+        ASSERT_EQ(10, vec.Size());
+
+        for (auto element : vec) {
+            ASSERT_EQ(0, element);
+        }
+
+        vec.Resize(20, 1);
+        ASSERT_EQ(20, vec.Capacity());
+        ASSERT_EQ(20, vec.Size());
+
+        auto sum = 0;
+        for (auto element : vec) {
+            sum += element;
+        }
+        ASSERT_EQ(sum, 10);
+
+        // Attempt to reduce size
+        vec.Resize(10);
+
+        sum = 0;
+        for (auto element : vec) {
+            sum += element;
+        }
+        ASSERT_EQ(sum, 0);
+    }
+
+    TEST(VectorTests, ReserveTests)
+    {
+        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
+        vec.Reserve(10);
+        ASSERT_EQ(10, vec.Capacity());
+        ASSERT_EQ(0, vec.Size());
+
+        vec.PushBack(2);
+        vec.PushBack(1);
+
+        // Attempt to reduce capacity
+        vec.Reserve(1);
+        ASSERT_EQ(1, vec.Capacity());
+        ASSERT_EQ(1, vec.Size());
+        ASSERT_EQ(2, vec.Front());
     }
 
 } // namespace container_tests

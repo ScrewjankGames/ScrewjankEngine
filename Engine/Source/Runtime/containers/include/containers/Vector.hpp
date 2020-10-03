@@ -77,7 +77,7 @@ namespace sj {
         }
 
         /** Addition operator overload */
-        VectorIterator_t& operator-(size_t num) const
+        VectorIterator_t operator-(size_t num) const
         {
             return VectorIterator_t(m_CurrElement - num);
         }
@@ -150,10 +150,22 @@ namespace sj {
 
         /**
          * Default Constructor
-         *
+         * @param count The number of elements to default construct in this vector
          */
-        Vector(Allocator* allocator = MemorySystem::GetDefaultAllocator(),
-               size_t capacity_hint = 0);
+        Vector(Allocator* allocator = MemorySystem::GetDefaultAllocator());
+
+        /**
+         * Value Initialization Constructor
+         * @param count The number of elements to default construct in this vector
+         */
+        Vector(Allocator* allocator, size_t count);
+
+        /**
+         * Value Initialization Constructor
+         * @param count The number of elements to construct in this vector
+         * @param value The value to use when initializing constructed elements
+         */
+        Vector(Allocator* allocator, size_t count, const T& value);
 
         /**
          * List initialization Constructor
@@ -183,7 +195,7 @@ namespace sj {
         /**
          * Move assignment from other vector
          */
-        Vector<T>& operator=(Vector<T>&& other);
+        Vector<T>& operator=(Vector<T>&& other) noexcept;
 
         /**
          * Assignment from initializer list
@@ -269,15 +281,30 @@ namespace sj {
         iterator Erase(iterator pos);
 
         /**
-         * Grows vector to requrested new_capacity and copies any current data over
-         * @param new_capacity The new size of the vector
-         */
-        void Resize(size_t new_capacity);
-
-        /**
          * @return The number of elements actively stored in the array
          */
         size_t Size() const;
+
+        /**
+         * Grows vector to requrested new_capacity, copies current data over, and default
+         * initializes empty indices
+         * @param new_size The new size of the vector
+         */
+        void Resize(size_t new_size);
+
+        /**
+         * Grows vector to requrested new_capacity, copies current data over, and default
+         * initializes empty indices
+         * @param new_size The new size of the vector
+         * @param value The value to initialize newly added elements with
+         */
+        void Resize(size_t new_size, const T& value);
+
+        /**
+         * Changes the capacity of the vector without affecting Vector.Size()
+         * @param new_capacity The new number of elements you would like the vector to have
+         */
+        void Reserve(size_t new_capacity);
 
         /**
          * @return The number of elements the vector can currently contain
@@ -325,18 +352,32 @@ namespace sj {
     };
 
     template <class T>
-    inline Vector<T>::Vector(Allocator* allocator, size_t capacity_hint)
-        : m_Data(nullptr), m_Allocator(allocator), m_Size(0), m_Capacity(capacity_hint)
+    inline Vector<T>::Vector(Allocator* allocator)
+        : m_Data(nullptr), m_Allocator(allocator), m_Size(0), m_Capacity(0)
     {
-        if (capacity_hint != 0) {
-            m_Data = (T*)(m_Allocator->Allocate(sizeof(T) * capacity_hint, alignof(T)));
-        }
+    }
+
+    template <class T>
+    inline Vector<T>::Vector(Allocator* allocator, size_t count) : Vector(allocator)
+    {
+        Resize(count);
+    }
+
+    template <class T>
+    inline Vector<T>::Vector(Allocator* allocator, size_t count, const T& value)
+        : m_Data(nullptr), m_Allocator(allocator), m_Size(count), m_Capacity(count)
+    {
+        Resize(count, value);
     }
 
     template <class T>
     inline Vector<T>::Vector(Allocator* allocator, std::initializer_list<T> list)
-        : Vector(allocator, list.size())
+        : Vector(allocator)
     {
+        // Make sure vector has space for size() elements
+        Reserve(list.size());
+
+        // Copy elements into m_Data
         size_t i = 0;
         for (auto& element : list) {
             new (&m_Data[i]) T(element);
@@ -347,12 +388,9 @@ namespace sj {
     }
 
     template <class T>
-    inline Vector<T>::Vector(const Vector<T>& other)
+    inline Vector<T>::Vector(const Vector<T>& other) : Vector(other.m_Allocator)
     {
-        m_Allocator = other.m_Allocator;
-        m_Data = nullptr;
-        m_Size = 0;
-        Resize(other.m_Capacity);
+        Reserve(other.m_Capacity);
 
         size_t i = 0;
         for (auto& elem : other) {
@@ -410,21 +448,25 @@ namespace sj {
     }
 
     template <class T>
-    inline Vector<T>& Vector<T>::operator=(Vector<T>&& other)
+    inline Vector<T>& Vector<T>::operator=(Vector<T>&& other) noexcept
     {
         Clear();
 
-        if (other.Size() > m_Capacity) {
-            Resize(other.Size());
+        // Steal the other object's member variables
+        m_Size = other.m_Size;
+        m_Capacity = other.m_Capacity;
+
+        if (m_Allocator != other.m_Allocator) {
+            SJ_ENGINE_LOG_WARN("Move assignment is changing vector allocator!");
         }
 
-        size_t i = 0;
-        for (auto& element : other) {
-            new (&m_Data[i]) T(std::move(element));
-            i++;
-        }
+        m_Allocator = other.m_Allocator;
+        m_Data = other.m_Data;
 
-        m_Size = other.Size();
+        // Reset state of other vector
+        other.m_Size = 0;
+        other.m_Capacity = 0;
+        other.m_Data = nullptr;
 
         return *this;
     }
@@ -437,7 +479,7 @@ namespace sj {
 
         // Ensure the vector is large enough to fit the new list
         if (list.size() > m_Capacity) {
-            Resize(list.size());
+            Reserve(list.size());
         }
 
         size_t i = 0;
@@ -515,7 +557,7 @@ namespace sj {
         if (m_Size >= m_Capacity) {
             // Array needs to grow
             size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
-            Resize(new_capacity);
+            Reserve(new_capacity);
         }
 
         // Copy element into array
@@ -724,7 +766,7 @@ namespace sj {
     {
         if (m_Size >= m_Capacity) {
             size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
-            Resize(new_capacity);
+            Reserve(new_capacity);
         }
 
         // Construct element in allocated space
@@ -758,7 +800,33 @@ namespace sj {
     }
 
     template <class T>
-    inline void Vector<T>::Resize(size_t new_capacity)
+    inline size_t Vector<T>::Size() const
+    {
+        return m_Size;
+    }
+
+    template <class T>
+    inline void Vector<T>::Resize(size_t new_size)
+    {
+        Resize(new_size, T {});
+    }
+
+    template <class T>
+    inline void Vector<T>::Resize(size_t new_size, const T& value)
+    {
+        Reserve(new_size);
+
+        if (new_size > m_Size) {
+            for (auto i = m_Size; i < m_Capacity; i++) {
+                new (&m_Data[i]) T(value);
+            }
+        }
+
+        m_Size = new_size;
+    }
+
+    template <class T>
+    inline void Vector<T>::Reserve(size_t new_capacity)
     {
         if (new_capacity == m_Capacity) {
             return;
@@ -789,18 +857,11 @@ namespace sj {
         m_Size = new_size;
 
         // Swap buffer pointers
-
         if (m_Data != nullptr) {
             m_Allocator->Free(m_Data);
         }
 
         m_Data = new_buffer;
-    }
-
-    template <class T>
-    inline size_t Vector<T>::Size() const
-    {
-        return m_Size;
     }
 
     template <class T>
