@@ -21,9 +21,9 @@
 #endif // SJ_DEBUG
 
 #ifdef SJ_ENABLE_ASSERTS
-    #define SJ_ASSERT(condition, ...)                                                              \
+    #define SJ_ASSERT(condition, fmt, ...)                                                         \
         if (!(condition)) {                                                                        \
-            SJ_ENGINE_LOG_FATAL("Assertion failed: {0}", __VA_ARGS__);                             \
+            SJ_ENGINE_LOG_FATAL("Assertion failed: " fmt, __VA_ARGS__);                            \
             SJ_DEBUGBREAK();                                                                       \
         }
 #else
