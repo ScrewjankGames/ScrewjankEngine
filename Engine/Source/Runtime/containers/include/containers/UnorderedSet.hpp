@@ -30,17 +30,38 @@ namespace sj {
 
         using difference_type = typename Set_t::difference_type;
 
+        using element_type = typename const Set_t::element_type;
+        using element_pointer = typename element_type*;
+
       public:
         /**
          * Constructor
          */
-        SetIterator_t(pointer element) : m_CurrElement(element)
+        SetIterator_t(element_pointer element) : m_CurrElement(element)
         {
+        }
+
+        /** Dereference operator overload */
+        [[nodiscard]] reference operator*() const
+        {
+            return m_CurrElement->Value;
+        }
+
+        /** Equality comparison operator */
+        bool operator==(const SetIterator_t& other) const
+        {
+            return m_CurrElement == other.m_CurrElement;
+        }
+
+        /** Inequality comparison operator */
+        bool operator!=(const SetIterator_t& other) const
+        {
+            return !(*this == other);
         }
 
       private:
         /** The element currently pointer at by this iterator */
-        pointer m_CurrElement;
+        element_pointer m_CurrElement;
     };
 
     /**
@@ -49,6 +70,8 @@ namespace sj {
     template <class T, class Hasher = std::hash<T>>
     class UnorderedSet
     {
+        struct Element;
+
       public:
         // Type aliases
         using key_type = T;
@@ -63,6 +86,7 @@ namespace sj {
         // Iterator definitions
         using iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
         using const_iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
+        using element_type = Element;
 
       public:
         /**
@@ -71,17 +95,23 @@ namespace sj {
         UnorderedSet(Allocator* allocator = MemorySystem::GetDefaultAllocator());
 
         /**
+         * Looks up supplied key in set
+         * @return iterator to element if found, else end()
+         */
+        const_iterator Find(const T& key) const;
+
+        /**
          * Insert an element into the set
          * @return An iterator to the element inserted
          */
-        iterator Insert(const T& key);
+        std::pair<iterator, bool> Insert(const T& key);
 
         /**
          * Emplace an element into the set
          * @return An iterator to the element inserted
          */
         template <class... Args>
-        iterator Emplace(Args&&... args);
+        std::pair<iterator, bool> Emplace(Args&&... args);
 
         /**
          * Erase an element from the set
@@ -144,12 +174,37 @@ namespace sj {
              */
             ~Element() {};
 
+            /**
+             * Move assignment operator
+             */
+            Element& operator=(Element&& other)
+            {
+                Offset = other.Offset;
+                if (!IsEmpty()) {
+                    Value.~T();
+                }
+
+                if (!other.IsEmpty()) {
+                    new (std::addressof(Value)) T(std::move(other.Value));
+                }
+
+                return *this;
+            }
+
+            /** Indicates the element has never contained a value (used during insertion) */
+            bool IsUninitialized() const
+            {
+                return Offset == PROBE_LIMIT;
+            }
+
+            /** Indicates the element does not currently contain a value */
             bool IsEmpty() const
             {
                 // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
                 return Offset >= PROBE_LIMIT;
             }
 
+            /** Indicates the element currently contains a value */
             bool HasValue() const
             {
                 // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
@@ -162,8 +217,7 @@ namespace sj {
                 new (std::addressof(Value)) T(std::forward<Args>(args)...);
             }
 
-            /** Element's distance from it's desired hash slot, where -1 is uninitialized
-               element */
+            /** Element's distance from it's desired hash slot */
             uint8_t Offset = PROBE_LIMIT;
 
             /** Nameless union to prevent premature initialization of value by Vector */
@@ -193,6 +247,17 @@ namespace sj {
 
         /** The maximum load factor of the set */
         float m_MaxLoadFactor;
+
+      public:
+        /**
+         * Ranged-based for loop compatabile iterator to begining of set
+         */
+        iterator begin();
+
+        /**
+         * Ranged-based for loop compatabile iterator to end of set
+         */
+        iterator end();
     };
 
     template <class T, class Hasher>
@@ -203,7 +268,14 @@ namespace sj {
     }
 
     template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator
+    inline typename UnorderedSet<T, Hasher>::const_iterator
+    UnorderedSet<T, Hasher>::Find(const T& key) const
+    {
+        return const_iterator(nullptr);
+    }
+
+    template <class T, class Hasher>
+    inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
     UnorderedSet<T, Hasher>::Insert(const T& value)
     {
         return Emplace(value);
@@ -211,33 +283,45 @@ namespace sj {
 
     template <class T, class Hasher>
     template <class... Args>
-    inline typename UnorderedSet<T, Hasher>::iterator
+    inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
     UnorderedSet<T, Hasher>::Emplace(Args&&... args)
     {
+        // Construct a new record
+        Element new_record;
+        new_record.Offset = 0;
+        new_record.EmplaceValue(std::forward<Args>(args)...);
+
+        // Ensure supplied key is not in the Set
+        if (auto it = Find(new_record.Value); it != end()) {
+            return {it, false};
+        }
+
+        // The new key is unique, insert it
         auto new_count = m_Count + 1;
+
         // If there's not enough space, rehash
         if ((new_count / Capacity()) > m_MaxLoadFactor || new_count > m_Elements.Capacity()) {
             Rehash(m_Elements.Capacity() * 2);
         }
 
-        // Insert the element
-        T value(std::forward<Args>(args)...);
-        auto hash = m_HashFunctor(value);
+        // Construct information needed for insertion
+        auto hash = m_HashFunctor(new_record.Value);
         auto start_index = hash & m_IndexMask;
 
-        for (int8_t i = 0; i < PROBE_LIMIT; i++) {
+        // Perform the robin hood insertion
+        for (uint8_t i = 0; i < PROBE_LIMIT; i++) {
             // Allow probing to wrap around the set
             auto index = (start_index + i) & m_IndexMask;
 
+            // Only directly insert into uninitialized slots
             if (m_Elements[index].IsEmpty()) {
-                m_Elements[index].Offset = i;
-                m_Elements[index].EmplaceValue(std::move(value));
-                if (i > m_MaxProbeDistance) {
-                    m_MaxProbeDistance = i;
-                }
-
-                return iterator(nullptr);
+                // If you've found an empty slot, take it
+                m_Elements[index] = std::move(new_record);
+                return {iterator(&m_Elements[index]), true};
+            } else {
+                // Attempt the robin hood operation
             }
+            new_record.Offset++;
         }
 
         SJ_ASSERT(
@@ -246,12 +330,13 @@ namespace sj {
             "hash function.",
             PROBE_LIMIT);
 
-        return iterator(nullptr);
+        return {iterator(nullptr), false};
     }
 
     template <class T, class Hasher>
     inline bool UnorderedSet<T, Hasher>::Erase(const T& key)
     {
+        return false;
     }
 
     template <class T, class Hasher>
@@ -291,6 +376,18 @@ namespace sj {
     inline size_t UnorderedSet<T, Hasher>::Capacity() const
     {
         return m_Elements.Capacity();
+    }
+
+    template <class T, class Hasher>
+    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::begin()
+    {
+        return iterator(&(*m_Elements.begin()));
+    }
+
+    template <class T, class Hasher>
+    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::end()
+    {
+        return iterator(&(*m_Elements.end()));
     }
 
 } // namespace sj
