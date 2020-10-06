@@ -16,6 +16,9 @@ namespace container_tests {
     {
         UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
 
+        set.Insert("Foo");
+
+        // Try duplicate insertion
         // set.Insert("Foo");
         // set.Insert("Bar");
         // set.Insert("Biz");

@@ -400,4 +400,13 @@ namespace container_tests {
         ASSERT_EQ(2, vec.Front());
     }
 
+    TEST(VectorTests, ValueInitializingConstructorTest)
+    {
+        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), 10, "Foo");
+
+        for (size_t i = 0; i < vec1.Size(); i++) {
+            ASSERT_EQ("Foo", vec1[i]);
+        }
+    }
+
 } // namespace container_tests

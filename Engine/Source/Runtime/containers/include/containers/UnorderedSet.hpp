@@ -1,5 +1,7 @@
 #pragma once
+
 // STD Headers
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -28,113 +30,25 @@ namespace sj {
 
         using difference_type = typename Set_t::difference_type;
 
-        using bucket_iterator = typename Set_t::const_bucket_iterator;
-        using const_bucket_iterator = typename Set_t::const_bucket_iterator;
-        using local_iterator = typename Set_t::const_local_iterator;
-        using const_local_iterator = typename Set_t::const_local_iterator;
-
       public:
         /**
          * Constructor
-         * @param bucket The bucket the iterator points to
          */
-        SetIterator_t(bucket_iterator bucket)
+        SetIterator_t(pointer element) : m_CurrElement(element)
         {
-            m_BucketIter = bucket;
-            m_ElementIter = bucket->begin();
-        }
-
-        /**
-         * Constructor
-         * @param bucket The bucket the iterator points to
-         */
-        SetIterator_t(bucket_iterator bucket, local_iterator element)
-        {
-            m_BucketIter = bucket;
-            m_ElementIter = bucket->begin();
-        }
-
-        /** Dereference operator overload */
-        [[nodiscard]] reference operator*() const
-        {
-            return *m_CurrElement;
-        }
-
-        /** Arrow operator overload */
-        [[nodiscard]] pointer operator->() const
-        {
-            return m_CurrElement;
-        }
-
-        /** Equality comparison operator */
-        bool operator==(const SetIterator_t& other) const
-        {
-            // Elements are unique among buckets, so the element iterator determines equality
-            return m_ElementIter == other.m_ElementIter;
-        }
-
-        /** Inequality comparison operator */
-        bool operator!=(const SetIterator_t& other) const
-        {
-            return !(*this == other);
-        }
-
-        /** Pre-increment operator overload */
-        SetIterator_t& operator++()
-        {
-            if (m_ElementIter == m_BucketIter->end() || m_ElementIter + 1 == m_BucketIter->end()) {
-                m_BucketIter++;
-                m_ElementIter = m_BucketIter->start();
-            } else {
-                m_ElementIter++;
-            }
-
-            return *this;
-        }
-
-        /** Post-increment operator overload */
-        SetIterator_t& operator++(int)
-        {
-            SetIterator_t tmp(*this);
-            this->operator++();
-            return tmp;
         }
 
       private:
-        bucket_iterator m_BucketIter;
-        local_iterator m_ElementIter;
+        /** The element currently pointer at by this iterator */
+        pointer m_CurrElement;
     };
 
     /**
-     * Closed addressing set using dynamic arrays for buckets
+     * Open-addressed robinhood hashed set
      */
     template <class T, class Hasher = std::hash<T>>
     class UnorderedSet
     {
-      private:
-        struct Bucket
-        {
-            Vector<T> Entries;
-
-            // Iterators
-            using iterator = typename decltype(Entries)::iterator;
-            using const_iterator = typename decltype(Entries)::const_iterator;
-
-            Bucket() : Entries(m_Allocator)
-            {
-            }
-
-            typename Vector<T>::iterator begin()
-            {
-                return Entries.begin();
-            }
-
-            typename Vector<T>::iterator end()
-            {
-                return Entries.end();
-            }
-        };
-
       public:
         // Type aliases
         using key_type = T;
@@ -149,8 +63,6 @@ namespace sj {
         // Iterator definitions
         using iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
         using const_iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
-        using local_iterator = typename const Bucket::iterator;
-        using const_local_iterator = typename Bucket::const_iterator;
 
       public:
         /**
@@ -159,176 +71,226 @@ namespace sj {
         UnorderedSet(Allocator* allocator = MemorySystem::GetDefaultAllocator());
 
         /**
-         * Copy assignment from other vector
+         * Insert an element into the set
+         * @return An iterator to the element inserted
          */
-        UnorderedSet<T>& operator=(const UnorderedSet<T>& other);
+        iterator Insert(const T& key);
 
         /**
-         * Move assignment from other vector
+         * Emplace an element into the set
+         * @return An iterator to the element inserted
          */
-        UnorderedSet<T>& operator=(UnorderedSet<T>&& other);
+        template <class... Args>
+        iterator Emplace(Args&&... args);
 
         /**
-         * Insert a value into the set
+         * Erase an element from the set
          */
-        std::pair<iterator, bool> Insert(const T& value);
-
-        void Erase(const T& value);
+        bool Erase(const T& key);
 
         /**
-         * Sets the number of buckets in the container to n or more.
-         * @note if n <= to the current bucket count, no action is taken
-         * @note Invalidates ALL iterators
+         * Rehash set to contain num_buckets buckets
          */
-        void Rehash(size_t n);
+        void Rehash(size_t capacity);
 
         /**
-         * Removes all elements in the Set
+         * Returns the number of elements stored in the set
          */
-        void Clear();
+        size_t Count() const;
+
+        /**
+         * Returns the number of elements this Set can hold
+         */
+        size_t Capacity() const;
 
       private:
-        /** Allocator to be used for the set's operations */
+        /** Offset that indicates an element is empty */
+        static constexpr uint8_t PROBE_LIMIT = std::numeric_limits<uint8_t>::max() - 1;
+
+        /** Flag to indicate a cell was erased so later lookups can probe correctly */
+        static constexpr uint8_t TOMBSTONE_VALUE = std::numeric_limits<uint8_t>::max();
+
+        struct Element
+        {
+            /**
+             * Constructor
+             */
+            Element() {};
+
+            /**
+             * Copy Constructor
+             */
+            Element(const Element& other)
+            {
+                Offset = other.Offset;
+                if (!IsEmpty()) {
+                    new (std::addressof(Value)) T(other.Value);
+                }
+            }
+
+            /**
+             * Move Constructor
+             */
+            Element(Element&& other)
+            {
+                Offset = other.Offset;
+                if (!IsEmpty()) {
+                    new (std::addressof(Value)) T(std::move(other.Value));
+                }
+            }
+
+            /**
+             * Destructor
+             */
+            ~Element() {};
+
+            bool IsEmpty() const
+            {
+                // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
+                return Offset >= PROBE_LIMIT;
+            }
+
+            bool HasValue() const
+            {
+                // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
+                return Offset < PROBE_LIMIT;
+            }
+
+            template <class... Args>
+            void EmplaceValue(Args&&... args)
+            {
+                new (std::addressof(Value)) T(std::forward<Args>(args)...);
+            }
+
+            /** Element's distance from it's desired hash slot, where -1 is uninitialized
+               element */
+            uint8_t Offset = PROBE_LIMIT;
+
+            /** Nameless union to prevent premature initialization of value by Vector */
+            union
+            {
+                T Value;
+            };
+        };
+
+        /** Backing allocator for the datastructure */
         Allocator* m_Allocator;
 
-        /** The upper bound for the set's load factor during operation */
-        float m_MaxLoadFactor;
-
-        /** The number of elements contained in the set */
-        size_t m_Size;
-
-        /**
-         * Always equal to m_Buckets.Size() - 1, allows a fast approximation of the mod operator
-         * when bucket size is a perfect power of two
-         */
-        size_t m_BucketMask;
-
-        /** Vector of buckets to represent the hashed set */
-        Vector<Bucket> m_Buckets;
-
-        /** Functor used to hash elements of the list */
+        /** Functor used to hash keys */
         Hasher m_HashFunctor;
 
-      public:
-        using bucket_iterator = typename decltype(m_Buckets)::const_iterator;
-        using const_bucket_iterator = typename decltype(m_Buckets)::const_iterator;
+        /** Entries of the hash set */
+        Vector<Element> m_Elements;
 
-        iterator begin();
-        iterator end();
+        /** Mask used to assign hashed keys to buckets */
+        size_t m_IndexMask;
+
+        /** Number of elements in the set */
+        size_t m_Count;
+
+        /** Used to terminate lookups early */
+        uint8_t m_MaxProbeDistance;
+
+        /** The maximum load factor of the set */
+        float m_MaxLoadFactor;
     };
 
     template <class T, class Hasher>
     inline UnorderedSet<T, Hasher>::UnorderedSet(Allocator* allocator)
-        : m_Allocator(allocator), m_MaxLoadFactor(1.0f), m_Size(0), m_BucketMask(0),
-          m_Buckets(m_Allocator), m_HashFunctor()
+        : m_Allocator(allocator), m_HashFunctor(), m_Elements(allocator, 1), m_IndexMask(0),
+          m_Count(0), m_MaxProbeDistance(0), m_MaxLoadFactor(0.9f)
     {
     }
 
     template <class T, class Hasher>
-    inline UnorderedSet<T>& UnorderedSet<T, Hasher>::operator=(const UnorderedSet<T>& other)
-    {
-        // TODO: insert return statement here
-    }
-
-    template <class T, class Hasher>
-    inline UnorderedSet<T>& UnorderedSet<T, Hasher>::operator=(UnorderedSet<T>&& other)
-    {
-        Clear();
-
-        m_Allocator = other.m_Allocator;
-        m_BucketMask = other.m_Allocator;
-        m_Buckets = std::move(other.m_Buckets);
-        m_HashFunctor = other.m_HashFunctor;
-        m_MaxLoadFactor = other.m_MaxLoadFactor;
-        m_Size = other.m_Size;
-    }
-
-    template <class T, class Hasher>
-    inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
+    inline typename UnorderedSet<T, Hasher>::iterator
     UnorderedSet<T, Hasher>::Insert(const T& value)
     {
-        // Adding this element will push us over our load factor. Rehash
-        if (m_Buckets.Size() == 0) {
-            Rehash(1);
-        } else if ((m_Size + 1.0f) / m_Buckets.Size() > m_MaxLoadFactor) {
-            Rehash(m_Buckets.Size() * 2);
+        return Emplace(value);
+    }
+
+    template <class T, class Hasher>
+    template <class... Args>
+    inline typename UnorderedSet<T, Hasher>::iterator
+    UnorderedSet<T, Hasher>::Emplace(Args&&... args)
+    {
+        auto new_count = m_Count + 1;
+        // If there's not enough space, rehash
+        if ((new_count / Capacity()) > m_MaxLoadFactor || new_count > m_Elements.Capacity()) {
+            Rehash(m_Elements.Capacity() * 2);
         }
 
-        // Buckets.Size() is always a power of two
-        // m_BucketMask is always Buckets.Size() - 1;
-        // This allows us to use the & operator instead of %
-        auto index = m_HashFunctor(value) & m_BucketMask;
+        // Insert the element
+        T value(std::forward<Args>(args)...);
+        auto hash = m_HashFunctor(value);
+        auto start_index = hash & m_IndexMask;
 
-        auto bucket = m_Buckets[index];
+        for (int8_t i = 0; i < PROBE_LIMIT; i++) {
+            // Allow probing to wrap around the set
+            auto index = (start_index + i) & m_IndexMask;
 
-        // Ensure the key is unique in the bucket
-        auto it = bucket.begin();
-        for (; it != (bucket.end() - 1); it++) {
-            if (value == *it) {
-                // Return the element with the matching key, and indicate that the new value was not
-                // inserted
-                return {it, false};
+            if (m_Elements[index].IsEmpty()) {
+                m_Elements[index].Offset = i;
+                m_Elements[index].EmplaceValue(std::move(value));
+                if (i > m_MaxProbeDistance) {
+                    m_MaxProbeDistance = i;
+                }
+
+                return iterator(nullptr);
             }
         }
 
-        return std::pair<iterator, bool>();
+        SJ_ASSERT(
+            false,
+            "UnorderedSet insertion failed due to excessive collision count (>= {}!). Check your "
+            "hash function.",
+            PROBE_LIMIT);
+
+        return iterator(nullptr);
     }
 
     template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::Erase(const T& value)
+    inline bool UnorderedSet<T, Hasher>::Erase(const T& key)
     {
-        size_t bucket = m_HashFunctor(value) & m_BucketMask;
-
-        // m_Buckets[bucket].Erase();
     }
 
     template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::Rehash(size_t n)
+    inline void UnorderedSet<T, Hasher>::Rehash(size_t new_capacity)
     {
-        if (n <= m_Buckets.Size()) {
+        SJ_ASSERT((new_capacity & (new_capacity - 1)) == 0,
+                  "UnorderedSet capacity must be a power of two!");
+
+        if (new_capacity <= m_Elements.Capacity()) {
             return;
         }
 
-        SJ_ASSERT((n & (n - 1)) == 0, "Bucket count must be a perfect power of two!");
+        // Move the old element set into a temporary
+        Vector<Element> old_set(std::move(m_Elements));
+        m_Elements = Vector<Element>(m_Allocator, new_capacity);
 
-        /**
-         * Allocate a new bucket list
-         */
-        Vector<Bucket> new_buckets(m_Allocator, n);
-        m_BucketMask = n - 1;
+        // Reset tracking data
+        m_Count = 0;
+        m_IndexMask = new_capacity - 1;
+        m_MaxProbeDistance = 0;
 
-        // Don't need to check for duplicate keys
-        for (auto& entry : *this) {
-            size_t bucket = m_HashFunctor(entry) & m_BucketMask;
-            new_buckets[bucket].EmplaceBack(std::move(entry));
-        }
-
-        *this = std::move(new_buckets);
-    }
-
-    template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::Clear()
-    {
-        for (auto& bucket : m_Buckets) {
-            bucket.Clear();
+        // Re-insert all the old data into the new UnorderedSet
+        for (auto& element : old_set) {
+            if (element.HasValue()) {
+                Emplace(std::move(element.Value));
+            }
         }
     }
 
     template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::begin()
+    inline size_t UnorderedSet<T, Hasher>::Count() const
     {
-        if (m_Buckets.Size() == 0) {
-            return end();
-        }
-
-        // return iterator(m_Buckets.start(), m_Buckets.At(0).start());
+        return m_Count;
     }
 
     template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::end()
+    inline size_t UnorderedSet<T, Hasher>::Capacity() const
     {
-        auto last_bucket = m_Buckets.At(m_Buckets.Size() - 1);
-        // return iterator(local_iterator(last_bucket), ;
+        return m_Elements.Capacity();
     }
 
 } // namespace sj

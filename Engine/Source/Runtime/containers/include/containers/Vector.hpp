@@ -364,8 +364,7 @@ namespace sj {
     }
 
     template <class T>
-    inline Vector<T>::Vector(Allocator* allocator, size_t count, const T& value)
-        : m_Data(nullptr), m_Allocator(allocator), m_Size(count), m_Capacity(count)
+    inline Vector<T>::Vector(Allocator* allocator, size_t count, const T& value) : Vector(allocator)
     {
         Resize(count, value);
     }
