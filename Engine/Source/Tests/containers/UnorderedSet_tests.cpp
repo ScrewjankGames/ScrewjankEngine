@@ -16,19 +16,18 @@ namespace container_tests {
     {
         UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
 
-        auto res = set.Insert("Foo");
-        ASSERT_EQ(true, res.second);
-        ASSERT_EQ("Foo", *(res.first));
-
-        res = set.Insert("Foo");
-        ASSERT_EQ(false, res.second);
-        // ASSERT_EQ(set.end(), res.first);
+        auto res1 = set.Insert("Foo");
+        ASSERT_EQ(true, res1.second);
+        ASSERT_EQ("Foo", *(res1.first));
 
         // Try duplicate insertion
-        // set.Insert("Foo");
-        // set.Insert("Bar");
-        // set.Insert("Biz");
+        auto res2 = set.Insert("Foo");
+        ASSERT_EQ(false, res2.second);
+        ASSERT_EQ(res1.first, res2.first);
 
+        set.Insert("Bar");
+        set.Insert("Biz");
+        set.Insert("Buzz");
         // auto foo = set.Find("Foo");
         // set.Insert({"Baz", "Boz"});
     }

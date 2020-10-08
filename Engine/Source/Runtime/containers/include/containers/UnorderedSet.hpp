@@ -23,41 +23,39 @@ namespace sj {
         using iterator_category = std::forward_iterator_tag;
 
         using value_type = typename const Set_t::value_type;
+        using element_type = typename const Set_t::element_type;
         using pointer = typename Set_t::const_pointer;
         using const_pointer = typename Set_t::const_pointer;
+        using element_pointer = typename element_type*;
         using reference = typename Set_t::const_reference;
         using const_reference = typename Set_t::const_reference;
-
         using difference_type = typename Set_t::difference_type;
-
-        using element_type = typename const Set_t::element_type;
-        using element_pointer = typename element_type*;
 
       public:
         /**
          * Constructor
          */
-        SetIterator_t(element_pointer element) : m_CurrElement(element)
-        {
-        }
+        SetIterator_t(element_pointer element);
 
-        /** Dereference operator overload */
-        [[nodiscard]] reference operator*() const
-        {
-            return m_CurrElement->Value;
-        }
+        /**
+         * Dereference operator overload
+         */
+        [[nodiscard]] const_reference operator*() const;
 
-        /** Equality comparison operator */
-        bool operator==(const SetIterator_t& other) const
-        {
-            return m_CurrElement == other.m_CurrElement;
-        }
+        /**
+         * Arrow operator overload
+         */
+        [[nodiscard]] const_pointer operator->() const;
 
-        /** Inequality comparison operator */
-        bool operator!=(const SetIterator_t& other) const
-        {
-            return !(*this == other);
-        }
+        /**
+         * Equality comparison operator
+         */
+        bool operator==(const SetIterator_t& other) const;
+
+        /**
+         * Inequality comparison operator
+         */
+        bool operator!=(const SetIterator_t& other) const;
 
       private:
         /** The element currently pointer at by this iterator */
@@ -82,10 +80,11 @@ namespace sj {
         using const_reference = const T&;
         using pointer = T*;
         using const_pointer = const T*;
+        using offset_t = int8_t;
 
         // Iterator definitions
-        using iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
         using const_iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
+        using iterator = const_iterator;
         using element_type = Element;
 
       public:
@@ -134,91 +133,67 @@ namespace sj {
         size_t Capacity() const;
 
       private:
+        /** Global maximum for how far an element can be from it's desired position */
+        static constexpr offset_t PROBE_LIMIT = std::numeric_limits<offset_t>::max();
+
         /** Offset that indicates an element is empty */
-        static constexpr uint8_t PROBE_LIMIT = std::numeric_limits<uint8_t>::max() - 1;
+        static constexpr offset_t EMPTY_OFFSET = -1;
 
         /** Flag to indicate a cell was erased so later lookups can probe correctly */
-        static constexpr uint8_t TOMBSTONE_VALUE = std::numeric_limits<uint8_t>::max();
+        static constexpr offset_t TOMBSTONE_VALUE = -2;
 
         struct Element
         {
             /**
              * Constructor
              */
-            Element() {};
+            Element();
+
+            /**
+             * Constructor
+             * @param offset The offset of the element from it's desired index
+             * @param args... Arguments to be forwarded to value_type's constructor
+             */
+            template <class... Args>
+            Element(offset_t offset, Args&&... args);
 
             /**
              * Copy Constructor
              */
-            Element(const Element& other)
-            {
-                Offset = other.Offset;
-                if (!IsEmpty()) {
-                    new (std::addressof(Value)) T(other.Value);
-                }
-            }
+            Element(const Element& other);
 
             /**
              * Move Constructor
              */
-            Element(Element&& other)
-            {
-                Offset = other.Offset;
-                if (!IsEmpty()) {
-                    new (std::addressof(Value)) T(std::move(other.Value));
-                }
-            }
+            Element(Element&& other);
 
             /**
              * Destructor
              */
-            ~Element() {};
+            ~Element();
 
             /**
              * Move assignment operator
              */
-            Element& operator=(Element&& other)
-            {
-                Offset = other.Offset;
-                if (!IsEmpty()) {
-                    Value.~T();
-                }
+            Element& operator=(Element&& other);
 
-                if (!other.IsEmpty()) {
-                    new (std::addressof(Value)) T(std::move(other.Value));
-                }
+            /**
+             * @return true if Element has never contained a value, else false
+             */
+            bool IsUninitialized() const;
 
-                return *this;
-            }
+            /**
+             * @return True if the element does not currently contain a record
+             */
+            bool IsEmpty() const;
 
-            /** Indicates the element has never contained a value (used during insertion) */
-            bool IsUninitialized() const
-            {
-                return Offset == PROBE_LIMIT;
-            }
-
-            /** Indicates the element does not currently contain a value */
-            bool IsEmpty() const
-            {
-                // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
-                return Offset >= PROBE_LIMIT;
-            }
-
-            /** Indicates the element currently contains a value */
-            bool HasValue() const
-            {
-                // Both PROBE_LIMIT and TOMBSTONE_VALUE denote empty cells.
-                return Offset < PROBE_LIMIT;
-            }
-
-            template <class... Args>
-            void EmplaceValue(Args&&... args)
-            {
-                new (std::addressof(Value)) T(std::forward<Args>(args)...);
-            }
+            /**
+             * @return True if the element currently contains a record
+             */
+            bool HasValue() const;
 
             /** Element's distance from it's desired hash slot */
-            uint8_t Offset = PROBE_LIMIT;
+            offset_t Offset = PROBE_LIMIT;
 
             /** Nameless union to prevent premature initialization of value by Vector */
             union
@@ -242,28 +217,36 @@ namespace sj {
         /** Number of elements in the set */
         size_t m_Count;
 
-        /** Used to terminate lookups early */
-        uint8_t m_MaxProbeDistance;
-
         /** The maximum load factor of the set */
         float m_MaxLoadFactor;
+
+        /**
+         * Insert the value with the current offset at rick_index, and re-insert the rich element
+         * @param poor_record The element that will be replacing the element at rich_index
+         * @param rich_index The index of the set that will be stolen from and re-inserted
+         */
+        void RobinHoodInsert(Element&& poor_record, size_t rich_index);
 
       public:
         /**
          * Ranged-based for loop compatabile iterator to begining of set
          */
-        iterator begin();
+        const_iterator begin() const;
 
         /**
          * Ranged-based for loop compatabile iterator to end of set
          */
-        iterator end();
+        const_iterator end() const;
     };
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// UnorderedSet Implementation
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     template <class T, class Hasher>
     inline UnorderedSet<T, Hasher>::UnorderedSet(Allocator* allocator)
         : m_Allocator(allocator), m_HashFunctor(), m_Elements(allocator, 1), m_IndexMask(0),
-          m_Count(0), m_MaxProbeDistance(0), m_MaxLoadFactor(0.9f)
+          m_Count(0), m_MaxLoadFactor(0.9f)
     {
     }
 
@@ -271,7 +254,22 @@ namespace sj {
     inline typename UnorderedSet<T, Hasher>::const_iterator
     UnorderedSet<T, Hasher>::Find(const T& key) const
     {
-        return const_iterator(nullptr);
+        auto hash = m_HashFunctor(key);
+        auto desired_index = hash & m_IndexMask;
+
+        // Ensure supplied key is not in the Set (duplicated from Find() to avoid redundant hashing)
+        size_t search_start_index = desired_index;
+
+        for (auto [index, curr_offset] = std::tuple {desired_index, (offset_t)0};
+             m_Elements[index].Offset >= curr_offset;
+             index = (index + 1) & m_IndexMask, curr_offset++) {
+
+            if (key == m_Elements[index].Value) {
+                return const_iterator(&m_Elements[index]);
+            }
+        }
+
+        return end();
     }
 
     template <class T, class Hasher>
@@ -286,51 +284,55 @@ namespace sj {
     inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
     UnorderedSet<T, Hasher>::Emplace(Args&&... args)
     {
-        // Construct a new record
-        Element new_record;
-        new_record.Offset = 0;
-        new_record.EmplaceValue(std::forward<Args>(args)...);
+        // construct a new record on the stack
+        Element new_record(0, std::forward<Args>(args)...);
+        auto hash = m_HashFunctor(new_record.Value);
+        auto desired_index = hash & m_IndexMask;
 
-        // Ensure supplied key is not in the Set
-        if (auto it = Find(new_record.Value); it != end()) {
-            return {it, false};
+        // Ensure supplied key is not in the Set (same as the Find() operation)
+        size_t search_start_index = desired_index;
+
+        for (auto [index, curr_offset] = std::tuple {desired_index, uint8_t(0)};
+             m_Elements[index].Offset >= curr_offset;
+             index = (index + 1) & m_IndexMask, curr_offset++) {
+
+            if (new_record.Value == m_Elements[index].Value) {
+                return {const_iterator(&m_Elements[index]), false};
+            }
         }
 
-        // The new key is unique, insert it
+        // The new key is unique, try to insert it
         auto new_count = m_Count + 1;
 
         // If there's not enough space, rehash
         if ((new_count / Capacity()) > m_MaxLoadFactor || new_count > m_Elements.Capacity()) {
             Rehash(m_Elements.Capacity() * 2);
+
+            // Recompute desired index, rehashing changes index mask
+            desired_index = hash & m_IndexMask;
         }
 
-        // Construct information needed for insertion
-        auto hash = m_HashFunctor(new_record.Value);
-        auto start_index = hash & m_IndexMask;
+        // Perform the robin hood insertion, with a maximum probe count of PROBE_LIMIT
+        for (size_t index = desired_index; new_record.Offset < PROBE_LIMIT;
+             index = (index + 1) & m_IndexMask, new_record.Offset++) {
 
-        // Perform the robin hood insertion
-        for (uint8_t i = 0; i < PROBE_LIMIT; i++) {
-            // Allow probing to wrap around the set
-            auto index = (start_index + i) & m_IndexMask;
-
-            // Only directly insert into uninitialized slots
+            // If we've found an open entry, take it
             if (m_Elements[index].IsEmpty()) {
-                // If you've found an empty slot, take it
                 m_Elements[index] = std::move(new_record);
-                return {iterator(&m_Elements[index]), true};
-            } else {
-                // Attempt the robin hood operation
+                return {const_iterator(&m_Elements[index]), true};
+            } else if (m_Elements[index].Offset < new_record.Offset) {
+                RobinHoodInsert(std::move(new_record), index);
+                return {const_iterator(&m_Elements[index]), true};
             }
-            new_record.Offset++;
         }
 
-        SJ_ASSERT(
-            false,
-            "UnorderedSet insertion failed due to excessive collision count (>= {}!). Check your "
-            "hash function.",
-            PROBE_LIMIT);
+        SJ_ASSERT(false,
+                  "UnorderedSet insertion failed due to excessive collision count (>= {}!). "
+                  "Check your "
+                  "hash function.",
+                  PROBE_LIMIT);
 
-        return {iterator(nullptr), false};
+        return {nullptr, false};
     }
 
     template <class T, class Hasher>
@@ -356,12 +358,12 @@ namespace sj {
         // Reset tracking data
         m_Count = 0;
         m_IndexMask = new_capacity - 1;
-        m_MaxProbeDistance = 0;
 
         // Re-insert all the old data into the new UnorderedSet
         for (auto& element : old_set) {
             if (element.HasValue()) {
                 Emplace(std::move(element.Value));
+                m_Count++;
             }
         }
     }
@@ -379,15 +381,148 @@ namespace sj {
     }
 
     template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::begin()
+    inline void UnorderedSet<T, Hasher>::RobinHoodInsert(Element&& poor_record, size_t rich_index)
+    {
+        // Swap the rich and poor entries
+        Element rich_record(std::move(m_Elements[rich_index]));
+
+        m_Elements[rich_index] = std::move(poor_record);
+
+        for (size_t index = rich_index; rich_record.Offset < PROBE_LIMIT;
+             index = (index + 1) & m_IndexMask, rich_record.Offset++) {
+            // If we've found an open entry, take it
+            if (m_Elements[index].IsEmpty()) {
+                m_Elements[index] = std::move(rich_record);
+
+                return;
+            } else if (m_Elements[index].Offset < rich_record.Offset) {
+                // We found a richer record.
+
+                // Recursively call this robin hood function to again steal from the rich
+                RobinHoodInsert(std::move(rich_record), index);
+                return;
+            }
+        }
+    }
+
+    template <class T, class Hasher>
+    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::begin() const
     {
         return iterator(&(*m_Elements.begin()));
     }
 
     template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::end()
+    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::end() const
     {
         return iterator(&(*m_Elements.end()));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// UnorderedSet::Element Implementation
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::Element()
+    {
+        Offset = EMPTY_OFFSET;
+    }
+
+    template <class T, class Hasher>
+    template <class... Args>
+    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, Args&&... args)
+    {
+        Offset = offset;
+        new (std::addressof(Value)) T(std::forward<Args>(args)...);
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::Element(const Element& other)
+    {
+        Offset = other.Offset;
+        if (!IsEmpty()) {
+            new (std::addressof(Value)) T(other.Value);
+        }
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::Element(Element&& other)
+    {
+        Offset = other.Offset;
+        if (!IsEmpty()) {
+            new (std::addressof(Value)) T(std::move(other.Value));
+        }
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::~Element()
+    {
+    }
+
+    template <class T, class Hasher>
+    inline typename UnorderedSet<T, Hasher>::Element&
+    UnorderedSet<T, Hasher>::Element::operator=(Element&& other)
+    {
+        if (!IsEmpty()) {
+            Value.~T();
+        }
+
+        Offset = other.Offset;
+        if (!other.IsEmpty()) {
+            new (std::addressof(Value)) T(std::move(other.Value));
+        }
+
+        return *this;
+    }
+
+    template <class T, class Hasher>
+    inline bool UnorderedSet<T, Hasher>::Element::IsUninitialized() const
+    {
+        return Offset == EMPTY_OFFSET;
+    }
+
+    template <class T, class Hasher>
+    inline bool UnorderedSet<T, Hasher>::Element::IsEmpty() const
+    {
+        return Offset < 0;
+    }
+
+    template <class T, class Hasher>
+    inline bool UnorderedSet<T, Hasher>::Element::HasValue() const
+    {
+        return Offset >= 0;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// SetIterator Implementation
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    template <class Set_t>
+    inline SetIterator_t<Set_t>::SetIterator_t(element_pointer element) : m_CurrElement(element)
+    {
+    }
+
+    template <class Set_t>
+    inline typename SetIterator_t<Set_t>::const_reference SetIterator_t<Set_t>::operator*() const
+    {
+        return m_CurrElement->Value;
+    }
+
+    template <class Set_t>
+    inline typename SetIterator_t<Set_t>::const_pointer SetIterator_t<Set_t>::operator->() const
+    {
+        return &m_CurrElement->Value;
+    }
+
+    template <class Set_t>
+    inline bool SetIterator_t<Set_t>::operator==(const SetIterator_t& other) const
+    {
+        return m_CurrElement == other.m_CurrElement;
+    }
+
+    template <class Set_t>
+    inline bool SetIterator_t<Set_t>::operator!=(const SetIterator_t& other) const
+    {
+        return !(*this == other);
     }
 
 } // namespace sj
