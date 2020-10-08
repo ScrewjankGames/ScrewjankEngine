@@ -13,6 +13,7 @@ To build and run the project you'll also need to install:
 - Custom container library:
   - Array
   - Vector
+  - Singly Linked List
   - UnorderedSet (In Progress)
   - UnorderedMap (In Progress)
 
