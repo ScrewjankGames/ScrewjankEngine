@@ -34,7 +34,7 @@ namespace sj {
 
     Allocator* MemorySystem::GetUnmanagedAllocator()
     {
-        static sj::UnmanagedAllocator s_Allocator;
+        static UnmanagedAllocator s_Allocator;
         return &s_Allocator;
     }
 

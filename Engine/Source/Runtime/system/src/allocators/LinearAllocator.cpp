@@ -33,7 +33,7 @@ namespace sj {
     {
         // Ensure there is enough space to satisfy allocation
         if (m_AllocatorStats.FreeSpace() < size + GetAlignmentOffset(alignment, m_CurrFrameStart)) {
-            SJ_LOG_ERROR("{} has insufficient memory to perform requested allocation", m_DebugName);
+            SJ_LOG_ERROR("Allocator has insufficient memory to perform requested allocation");
             return nullptr;
         }
 

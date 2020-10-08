@@ -13,12 +13,12 @@
 
 using namespace sj;
 
-void* operator new(size_t num_bytes) noexcept(false)
+[[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {
     return MemorySystem::GetUnmanagedAllocator()->Allocate(num_bytes);
 }
 
-void operator delete(void* memory) throw()
+void operator delete(void* memory) noexcept
 {
     MemorySystem::GetUnmanagedAllocator()->Free(memory);
 }

@@ -17,7 +17,8 @@ namespace sj {
 
         ~LinearAllocator();
 
-        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment = 1) override;
+        [[nodiscard]] void* Allocate(const size_t size,
+                                     const size_t alignment = alignof(std::max_align_t)) override;
 
         void Free(void* memory = nullptr) override;
 
