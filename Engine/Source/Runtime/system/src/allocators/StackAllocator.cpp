@@ -27,14 +27,6 @@ namespace sj {
 
     void* StackAllocator::Allocate(const size_t size, const size_t alignment)
     {
-        auto free_space = m_Capacity - (uintptr_t(m_Offset) - uintptr_t(m_BufferStart));
-
-        if (free_space < size) {
-            SJ_LOG_ERROR("Allocator {} has insufficient memory to perform requested allocation.",
-                         m_DebugName);
-            return nullptr;
-        }
-
         // Calculate padding needed to align header and payload
         size_t alignment_requirement = std::max(alignment, alignof(StackAllocatorHeader));
 
@@ -47,6 +39,8 @@ namespace sj {
 
         size_t total_allocation_size = required_padding + sizeof(StackAllocatorHeader) + size;
 
+        // Ensure the allocator has enough memory to satisfy the allocation
+        auto free_space = m_Capacity - (uintptr_t(m_Offset) - uintptr_t(m_BufferStart));
         if (free_space < total_allocation_size) {
             SJ_LOG_ERROR(
                 "Stack allocator has insufficient memory to perform requested allocation.");
@@ -82,7 +76,7 @@ namespace sj {
                       "Stack allocator cannot free memory that is not on top of the stack.");
         }
 
-        // Get beginning of current frame
+        // Get beginning of "top" allocation frame
         auto current_frame_start = (uintptr_t)m_CurrentHeader - m_CurrentHeader->HeaderOffset;
 
         // Roll free memory pointer back to start of current frame

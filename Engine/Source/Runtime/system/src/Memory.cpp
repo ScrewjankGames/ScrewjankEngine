@@ -52,12 +52,13 @@ namespace sj {
     uintptr_t GetAlignmentAdjustment(size_t align_of, const void* const ptr)
     {
         auto offset = GetAlignmentOffset(align_of, ptr);
+
+        // If the address is already aligned, we don't need any adjustment
         if (offset == 0) {
             return 0;
         }
 
-        auto adjustment = align_of - offset;
-        return adjustment;
+        return align_of - offset;
     }
 
     bool IsMemoryAligned(const void* const memory_address, const size_t align_of)

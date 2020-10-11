@@ -44,54 +44,48 @@ namespace sj {
             return nullptr;
         }
 
-        // We're going to use the block, remove it from the free list
+        // Remove block from the free list
         RemoveFreeBlock(best_fit_block);
 
-        // Get a copy of the current block's info before it is overwritten in the buffer
+        // Get a copy of the current block's info before it is overwritten
         FreeBlock old_block_info = *best_fit_block;
 
-        // Place allocation header in the best fit block
-        void* header_loc = (void*)((uintptr_t)best_fit_block + header_padding);
+        // Calculate allocation information
+        void* header_address = (void*)((uintptr_t)best_fit_block + header_padding);
+        void* payload_address = (void*)((uintptr_t)header_address + sizeof(AllocationHeader));
 
-        // Assert that the header is being placed at an aligned memory address
-        SJ_ASSERT(IsMemoryAligned(header_loc, alignof(AllocationHeader)),
+        // Amount of space left in the block for the payload
+        // !!!This operation overwrites the data pointed to by best_fit_block!!!
+        auto payload_space = old_block_info.Size - sizeof(AllocationHeader) - header_padding;
+
+        SJ_ASSERT(IsMemoryAligned(header_address, alignof(AllocationHeader)),
                   "Allocation header memory is misaligned");
 
-        // Place the header into memory just before the user's data
-        auto header = new (header_loc) AllocationHeader();
-        header->Padding = header_padding;
-        header->Size = old_block_info.Size - sizeof(AllocationHeader) - header_padding;
-
-        // Calculate the memory location returned to the user
-        void* payload_loc = (void*)((uintptr_t)header_loc + sizeof(AllocationHeader));
-
-        // Assert payload_loc satisfy's the user's alignment request
-        SJ_ASSERT(IsMemoryAligned(payload_loc, alignment),
+        SJ_ASSERT(IsMemoryAligned(payload_address, alignment),
                   "Allocation payload memory is misaligned");
 
-        // See if we can fit a memory-aligned free block after the end of the payload in this
-        // current block
-        uintptr_t payload_end = (uintptr_t)payload_loc + size;
-        uintptr_t block_end = uintptr_t(best_fit_block) + old_block_info.Size;
+        // Place the header into memory just before the user's data
+        auto header = new (header_address) AllocationHeader(header_padding, payload_space);
 
-        // Find the amount of padding we need after the payload to align a new free block
+        // Calculate unused space and attempt to make a new free block
+        uintptr_t payload_end = (uintptr_t)payload_address + size;
+        uintptr_t block_end = uintptr_t(payload_address) + payload_space;
+
+        // Padding required to align a new free block after the end of the user payload
         auto new_block_adjustment = GetAlignmentAdjustment(alignof(FreeBlock), (void*)payload_end);
 
+        // Padding bytes for the new block would be left at the end of the current block
         auto unused_space = block_end - (payload_end + new_block_adjustment);
 
-        // If the remaining space is big enough to host a free block and later an allocation, create
-        // a new free block out of it
-        if (unused_space > sizeof(FreeBlock) && unused_space > sizeof(AllocationHeader)) {
+        if (unused_space >= kMinBlockSize) {
             // Remove unused_space from the allocation header's representation of the block
             header->Size -= unused_space;
 
-            void* new_block_location = (void*)(payload_end + new_block_adjustment);
+            // Place a FreeBlock into the buffer after the user's payload
+            void* new_block_address = (void*)(payload_end + new_block_adjustment);
+            FreeBlock* new_block = new (new_block_address) FreeBlock(unused_space);
 
-            SJ_ASSERT(IsMemoryAligned(new_block_location, alignof(FreeBlock)),
-                      "New freeblock improperly aligned.");
-
-            // payload_end is the first byte **AFTER** the user's data
-            FreeBlock* new_block = new (new_block_location) FreeBlock(unused_space);
+            // Insert the new block into the free list
             AddFreeBlock(new_block);
         }
 
@@ -99,7 +93,7 @@ namespace sj {
         m_AllocatorStats.TotalBytesAllocated += header->Size;
         m_AllocatorStats.ActiveAllocationCount++;
         m_AllocatorStats.ActiveBytesAllocated += header->Size;
-        return payload_loc;
+        return payload_address;
     }
 
     void FreeListAllocator::Free(void* memory)
@@ -132,7 +126,7 @@ namespace sj {
 
         const auto header_and_payload_size = size + sizeof(AllocationHeader);
 
-        // When looking to align memory, align by the most strict alignment requirement. This will
+        // When looking to align memory, align by the strictest alignment requirement. This will
         // allow header and payload to be packed together in memory without padding between them,
         // only padding in the allocation is placed before the header.
         const size_t alignment_requirement = std::max(alignof(AllocationHeader), alignment);
@@ -141,7 +135,6 @@ namespace sj {
         FreeBlock* curr_block = m_FreeBlocks;
 
         // Storage for results of the free-list search
-        FreeBlock* best_fit_block = nullptr;
         size_t header_padding = 0;
 
         // Search the free list for a best-fit block
@@ -159,18 +152,13 @@ namespace sj {
 
             // If the current free block is large enough to support allocation
             if (total_allocation_size <= curr_block->Size) {
-                // Determine if it is a better fit than the current best-fit block
-                if (best_fit_block == nullptr || curr_block->Size < best_fit_block->Size) {
-                    // This is the first block found that can handle the allocation
-                    best_fit_block = curr_block;
-                    header_padding = required_padding;
-                }
+                return {curr_block, header_padding};
             }
 
             curr_block = curr_block->Next;
         }
 
-        return {best_fit_block, header_padding};
+        return {nullptr, header_padding};
     }
 
     void FreeListAllocator::AddFreeBlock(FreeBlock* new_block)

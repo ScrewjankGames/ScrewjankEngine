@@ -1,5 +1,6 @@
 #pragma once
 // STD Headers
+#include <cstddef>
 
 // Library headers
 
@@ -68,8 +69,10 @@ namespace sj {
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
+         * @param alignment The alignment requirement for this allocation
          */
-        [[nodiscard]] virtual void* Allocate(const size_t size, const size_t alignment = 1) = 0;
+        [[nodiscard]] virtual void*
+        Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
 
         /**
          * Marks memory as free

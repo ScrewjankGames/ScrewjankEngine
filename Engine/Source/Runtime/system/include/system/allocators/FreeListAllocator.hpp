@@ -63,8 +63,8 @@ namespace sj {
         };
 
         /**
-         * Searches the free list for a block that can satisfy the size and alignment requirements
-         * provided, in addition to the allocation header.
+         * Searches the free list for the first block that can satisfy the size and alignment
+         * requirements provided, in addition to the allocation header.
          * @param size The size the user wishes to allocate
          * @param the alignment restriction for the memory the user is requesting
          * @return The most suitable free block, along with the amount of padding that needs to be
@@ -99,5 +99,14 @@ namespace sj {
 
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;
+
+        /** Constant value to determine the minimum size of a block */
+        static constexpr size_t kMinBlockSize =
+            std::max(sizeof(FreeBlock), sizeof(AllocationHeader) + 1);
+
+        /** Constant value to determine the strictest alignment that must be satisfied to split off
+         * a new free block */
+        static constexpr size_t kMaxMetadataAlignment =
+            std::max(alignof(FreeBlock), alignof(AllocationHeader));
     };
 } // namespace sj

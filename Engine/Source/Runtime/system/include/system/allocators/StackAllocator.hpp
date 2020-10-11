@@ -13,21 +13,50 @@ namespace sj {
     class StackAllocator : public Allocator
     {
       public:
+        /**
+         * Constructor
+         * @param buffer_size The size of this allocator's buffer in bytes
+         * @param backing_allocator The allocator this allocator get's it's memory from
+         */
         StackAllocator(size_t buffer_size,
                        Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
+        /**
+         * Destructor
+         */
         ~StackAllocator();
 
-        [[nodiscard]] void* Allocate(const size_t size, const size_t alignment) override;
+        /**
+         * Allocates size bites from the heap
+         * @param size The number of bytes to allocate
+         * @param alignment The alignment requirement for this allocation
+         */
+        [[nodiscard]] void* Allocate(const size_t size,
+                                     const size_t alignment = alignof(std::max_align_t)) override;
 
+        /**
+         * Marks memory as free
+         * @param memory Pointer to the memory to free
+         * @note memory must point to the head of the most recent allocation, or nullptr to pop off
+         * the stack
+         */
         void Free(void* memory = nullptr) override;
 
+        /**
+         * See Allocate
+         */
+        [[nodiscard]] void* Push(size_t size, size_t alignment = alignof(std::max_align_t));
+
+        /**
+         * Calls Free() with the address of the last allocation
+         */
+        void Pop();
+
+        /**
+         * Calls allocate with the correct size and alignment for T
+         */
         template <typename T>
         [[nodiscard]] void* PushType();
-
-        [[nodiscard]] void* Push(size_t size, size_t alignment = 1);
-
-        void Pop();
 
       private:
         /** Data structure used to manage allocations the stack */
@@ -37,7 +66,7 @@ namespace sj {
             StackAllocatorHeader* PreviousHeader;
 
             /** Stores how many bytes were used to pad this header in the stack */
-            uintptr_t HeaderOffset;
+            size_t HeaderOffset;
         };
 
         /** Allocator from which this allocator requests memory */
