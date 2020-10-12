@@ -100,7 +100,6 @@ namespace sj {
     {
         SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
 
-        // Allocation Header
         AllocationHeader* block_header =
             (AllocationHeader*)((uintptr_t)memory - sizeof(AllocationHeader));
 
@@ -113,7 +112,6 @@ namespace sj {
         m_AllocatorStats.ActiveAllocationCount--;
         m_AllocatorStats.ActiveBytesAllocated -= block_header->Size;
 
-        // Potentially stomps on memory useb by block_header!
         FreeBlock* new_block = new (block_start) FreeBlock(block_size);
 
         AddFreeBlock(new_block);

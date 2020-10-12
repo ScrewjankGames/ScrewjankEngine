@@ -20,3 +20,11 @@ option(BUILD_GMOCK OFF)
 add_subdirectory(googletest)
 set_target_properties(gtest PROPERTIES FOLDER Engine/Dependencies/googletest)
 set_target_properties(gtest_main PROPERTIES FOLDER Engine/Dependencies/googletest)
+
+## GoogleBenchmark
+option(BENCHMARK_ENABLE_TESTING "Enable testing of the benchmark library." OFF)
+option(BENCHMARK_ENABLE_INSTALL "Enable installation of benchmark. (Projects embedding benchmark may want to turn this OFF.)" OFF)
+option(BENCHMARK_ENABLE_GTEST_TESTS "Enable building the unit tests which depend on gtest" OFF)
+add_subdirectory(benchmark)
+set_target_properties(benchmark PROPERTIES FOLDER Engine/Dependencies/googlebenchmark)
+set_target_properties(benchmark_main PROPERTIES FOLDER Engine/Dependencies/googlebenchmark)

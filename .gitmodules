@@ -10,3 +10,6 @@
 [submodule "Dependencies/spdlog"]
 	path = Dependencies/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "Dependencies/benchmark"]
+	path = Dependencies/benchmark
+	url = https://github.com/google/benchmark.git
