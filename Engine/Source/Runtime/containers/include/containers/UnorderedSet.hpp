@@ -100,6 +100,11 @@ namespace sj {
         const_iterator Find(const T& key) const;
 
         /**
+         * @return True if key is in set, else false
+         */
+        bool Contains(const T& key) const;
+
+        /**
          * Insert an element into the set
          * @return An iterator to the element inserted
          */
@@ -118,6 +123,11 @@ namespace sj {
         bool Erase(const T& key);
 
         /**
+         * Erase all elements in the set
+         */
+        void Clear();
+
+        /**
          * Rehash set to contain num_buckets buckets
          */
         void Rehash(size_t capacity);
@@ -134,13 +144,13 @@ namespace sj {
 
       private:
         /** Global maximum for how far an element can be from it's desired position */
-        static constexpr offset_t PROBE_LIMIT = std::numeric_limits<offset_t>::max();
+        static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
 
         /** Offset that indicates an element is empty */
-        static constexpr offset_t EMPTY_OFFSET = -1;
+        static constexpr offset_t kEmptyOffset = -1;
 
         /** Flag to indicate a cell was erased so later lookups can probe correctly */
-        static constexpr offset_t TOMBSTONE_VALUE = -2;
+        static constexpr offset_t kTombstoneValue = -2;
 
         struct Element
         {
@@ -193,7 +203,7 @@ namespace sj {
             bool HasValue() const;
 
             /** Element's distance from it's desired hash slot */
-            offset_t Offset = PROBE_LIMIT;
+            offset_t Offset = kProbeLimit;
 
             /** Nameless union to prevent premature initialization of value by Vector */
             union
@@ -257,10 +267,7 @@ namespace sj {
         auto hash = m_HashFunctor(key);
         auto desired_index = hash & m_IndexMask;
 
-        // Ensure supplied key is not in the Set (duplicated from Find() to avoid redundant hashing)
-        size_t search_start_index = desired_index;
-
-        for (auto [index, curr_offset] = std::tuple {desired_index, (offset_t)0};
+        for (auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
              m_Elements[index].Offset >= curr_offset;
              index = (index + 1) & m_IndexMask, curr_offset++) {
 
@@ -270,6 +277,12 @@ namespace sj {
         }
 
         return end();
+    }
+
+    template <class T, class Hasher>
+    inline bool UnorderedSet<T, Hasher>::Contains(const T& key) const
+    {
+        return Find(key) != end();
     }
 
     template <class T, class Hasher>
@@ -292,7 +305,7 @@ namespace sj {
         // Ensure supplied key is not in the Set (same as the Find() operation)
         size_t search_start_index = desired_index;
 
-        for (auto [index, curr_offset] = std::tuple {desired_index, uint8_t(0)};
+        for (auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
              m_Elements[index].Offset >= curr_offset;
              index = (index + 1) & m_IndexMask, curr_offset++) {
 
@@ -312,13 +325,14 @@ namespace sj {
             desired_index = hash & m_IndexMask;
         }
 
-        // Perform the robin hood insertion, with a maximum probe count of PROBE_LIMIT
-        for (size_t index = desired_index; new_record.Offset < PROBE_LIMIT;
+        // Perform the robin hood insertion, with a maximum probe count of kProbeLimit
+        for (size_t index = desired_index; new_record.Offset < kProbeLimit;
              index = (index + 1) & m_IndexMask, new_record.Offset++) {
 
             // If we've found an open entry, take it
             if (m_Elements[index].IsEmpty()) {
                 m_Elements[index] = std::move(new_record);
+                m_Count++;
                 return {const_iterator(&m_Elements[index]), true};
             } else if (m_Elements[index].Offset < new_record.Offset) {
                 RobinHoodInsert(std::move(new_record), index);
@@ -330,7 +344,7 @@ namespace sj {
                   "UnorderedSet insertion failed due to excessive collision count (>= {}!). "
                   "Check your "
                   "hash function.",
-                  PROBE_LIMIT);
+                  kProbeLimit);
 
         return {nullptr, false};
     }
@@ -338,7 +352,27 @@ namespace sj {
     template <class T, class Hasher>
     inline bool UnorderedSet<T, Hasher>::Erase(const T& key)
     {
+        auto hash = m_HashFunctor(key);
+        auto start_index = hash & m_IndexMask;
+
+        for (auto [index, offset] = std::tuple {start_index, offset_t(0)};
+             m_Elements[index].Offset >= offset;
+             index = (index + 1) & m_IndexMask, offset++) {
+            if (m_Elements[index].Value == key) {
+                m_Count--;
+                m_Elements[index].Offset = kTombstoneValue;
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    template <class T, class Hasher>
+    inline void UnorderedSet<T, Hasher>::Clear()
+    {
+        m_Elements = Vector<Element>(m_Allocator, m_Elements.Capacity());
+        m_Count = 0;
     }
 
     template <class T, class Hasher>
@@ -356,14 +390,13 @@ namespace sj {
         m_Elements = Vector<Element>(m_Allocator, new_capacity);
 
         // Reset tracking data
-        m_Count = 0;
         m_IndexMask = new_capacity - 1;
 
-        // Re-insert all the old data into the new UnorderedSet
+        // Reset count and re-insert all the old data back into the set
+        m_Count = 0;
         for (auto& element : old_set) {
             if (element.HasValue()) {
                 Emplace(std::move(element.Value));
-                m_Count++;
             }
         }
     }
@@ -388,17 +421,17 @@ namespace sj {
 
         m_Elements[rich_index] = std::move(poor_record);
 
-        for (size_t index = rich_index; rich_record.Offset < PROBE_LIMIT;
+        for (size_t index = rich_index; rich_record.Offset < kProbeLimit;
              index = (index + 1) & m_IndexMask, rich_record.Offset++) {
             // If we've found an open entry, take it
             if (m_Elements[index].IsEmpty()) {
+                m_Count++;
                 m_Elements[index] = std::move(rich_record);
-
                 return;
             } else if (m_Elements[index].Offset < rich_record.Offset) {
-                // We found a richer record.
-
-                // Recursively call this robin hood function to again steal from the rich
+                // We found a richer record. Recursively call this robin hood function to again
+                // steal from the rich
+                m_Count++;
                 RobinHoodInsert(std::move(rich_record), index);
                 return;
             }
@@ -424,7 +457,7 @@ namespace sj {
     template <class T, class Hasher>
     inline UnorderedSet<T, Hasher>::Element::Element()
     {
-        Offset = EMPTY_OFFSET;
+        Offset = kEmptyOffset;
     }
 
     template <class T, class Hasher>
@@ -477,7 +510,7 @@ namespace sj {
     template <class T, class Hasher>
     inline bool UnorderedSet<T, Hasher>::Element::IsUninitialized() const
     {
-        return Offset == EMPTY_OFFSET;
+        return Offset == kEmptyOffset;
     }
 
     template <class T, class Hasher>
