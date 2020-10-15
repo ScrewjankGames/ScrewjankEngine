@@ -299,11 +299,6 @@ namespace container_tests {
 
         delete vec;
 
-        // std::vector<DtorDummy> vec;
-        // for (int i = 0; i < 10; i++) {
-        //    vec.emplace_back(&destroyed);
-        //}
-
         ASSERT_EQ(10, destroyed);
     }
 

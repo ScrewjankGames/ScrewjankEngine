@@ -12,6 +12,20 @@ using namespace sj;
 
 namespace container_tests {
 
+    TEST(UnorderedSetTests, CopyConstructorTest)
+    {
+        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator());
+        set1 = {"Foo", "Bar", "Biz", "Baz"};
+
+        UnorderedSet<std::string> set2(set1);
+
+        ASSERT_EQ(set1, set2);
+
+        for (auto it1 = set1.begin(), it2 = set2.begin(); it1 != set1.begin(); it1++, it2++) {
+            ASSERT_EQ(*it1, *it2);
+        }
+    }
+
     TEST(UnorderedSetTests, InsertTest)
     {
         UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());

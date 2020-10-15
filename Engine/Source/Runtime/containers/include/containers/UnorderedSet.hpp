@@ -57,6 +57,11 @@ namespace sj {
          */
         bool operator!=(const SetIterator_t& other) const;
 
+        /**
+         * Pre-increment operator overload
+         */
+        SetIterator_t& operator++();
+
       private:
         /** The element currently pointer at by this iterator */
         element_pointer m_CurrElement;
@@ -92,6 +97,16 @@ namespace sj {
          * Default constructor
          */
         UnorderedSet(Allocator* allocator = MemorySystem::GetDefaultAllocator());
+
+        /**
+         * List Initialization Constructor
+         */
+        UnorderedSet(Allocator* allocator, std::initializer_list<T> list);
+
+        /**
+         * Assignment from initializer list
+         */
+        UnorderedSet<T>& operator=(std::initializer_list<T> list);
 
         /**
          * Looks up supplied key in set
@@ -258,6 +273,25 @@ namespace sj {
         : m_Allocator(allocator), m_HashFunctor(), m_Elements(allocator, 1), m_IndexMask(0),
           m_Count(0), m_MaxLoadFactor(0.9f)
     {
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::UnorderedSet(Allocator* allocator,
+                                                 std::initializer_list<T> list)
+        : UnorderedSet(allocator)
+    {
+        for (auto key : list) {
+            Insert(key);
+        }
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T>& UnorderedSet<T, Hasher>::operator=(std::initializer_list<T> list)
+    {
+        Clear();
+        for (auto key : list) {
+            Insert(key);
+        }
     }
 
     template <class T, class Hasher>
@@ -556,6 +590,13 @@ namespace sj {
     inline bool SetIterator_t<Set_t>::operator!=(const SetIterator_t& other) const
     {
         return !(*this == other);
+    }
+
+    template <class Set_t>
+    inline SetIterator_t<Set_t>& SetIterator_t<Set_t>::operator++()
+    {
+        ++m_CurrElement;
+        return *this;
     }
 
 } // namespace sj
