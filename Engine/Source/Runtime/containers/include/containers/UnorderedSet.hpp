@@ -222,7 +222,7 @@ namespace sj {
             /**
              * Move Constructor
              */
-            Element(Element&& other);
+            Element(Element&& other) noexcept;
 
             /**
              * Destructor
@@ -616,7 +616,7 @@ namespace sj {
     }
 
     template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(Element&& other)
+    inline UnorderedSet<T, Hasher>::Element::Element(Element&& other) noexcept
     {
         Offset = other.Offset;
         if (!IsEmpty()) {
