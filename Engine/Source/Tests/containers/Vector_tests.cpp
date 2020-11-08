@@ -342,6 +342,9 @@ namespace container_tests {
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
 
+        vec1.PushBack("Buzz");
+        ASSERT_EQ(1, vec1.Size());
+
         Vector<std::string> vec3(
             Vector<std::string>(MemorySystem::GetUnmanagedAllocator(), {"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
@@ -376,6 +379,10 @@ namespace container_tests {
             sum += element;
         }
         ASSERT_EQ(sum, 0);
+
+        vec.Resize(0);
+        ASSERT_EQ(0, vec.Size());
+        ASSERT_EQ(0, vec.Capacity());
     }
 
     TEST(VectorTests, ReserveTests)
@@ -393,6 +400,11 @@ namespace container_tests {
         ASSERT_EQ(1, vec.Capacity());
         ASSERT_EQ(1, vec.Size());
         ASSERT_EQ(2, vec.Front());
+
+        // Attempt to eliminate capacity
+        vec.Reserve(0);
+        ASSERT_EQ(0, vec.Capacity());
+        ASSERT_EQ(0, vec.Size());
     }
 
     TEST(VectorTests, ValueInitializingConstructorTest)

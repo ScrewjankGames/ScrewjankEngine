@@ -5,7 +5,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"
 #include "containers/ForwardList.hpp"
 #include "system/Allocator.hpp"
 

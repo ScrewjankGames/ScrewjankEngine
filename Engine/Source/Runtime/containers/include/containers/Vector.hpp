@@ -8,7 +8,7 @@
 
 // Scewjank Headers
 #include "core/Assert.hpp"
-#include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"
 
 namespace sj {
 
@@ -320,7 +320,7 @@ namespace sj {
         /** Current size of the dynamic array */
         size_t m_Size;
 
-        /** Current capacity of the dynamic array */
+        /** Current capacity of the dynamic array, not including the sentinel element */
         size_t m_Capacity;
 
         /** Allocator used to service this vector */

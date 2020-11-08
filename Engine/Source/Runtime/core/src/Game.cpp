@@ -9,7 +9,7 @@
 // Engine Headers
 #include "core/Game.hpp"
 #include "core/Log.hpp"
-#include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"
 
 namespace sj {
 

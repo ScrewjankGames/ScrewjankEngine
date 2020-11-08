@@ -6,4 +6,4 @@
 #include "core/Assert.hpp"
 #include "core/Game.hpp"
 #include "core/Log.hpp"
-#include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"

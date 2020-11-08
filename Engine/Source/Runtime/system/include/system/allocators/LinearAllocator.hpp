@@ -4,7 +4,7 @@
 // Library Headers
 
 // Engine Headers
-#include "core/MemorySystem.hpp"
+#include "system/Memory.hpp"
 #include "system/Allocator.hpp"
 
 namespace sj {

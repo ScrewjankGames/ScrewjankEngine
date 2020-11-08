@@ -12,6 +12,43 @@ using namespace sj;
 
 namespace container_tests {
 
+    TEST(UnorderedSetTests, IterationTest)
+    {
+        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        set = {"Foo", "Bar", "Biz", "Baz"};
+
+        // Assert that iterator to begin actually points to an element
+        ASSERT_TRUE(set.Contains(*(set.begin())));
+
+        size_t i = 0;
+        for (auto it = set.begin(); it != set.end(); it++, i++) {
+            auto element = *it;
+            ASSERT_TRUE(set.Contains(element));
+        }
+        ASSERT_EQ(i, set.Count());
+
+        i = 0;
+        for (auto& element : set) {
+            ASSERT_TRUE(set.Contains(element));
+            i++;
+        }
+        ASSERT_EQ(i, set.Count());
+    }
+
+    TEST(UnorderedSetTests, InitializerListTest)
+    {
+        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        set = {"Foo", "Bar", "Biz", "Baz"};
+
+        ASSERT_EQ(4, set.Count());
+
+        ASSERT_TRUE(set.Contains("Foo"));
+        ASSERT_TRUE(set.Contains("Bar"));
+        ASSERT_TRUE(set.Contains("Biz"));
+        ASSERT_TRUE(set.Contains("Baz"));
+        ASSERT_FALSE(set.Contains(""));
+    }
+
     TEST(UnorderedSetTests, CopyConstructorTest)
     {
         UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator());
@@ -21,9 +58,63 @@ namespace container_tests {
 
         ASSERT_EQ(set1, set2);
 
-        for (auto it1 = set1.begin(), it2 = set2.begin(); it1 != set1.begin(); it1++, it2++) {
-            ASSERT_EQ(*it1, *it2);
-        }
+        set1.Erase("Bar");
+        ASSERT_FALSE(set1.Contains("Bar"));
+        ASSERT_TRUE(set2.Contains("Bar"));
+
+        ASSERT_TRUE(set2.Erase("Bar"));
+
+        // Ensure elements are deeply copied
+        auto foo1 = set1.Find("Foo");
+        auto foo2 = set2.Find("Foo");
+        ASSERT_NE(foo1, foo2);
+    }
+
+    TEST(UnorderedSetTests, MoveConstructorTest)
+    {
+        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        UnorderedSet<std::string> set2(std::move(set1));
+        ASSERT_FALSE(set1.Contains("Foo"));
+        ASSERT_EQ(set1.Count(), 0);
+
+        ASSERT_EQ(4, set2.Count());
+        ASSERT_TRUE(set2.Contains("Foo"));
+        ASSERT_TRUE(set2.Contains("Bar"));
+        ASSERT_TRUE(set2.Contains("Biz"));
+        ASSERT_TRUE(set2.Contains("Baz"));
+    }
+
+    TEST(UnorderedSetTests, CopyAssignmentTest)
+    {
+        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        auto set2 = set1;
+        ASSERT_EQ(set1.Count(), set2.Count());
+        ASSERT_EQ(set1.Capacity(), set2.Capacity());
+
+        auto foo1 = set1.Find("Foo");
+        auto foo2 = set2.Find("Foo");
+        ASSERT_NE(foo1, foo2);
+    }
+
+    TEST(UnorderedSetTests, MoveAssignmentTest)
+    {
+        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+                                       {"Foo", "Bar", "Biz", "Baz"});
+
+        auto set2 = std::move(set1);
+        ASSERT_EQ(4, set2.Count());
+
+        auto foo1 = set1.Find("Foo");
+        ASSERT_EQ(set1.end(), foo1);
+
+        ASSERT_TRUE(set2.Contains("Foo"));
+
+        set1.Insert("Foo");
+        ASSERT_EQ(1, set1.Count());
     }
 
     TEST(UnorderedSetTests, InsertTest)
