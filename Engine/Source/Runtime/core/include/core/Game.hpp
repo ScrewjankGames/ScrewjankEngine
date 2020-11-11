@@ -4,13 +4,14 @@
 // Library Headers
 
 // Engine Headers
-
+#include "core/Log.hpp"
 #include "system/Memory.hpp"
-#include "event_system/EventSystem.hpp"
 
 namespace sj {
-    // Forward declare system classes
+    // Forward declarations
     class MemorySystem;
+    class EventSystem;
+    class Window;
 
     class Game
     {
@@ -37,11 +38,14 @@ namespace sj {
         void Run();
 
       private:
-        /** Engine's event system */
-        UniquePtr<EventSystem> m_EventSystem;
-
         /** Engine's memory system */
         MemorySystem* m_MemorySystem;
+
+        /** Handle to game's window */
+        UniquePtr<Window> m_Window;
+
+        /** Engine's event system */
+        UniquePtr<EventSystem> m_EventSystem;
 
         /** Current frame time */
         float m_DeltaTime;

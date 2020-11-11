@@ -59,7 +59,7 @@ static void BM_StdUnorderedSetFind(benchmark::State& state)
 
     while (state.KeepRunning()) {
         for (auto i = 0; i < state.range(); i++) {
-            set.find(random_number_generator());
+            auto found = set.find(random_number_generator());
         }
     }
 }
@@ -80,7 +80,7 @@ static void BM_SjUnorderedSetFind(benchmark::State& state)
 
     while (state.KeepRunning()) {
         for (auto i = 0; i < state.range(); i++) {
-            set.Find(random_number_generator());
+            auto found = set.Find(random_number_generator());
         }
     }
 }

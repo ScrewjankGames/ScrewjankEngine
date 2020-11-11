@@ -139,7 +139,7 @@ namespace sj {
          * Looks up supplied key in set
          * @return iterator to element if found, else end()
          */
-        const_iterator Find(const T& key) const;
+        [[nodiscard]] const_iterator Find(const T& key) const;
 
         /**
          * @return True if key is in set, else false

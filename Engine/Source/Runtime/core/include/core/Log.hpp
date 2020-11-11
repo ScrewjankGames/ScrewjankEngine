@@ -42,7 +42,7 @@ namespace sj {
     template <typename... Args>
     inline void Logger::LogTrace(const char* format, Args... args)
     {
-        spdlog::trace(format, args...)
+        spdlog::trace(format, args...);
     }
 
     template <typename... Args>

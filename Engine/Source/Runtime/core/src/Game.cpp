@@ -1,15 +1,15 @@
+#include "core/Game.hpp"
+
 // STD Headers
 #include <chrono>
 
 // Library Headers
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
 // Engine Headers
-#include "core/Game.hpp"
-#include "core/Log.hpp"
-#include "system/Memory.hpp"
+#include "core/Window.hpp"
+#include "event_system/EventSystem.hpp"
 
 namespace sj {
 
@@ -26,10 +26,10 @@ namespace sj {
     {
         m_MemorySystem = MemorySystem::Get();
         m_MemorySystem->Initialize();
-        SJ_ENGINE_LOG_INFO("Memory System Initialized");
 
         m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
-        SJ_ENGINE_LOG_INFO("Core engine systems initialized.");
+
+        m_Window = Window::MakeWindow();
 
         Run();
     }
@@ -39,10 +39,6 @@ namespace sj {
         using Timer = std::chrono::high_resolution_clock;
         auto previousTime = Timer::now();
         auto currentTime = Timer::now();
-
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -55,7 +51,7 @@ namespace sj {
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        // createInfo.pApplicationInfo = &appInfo;
+        createInfo.pApplicationInfo = &appInfo;
         createInfo.enabledLayerCount = 0;
 
         uint32_t glfwExtensionCount = 0;
@@ -74,18 +70,15 @@ namespace sj {
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!m_Window->WindowClosed()) {
             currentTime = Timer::now();
             m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
 
-            // Update
-            glfwPollEvents();
+            m_Window->ProcessEvents();
 
             previousTime = currentTime;
         }
 
         vkDestroyInstance(vulkanInstance, nullptr);
-        glfwDestroyWindow(window);
-        glfwTerminate();
     }
 } // namespace sj
