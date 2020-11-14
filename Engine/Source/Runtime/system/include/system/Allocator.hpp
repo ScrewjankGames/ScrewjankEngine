@@ -86,12 +86,45 @@ namespace sj {
          */
         template <class T>
         [[nodiscard]] void* AllocateType();
+
+        /**
+         * Helper function that utilizes the allocator to allocate and construct an object
+         * @param args... Arguments to be forwarded to the type's constructor
+         */
+        template <class T, class... Args>
+        [[nodiscard]] T* New(Args&&... args);
+
+        /**
+         * Helper function that utilizes the allocator to destruct and deallocate an object
+         * @param memory Pointer to the object to be deleted
+         */
+        template <class T>
+        void Delete(T*& memory);
     };
 
     template <class T>
     void* Allocator::AllocateType()
     {
         return Allocate(sizeof(T), alignof(T));
+    }
+
+    template <class T, class... Args>
+    inline T* Allocator::New(Args&&... args)
+    {
+        return new (AllocateType<T>()) T(std::forward<Args>(args)...);
+    }
+
+    template <class T>
+    inline void Allocator::Delete(T*& memory)
+    {
+        // Call object destructor
+        memory->~T();
+
+        // Deallocate object
+        Free(memory);
+
+        // Null out supplied pointer
+        memory = nullptr;
     }
 
 } // namespace sj

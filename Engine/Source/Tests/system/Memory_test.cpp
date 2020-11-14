@@ -41,6 +41,13 @@ namespace system_tests {
         delete dummy;
     }
 
+    TEST(MemoryTests, CustomNewDeleteTest)
+    {
+        auto num_ptr = MemorySystem::GetUnmanagedAllocator()->New<int>(1);
+        ASSERT_EQ(1, *num_ptr);
+        Delete<int>(MemorySystem::GetUnmanagedAllocator(), num_ptr);
+    }
+
     TEST(MemoryTests, UnmanagedAllocatorNewDeleteTest)
     {
         auto dummy = new DummyClass(5, 5.0);

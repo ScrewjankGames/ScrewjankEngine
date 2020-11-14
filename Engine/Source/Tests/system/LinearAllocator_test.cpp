@@ -86,9 +86,9 @@ namespace system_tests {
         // Reserve 256 bytes
         LinearAllocator allocator(256, MemorySystem::GetUnmanagedAllocator());
 
-        LinearAllocatorDummy* dummy1 = New<LinearAllocatorDummy>(allocator, 1, 1.0);
-        auto dummy2 = New<LinearAllocatorDummy>(allocator, 2, 2.0);
-        auto dummy3 = New<LinearAllocatorDummy>(allocator, 3, 3.0);
+        LinearAllocatorDummy* dummy1 = allocator.New<LinearAllocatorDummy>(1, 1.0);
+        auto dummy2 = allocator.New<LinearAllocatorDummy>(2, 2.0);
+        auto dummy3 = allocator.New<LinearAllocatorDummy>(3, 3.0);
 
         ASSERT_EQ(1, dummy1->m_num);
         ASSERT_EQ(1.0, dummy1->m_double);

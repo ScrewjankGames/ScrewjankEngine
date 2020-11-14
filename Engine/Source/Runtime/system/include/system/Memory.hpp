@@ -94,30 +94,7 @@ namespace sj {
 
         SJ_ASSERT(allocator != nullptr, "Engine defualt allocator is not initialized.");
 
-        return New<T>(allocator, std::forward<Args>(args)...);
-    }
-
-    /**
-     * Global utility function to allocate and construct and object
-     * @param allocator The allocator to use
-     * @param args Arguments to forward to T's constructor
-     */
-    template <class T, AllocatorConcept Alloc_t, class... Args>
-    T* New(Alloc_t& allocator, Args&&... args)
-    {
-        return new (allocator.AllocateType<T>()) T(std::forward<Args>(args)...);
-    }
-
-    /**
-     * Global utility function to allocate and construct and object
-     * @param allocator Pointer to the allocator to use
-     * @param args Arguments to forward to T's constructor
-     */
-    template <class T, AllocatorPtrConcept Alloc_t, class... Args>
-    T* New(Alloc_t& allocator, Args&&... args)
-    {
-        SJ_ASSERT(allocator != nullptr, "Allocator is invalid.");
-        return new (allocator->AllocateType<T>()) T(std::forward<Args>(args)...);
+        return allocator->New<T>(std::forward<Args>(args)...);
     }
 
     /**
@@ -178,12 +155,12 @@ namespace sj {
     constexpr UniquePtr<T> MakeUnique(Alloc_t& allocator, Args&&... args)
     {
         // Allocate the memory using the desired allocator
-        auto memory = New<T>(allocator, std::forward<Args>(args)...);
+        auto memory = allocator.New<T>(std::forward<Args>(args)...);
 
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
         return std::unique_ptr<T, std::function<void(T*)>>(memory, [&allocator](T* mem) {
-            Delete<T>(allocator, mem);
+            allocator.Delete<T>(mem);
         });
     }
 
@@ -191,22 +168,27 @@ namespace sj {
     constexpr UniquePtr<T> MakeUnique(Alloc_t allocator, Args&&... args)
     {
         // Allocate the memory using the desired allocator
-        auto memory = New<T>(allocator, std::forward<Args>(args)...);
+        auto memory = allocator->New<T>(std::forward<Args>(args)...);
 
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
         return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
             SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
-            Delete<T>(allocator, mem);
+            allocator->Delete<T>(mem);
         });
     }
 
     template <typename T, typename... Args>
     constexpr UniquePtr<T> MakeUnique(Args&&... args)
     {
-        // Leverages global new and delete
-        return std::unique_ptr<T>(std::forward<Args>(args)..., [](T* mem) {
-            delete mem;
+        // Allocate the memory using the engine's default allocator
+        auto memory = MemorySystem::GetDefaultAllocator()->New<T>(std::forward<Args>(args)...);
+
+        //  Pass ownership of memory to the unique_ptr
+        //  Supply a custom deletion function that uses the correct allocator
+        return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
+            SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
+            MemorySystem::GetDefaultAllocator()->Delete<T>(mem);
         });
     }
 
