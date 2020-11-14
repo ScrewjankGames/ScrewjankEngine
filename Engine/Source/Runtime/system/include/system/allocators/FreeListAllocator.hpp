@@ -14,9 +14,18 @@ namespace sj {
     class FreeListAllocator : public Allocator
     {
       public:
+        /*
+         * Constructor
+         * @param buffer_size The size (in bytes) you'd wish for this allocator to reserve
+         * @param backing_allocator The memory allocator this one should use to request it's backing
+         *        buffer.
+         */
         FreeListAllocator(size_t buffer_size,
                           Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
 
+        /**
+         * Destructor
+         */
         ~FreeListAllocator();
 
         /**

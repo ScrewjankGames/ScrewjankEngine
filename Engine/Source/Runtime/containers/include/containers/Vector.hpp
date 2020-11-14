@@ -316,6 +316,11 @@ namespace sj {
          */
         void Clear();
 
+        /**
+         * Allows access to the raw C-Style array
+         */
+        T* Data();
+
       private:
         /** Current size of the dynamic array */
         size_t m_Size;
@@ -877,6 +882,12 @@ namespace sj {
         }
 
         m_Size = 0;
+    }
+
+    template <class T>
+    inline T* Vector<T>::Data()
+    {
+        return m_Data;
     }
 
     template <class T>

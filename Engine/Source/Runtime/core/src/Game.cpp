@@ -10,6 +10,7 @@
 // Engine Headers
 #include "core/Window.hpp"
 #include "event_system/EventSystem.hpp"
+#include "rendering/Renderer.hpp"
 
 namespace sj {
 
@@ -27,9 +28,10 @@ namespace sj {
         m_MemorySystem = MemorySystem::Get();
         m_MemorySystem->Initialize();
 
-        m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
+        m_Window = Window::Create();
 
-        m_Window = Window::MakeWindow();
+        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator());
+        m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
 
         Run();
     }
@@ -40,36 +42,6 @@ namespace sj {
         auto previousTime = Timer::now();
         auto currentTime = Timer::now();
 
-        VkApplicationInfo appInfo = {};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pNext = nullptr;
-        appInfo.pApplicationName = "Screwjank Engine Game";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_2;
-
-        VkInstanceCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-        createInfo.enabledLayerCount = 0;
-
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-
-        VkInstance vulkanInstance;
-        if (vkCreateInstance(&createInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
-            SJ_ENGINE_LOG_ERROR("Failed to create Vulkan instance.");
-            return;
-        }
-
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
-
         while (!m_Window->WindowClosed()) {
             currentTime = Timer::now();
             m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
@@ -78,7 +50,5 @@ namespace sj {
 
             previousTime = currentTime;
         }
-
-        vkDestroyInstance(vulkanInstance, nullptr);
     }
 } // namespace sj

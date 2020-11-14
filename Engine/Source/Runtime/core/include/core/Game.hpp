@@ -12,6 +12,7 @@ namespace sj {
     class MemorySystem;
     class EventSystem;
     class Window;
+    class Renderer;
 
     class Game
     {
@@ -43,6 +44,9 @@ namespace sj {
 
         /** Handle to game's window */
         UniquePtr<Window> m_Window;
+
+        /** Engine's rendering subsystem */
+        UniquePtr<Renderer> m_Renderer;
 
         /** Engine's event system */
         UniquePtr<EventSystem> m_EventSystem;

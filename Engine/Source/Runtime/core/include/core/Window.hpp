@@ -16,7 +16,7 @@ namespace sj {
          * Factory function to construct Window interface appropriate to the current operating
          * system
          */
-        static UniquePtr<Window> MakeWindow();
+        static UniquePtr<Window> Create();
 
         /**
          * Destructor

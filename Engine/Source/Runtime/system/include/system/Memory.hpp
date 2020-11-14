@@ -183,7 +183,7 @@ namespace sj {
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
         return std::unique_ptr<T, std::function<void(T*)>>(memory, [&allocator](T* mem) {
-            allocator.Free(mem);
+            Delete<T>(allocator, mem);
         });
     }
 
@@ -197,7 +197,7 @@ namespace sj {
         //  Supply a custom deletion function that uses the correct allocator
         return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
             SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
-            allocator->Free(mem);
+            Delete<T>(allocator, mem);
         });
     }
 
@@ -206,7 +206,7 @@ namespace sj {
     {
         // Leverages global new and delete
         return std::unique_ptr<T>(std::forward<Args>(args)..., [](T* mem) {
-            delete mem
+            delete mem;
         });
     }
 

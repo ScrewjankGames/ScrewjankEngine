@@ -11,8 +11,8 @@
     #ifdef SJ_PLATFORM_WINDOWS
         #define SJ_DEBUGBREAK() __debugbreak()
     #elif SJ_PLATFORM_LINUX
-        #define #include < signal.h>
-        #define HZ_DEBUGBREAK() raise(SIGTRAP)
+        #include <signal.h>
+        #define SJ_DEBUGBREAK() raise(SIGTRAP)
     #else
         #error "Platform does not support debug breaking"
     #endif // SJ_PLATFORM_WINDOWS
@@ -23,7 +23,6 @@
 #ifdef SJ_ENABLE_ASSERTS
     #define SJ_ASSERT(condition, fmt, ...)                                                         \
         if (!(condition)) {                                                                        \
-            SJ_ENGINE_LOG_FATAL("Assertion failed: " fmt, __VA_ARGS__);                            \
             SJ_DEBUGBREAK();                                                                       \
         }
 #else

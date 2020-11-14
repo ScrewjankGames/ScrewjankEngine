@@ -44,6 +44,7 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/math/include
         ${CMAKE_CURRENT_SOURCE_DIR}/system/include
         ${CMAKE_CURRENT_SOURCE_DIR}/platform/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/rendering/include
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/include
         ${ENGINE_DEPENDENCIES_DIR}/spdlog/include
     PRIVATE
