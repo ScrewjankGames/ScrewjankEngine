@@ -45,7 +45,7 @@ namespace system_tests {
     {
         auto num_ptr = MemorySystem::GetUnmanagedAllocator()->New<int>(1);
         ASSERT_EQ(1, *num_ptr);
-        Delete<int>(MemorySystem::GetUnmanagedAllocator(), num_ptr);
+        MemorySystem::GetUnmanagedAllocator()->Delete(num_ptr);
     }
 
     TEST(MemoryTests, UnmanagedAllocatorNewDeleteTest)

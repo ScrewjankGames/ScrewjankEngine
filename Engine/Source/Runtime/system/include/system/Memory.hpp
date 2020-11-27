@@ -2,6 +2,7 @@
 // STD Headers
 #include <cstddef>
 #include <memory>
+#include <functional>
 
 // Library Headers
 
@@ -52,6 +53,10 @@ namespace sj {
         ~MemorySystem();
     };
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Memory Management Utility Functions
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     /**
      * Function that returns the first aligned memory address given certain constraints
      * @param align_of The alignment of the memory being allocated
@@ -98,42 +103,6 @@ namespace sj {
     }
 
     /**
-     * Global utility function to deallocate and destroy and object
-     * @param allocator Pointer to the allocator to use
-     * @param memory The memory address to free
-     */
-    template <class T, AllocatorPtrConcept Alloc_t, class... Args>
-    void Delete(Alloc_t allocator, T*& memory)
-    {
-        // Call object destructor
-        memory->~T();
-
-        // Deallocate object
-        allocator->Free(memory);
-
-        // Null out supplied pointer
-        memory = nullptr;
-    }
-
-    /**
-     * Global utility function to deallocate and destroy and object
-     * @param allocator Pointer to the allocator to use
-     * @param memory The memory address to free
-     */
-    template <class T, AllocatorConcept Alloc_t, class... Args>
-    void Delete(Alloc_t& allocator, T*& memory)
-    {
-        // Call object destructor
-        memory->~T();
-
-        // Deallocate object
-        allocator.Free(memory);
-
-        // Null out supplied pointer
-        memory = nullptr;
-    }
-
-    /**
      * Global utility function to deallocate and destroy and object using the engine's default
      * allocator
      * @param allocator The allocator to use
@@ -144,12 +113,34 @@ namespace sj {
     template <class T, class... Args>
     void Delete(T*& memory)
     {
-        Delete(MemorySystem::GetDefaultAllocator(), memory);
+        MemorySystem::GetDefaultAllocator()->Delete(memory);
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Smart Pointer Implementations
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Placeholder UniquePtr alias
     template <typename T>
     using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
+
+    // template <typename T>
+    // class UniquePtr
+    //{
+    //  public:
+    //    /**
+    //     * Constructor
+    //     * @param p The pointer to be managed
+    //     * @param deleter The deleter to be used when releasing the pointer
+    //     */
+    //    UniquePtr() : m_Pointer(nullptr)
+    //    {
+    //    }
+
+    //  private:
+    //    T* m_Pointer;
+    //    std::function<void(T*)> m_Deleter;
+    //};
 
     template <typename T, AllocatorConcept Alloc_t, typename... Args>
     constexpr UniquePtr<T> MakeUnique(Alloc_t& allocator, Args&&... args)
@@ -181,14 +172,17 @@ namespace sj {
     template <typename T, typename... Args>
     constexpr UniquePtr<T> MakeUnique(Args&&... args)
     {
+        // Get pointer to the engine's default allocator
+        auto allocator = MemorySystem::GetDefaultAllocator();
+
         // Allocate the memory using the engine's default allocator
-        auto memory = MemorySystem::GetDefaultAllocator()->New<T>(std::forward<Args>(args)...);
+        auto memory = allocator->New<T>(std::forward<Args>(args)...);
 
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
         return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
             SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
-            MemorySystem::GetDefaultAllocator()->Delete<T>(mem);
+            allocator->Delete<T>(mem);
         });
     }
 

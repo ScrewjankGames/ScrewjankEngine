@@ -52,7 +52,7 @@ namespace system_tests {
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
-        Delete(allocator, dummy3);
+        allocator.Delete(dummy3);
 
         mem_loc3 = allocator.AllocateType<double>();
         ASSERT_NE(nullptr, mem_loc3);
@@ -64,7 +64,7 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy2->Value);
         ASSERT_EQ(3.14, dummy4->Value);
         ASSERT_EQ('d', dummy4->Label);
-        Delete(allocator, d);
+        allocator.Delete(d);
 
         mem_loc3 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc3);
@@ -116,7 +116,7 @@ namespace system_tests {
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
-        Delete(allocator, dummy3);
+        allocator.Delete(dummy3);
         // allocator.Delete<PoolAllocatorDummy>(dummy3);
 
         mem_loc3 = allocator.AllocateType<double>();
@@ -129,7 +129,7 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy2->Value);
         ASSERT_EQ(3.14, dummy4->Value);
         ASSERT_EQ('d', dummy4->Label);
-        Delete(allocator, d);
+        allocator.Delete(d);
         // allocator.Delete<double>(d);
 
         mem_loc3 = allocator.AllocateType<PoolAllocatorDummy>();

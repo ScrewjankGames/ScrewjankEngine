@@ -450,7 +450,7 @@ namespace sj {
         auto dead_node = pos.m_Node->Next;
         pos.m_Node->Next = dead_node->Next;
 
-        Delete(m_Allocator, dead_node);
+        m_Allocator->Delete(dead_node);
         return iterator(pos.m_Node->Next);
     }
 

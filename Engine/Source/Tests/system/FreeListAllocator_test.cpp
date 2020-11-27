@@ -51,7 +51,7 @@ namespace system_tests {
         ASSERT_EQ(Dummy1->Value, Dummy2->Value);
         ASSERT_EQ(Dummy2->Value, Dummy3->Value);
 
-        Delete(allocator, Dummy1);
+        allocator.Delete(Dummy1);
 
         auto mem_loc4 = allocator.AllocateType<FreeListDummy>();
 
@@ -65,9 +65,9 @@ namespace system_tests {
         ASSERT_EQ('b', Dummy2->Label);
         ASSERT_EQ(Dummy4->Value, Dummy2->Value);
 
-        Delete(allocator, Dummy2);
-        Delete(allocator, Dummy3);
-        Delete(allocator, Dummy4);
+        allocator.Delete(Dummy2);
+        allocator.Delete(Dummy3);
+        allocator.Delete(Dummy4);
     }
 
     TEST(FreeListAllocatorTests, AdvancedAllocationTest)
