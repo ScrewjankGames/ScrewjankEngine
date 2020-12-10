@@ -11,6 +11,9 @@
 
 namespace sj {
 
+    // Forward declarations
+    class VulkanRenderDevice;
+
     class VulkanRendererAPI : public RendererAPI
     {
       public:
@@ -24,12 +27,25 @@ namespace sj {
          */
         ~VulkanRendererAPI();
 
+        /**
+         * Returns a pointer to the Vulkan render device
+         */
+        RenderDevice* GetRenderDevice() override;
+
       private:
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_VkInstance;
 
         /** Handle to manage Vulkan's debug callbacks */
         VkDebugUtilsMessengerEXT m_VkDebugMessenger;
+
+        /** Owning pointer to the render device used to back API operations */
+        UniquePtr<VulkanRenderDevice> m_RenderDevice;
+
+        /**
+         * Initializes the Vulkan API's instance and debug messaging hooks
+         */
+        void InitializeVulkan();
 
         /**
          * Returns list of Vulkan extenstions the renderer should support

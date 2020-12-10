@@ -7,9 +7,26 @@
 
 // Screwjank Headers
 #include "platform/Vulkan/VulkanRendererAPI.hpp"
+#include "platform/Vulkan/VulkanRenderDevice.hpp"
 
 namespace sj {
     VulkanRendererAPI::VulkanRendererAPI()
+    {
+        InitializeVulkan();
+
+        // Compile-time check to enable debug messaging
+        if constexpr (g_IsDebugBuild) {
+            EnableDebugMessaging();
+        }
+
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
+
+        // m_RenderDevice = UniquePtr<VulkanRenderDevice>();
+    }
+
+    void VulkanRendererAPI::InitializeVulkan()
     {
         VkApplicationInfo app_info;
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -49,14 +66,6 @@ namespace sj {
         if (result != VK_SUCCESS) {
             SJ_ENGINE_LOG_ERROR("Vulkan instance creation failed with error code {}", result);
         }
-
-        if constexpr (g_IsDebugBuild) {
-            EnableDebugMessaging();
-        }
-
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
     }
 
     VulkanRendererAPI::~VulkanRendererAPI()
@@ -72,6 +81,11 @@ namespace sj {
         }
 
         vkDestroyInstance(m_VkInstance, nullptr);
+    }
+
+    RenderDevice* VulkanRendererAPI::GetRenderDevice()
+    {
+        return m_RenderDevice.Get();
     }
 
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const

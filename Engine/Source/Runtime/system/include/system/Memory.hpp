@@ -121,26 +121,138 @@ namespace sj {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Placeholder UniquePtr alias
-    template <typename T>
-    using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
-
     // template <typename T>
-    // class UniquePtr
-    //{
-    //  public:
-    //    /**
-    //     * Constructor
-    //     * @param p The pointer to be managed
-    //     * @param deleter The deleter to be used when releasing the pointer
-    //     */
-    //    UniquePtr() : m_Pointer(nullptr)
-    //    {
-    //    }
+    // using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
 
-    //  private:
-    //    T* m_Pointer;
-    //    std::function<void(T*)> m_Deleter;
-    //};
+    template <typename T>
+    class UniquePtr
+    {
+        using Deleter = std::function<void(T*)>;
+
+      public:
+        /**
+         * Constructor
+         * @param p The pointer to be managed
+         * @Note Since a deleter is not supplied, it is assumed the Default Allocator deleter can be
+         * used
+         */
+        UniquePtr(T* ptr = nullptr) : m_Pointer(nullptr)
+        {
+            m_Deleter = std::move([](T* ptr) {
+                MemorySystem::GetDefaultAllocator()->Delete(ptr);
+            });
+        }
+
+        /**
+         * Constructor
+         * @param p The pointer to be managed
+         * @param deleter The deleter to be used when releasing the pointer
+         */
+        UniquePtr(T* ptr, Deleter deleter) : m_Pointer(ptr), m_Deleter(std::move(deleter))
+        {
+        }
+
+        /**
+         * Move constructor
+         */
+        UniquePtr(UniquePtr&& other)
+        {
+            m_Pointer = other.m_Pointer;
+            other.m_Pointer = nullptr;
+            m_Deleter = std::move(other.m_Deleter);
+        }
+
+        /**
+         * Destructor
+         */
+        ~UniquePtr()
+        {
+            CleanUp();
+        }
+
+        /**
+         * Move Assignment Operator
+         */
+        void operator=(UniquePtr&& other)
+        {
+            CleanUp();
+
+            m_Pointer = other.m_Pointer;
+            other.m_Pointer = nullptr;
+            m_Deleter = std::move(other.m_Deleter);
+        }
+
+        /**
+         * Arrow operator overload
+         */
+        T* operator->()
+        {
+            return m_Pointer;
+        }
+
+        /**
+         * Dereference operator overload
+         */
+        T& operator*()
+        {
+            return *m_Pointer;
+        }
+
+        /**
+         * Releases ownership of managed resource to caller
+         * @return A copy of m_Pointer
+         */
+        [[nodiscard]] T* Release() noexcept
+        {
+            auto ptr = m_Pointer;
+            m_Pointer = nullptr;
+            return ptr;
+        }
+
+        /**
+         * Releases currently managed resource (if present), and asumes ownership of ptr
+         * @param ptr The pointer to manage
+         * @note Assumes current deleter is sufficient (same allocator as old m_Pointer)
+         */
+        void Reset(T* ptr = nullptr)
+        {
+            CleanUp();
+            m_Pointer = ptr;
+        }
+
+        /**
+         * Returns underlying raw pointer
+         */
+        T* Get() const
+        {
+            return m_Pointer;
+        }
+
+        /**
+         * Copy constructor: disallowed
+         */
+        UniquePtr(const UniquePtr& other) = delete;
+
+        /**
+         * Copy Assignment Operator: disallowed
+         */
+        UniquePtr& operator=(const UniquePtr& other) = delete;
+
+      private:
+        /** The resource being managed by this container */
+        T* m_Pointer;
+
+        /** Function capable of deleting the contained pointer */
+        std::function<void(T*)> m_Deleter;
+
+        void CleanUp()
+        {
+            if (m_Pointer != nullptr) {
+                // Delete the resource with the supplied deleter
+                m_Deleter(m_Pointer);
+            }
+        }
+    };
 
     template <typename T, AllocatorConcept Alloc_t, typename... Args>
     constexpr UniquePtr<T> MakeUnique(Alloc_t& allocator, Args&&... args)
@@ -163,7 +275,7 @@ namespace sj {
 
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
-        return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
+        return UniquePtr<T>(memory, [allocator](T* mem) {
             SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
             allocator->Delete<T>(mem);
         });
@@ -175,15 +287,7 @@ namespace sj {
         // Get pointer to the engine's default allocator
         auto allocator = MemorySystem::GetDefaultAllocator();
 
-        // Allocate the memory using the engine's default allocator
-        auto memory = allocator->New<T>(std::forward<Args>(args)...);
-
-        //  Pass ownership of memory to the unique_ptr
-        //  Supply a custom deletion function that uses the correct allocator
-        return std::unique_ptr<T, std::function<void(T*)>>(memory, [allocator](T* mem) {
-            SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
-            allocator->Delete<T>(mem);
-        });
+        return MakeUnique(allocator, std::forward<Args>(args)...);
     }
 
     // Placeholder SharedPtr alias

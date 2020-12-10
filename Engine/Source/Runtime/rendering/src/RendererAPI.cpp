@@ -4,6 +4,7 @@
 
 // Screwjank Headers
 #include "rendering/RendererAPI.hpp"
+#include "rendering/RenderDevice.hpp"
 #include "platform/PlatformDetection.hpp"
 
 // Platform specific headers
@@ -19,22 +20,37 @@
 
 namespace sj {
 
-    UniquePtr<RendererAPI> sj::RendererAPI::Create()
+    /** Defaults to Vulkan API */
+    RendererAPI::API RendererAPI::s_VendorAPI = RendererAPI::API::Unkown;
+
+    UniquePtr<RendererAPI> RendererAPI::Create()
     {
         static_assert(g_Platform != Platform::Unknown, "Renderer does not support this platform");
 
-        if constexpr (g_Platform == Platform::Windows) {
-            VulkanRendererAPI* vkAPI = New<VulkanRendererAPI>();
-            return UniquePtr<RendererAPI>(vkAPI, [](auto* ptr) {
-                Delete<RendererAPI>(ptr);
-            });
+        RendererAPI* api = nullptr;
 
-            return nullptr;
+        // Chose the rendering API
+        if constexpr (g_Platform == Platform::Windows) {
+
+            s_VendorAPI = API::Vulkan;
+            api = New<VulkanRendererAPI>();
+
         } else if constexpr (g_Platform == Platform::Linux) {
-            return nullptr;
+            ;
         } else if constexpr (g_Platform == Platform::IOS) {
-            return nullptr;
+            ;
         }
+
+        SJ_ASSERT(api != nullptr, "Failed to initialize rendering API");
+
+        return UniquePtr<RendererAPI>(api, [](RendererAPI* ptr) {
+            Delete<RendererAPI>(ptr);
+        });
+    }
+
+    RendererAPI::API RendererAPI::GetVendorAPI()
+    {
+        return s_VendorAPI;
     }
 
 } // namespace sj
