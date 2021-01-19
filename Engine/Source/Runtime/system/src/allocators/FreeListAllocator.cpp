@@ -36,13 +36,8 @@ namespace sj {
         FreeBlock* best_fit_block = free_list_search_result.first;
         size_t header_padding = free_list_search_result.second;
 
-        // If no best fit block was found, log an error
-        if (best_fit_block == nullptr) {
-            SJ_ENGINE_LOG_ERROR(
-                "FreeListAllocator has insufficient memory to perform allocation of {} bytes",
-                size);
-            return nullptr;
-        }
+        // If no best fit block was found, halt program
+        SJ_ASSERT(best_fit_block != nullptr, "Free list allocator is out of memory.");
 
         // Remove block from the free list
         RemoveFreeBlock(best_fit_block);
@@ -207,8 +202,8 @@ namespace sj {
 
         // If the block being removed is the head of the list
         if (block == m_FreeBlocks) {
-            // Rewiring is not sufficient, explicitly clear the head of the list
-            m_FreeBlocks = nullptr;
+            // Rewire the head of the list
+            m_FreeBlocks = block->Next;
             return;
         }
 

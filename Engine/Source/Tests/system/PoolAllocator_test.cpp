@@ -117,7 +117,6 @@ namespace system_tests {
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
         allocator.Delete(dummy3);
-        // allocator.Delete<PoolAllocatorDummy>(dummy3);
 
         mem_loc3 = allocator.AllocateType<double>();
         ASSERT_NE(nullptr, mem_loc3);
@@ -130,7 +129,6 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy4->Value);
         ASSERT_EQ('d', dummy4->Label);
         allocator.Delete(d);
-        // allocator.Delete<double>(d);
 
         mem_loc3 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc3);

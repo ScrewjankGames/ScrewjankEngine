@@ -90,10 +90,11 @@ namespace system_tests {
         mem_loc1 = allocator.AllocateType<FreeListDummy>();
         ASSERT_NE(nullptr, mem_loc1);
 
-        // Free the first block, and try to allocate something larger (should fail)
+        // Free the first block, and try to allocate again from head
         allocator.Free(mem_loc1);
-        mem_loc1 = allocator.Allocate(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
-        ASSERT_EQ(nullptr, mem_loc1);
+        mem_loc1 = allocator.AllocateType<FreeListDummy>();
+        ASSERT_NE(nullptr, mem_loc1);
+        allocator.Free(mem_loc1);
 
         // Free the second block, the two blocks in the allocator should coaselce and allow for a
         // single larger allocation

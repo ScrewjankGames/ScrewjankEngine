@@ -287,7 +287,7 @@ namespace sj {
         // Get pointer to the engine's default allocator
         auto allocator = MemorySystem::GetDefaultAllocator();
 
-        return MakeUnique(allocator, std::forward<Args>(args)...);
+        return MakeUnique<T>(allocator, std::forward<Args>(args)...);
     }
 
     // Placeholder SharedPtr alias
