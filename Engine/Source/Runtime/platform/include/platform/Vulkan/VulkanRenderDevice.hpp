@@ -24,6 +24,12 @@ namespace sj {
 
       private:
         /**
+         * Iterates over the system's rendering hardware, and selects the most suitable GPU for
+         * rendering
+         */
+        void SelectPhysicalDevice();
+        
+        /**
          * Vulkan's logical representation of the physical rendering device
          * @note This handle is freed when the VkInstance is destroyed
          */
@@ -31,11 +37,5 @@ namespace sj {
 
         /** Non-owning handle to the Vulkan instance */
         VkInstance m_VkInstance;
-
-        /**
-         * Iterates over the system's rendering hardware, and selects the most suitable GPU for
-         * rendering
-         */
-        void SelectPhysicalDevice();
     };
 } // namespace sj

@@ -56,8 +56,11 @@ namespace sj {
 
     void MemorySystem::Initialize()
     {
+        auto memory_reserve = 67108864;
         // Reserve 64MB of free space by default
-        m_DefaultAllocator = new FreeListAllocator(67108864, GetUnmanagedAllocator());
+        m_DefaultAllocator = new FreeListAllocator(memory_reserve, GetUnmanagedAllocator());
+        
+        SJ_ENGINE_LOG_INFO("Memory system initialized with {} KB of memory", memory_reserve / 1024);
     }
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
@@ -69,7 +72,7 @@ namespace sj {
         uintptr_t adjustment = GetAlignmentAdjustment(align_of, buffer_start);
 
         if (buffer_size < adjustment || buffer_size - adjustment < size) {
-            SJ_LOG_ERROR("Memory alignment cannot be satisfied in provided space.");
+            SJ_ENGINE_LOG_ERROR("Memory alignment cannot be satisfied in provided space.");
             return nullptr;
         }
 

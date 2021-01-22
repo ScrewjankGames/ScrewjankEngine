@@ -28,6 +28,7 @@ namespace sj {
         m_MemorySystem = MemorySystem::Get();
         m_MemorySystem->Initialize();
 
+        SJ_ENGINE_LOG_INFO("Creating window");
         m_Window = Window::Create();
 
         m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator());

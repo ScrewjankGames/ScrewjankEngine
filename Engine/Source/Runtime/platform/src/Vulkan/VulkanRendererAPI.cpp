@@ -23,7 +23,7 @@ namespace sj {
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
 
-        // m_RenderDevice = UniquePtr<VulkanRenderDevice>();
+        m_RenderDevice = MakeUnique<VulkanRenderDevice>(m_VkInstance);
     }
 
     void VulkanRendererAPI::InitializeVulkan()
@@ -75,7 +75,7 @@ namespace sj {
                 vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
 
             SJ_ASSERT(messenger_destroy_func != nullptr,
-                      "Failed to load Vulkan Debug messenger destroy function";)
+                      "Failed to load Vulkan Debug messenger destroy function");
 
             messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
         }
@@ -132,7 +132,7 @@ namespace sj {
                 SJ_ASSERT(false, "Failed to enable vulkan validation layer {}", layer_name);
             }
 
-            SJ_ENGINE_LOG_INFO("Enabled Vulkan validation layer: {}", layer_name);
+            SJ_ENGINE_LOG_DEBUG("Enabled Vulkan validation layer: {}", layer_name);
         }
     }
 

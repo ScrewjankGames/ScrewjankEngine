@@ -66,11 +66,11 @@ namespace sj {
          * Callback function that allows the Vulkan API to use the engine's logging system
          * @note See Vulkan API for description of arguments
          */
-        static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugLogCallback( //
-            VkDebugUtilsMessageSeverityFlagBitsEXT severity, //
-            VkDebugUtilsMessageTypeFlagsEXT message_type, //
-            const VkDebugUtilsMessengerCallbackDataEXT* callback_data, //
-            void* user_data //
+        static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugLogCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+            VkDebugUtilsMessageTypeFlagsEXT message_type,
+            const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+            void* user_data
         );
     };
 

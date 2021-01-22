@@ -24,6 +24,9 @@ namespace sj {
         void LogTrace(const char* format, Args... args);
 
         template <typename... Args>
+        void LogDebug(const char* format, Args... args);
+
+        template <typename... Args>
         void LogInfo(const char* format, Args... args);
 
         template <typename... Args>
@@ -43,6 +46,12 @@ namespace sj {
     inline void Logger::LogTrace(const char* format, Args... args)
     {
         spdlog::trace(format, args...);
+    }
+
+    template <typename... Args>
+    inline void Logger::LogDebug(const char* format, Args... args)
+    {
+        spdlog::debug(format, args...);
     }
 
     template <typename... Args>
@@ -72,17 +81,21 @@ namespace sj {
 
 #ifdef NDEBUG
     #define SJ_ENGINE_LOG_TRACE(...)
-    #define SJ_ENGINE_LOG_INFO(format, ...) sj::Logger::GetEngineLogger()
+    #define SJ_ENGINE_LOG_DEBUG(...)
+    #define SJ_ENGINE_LOG_INFO(...)
     #define SJ_ENGINE_LOG_WARN(...)
     #define SJ_ENGINE_LOG_ERROR(...)
 
-    #define SJ_LOG_TRACE(...)
-    #define SJ_LOG_INFO(...)
-    #define SJ_LOG_WARN(...)
-    #define SJ_LOG_ERROR(...)
+    #define SJ_GAME_LOG_TRACE(...)
+    #define SJ_GAME_LOG_DEBUG(...)
+    #define SJ_GAME_LOG_INFO(...)
+    #define SJ_GAME_LOG_WARN(...)
+    #define SJ_GAME_LOG_ERROR(...)
 #else
     #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
+    #define SJ_ENGINE_LOG_DEBUG(format, ...)                                                        \
+        sj::Logger::GetEngineLogger()->LogDebug(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_INFO(format, ...)                                                        \
         sj::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_WARN(format, ...)                                                        \
@@ -92,9 +105,10 @@ namespace sj {
     #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
 
-    #define SJ_LOG_TRACE(...)
-    #define SJ_LOG_INFO(...)
-    #define SJ_LOG_WARN(...)
-    #define SJ_LOG_ERROR(...)
+    #define SJ_GAME_LOG_TRACE(...)
+    #define SJ_GAME_LOG_DEBUG(...)
+    #define SJ_GAME_LOG_INFO(...)
+    #define SJ_GAME_LOG_WARN(...)
+    #define SJ_GAME_LOG_ERROR(...)
 
 #endif

@@ -42,7 +42,7 @@ namespace sj {
         // Ensure the allocator has enough memory to satisfy the allocation
         auto free_space = m_Capacity - (uintptr_t(m_Offset) - uintptr_t(m_BufferStart));
         if (free_space < total_allocation_size) {
-            SJ_LOG_ERROR(
+            SJ_ENGINE_LOG_ERROR(
                 "Stack allocator has insufficient memory to perform requested allocation.");
             return nullptr;
         }

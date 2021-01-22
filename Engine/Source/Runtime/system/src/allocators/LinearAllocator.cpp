@@ -22,7 +22,7 @@ namespace sj {
         // all of their allocations on destruction
         if (!(m_AllocatorStats.ActiveAllocationCount == 0 &&
               m_AllocatorStats.FreeSpace() == m_AllocatorStats.Capacity)) {
-            SJ_LOG_WARN("Linear allocator {} was not properly reset before destruction.");
+            SJ_ENGINE_LOG_WARN("Linear allocator was not properly reset before destruction.");
             Reset();
         }
 
@@ -33,7 +33,7 @@ namespace sj {
     {
         // Ensure there is enough space to satisfy allocation
         if (m_AllocatorStats.FreeSpace() < size + GetAlignmentOffset(alignment, m_CurrFrameStart)) {
-            SJ_LOG_ERROR("Allocator has insufficient memory to perform requested allocation");
+            SJ_ENGINE_LOG_FATAL("Allocator has insufficient memory to perform requested allocation");
             return nullptr;
         }
 
