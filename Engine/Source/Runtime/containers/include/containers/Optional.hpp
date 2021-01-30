@@ -42,17 +42,28 @@ namespace sj {
          * Constructor
          * @param value The value to initialize the optional with
          */
-        constexpr Optional(T&& value);
+        template<class U = T>
+        requires std::convertible_to<U, T>
+        constexpr Optional(U&& value);
+
+        /**
+         * Copy Constructor
+         */
+        constexpr Optional(const Optional& other);
 
         /**
          * Copy Constructor 
          */
-        Optional(const Optional& other) noexcept;
+        template <class U = T>
+        requires std::convertible_to<U, T>
+        Optional(const Optional<U>& other) noexcept;
 
         /**
          * Move Constructor  
          */
-        Optional(Optional&& other) noexcept;
+        template <class U = T>
+        requires std::convertible_to<U, T>
+        Optional(Optional<U>&& other) noexcept;
 
         /**
          * Destructor 
@@ -70,6 +81,20 @@ namespace sj {
         constexpr Optional& operator=(Optional&& other) noexcept;
 
         /**
+         * Copy assignment operator  
+         */
+        template<class U>
+        requires std::convertible_to<U, T>
+        Optional& operator=(const Optional<U>& other) noexcept;
+
+        /**
+         * Move assignment operator
+         */
+        template<class U>
+        requires std::convertible_to<U, T>
+        Optional& operator=(Optional<U>&& other) noexcept;
+
+        /**
          * Resets the Optional to contain no value
          * @param nullopt The NullOpt object
          */
@@ -78,7 +103,9 @@ namespace sj {
         /**
          * Value assignment operator 
          */
-        Optional& operator=(T&& value) noexcept;
+        template <class U = T>
+        requires std::convertible_to<U, T>
+        Optional& operator=(U&& value) noexcept;
 
         /**
          * Allows optional to be implicitly converted to a boolean (like a pointer)
@@ -261,7 +288,9 @@ namespace sj {
     }
 
     template <class T>
-    inline constexpr Optional<T>::Optional(T&& value)
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline constexpr Optional<T>::Optional(U&& value)
     {
         m_HasValue = true;
 
@@ -269,7 +298,20 @@ namespace sj {
     }
 
     template <class T>
-    inline Optional<T>::Optional(const Optional& other) noexcept
+    inline constexpr Optional<T>::Optional(const Optional<T>& other)
+    {
+        m_HasValue = other.HasValue();
+
+        if (m_HasValue)
+        {
+            new (std::addressof(m_Value)) T(other.Value());
+        }
+    }
+
+    template <class T>
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline Optional<T>::Optional(const Optional<U>& other) noexcept
     {
         m_HasValue = other.HasValue();
 
@@ -280,7 +322,9 @@ namespace sj {
     }
 
     template <class T>
-    inline Optional<T>::Optional(Optional&& other) noexcept
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline Optional<T>::Optional(Optional<U>&& other) noexcept
     {
         m_HasValue = other.HasValue();
 
@@ -352,6 +396,64 @@ namespace sj {
             m_HasValue = false;
         }
     }
+
+    template <class T>
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline Optional<T>& Optional<T>::operator=(const Optional<U>& other) noexcept
+    {
+        if (other.HasValue())
+        {
+            if (m_HasValue)
+            {
+                m_Value = other.m_Value;
+            }
+            else
+            {
+                m_HasValue = true;
+                new (std::addressof(m_Value)) T(other.m_Value);
+            }
+        }
+        else
+        {
+            if (m_HasValue)
+            {
+                m_HasValue.~T();
+            }
+
+            m_HasValue = false;
+        }
+
+        return *this;
+    }
+
+    template <class T>
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline Optional<T>& Optional<T>::operator=(Optional<U>&& other) noexcept
+    {
+        if (other.HasValue())
+        {
+            if (m_HasValue)
+            {
+                m_Value = std::move(other.m_Value);
+            }
+            else
+            {
+                m_HasValue = true;
+                new (std::addressof(m_Value)) T(std::move(other.m_Value));
+            }
+        }
+        else
+        {
+            if (m_HasValue)
+            {
+                m_HasValue.~T();
+            }
+
+            m_HasValue = false;
+        }
+    }
     
     template <class T>
     inline Optional<T>& Optional<T>::operator=(Nullopt_t) noexcept
@@ -361,16 +463,18 @@ namespace sj {
     }
 
     template <class T>
-    inline Optional<T>& Optional<T>::operator=(T&& value) noexcept
+    template <class U>
+    requires std::convertible_to<U, T>
+    inline Optional<T>& Optional<T>::operator=(U&& value) noexcept
     {
         if (HasValue())
         {
-            m_Value = std::forward<T>(value);
+            m_Value = std::forward<T>((T)value);
         }
         else
         {
             m_HasValue = true;
-            new (std::addressof(m_Value)) T(std::forward<T>(value));
+            new (std::addressof(m_Value)) T(std::forward<T>((T)value));
         }
 
         return *this;
