@@ -4,31 +4,70 @@
 
 // Screwjank Headers
 #include "platform/Vulkan/VulkanRenderDevice.hpp"
+
 #include "containers/Vector.hpp"
+#include "containers/UnorderedSet.hpp"
+#include "platform/Vulkan/VulkanRendererAPI.hpp"
+#include "platform/PlatformDetection.hpp"
 
 namespace sj {
 
-    VulkanRenderDevice::VulkanRenderDevice(VkInstance instance)
-        : m_PhysicalDevice(VK_NULL_HANDLE), m_VkInstance(instance)
+    VulkanRenderDevice::VulkanRenderDevice(VulkanRendererAPI* api)
+        : m_PhysicalDevice(VK_NULL_HANDLE), m_API(api)
     {
-        SJ_ASSERT(m_VkInstance != VK_NULL_HANDLE,
-                  "Render device did not receive a valid vulkan instance");
+        SJ_ASSERT(api != nullptr,
+                  "Render device did not receive a valid vulkan api");
 
         SelectPhysicalDevice();
+        CreateLogicalDevice();
     }
 
     VulkanRenderDevice::~VulkanRenderDevice()
     {
+        vkDestroyDevice(m_Device, nullptr);
+    }
+
+    VulkanRenderDevice::QueueFamilyIndices VulkanRenderDevice::GetQueueFamilyIndices() const
+    {
+        uint32_t queue_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queue_count, nullptr);
+
+        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetDefaultAllocator(), queue_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queue_count, queue_data.Data());
+        
+        QueueFamilyIndices indices;
+
+        int i = 0;
+        for (const auto& family : queue_data)
+        {
+            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.GraphicsFamilyIndex = i;
+            }
+
+            VkBool32 presentation_support = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_API->GetRenderingSurface(), &presentation_support);
+            if (presentation_support)
+            {
+                indices.PresentationFamilyIndex = i;
+            }
+
+            i++;
+        }
+
+        return indices;
     }
 
     void VulkanRenderDevice::SelectPhysicalDevice()
     {
+        VkInstance instance = m_API->GetInstance();
+        
         uint32_t device_count = 0;
-        vkEnumeratePhysicalDevices(m_VkInstance, &device_count, nullptr);
+        vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", device_count);
 
         Vector<VkPhysicalDevice> devices(MemorySystem::GetDefaultAllocator(), device_count);
-        vkEnumeratePhysicalDevices(m_VkInstance, &device_count, devices.Data());
+        vkEnumeratePhysicalDevices(instance, &device_count, devices.Data());
         
         int best_score = -1; 
 
@@ -51,6 +90,50 @@ namespace sj {
                 m_PhysicalDevice = device;
             }
         }
+    }
+
+    void VulkanRenderDevice::CreateLogicalDevice()
+    {
+        SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "CreateLogicalDevice requires a selected physical device");
+        SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
+    
+        QueueFamilyIndices indices = GetQueueFamilyIndices();
+
+        UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetDefaultAllocator());
+        unique_queue_families = 
+        {
+            indices.GraphicsFamilyIndex.Value(),
+            indices.PresentationFamilyIndex.Value()
+        };
+
+        Vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetDefaultAllocator());
+        float queue_priorities = 1.0f;
+        for (auto family : unique_queue_families)
+        {
+            VkDeviceQueueCreateInfo queue_create_info {};
+            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_info.queueFamilyIndex = family;
+            queue_create_info.queueCount = 1;
+            queue_create_info.pQueuePriorities = &queue_priorities;
+            queue_create_infos.EmplaceBack(queue_create_info);
+        }
+
+
+        VkPhysicalDeviceFeatures device_features = {};
+
+        VkDeviceCreateInfo device_create_info = {};
+        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.Size());
+        device_create_info.pQueueCreateInfos = queue_create_infos.Data();
+        device_create_info.enabledLayerCount = 0;
+        device_create_info.enabledExtensionCount = 0;
+        device_create_info.pEnabledFeatures = &device_features;
+
+        VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);
+        SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");
+
+        vkGetDeviceQueue(m_Device, *indices.GraphicsFamilyIndex, 0, &m_GraphicsQueue);
+        vkGetDeviceQueue(m_Device, *indices.PresentationFamilyIndex, 0, &m_PresentationQueue);
     }
 
 } // namespace sj

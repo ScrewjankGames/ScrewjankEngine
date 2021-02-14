@@ -22,6 +22,7 @@ set_target_properties(Engine
 # Find Vulkan
 ################################################################################
 find_package(Vulkan REQUIRED)
+add_definitions(-DSJ_VULKAN_SUPPORT)
 
 ################################################################################
 # Link dependencies

@@ -31,7 +31,7 @@ namespace sj {
         SJ_ENGINE_LOG_INFO("Creating window");
         m_Window = Window::Create();
 
-        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator());
+        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator(), m_Window.Get());
         m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
 
         Run();

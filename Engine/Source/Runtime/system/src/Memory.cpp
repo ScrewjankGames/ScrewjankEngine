@@ -12,16 +12,14 @@
 #include "system/allocators/UnmanagedAllocator.hpp"
 #include "system/allocators/FreeListAllocator.hpp"
 
-using namespace sj;
-
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {
-    return MemorySystem::GetUnmanagedAllocator()->Allocate(num_bytes);
+    return sj::MemorySystem::GetUnmanagedAllocator()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) noexcept
 {
-    MemorySystem::GetUnmanagedAllocator()->Free(memory);
+    sj::MemorySystem::GetUnmanagedAllocator()->Free(memory);
 }
 
 namespace sj {

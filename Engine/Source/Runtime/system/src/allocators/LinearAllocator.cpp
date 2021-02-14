@@ -3,9 +3,11 @@
 // Library Headers
 
 // Screwjank Headers
-#include "core/Assert.hpp"
-#include "system/Memory.hpp"
 #include "system/allocators/LinearAllocator.hpp"
+
+#include "core/Assert.hpp"
+#include "core/Log.hpp"
+#include "system/Memory.hpp"
 
 namespace sj {
     LinearAllocator::LinearAllocator(size_t buffer_size, Allocator* backing_allocator)

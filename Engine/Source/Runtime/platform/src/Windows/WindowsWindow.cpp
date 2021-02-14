@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 
 // Screwjank Headers
+#include "platform/PlatformDetection.hpp"
 #include "platform/Windows/WindowsWindow.hpp"
 
 namespace sj {
@@ -34,4 +35,37 @@ namespace sj {
     {
         return glfwWindowShouldClose(m_NativeWindow);
     }
+
+#ifdef SJ_VULKAN_SUPPORT
+    Vector<const char*> WindowsWindow::GetRequiredVulkanExtenstions() const
+    {
+        uint32_t extension_count = 0;
+        const char** extensions;
+        extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+
+        Vector<const char*> extensions_vector;
+        extensions_vector.Reserve(extension_count);
+
+        for (size_t i = 0; i < extension_count; i++)
+        {
+            extensions_vector.PushBack(extensions[i]);
+        }
+
+        if constexpr (g_IsDebugBuild)
+        {
+            extensions_vector.PushBack(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        return extensions_vector;
+    }
+
+    VkSurfaceKHR WindowsWindow::CreateWindowSurface(VkInstance instance) const
+    {
+        VkSurfaceKHR surface;
+        VkResult success = glfwCreateWindowSurface(instance, m_NativeWindow, nullptr, &surface);
+        SJ_ASSERT(success == VK_SUCCESS, "Failed to create vulkan window surface");
+
+        return surface;
+    }
+#endif
 } // namespace sj

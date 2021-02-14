@@ -8,6 +8,7 @@
 
 // Screwjank Headers
 #include "core/Name.hpp"
+#include "core/Assert.hpp"
 
 namespace sj {
 
@@ -85,12 +86,14 @@ namespace sj {
     #define SJ_ENGINE_LOG_INFO(...)
     #define SJ_ENGINE_LOG_WARN(...)
     #define SJ_ENGINE_LOG_ERROR(...)
+    #define SJ_ENGINE_LOG_FATAL(...)
 
     #define SJ_GAME_LOG_TRACE(...)
     #define SJ_GAME_LOG_DEBUG(...)
     #define SJ_GAME_LOG_INFO(...)
     #define SJ_GAME_LOG_WARN(...)
     #define SJ_GAME_LOG_ERROR(...)
+    #define SJ_GAME_LOG_FATAL(...)
 #else
     #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
@@ -105,10 +108,11 @@ namespace sj {
     #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
 
-    #define SJ_GAME_LOG_TRACE(...)
-    #define SJ_GAME_LOG_DEBUG(...)
-    #define SJ_GAME_LOG_INFO(...)
-    #define SJ_GAME_LOG_WARN(...)
-    #define SJ_GAME_LOG_ERROR(...)
+    #define SJ_GAME_LOG_TRACE(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_DEBUG(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_INFO(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_WARN(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_ERROR(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_FATAL(...) SJ_ASSERT_NYI();
 
 #endif

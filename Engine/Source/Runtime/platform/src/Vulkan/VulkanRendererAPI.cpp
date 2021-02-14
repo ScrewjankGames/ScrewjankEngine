@@ -1,17 +1,22 @@
 // STD Headers
 
 // Library Headers
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
 // Screwjank Headers
 #include "platform/Vulkan/VulkanRendererAPI.hpp"
+
+#include "core/Window.hpp"
 #include "platform/Vulkan/VulkanRenderDevice.hpp"
 
+#ifdef SJ_PLATFORM_WINDOWS
+#include "platform/Windows/WindowsWindow.hpp"
+#endif // SJ_PLATFORM_WINDOWS
+
+
 namespace sj {
-    VulkanRendererAPI::VulkanRendererAPI()
+    VulkanRendererAPI::VulkanRendererAPI(Window* window) : RendererAPI(window)
     {
+
         InitializeVulkan();
 
         // Compile-time check to enable debug messaging
@@ -23,7 +28,30 @@ namespace sj {
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
 
-        m_RenderDevice = MakeUnique<VulkanRenderDevice>(m_VkInstance);
+        // Create the window render surface
+
+        // Create physical and logical render devices
+        m_RenderDevice = MakeUnique<VulkanRenderDevice>(this);
+    }
+
+    
+    VulkanRendererAPI::~VulkanRendererAPI()
+    {
+        if constexpr (g_IsDebugBuild)
+        {
+            auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+                vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
+
+            SJ_ASSERT(messenger_destroy_func != nullptr,
+                      "Failed to load Vulkan Debug messenger destroy function");
+
+            messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
+        }
+
+        // Important: Device must be destroyed before instance
+        m_RenderDevice.Reset();
+        vkDestroySurfaceKHR(m_VkInstance, m_RenderingSurface, nullptr);
+        vkDestroyInstance(m_VkInstance, nullptr);
     }
 
     void VulkanRendererAPI::InitializeVulkan()
@@ -46,41 +74,31 @@ namespace sj {
         create_info.ppEnabledLayerNames = nullptr;
 
         // Get extension count and names
-        auto extenstions = GetRequiredExtenstions();
+        Vector<const char*> extenstions = GetRequiredExtenstions();
         create_info.enabledExtensionCount = (uint32_t)extenstions.Size();
         create_info.ppEnabledExtensionNames = extenstions.Data();
 
         // Compile-time check for adding validation layers
         if constexpr (g_IsDebugBuild) {
-            static Vector<const char*> layers(MemorySystem::GetDefaultAllocator(),
-                                              {"VK_LAYER_KHRONOS_validation"});
+            static Vector<const char*> layers(
+                MemorySystem::GetDefaultAllocator(),
+                {"VK_LAYER_KHRONOS_validation"}
+            );
+
             EnableValidationLayers(layers);
 
             create_info.enabledLayerCount = (uint32_t)layers.Size();
             create_info.ppEnabledLayerNames = layers.Data();
         }
 
+
         // Create the vulkan instance
         VkResult result = vkCreateInstance(&create_info, nullptr, &m_VkInstance);
+        SJ_ASSERT(result == VK_SUCCESS,
+                  "Vulkan instance creation failed with error code {}",
+                  result);
 
-        if (result != VK_SUCCESS) {
-            SJ_ENGINE_LOG_ERROR("Vulkan instance creation failed with error code {}", result);
-        }
-    }
-
-    VulkanRendererAPI::~VulkanRendererAPI()
-    {
-        if constexpr (g_IsDebugBuild) {
-            auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
-
-            SJ_ASSERT(messenger_destroy_func != nullptr,
-                      "Failed to load Vulkan Debug messenger destroy function");
-
-            messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
-        }
-
-        vkDestroyInstance(m_VkInstance, nullptr);
+        CreateRenderSurface();
     }
 
     RenderDevice* VulkanRendererAPI::GetRenderDevice()
@@ -88,24 +106,33 @@ namespace sj {
         return m_RenderDevice.Get();
     }
 
+    VkInstance VulkanRendererAPI::GetInstance() const
+    {
+        return m_VkInstance;
+    }
+
+    VkSurfaceKHR VulkanRendererAPI::GetRenderingSurface() const
+    {
+        return m_RenderingSurface;
+    }
+
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
     {
-        uint32_t extension_count = 0;
-        const char** extensions;
-        extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+#ifdef SJ_PLATFORM_WINDOWS
+        return reinterpret_cast<WindowsWindow*>(m_Window)->GetRequiredVulkanExtenstions();
+#else
+        #error
+#endif 
+    }
 
-        Vector<const char*> extensions_vector;
-        extensions_vector.Reserve(extension_count);
-
-        for (size_t i = 0; i < extension_count; i++) {
-            extensions_vector.PushBack(extensions[i]);
-        }
-
-        if constexpr (g_IsDebugBuild) {
-            extensions_vector.PushBack(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-        return extensions_vector;
+    void VulkanRendererAPI::CreateRenderSurface()
+    {
+#ifdef SJ_PLATFORM_WINDOWS
+        m_RenderingSurface =
+            reinterpret_cast<WindowsWindow*>(m_Window)->CreateWindowSurface(m_VkInstance);
+#else
+    #error
+#endif 
     }
 
     void
@@ -121,7 +148,7 @@ namespace sj {
         for (auto layer_name : required_validation_layers) {
             bool layer_found = false;
 
-            for (auto layer_properties : available_layers) {
+            for (const auto& layer_properties : available_layers) {
                 if (strcmp(layer_name, layer_properties.layerName) == 0) {
                     layer_found = true;
                     break;

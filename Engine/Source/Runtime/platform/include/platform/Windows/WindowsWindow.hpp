@@ -3,9 +3,14 @@
 // STD Headers
 
 // Library Headers
+#ifdef SJ_VULKAN_SUPPORT
+    #include <vulkan/vulkan.h>
+#endif
 
 // Screwjank Headers
 #include "core/Window.hpp"
+#include "containers/Vector.hpp"
+#include "platform/PlatformDetection.hpp"
 
 struct GLFWwindow;
 
@@ -36,6 +41,12 @@ namespace sj {
          * @return true If the window has been instructed to close, else false
          */
         bool WindowClosed() const override;
+
+#ifdef SJ_VULKAN_SUPPORT
+        Vector<const char*> GetRequiredVulkanExtenstions() const;
+
+        VkSurfaceKHR CreateWindowSurface(VkInstance instance) const;
+#endif
 
       private:
         GLFWwindow* m_NativeWindow;

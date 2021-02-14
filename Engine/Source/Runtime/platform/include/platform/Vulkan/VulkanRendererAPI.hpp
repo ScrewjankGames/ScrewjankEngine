@@ -7,12 +7,15 @@
 
 // Screwjank Headers
 #include "rendering/RendererAPI.hpp"
+
+#include "platform/PlatformDetection.hpp"
 #include "containers/Vector.hpp"
 
 namespace sj {
 
     // Forward declarations
     class VulkanRenderDevice;
+    class Window;
 
     class VulkanRendererAPI : public RendererAPI
     {
@@ -20,7 +23,7 @@ namespace sj {
         /**
          * Constructor
          */
-        VulkanRendererAPI();
+        VulkanRendererAPI(Window* window);
 
         /**
          * Destructor
@@ -28,9 +31,29 @@ namespace sj {
         ~VulkanRendererAPI();
 
         /**
+         * @return The active VkInstance
+         */
+        VkInstance GetInstance() const;
+
+        /**
+         * @return The window surface
+         */
+        VkSurfaceKHR GetRenderingSurface() const; 
+
+        /**
          * Returns a pointer to the Vulkan render device
          */
         RenderDevice* GetRenderDevice() override;
+
+        const Vector<const char*>& GetValidationLayerInfo() const
+        {
+            static Vector<const char*> layers(
+                MemorySystem::GetDefaultAllocator(),
+                {"VK_LAYER_KHRONOS_validation"}
+            );
+
+            return layers;
+        }
 
       private:
         /** The Vulkan instance is the engine's connection to the vulkan library */
@@ -38,6 +61,9 @@ namespace sj {
 
         /** Handle to manage Vulkan's debug callbacks */
         VkDebugUtilsMessengerEXT m_VkDebugMessenger;
+
+        /** Handle to the surface vulkan renders to */
+        VkSurfaceKHR m_RenderingSurface;
 
         /** Owning pointer to the render device used to back API operations */
         UniquePtr<VulkanRenderDevice> m_RenderDevice;
@@ -51,6 +77,9 @@ namespace sj {
          * Returns list of Vulkan extenstions the renderer should support
          */
         Vector<const char*> GetRequiredExtenstions() const;
+
+        /** Creates the rendering surface */
+        void CreateRenderSurface();
 
         /**
          * Turns on Vulkan validation layers

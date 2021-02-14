@@ -37,7 +37,7 @@ namespace sj {
 #endif
 
     /**
-     *  Detect compiler
+     *  Detect compiler toolchain
      */
     enum class Compiler
     {
@@ -46,7 +46,6 @@ namespace sj {
         GCC,
         Unknown
     };
-
 #ifdef _MSC_VER
     #define SJ_COMPILER_MSVC
     constexpr Compiler g_Compiler = Compiler::MSVC;
@@ -61,9 +60,9 @@ namespace sj {
     constexpr Compiler g_Compiler = Compiler::Unknown;
 #endif // _MSC_VER
 
-/**
- * Detect build configuration
- */
+    /**
+     * Detect build configuration
+     */
 #ifdef NDEBUG
     #define SJ_RELEASE
     constexpr bool g_IsDebugBuild = false;
@@ -72,5 +71,21 @@ namespace sj {
     #define SJ_ENABLE_ASSERTS
     constexpr bool g_IsDebugBuild = true;
 #endif // NDEBUG
+
+    /**
+     * Detect rendering API support  
+     */
+#ifdef SJ_VULKAN_SUPPORT
+    constexpr bool g_VulkanEnabled = true;
+#else
+    constexpr bool g_VulkanEnabled = false;
+#endif 
+
+#ifdef SJ_DX12_SUPPORT
+    constexpr bool g_DirectX12Enabled = true;
+ #else
+    constexpr bool g_DirectX12Enabled = false;
+#endif 
+
 
 } // namespace sj

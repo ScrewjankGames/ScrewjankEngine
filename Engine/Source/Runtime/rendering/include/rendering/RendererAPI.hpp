@@ -13,6 +13,7 @@ namespace sj {
 
     // Forward declarations
     class RenderDevice;
+    class Window;
 
     class RendererAPI
     {
@@ -28,7 +29,7 @@ namespace sj {
         /**
          * Creates and initializes graphics API
          */
-        static UniquePtr<RendererAPI> Create();
+        static UniquePtr<RendererAPI> Create(Window* window);
 
         /**
          * @return The currently selected Graphics API
@@ -46,13 +47,19 @@ namespace sj {
         virtual RenderDevice* GetRenderDevice() = 0;
 
       protected:
+        /** Reference to the engine's window */
+        Window* m_Window;
+        
         /**
          * Constructor
          */
-        RendererAPI() = default;
+        RendererAPI(Window* window);
 
       private:
+        /** Allows other systems to query the currently active rendering API*/
         static API s_VendorAPI;
+
+
     };
 
 } // namespace sj

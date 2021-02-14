@@ -3,7 +3,7 @@
 // STD Headers
 
 // Library Headers
-#include <vulkan/vulkan.h>
+
 
 // Screwjank Headers
 #include "containers/Vector.hpp"
@@ -12,14 +12,14 @@
 namespace sj {
 
     class RendererAPI;
-
+    class Window;
     class Renderer
     {
       public:
         /**
          * Constructor
          */
-        Renderer();
+        Renderer(Window* window);
 
         /**
          * Destructor
