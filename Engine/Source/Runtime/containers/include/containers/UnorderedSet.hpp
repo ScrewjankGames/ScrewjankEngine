@@ -109,6 +109,12 @@ namespace sj {
         UnorderedSet(Allocator* allocator, std::initializer_list<T> list);
 
         /**
+         * Range Constructor
+         */
+        template <class InputIterator>
+        UnorderedSet(Allocator* allocator, InputIterator first, InputIterator last);
+
+        /**
          * Copy Constructor
          */
         UnorderedSet(UnorderedSet& other) = default;
@@ -151,6 +157,12 @@ namespace sj {
          * @return An iterator to the element inserted
          */
         std::pair<iterator, bool> Insert(const T& key);
+
+        /**
+         * Range-based insert  
+         */
+        template <class InputIterator>
+        void Insert(InputIterator first, InputIterator last);
 
         /**
          * Emplace an element into the set
@@ -328,6 +340,17 @@ namespace sj {
     }
 
     template <class T, class Hasher>
+    template <class InputIterator>
+    inline UnorderedSet<T, Hasher>::UnorderedSet(Allocator* allocator,
+                                                 InputIterator first,
+                                                 InputIterator last)
+        : UnorderedSet(allocator)
+    {
+        Insert(first, last);
+    }
+
+
+    template <class T, class Hasher>
     inline UnorderedSet<T, Hasher>::UnorderedSet(UnorderedSet<T, Hasher>&& other) noexcept
         : m_Elements(std::move(other.m_Elements))
     {
@@ -418,6 +441,18 @@ namespace sj {
     UnorderedSet<T, Hasher>::Insert(const T& value)
     {
         return Emplace(value);
+    }
+
+
+
+    template <class T, class Hasher>
+    template <class InputIterator>
+    inline void UnorderedSet<T, Hasher>::Insert(InputIterator first, InputIterator last)
+    {
+        for (auto it = first; it != last; it++)
+        {
+            Insert(*it);
+        }
     }
 
     template <class T, class Hasher>

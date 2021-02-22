@@ -117,7 +117,17 @@ namespace sj {
         /**
          * Function to allow use in ranged based for loops
          */
+        auto begin() const -> decltype(std::begin(m_Array));
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
         auto end() -> decltype(std::end(m_Array));
+
+        /**
+         * Function to allow use in ranged based for loops
+         */
+        auto end() const -> decltype(std::end(m_Array));
     };
 
     /**
@@ -218,7 +228,19 @@ namespace sj {
     }
 
     template <class T, size_t N>
+    inline auto Array<T, N>::begin() const -> decltype(std::begin(m_Array))
+    {
+        return std::begin(m_Array);
+    }
+
+    template <class T, size_t N>
     inline auto Array<T, N>::end() -> decltype(std::end(m_Array))
+    {
+        return std::end(m_Array);
+    }
+
+    template <class T, size_t N>
+    inline auto Array<T, N>::end() const -> decltype(std::end(m_Array))
     {
         return std::end(m_Array);
     }

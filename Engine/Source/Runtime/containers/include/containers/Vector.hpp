@@ -787,7 +787,7 @@ namespace sj {
     inline typename Vector<T>::iterator Vector<T>::Erase(iterator pos)
     {
         // Destroy contained element
-        auto element = *pos;
+        auto& element = *pos;
         element.~T();
 
         // Move everything one to the left

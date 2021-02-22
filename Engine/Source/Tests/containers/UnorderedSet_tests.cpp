@@ -7,6 +7,7 @@
 
 // Void Engine Headers
 #include "containers/UnorderedSet.hpp"
+#include "containers/Vector.hpp"
 
 using namespace sj;
 
@@ -47,6 +48,28 @@ namespace container_tests {
         ASSERT_TRUE(set.Contains("Biz"));
         ASSERT_TRUE(set.Contains("Baz"));
         ASSERT_FALSE(set.Contains(""));
+    }
+
+    TEST(UnorderedSetTests, RangeConstructionTest)
+    {
+        Vector<std::string> vec(MemorySystem::GetUnmanagedAllocator());
+        vec = {"FOO", "BAR", "BIZ", "BAZ", "BUZZ"};
+
+        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator(),
+                                      vec.begin(),
+                                      vec.end());
+
+        ASSERT_EQ(vec.Size(), set.Count());
+
+        for (auto& element : vec)
+        {
+            ASSERT_TRUE(set.Contains(element));
+        }
+
+        auto var = *vec.begin();
+        vec.Erase(vec.begin());
+
+        ASSERT_TRUE(set.Contains(var));
     }
 
     TEST(UnorderedSetTests, CopyConstructorTest)
