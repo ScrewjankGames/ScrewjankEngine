@@ -173,7 +173,7 @@ namespace sj {
         /**
          * Move Assignment Operator
          */
-        void operator=(UniquePtr&& other)
+        void operator=(UniquePtr&& other) noexcept
         {
             CleanUp();
 
@@ -186,6 +186,14 @@ namespace sj {
          * Arrow operator overload
          */
         T* operator->()
+        {
+            return m_Pointer;
+        }
+
+        /**
+         * Const arrow operator overload
+         */
+        const T* operator->() const
         {
             return m_Pointer;
         }

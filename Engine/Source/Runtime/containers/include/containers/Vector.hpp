@@ -317,6 +317,11 @@ namespace sj {
         void Clear();
 
         /**
+         * @return Whether or not the vector currently contains elements  
+         */
+        bool Empty();
+
+        /**
          * Allows access to the raw C-Style array
          */
         T* Data();
@@ -882,6 +887,12 @@ namespace sj {
         }
 
         m_Size = 0;
+    }
+
+    template <class T>
+    inline bool Vector<T>::Empty()
+    {
+        return Size() != 0;
     }
 
     template <class T>
