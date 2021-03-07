@@ -1,7 +1,6 @@
 #pragma once
 
 // STD Headers
-#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -165,6 +164,12 @@ namespace sj {
         void Insert(InputIterator first, InputIterator last);
 
         /**
+         * Range-based emplace 
+         */
+        template <class InputIterator>
+        void Emplace(InputIterator first, InputIterator last);
+
+        /**
          * Emplace an element into the set
          * @return An iterator to the element inserted
          */
@@ -221,10 +226,23 @@ namespace sj {
             /**
              * Constructor
              * @param offset The offset of the element from it's desired index
-             * @param args... Arguments to be forwarded to value_type's constructor
+             * @param value Object to copy in element memory
              */
-            template <class... Args>
-            Element(offset_t offset, Args&&... args) noexcept;
+            Element(offset_t offset) noexcept;
+
+            /**
+             * Constructor
+             * @param offset The offset of the element from it's desired index
+             * @param value Object to copy in element memory
+             */
+            Element(offset_t offset, T& value) noexcept;
+
+            /**
+             * Constructor
+             * @param offset The offset of the element from it's desired index
+             * @param value Object to move in element memory
+             */
+            Element(offset_t offset, T&& value) noexcept;
 
             /**
              * Copy Constructor
@@ -282,7 +300,7 @@ namespace sj {
         };
 
         /** The Sentinel Element is used to detect the end of the list */
-        static inline Element s_SentinelElement = {kEndOfSetSentinel};
+        static inline Element s_SentinelElement = Element(kEndOfSetSentinel);
 
         /** Functor used to hash keys */
         Hasher m_HashFunctor;
@@ -346,7 +364,7 @@ namespace sj {
                                                  InputIterator last)
         : UnorderedSet(allocator)
     {
-        Insert(first, last);
+        Emplace(first, last);
     }
 
 
@@ -455,13 +473,23 @@ namespace sj {
         }
     }
 
+    template<class T, class Hasher>
+    template <class InputIterator>
+    inline void UnorderedSet<T, Hasher>::Emplace(InputIterator first, InputIterator last)
+    {
+        for (auto it = first; it != last; it++)
+        {
+            Emplace(*it);
+        }
+    }
+
     template <class T, class Hasher>
     template <class... Args>
     inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
     UnorderedSet<T, Hasher>::Emplace(Args&&... args)
     {
         // construct a new record on the stack
-        Element new_record(0, std::forward<Args>(args)...);
+        Element new_record(0, std::move(T(std::forward<Args>(args)...)));
         auto hash = m_HashFunctor(new_record.Value);
         auto desired_index = hash & m_IndexMask;
 
@@ -634,11 +662,23 @@ namespace sj {
     }
 
     template <class T, class Hasher>
-    template <class... Args>
-    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, Args&&... args) noexcept
+    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset) noexcept
     {
         Offset = offset;
-        new (std::addressof(Value)) T(std::forward<Args>(args)...);
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, T& value) noexcept
+    {
+        Offset = offset;
+        new (std::addressof(Value)) T(value);
+    }
+
+    template <class T, class Hasher>
+    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, T&& value) noexcept
+    {
+        Offset = offset;
+        new (std::addressof(Value)) T(value);
     }
 
     template <class T, class Hasher>

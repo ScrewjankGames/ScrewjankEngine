@@ -7,6 +7,8 @@
 
 // Void Engine Headers
 #include "containers/UnorderedSet.hpp"
+
+#include "containers/Array.hpp"
 #include "containers/Vector.hpp"
 
 using namespace sj;
@@ -225,6 +227,14 @@ namespace container_tests {
 
         auto insert_res = set.Insert("Biz2");
         ASSERT_EQ(true, insert_res.second);
+
+        // Degenerate Case: After Range Insertion?
+        Array<const char*, 1> arr = {"VK_KHR_swapchain"};
+        UnorderedSet<const char*> set2( MemorySystem::GetUnmanagedAllocator(), arr.begin(), arr.end() );
+
+        ASSERT_TRUE(set2.Contains(arr[0]));
+        ASSERT_TRUE(set2.Erase(arr[0]));
+        ASSERT_EQ(0, set2.Count());
     }
 
     TEST(UnorderedSetTests, FindTest)
