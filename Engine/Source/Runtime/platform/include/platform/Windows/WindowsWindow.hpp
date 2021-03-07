@@ -43,8 +43,14 @@ namespace sj {
         bool WindowClosed() const override;
 
 #ifdef SJ_VULKAN_SUPPORT
+        /**
+         * @return Extensions Vulkan API must support to support this window.   
+         */
         Vector<const char*> GetRequiredVulkanExtenstions() const;
 
+        /**
+         * @return The Vulkan presentation surface for this window
+         */
         VkSurfaceKHR CreateWindowSurface(VkInstance instance) const;
 #endif
 

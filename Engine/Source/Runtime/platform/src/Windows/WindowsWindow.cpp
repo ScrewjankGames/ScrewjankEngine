@@ -1,7 +1,9 @@
 // STD Headers
 
 // Library Headers
-#define GLFW_INCLUDE_VULKAN
+#ifdef SJ_VULKAN_SUPPORT
+    #define GLFW_INCLUDE_VULKAN
+#endif
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
@@ -49,11 +51,6 @@ namespace sj {
         for (size_t i = 0; i < extension_count; i++)
         {
             extensions_vector.PushBack(extensions[i]);
-        }
-
-        if constexpr (g_IsDebugBuild)
-        {
-            extensions_vector.PushBack(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
         return extensions_vector;

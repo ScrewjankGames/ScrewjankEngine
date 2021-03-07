@@ -6,20 +6,28 @@
 #include <vulkan/vulkan.h>
 
 // Screwjank Headers
-#include "rendering/RendererAPI.hpp"
-
-#include "platform/PlatformDetection.hpp"
+#include "containers/Array.hpp"
+#include "containers/String.hpp"
 #include "containers/Vector.hpp"
+#include "platform/PlatformDetection.hpp"
+#include "rendering/RendererAPI.hpp"
 
 namespace sj {
 
     // Forward declarations
     class VulkanRenderDevice;
     class Window;
+    struct DeviceQueueFamilyIndices;
 
     class VulkanRendererAPI : public RendererAPI
     {
       public:
+
+        /** List of extensions devices must support */
+        static constexpr Array<ConstString, 1> kRequiredDeviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        };
+
         /**
          * Constructor
          */
@@ -45,17 +53,24 @@ namespace sj {
          */
         RenderDevice* GetRenderDevice() override;
 
-        const Vector<const char*>& GetValidationLayerInfo() const
-        {
-            static Vector<const char*> layers(
-                MemorySystem::GetDefaultAllocator(),
-                {"VK_LAYER_KHRONOS_validation"}
-            );
+        /**
+         * Returns the queue families available for the supplied VkPhysicalDevice 
+         */
+        DeviceQueueFamilyIndices GetDeviceQueueFamilyIndices(VkPhysicalDevice device) const;
 
-            return layers;
-        }
+        /**
+         * Queries physical device suitability for use in engine  
+         */
+        bool IsDeviceSuitable(VkPhysicalDevice device) const;
 
       private:
+        struct SwapChainParams
+        {
+            VkSurfaceCapabilitiesKHR Capabilities;
+            Vector<VkSurfaceFormatKHR> Formats;
+            Vector<VkPresentModeKHR> PresentModes;
+        };
+
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_VkInstance;
 
@@ -64,6 +79,9 @@ namespace sj {
 
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_RenderingSurface;
+
+        /** Pointer to the swap chain that controls image presenation */
+        VkSwapchainKHR m_SwapChain;
 
         /** Owning pointer to the render device used to back API operations */
         UniquePtr<VulkanRenderDevice> m_RenderDevice;
@@ -80,6 +98,16 @@ namespace sj {
 
         /** Creates the rendering surface */
         void CreateRenderSurface();
+
+        /** 
+         * Picks swap chain settings and creates swap chain 
+         */
+        void CreateSwapChain();
+
+        /**
+         * Query swap chain support parameters 
+         */
+        SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device) const;
 
         /**
          * Turns on Vulkan validation layers

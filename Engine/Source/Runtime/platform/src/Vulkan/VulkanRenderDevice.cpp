@@ -27,35 +27,14 @@ namespace sj {
         vkDestroyDevice(m_Device, nullptr);
     }
 
-    VulkanRenderDevice::QueueFamilyIndices VulkanRenderDevice::GetQueueFamilyIndices() const
+    VkPhysicalDevice VulkanRenderDevice::GetPhysicalDevice() const
     {
-        uint32_t queue_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queue_count, nullptr);
+        return m_PhysicalDevice;
+    }
 
-        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetDefaultAllocator(), queue_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queue_count, queue_data.Data());
-        
-        QueueFamilyIndices indices;
-
-        int i = 0;
-        for (const auto& family : queue_data)
-        {
-            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                indices.GraphicsFamilyIndex = i;
-            }
-
-            VkBool32 presentation_support = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_API->GetRenderingSurface(), &presentation_support);
-            if (presentation_support)
-            {
-                indices.PresentationFamilyIndex = i;
-            }
-
-            i++;
-        }
-
-        return indices;
+    VkDevice VulkanRenderDevice::GetLogicalDevice() const
+    {
+        return m_Device;
     }
 
     void VulkanRenderDevice::SelectPhysicalDevice()
@@ -71,9 +50,14 @@ namespace sj {
         
         int best_score = -1; 
 
-        // Picks the first discrete GPU found, if no discrete GPU first Vulkan compatible device
+        // Picks the best compatible GPU found, prefering discrete GPUs  
         for (const auto& device : devices) {
             int score = 0;
+
+            if (!m_API->IsDeviceSuitable(device))
+            {
+                continue;
+            }
 
             VkPhysicalDeviceProperties device_props;
             VkPhysicalDeviceFeatures device_features;
@@ -90,6 +74,9 @@ namespace sj {
                 m_PhysicalDevice = device;
             }
         }
+
+        SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE,
+                  "Screwjank Engine failed to select suitable physical device.");
     }
 
     void VulkanRenderDevice::CreateLogicalDevice()
@@ -97,7 +84,7 @@ namespace sj {
         SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "CreateLogicalDevice requires a selected physical device");
         SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
     
-        QueueFamilyIndices indices = GetQueueFamilyIndices();
+        DeviceQueueFamilyIndices indices = m_API->GetDeviceQueueFamilyIndices(m_PhysicalDevice);
 
         UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetDefaultAllocator());
         unique_queue_families = 
@@ -118,7 +105,6 @@ namespace sj {
             queue_create_infos.EmplaceBack(queue_create_info);
         }
 
-
         VkPhysicalDeviceFeatures device_features = {};
 
         VkDeviceCreateInfo device_create_info = {};
@@ -126,8 +112,12 @@ namespace sj {
         device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.Size());
         device_create_info.pQueueCreateInfos = queue_create_infos.Data();
         device_create_info.enabledLayerCount = 0;
-        device_create_info.enabledExtensionCount = 0;
         device_create_info.pEnabledFeatures = &device_features;
+        
+        const char** deviceExtensionNames = (const char**)(VulkanRendererAPI::kRequiredDeviceExtensions.Data());
+        device_create_info.enabledExtensionCount = 
+            static_cast<uint32_t>(VulkanRendererAPI::kRequiredDeviceExtensions.Size());
+        device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
 
         VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);
         SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");

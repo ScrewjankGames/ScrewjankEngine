@@ -1,4 +1,5 @@
 // STD Headers
+#include <unordered_set>
 
 // Library Headers
 
@@ -6,6 +7,8 @@
 #include "platform/Vulkan/VulkanRendererAPI.hpp"
 
 #include "core/Window.hpp"
+#include "containers/String.hpp"
+#include "containers/UnorderedSet.hpp"
 #include "platform/Vulkan/VulkanRenderDevice.hpp"
 
 #ifdef SJ_PLATFORM_WINDOWS
@@ -14,6 +17,7 @@
 
 
 namespace sj {
+
     VulkanRendererAPI::VulkanRendererAPI(Window* window) : RendererAPI(window)
     {
 
@@ -28,10 +32,11 @@ namespace sj {
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
 
-        // Create the window render surface
-
         // Create physical and logical render devices
         m_RenderDevice = MakeUnique<VulkanRenderDevice>(this);
+        
+        // Create Swap Chain
+        CreateSwapChain();
     }
 
     
@@ -106,6 +111,81 @@ namespace sj {
         return m_RenderDevice.Get();
     }
 
+    DeviceQueueFamilyIndices
+    VulkanRendererAPI::GetDeviceQueueFamilyIndices(VkPhysicalDevice device) const
+    {
+        uint32_t queue_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
+
+        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetDefaultAllocator(),
+                                                   queue_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
+
+        DeviceQueueFamilyIndices indices;
+
+        int i = 0;
+        for (const auto& family : queue_data)
+        {
+            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.GraphicsFamilyIndex = i;
+            }
+
+            if (m_RenderingSurface != VK_NULL_HANDLE)
+            {
+                VkBool32 presentation_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(
+                    device,
+                    i,
+                    m_RenderingSurface,
+                    &presentation_support
+                );
+
+                if (presentation_support)
+                {
+                    indices.PresentationFamilyIndex = i;
+                }
+            }
+
+            i++;
+        }
+
+        return indices;
+    }
+
+    bool VulkanRendererAPI::IsDeviceSuitable(VkPhysicalDevice device) const
+    {
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
+
+        // Query queue support
+        bool indicies_complete =
+            indices.GraphicsFamilyIndex.HasValue() && indices.PresentationFamilyIndex.HasValue();
+
+        // Check extension support
+        uint32_t extension_count;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+        Vector<VkExtensionProperties> extension_props(MemorySystem::GetDefaultAllocator(), extension_count);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, extension_props.Data());
+
+        UnorderedSet<ConstString> missing_extensions(
+            MemorySystem::GetDefaultAllocator(),
+            kRequiredDeviceExtensions.begin(),
+            kRequiredDeviceExtensions.end()
+        );
+
+        for (const VkExtensionProperties& extension : extension_props)
+        {
+            missing_extensions.Erase(extension.extensionName);
+        }
+
+        // Check swap chain dupport
+        SwapChainParams params = QuerySwapChainParams(device);
+        bool swap_chain_supported = !params.Formats.Empty() && !params.PresentModes.Empty();
+        
+
+        return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
+    }
+
     VkInstance VulkanRendererAPI::GetInstance() const
     {
         return m_VkInstance;
@@ -118,11 +198,19 @@ namespace sj {
 
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
     {
+        Vector<const char*> extensions_vector;
 #ifdef SJ_PLATFORM_WINDOWS
-        return reinterpret_cast<WindowsWindow*>(m_Window)->GetRequiredVulkanExtenstions();
+        extensions_vector = reinterpret_cast<WindowsWindow*>(m_Window)->GetRequiredVulkanExtenstions();
 #else
         #error
 #endif 
+
+        if constexpr (g_IsDebugBuild)
+        {
+            extensions_vector.PushBack(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        return extensions_vector;
     }
 
     void VulkanRendererAPI::CreateRenderSurface()
@@ -133,6 +221,49 @@ namespace sj {
 #else
     #error
 #endif 
+    }
+
+    void VulkanRendererAPI::CreateSwapChain()
+    {
+
+    }
+
+    VulkanRendererAPI::SwapChainParams VulkanRendererAPI::QuerySwapChainParams(VkPhysicalDevice physical_device) const
+    {
+        SwapChainParams params = {};
+
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
+                                                  m_RenderingSurface,
+                                                  &params.Capabilities);
+
+        uint32_t format_count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
+                                             m_RenderingSurface,
+                                             &format_count,
+                                             nullptr);
+
+        SJ_ASSERT(format_count != 0, "No surface formats found");
+
+        params.Formats.Reserve(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
+                                             m_RenderingSurface,
+                                             &format_count,
+                                             params.Formats.Data());
+
+        uint32_t present_mode_count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
+                                                  m_RenderingSurface,
+                                                  &present_mode_count,
+                                                  nullptr);
+
+        SJ_ASSERT(present_mode_count != 0, "No present modes found");
+        params.PresentModes.Reserve(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
+                                                  m_RenderingSurface,
+                                                  &present_mode_count,
+                                                  params.PresentModes.Data());
+
+        return params;
     }
 
     void

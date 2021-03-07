@@ -10,20 +10,19 @@
 #include "containers/Optional.hpp"
 
 namespace sj {
-    
+
     // Forward Declarations
     class VulkanRendererAPI;
+
+    struct DeviceQueueFamilyIndices
+    {
+        Optional<uint32_t> GraphicsFamilyIndex;
+        Optional<uint32_t> PresentationFamilyIndex;
+    };
 
     class VulkanRenderDevice : public RenderDevice
     {
       public:
-
-        struct QueueFamilyIndices
-        {
-            Optional<uint32_t> GraphicsFamilyIndex;
-            Optional<uint32_t> PresentationFamilyIndex;
-        };
-
         /**
          * Constructor
          */
@@ -35,9 +34,14 @@ namespace sj {
         ~VulkanRenderDevice();
 
         /**
-         * 
+         * @return The vulkan handle for the logical device
          */
-        QueueFamilyIndices GetQueueFamilyIndices() const;
+        VkPhysicalDevice GetPhysicalDevice() const;
+
+        /**
+         * @return The vulkan handle for the logical device  
+         */
+        VkDevice GetLogicalDevice() const;
 
       private:
         /**

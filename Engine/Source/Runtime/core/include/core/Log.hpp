@@ -7,7 +7,6 @@
 #include <spdlog/spdlog.h>
 
 // Screwjank Headers
-#include "core/Name.hpp"
 #include "core/Assert.hpp"
 
 namespace sj {
