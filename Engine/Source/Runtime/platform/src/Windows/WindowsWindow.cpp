@@ -38,6 +38,17 @@ namespace sj {
         return glfwWindowShouldClose(m_NativeWindow);
     }
 
+    Window::FrameBufferSize WindowsWindow::GetFrameBufferSize() const
+    {
+        int width;
+        int height;
+
+        glfwGetFramebufferSize(m_NativeWindow, &width, &height);
+        
+        FrameBufferSize size = {(uint32_t)width, (uint32_t)height};
+        return size;
+    }
+
 #ifdef SJ_VULKAN_SUPPORT
     Vector<const char*> WindowsWindow::GetRequiredVulkanExtenstions() const
     {

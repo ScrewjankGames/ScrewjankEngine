@@ -187,6 +187,8 @@ namespace sj {
                 AttemptCoalesceBlock(new_block);
                 return;
             }
+
+            curr_block = curr_block->Next;
         }
 
         // If no suitable place between two blocks was found, tack the block onto the end of the

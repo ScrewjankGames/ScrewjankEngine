@@ -10,6 +10,7 @@
 #include "containers/String.hpp"
 #include "containers/UnorderedSet.hpp"
 #include "platform/Vulkan/VulkanRenderDevice.hpp"
+#include "platform/Vulkan/VulkanSwapChain.hpp"
 
 #ifdef SJ_PLATFORM_WINDOWS
 #include "platform/Windows/WindowsWindow.hpp"
@@ -20,23 +21,10 @@ namespace sj {
 
     VulkanRendererAPI::VulkanRendererAPI(Window* window) : RendererAPI(window)
     {
-
         InitializeVulkan();
 
-        // Compile-time check to enable debug messaging
-        if constexpr (g_IsDebugBuild) {
-            EnableDebugMessaging();
-        }
-
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
-
-        // Create physical and logical render devices
-        m_RenderDevice = MakeUnique<VulkanRenderDevice>(this);
-        
-        // Create Swap Chain
-        CreateSwapChain();
+        SJ_ASSERT(m_RenderDevice.Get() != nullptr, "Failed to create render device");
+        SJ_ASSERT(m_SwapChain.Get() != nullptr, "Failed to create swap chain");
     }
 
     
@@ -52,9 +40,11 @@ namespace sj {
 
             messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
         }
-
-        // Important: Device must be destroyed before instance
+    
+        // Important: Component Unique pointers must be released in a specific order
+        m_SwapChain.Reset();
         m_RenderDevice.Reset();
+
         vkDestroySurfaceKHR(m_VkInstance, m_RenderingSurface, nullptr);
         vkDestroyInstance(m_VkInstance, nullptr);
     }
@@ -103,7 +93,25 @@ namespace sj {
                   "Vulkan instance creation failed with error code {}",
                   result);
 
+        // Compile-time check to enable debug messaging
+        if constexpr (g_IsDebugBuild)
+        {
+            EnableDebugMessaging();
+        }
+
+        // Create rendering surface
         CreateRenderSurface();
+
+        // Select physical device and create and logical render device
+        m_RenderDevice = MakeUnique<VulkanRenderDevice>(this);
+
+        // Create the vulkan swap chain connected to the current window
+        m_SwapChain = MakeUnique<VulkanSwapChain>(this, m_Window);
+
+        // Log success
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
     }
 
     RenderDevice* VulkanRendererAPI::GetRenderDevice()
@@ -179,10 +187,9 @@ namespace sj {
         }
 
         // Check swap chain dupport
-        SwapChainParams params = QuerySwapChainParams(device);
+        VulkanSwapChain::SwapChainParams params = m_SwapChain->QuerySwapChainParams(device, m_RenderingSurface);
         bool swap_chain_supported = !params.Formats.Empty() && !params.PresentModes.Empty();
         
-
         return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
     }
 
@@ -194,6 +201,16 @@ namespace sj {
     VkSurfaceKHR VulkanRendererAPI::GetRenderingSurface() const
     {
         return m_RenderingSurface;
+    }
+
+    VkPhysicalDevice VulkanRendererAPI::GetPhysicalDevice() const
+    {
+        return m_RenderDevice->GetPhysicalDevice();
+    }
+
+    VkDevice VulkanRendererAPI::GetLogicalDevice() const
+    {
+        return m_RenderDevice->GetLogicalDevice();
     }
 
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
@@ -221,49 +238,6 @@ namespace sj {
 #else
     #error
 #endif 
-    }
-
-    void VulkanRendererAPI::CreateSwapChain()
-    {
-
-    }
-
-    VulkanRendererAPI::SwapChainParams VulkanRendererAPI::QuerySwapChainParams(VkPhysicalDevice physical_device) const
-    {
-        SwapChainParams params = {};
-
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
-                                                  m_RenderingSurface,
-                                                  &params.Capabilities);
-
-        uint32_t format_count;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
-                                             m_RenderingSurface,
-                                             &format_count,
-                                             nullptr);
-
-        SJ_ASSERT(format_count != 0, "No surface formats found");
-
-        params.Formats.Reserve(format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
-                                             m_RenderingSurface,
-                                             &format_count,
-                                             params.Formats.Data());
-
-        uint32_t present_mode_count;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
-                                                  m_RenderingSurface,
-                                                  &present_mode_count,
-                                                  nullptr);
-
-        SJ_ASSERT(present_mode_count != 0, "No present modes found");
-        params.PresentModes.Reserve(present_mode_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
-                                                  m_RenderingSurface,
-                                                  &present_mode_count,
-                                                  params.PresentModes.Data());
-
-        return params;
     }
 
     void

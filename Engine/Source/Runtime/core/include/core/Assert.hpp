@@ -17,7 +17,7 @@
     #elif SJ_PLATFORM_LINUX
         #define SJ_DEBUGBREAK() raise(SIGTRAP)
     #else
-        #error "Platform does not support debug breaking"
+        #error "Debug break NYI for this platform"
     #endif // SJ_PLATFORM_WINDOWS
 #else
     #define SJ_DEBUGBREAK()

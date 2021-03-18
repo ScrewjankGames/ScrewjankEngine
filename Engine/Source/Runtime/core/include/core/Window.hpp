@@ -13,6 +13,15 @@ namespace sj {
     {
       public:
         /**
+         * Struct to represent the window width and height in pixels
+         */
+        struct FrameBufferSize
+        {
+            uint32_t Width;
+            uint32_t Height;
+        };
+
+        /**
          * Factory function to construct Window interface appropriate to the current operating
          * system
          */
@@ -32,6 +41,11 @@ namespace sj {
          * @return true If the window has been instructed to close, else false
          */
         virtual bool WindowClosed() const = 0;
+
+        /**
+         * @return Window size in pixels  
+         */
+        virtual FrameBufferSize GetFrameBufferSize() const = 0;
 
       protected:
         /**

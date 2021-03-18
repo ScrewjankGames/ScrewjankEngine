@@ -42,6 +42,11 @@ namespace sj {
          */
         bool WindowClosed() const override;
 
+        /**
+         * @return Window size in pixels
+         */
+        FrameBufferSize GetFrameBufferSize() const override;
+
 #ifdef SJ_VULKAN_SUPPORT
         /**
          * @return Extensions Vulkan API must support to support this window.   
