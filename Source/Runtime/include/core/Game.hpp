@@ -10,7 +10,6 @@
 namespace sj {
     // Forward declarations
     class MemorySystem;
-    class EventSystem;
     class Window;
     class Renderer;
 
@@ -47,9 +46,6 @@ namespace sj {
 
         /** Engine's rendering subsystem */
         UniquePtr<Renderer> m_Renderer;
-
-        /** Engine's event system */
-        UniquePtr<EventSystem> m_EventSystem;
 
         /** Current frame time */
         float m_DeltaTime;

@@ -9,12 +9,11 @@
 
 // Engine Headers
 #include "core/Window.hpp"
-#include "event_system/EventSystem.hpp"
 #include "rendering/Renderer.hpp"
 
 namespace sj {
 
-    Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr), m_EventSystem(nullptr)
+    Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr)
     {
     }
 
@@ -32,7 +31,6 @@ namespace sj {
         m_Window = Window::Create();
 
         m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator(), m_Window.Get());
-        m_EventSystem = MakeUnique<EventSystem>(MemorySystem::GetDefaultAllocator());
 
         Run();
     }
