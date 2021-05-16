@@ -13,4 +13,4 @@ compile_commands.json
 CTestTestfile.cmake
 
 build/
-Assets/CompiledAssets
+Assets/GameData
