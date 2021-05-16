@@ -32,12 +32,12 @@ add_executable(${PROJECT_NAME} ${ALL_FILES})
 
 set_target_properties(${PROJECT_NAME}
     PROPERTIES 
-        FOLDER Engine/
+        #FOLDER Engine/
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
 )
 
 ################################################################################
-# Statically Link Dependencies (Wholearchive to allow access to factory symbols)
+# Statically Link Dependencies
 ################################################################################
-target_link_libraries(${PROJECT_NAME} PRIVATE Engine)
+target_link_libraries(${PROJECT_NAME} PRIVATE ScrewjankEngine)
