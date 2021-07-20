@@ -25,12 +25,10 @@ set(CMAKE_CONFIGURATION_TYPES
     CACHE STRING "" FORCE
 )
 
+set(CMAKE_CXX_FLAGS_GOLD, CMAKE_CXX_FLAGS_RELEASE)
+set(CMAKE_C_FLAGS_GOLD, CMAKE_C_FLAGS_RELEASE)
 add_compile_definitions($<$<CONFIG:Gold>:-DSJ_GOLD>)
-if(MSVC)
-    add_compile_options("$<$<CONFIG:Gold>:${CMAKE_CXX_FLAGS_RELEASE} /LTCG /GL>")
-elseif(Clang)
-    message(FATAL_ERROR "Need to configure c++ gold flags for clang.")
-endif()
+
 
 ################################################################################
 # Define project-wide locations
