@@ -1,4 +1,4 @@
-#include "core/Game.hpp"
+#include <core/Game.hpp>
 
 // STD Headers
 #include <chrono>
@@ -8,12 +8,19 @@
 #include <GLFW/glfw3.h>
 
 // Engine Headers
-#include "core/Window.hpp"
-#include "rendering/Renderer.hpp"
+#include <core/Window.hpp>
+#include <rendering/Renderer.hpp>
 
 namespace sj {
 
-    Game::Game() : m_DeltaTime(0), m_MemorySystem(nullptr)
+    uint64_t Game::m_FrameCount = 0;
+
+    uint64_t Game::GetFrameCount()
+    {
+        return m_FrameCount;
+    }
+
+    Game::Game() : m_DeltaTime(0)
     {
     }
 
@@ -24,13 +31,10 @@ namespace sj {
 
     void Game::Start()
     {
-        m_MemorySystem = MemorySystem::Get();
-        m_MemorySystem->Initialize();
-
         SJ_ENGINE_LOG_INFO("Creating window");
         m_Window = Window::Create();
 
-        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetDefaultAllocator(), m_Window.Get());
+        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetRootHeapZone(), m_Window.Get());
 
         Run();
     }
@@ -48,6 +52,8 @@ namespace sj {
             m_Window->ProcessEvents();
 
             previousTime = currentTime;
+
+            m_FrameCount++;
         }
     }
 } // namespace sj

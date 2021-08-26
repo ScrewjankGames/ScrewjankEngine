@@ -3,13 +3,13 @@
 // Library Headers
 
 // Screwjank Headers
-#include "core/Window.hpp"
+#include <core/Window.hpp>
 
 // Platform specific headers
 #ifdef SJ_PLATFORM_WINDOWS
-    #include "platform/Windows/WindowsWindow.hpp"
+    #include <platform/Windows/WindowsWindow.hpp>
 #elif SJ_PLATFORM_LINUX
-//#include "platform/Linux/LinuxWindow.hpp"
+//#include <platform/Linux/LinuxWindow.hpp>
     #error Linux platform unsupported
 #elif SJ_PLATFORM_IOS
     #error IOS Platform unsupported
@@ -23,15 +23,18 @@ namespace sj {
         static_assert(g_Platform != Platform::Unknown,
                       "Window system does not support this platform");
 
-        if constexpr (g_Platform == Platform::Windows) {
+        if constexpr (g_Platform == Platform::Windows) 
+        {
             WindowsWindow* window = New<WindowsWindow>();
-            return UniquePtr<Window>(window, [](auto* ptr) {
-                Delete<Window>(ptr);
-            });
-        } else if constexpr (g_Platform == Platform::Linux) {
-            return nullptr;
-        } else if constexpr (g_Platform == Platform::IOS) {
-            return nullptr;
+            return UniquePtr<Window>(MemorySystem::GetRootHeapZone(), window);
+        } 
+        else if constexpr (g_Platform == Platform::Linux) 
+        {
+            return {};
+        } 
+        else if constexpr (g_Platform == Platform::IOS) 
+        {
+            return {};
         }
     }
 } // namespace sj

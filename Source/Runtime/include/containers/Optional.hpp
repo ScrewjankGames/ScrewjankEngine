@@ -6,7 +6,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include "core/Assert.hpp"
+#include <core/Assert.hpp>
 
 namespace sj {
 

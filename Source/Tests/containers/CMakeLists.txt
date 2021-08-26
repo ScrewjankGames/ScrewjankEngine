@@ -14,7 +14,7 @@ set_target_properties(ContainerTestSuite
 # Link GTest and Engine Modules
 ################################################################################
 target_link_libraries(ContainerTestSuite
-	PRIVATE 
-		gtest_main 
+	PRIVATE  
+		gtest
 		ScrewjankEngine
 )

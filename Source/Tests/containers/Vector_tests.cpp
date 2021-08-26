@@ -5,8 +5,8 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "containers/Vector.hpp"
-#include "core/Log.hpp"
+#include <containers/Vector.hpp>
+#include <core/Log.hpp>
 
 using namespace sj;
 
@@ -69,9 +69,29 @@ namespace container_tests {
         int m_Data;
     };
 
+    TEST(StaticVectorTests, AddRemoveTest)
+    {
+        StaticVector<int, 3> vec;
+
+        vec.Add(1);
+        vec.Add(2);
+        vec.Add(3);
+
+        ASSERT_EQ(1, vec[0]);
+        ASSERT_EQ(2, vec[1]);
+        ASSERT_EQ(3, vec[2]);
+
+        vec.Erase(1);
+        ASSERT_EQ(1, vec[0]);
+        ASSERT_NE(2, vec[1]);
+
+        vec.Erase(0);
+        ASSERT_NE(1, vec[0]);
+    }
+
     TEST(VectorTests, ListInitializationTest)
     {
-        Vector<int> vec1(MemorySystem::GetUnmanagedAllocator(), {1, 2, 3, 4, 5});
+        Vector<int> vec1({1, 2, 3, 4, 5});
         ASSERT_EQ(5, vec1.Size());
         ASSERT_EQ(5, vec1.Capacity());
 
@@ -79,7 +99,7 @@ namespace container_tests {
             ASSERT_EQ(i + 1, vec1[i]);
         }
 
-        Vector<std::string> vec2(MemorySystem::GetUnmanagedAllocator());
+        Vector<std::string> vec2;
         vec2 = {"Foo", "Bar", "Biz", "Baz"};
         ASSERT_EQ(4, vec2.Size());
         ASSERT_EQ(4, vec2.Capacity());
@@ -91,7 +111,7 @@ namespace container_tests {
 
     TEST(VectorTests, ElementInsertionTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec;
         VectorTestDummy dummy;
 
         // Copy construct dummy into vec
@@ -106,7 +126,7 @@ namespace container_tests {
 
     TEST(VectorTests, ElementAccessTest)
     {
-        Vector<int> vec1(MemorySystem::GetUnmanagedAllocator(), {1, 2, 3});
+        Vector<int> vec1(MemorySystem::GetRootHeapZone(), {1, 2, 3});
 
         ASSERT_EQ(1, vec1[0]);
 
@@ -121,7 +141,7 @@ namespace container_tests {
 
     TEST(VectorTests, IterationTest)
     {
-        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<int> vec;
         int i = 0;
 
         for (auto& element : vec) {
@@ -147,7 +167,7 @@ namespace container_tests {
         }
 
         // Iterate through all the odd elements backwards
-        for (auto it = vec.end(); it > vec.begin(); it -= 2) {
+        for (auto it = vec.end() - 2; it > vec.begin(); it -= 2) {
             ASSERT_NE(0, *it % 2);
         }
 
@@ -159,7 +179,7 @@ namespace container_tests {
 
     TEST(VectorTests, SingleInsertionTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec;
 
         vec.Insert(0, VectorTestDummy(3));
         ASSERT_EQ(3, vec[0].Value());
@@ -190,11 +210,11 @@ namespace container_tests {
 
     TEST(VectorTests, VectorInsertionTest)
     {
-        Vector<VectorTestDummy> vec1(MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec1;
 
-        Vector<VectorTestDummy> vec2(MemorySystem::GetUnmanagedAllocator(), {1, 6});
-        Vector<VectorTestDummy> vec3(MemorySystem::GetUnmanagedAllocator(), {2, 5});
-        Vector<VectorTestDummy> vec4(MemorySystem::GetUnmanagedAllocator(), {7, 8});
+        Vector<VectorTestDummy> vec2 = {1, 6};
+        Vector<VectorTestDummy> vec3 = {2, 5};
+        Vector<VectorTestDummy> vec4({7, 8});
 
         // Vector insertion requires grow
         vec1.Insert(0, vec2);
@@ -227,7 +247,7 @@ namespace container_tests {
 
     TEST(VectorTests, VectorEraseElementTest)
     {
-        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<int> vec;
         vec = {1, 2, 3, 4, 5, 6};
 
         // Erase 1
@@ -258,7 +278,7 @@ namespace container_tests {
 
     TEST(VectorTests, EmplaceTest)
     {
-        Vector<VectorTestDummy> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<VectorTestDummy> vec;
 
         vec.Emplace(0, 3);
         vec.Emplace(0, VectorTestDummy(0));
@@ -291,7 +311,7 @@ namespace container_tests {
             int* m_Counter;
         };
 
-        Vector<DtorDummy>* vec = new Vector<DtorDummy>(MemorySystem::GetUnmanagedAllocator());
+        Vector<DtorDummy>* vec = new Vector<DtorDummy>;
 
         for (int i = 0; i < 10; i++) {
             vec->EmplaceBack(&destroyed);
@@ -304,8 +324,8 @@ namespace container_tests {
 
     TEST(VectorTests, CopyAssignmentOperatorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), {"Foo", "Bar"});
-        Vector<std::string> vec2(MemorySystem::GetUnmanagedAllocator(), {"Biz", "Baz"});
+        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        Vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
 
         // Copy Assignment
         vec1 = vec2;
@@ -317,18 +337,18 @@ namespace container_tests {
 
     TEST(VectorTests, MoveAssignmentOperatorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), {"Foo", "Bar"});
-        Vector<std::string> vec2(MemorySystem::GetUnmanagedAllocator(), {"Biz", "Baz"});
+        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        Vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
 
         // Move Assign a vector temporary into vec2
-        vec2 = Vector<std::string>(MemorySystem::GetUnmanagedAllocator(), {"One", "Two"});
+        vec2 = Vector<std::string>(MemorySystem::GetRootHeapZone(), {"One", "Two"});
         ASSERT_EQ("One", vec2[0]);
         ASSERT_EQ("Two", vec2[1]);
     }
 
     TEST(VectorTests, CopyContructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), {"Foo", "Bar"});
+        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
         Vector<std::string> vec2(vec1);
 
         ASSERT_EQ("Foo", vec2[0]);
@@ -337,7 +357,7 @@ namespace container_tests {
 
     TEST(VectorTests, MoveContructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), {"Foo", "Bar"});
+        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
         Vector<std::string> vec2(std::move(vec1));
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
@@ -346,14 +366,14 @@ namespace container_tests {
         ASSERT_EQ(1, vec1.Size());
 
         Vector<std::string> vec3(
-            Vector<std::string>(MemorySystem::GetUnmanagedAllocator(), {"Biz", "Baz"}));
+            Vector<std::string>(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
         ASSERT_EQ("Baz", vec3[1]);
     }
 
     TEST(VectorTests, ResizeTest)
     {
-        Vector<int> vec(MemorySystem::GetUnmanagedAllocator(), 10);
+        Vector<int> vec(MemorySystem::GetRootHeapZone(), 10);
         ASSERT_EQ(10, vec.Capacity());
         ASSERT_EQ(10, vec.Size());
 
@@ -387,7 +407,7 @@ namespace container_tests {
 
     TEST(VectorTests, ReserveTests)
     {
-        Vector<int> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<int> vec;
         vec.Reserve(10);
         ASSERT_EQ(10, vec.Capacity());
         ASSERT_EQ(0, vec.Size());
@@ -409,7 +429,7 @@ namespace container_tests {
 
     TEST(VectorTests, ValueInitializingConstructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetUnmanagedAllocator(), 10, "Foo");
+        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
 
         for (size_t i = 0; i < vec1.Size(); i++) {
             ASSERT_EQ("Foo", vec1[i]);

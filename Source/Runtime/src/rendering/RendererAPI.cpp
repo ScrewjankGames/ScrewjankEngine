@@ -3,13 +3,13 @@
 // Library Headers
 
 // Screwjank Headers
-#include "rendering/RendererAPI.hpp"
-#include "rendering/RenderDevice.hpp"
-#include "platform/PlatformDetection.hpp"
+#include <rendering/RendererAPI.hpp>
+#include <rendering/RenderDevice.hpp>
+#include <platform/PlatformDetection.hpp>
 
 // Platform specific headers
 #ifdef SJ_PLATFORM_WINDOWS
-    #include "platform/Vulkan/VulkanRendererAPI.hpp"
+    #include <platform/Vulkan/VulkanRendererAPI.hpp>
 #elif SJ_PLATFORM_LINUX
     #error Linux platform unsupported
 #elif SJ_PLATFORM_IOS
@@ -29,6 +29,8 @@ namespace sj {
 
         RendererAPI* api = nullptr;
 
+        ScopedHeapZone rendererZone(MemorySystem::GetRootHeapZone());
+
         // Chose the rendering API
         if constexpr (g_Platform == Platform::Windows) 
         {
@@ -37,18 +39,16 @@ namespace sj {
         } 
         else if constexpr (g_Platform == Platform::Linux) 
         {
-            SJ_ASSERT_NYI();
+            SJ_ASSERT_NOT_IMPLEMENTED();
         } 
         else if constexpr (g_Platform == Platform::IOS) 
         {
-            SJ_ASSERT_NYI();
+            SJ_ASSERT_NOT_IMPLEMENTED();
         }
 
         SJ_ASSERT(api != nullptr, "Failed to initialize rendering API");
 
-        return UniquePtr<RendererAPI>(api, [](RendererAPI* ptr) {
-            Delete<RendererAPI>(ptr);
-        });
+        return UniquePtr<RendererAPI>(rendererZone.Get(), api);
     }
 
     RendererAPI::API RendererAPI::GetVendorAPI()

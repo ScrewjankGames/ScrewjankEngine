@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "platform/PlatformDetection.hpp"
-#include "system/Memory.hpp"
-#include "system/allocators/FreeListAllocator.hpp"
+#include <platform/PlatformDetection.hpp>
+#include <system/Memory.hpp>
+#include <system/allocators/FreeListAllocator.hpp>
 
 using namespace sj;
 
@@ -21,8 +21,12 @@ namespace system_tests {
     TEST(FreeListAllocatorTests, BasicAllocationTest)
     {
         // Test basic allocations and frees that shouldn't hit many edge cases
-        FreeListAllocator allocator(sizeof(FreeListDummy) * 16,
-                                    MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap = MemorySystem::GetRootHeapZone();
+        size_t alloc_size = sizeof(FreeListDummy) * 16;
+        void* test_memory = heap->Allocate(alloc_size);
+
+        FreeListAllocator allocator;
+        allocator.Init(alloc_size, test_memory);
 
         // Allocate and construct three dummies sequentially
         auto mem_loc1 = allocator.Allocate(sizeof(FreeListDummy), alignof(FreeListDummy));
@@ -68,6 +72,8 @@ namespace system_tests {
         allocator.Delete(Dummy2);
         allocator.Delete(Dummy3);
         allocator.Delete(Dummy4);
+
+        heap->Free(test_memory);
     }
 
     TEST(FreeListAllocatorTests, AdvancedAllocationTest)
@@ -77,8 +83,14 @@ namespace system_tests {
 
         // This allocator should have enough room for exactly two individual allocations of size
         // sizeof(FreeListDummy)
-        FreeListAllocator allocator(sizeof(FreeListDummy) * 4,
-                                    MemorySystem::GetUnmanagedAllocator());
+
+        HeapZone* heap = MemorySystem::Get()->GetRootHeapZone();
+        size_t alloc_size = sizeof(FreeListDummy) * 4;
+        void* test_memory = heap->Allocate(alloc_size);
+
+        FreeListAllocator allocator;
+        allocator.Init(alloc_size, test_memory);
+
 
         auto mem_loc1 = allocator.AllocateType<FreeListDummy>();
         auto mem_loc2 = allocator.AllocateType<FreeListDummy>();
@@ -116,11 +128,18 @@ namespace system_tests {
 
         allocator.Free(mem_loc1);
         allocator.Free(mem_loc2);
+
+        heap->Free(test_memory);
     }
 
     TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
     {
-        FreeListAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap = MemorySystem::Get()->GetRootHeapZone();
+        size_t alloc_size = 128;
+        void* test_memory = heap->Allocate(alloc_size);
+
+        FreeListAllocator allocator;
+        allocator.Init(alloc_size, test_memory);
 
         auto mem_loc1 = allocator.AllocateType<int>();
         auto mem_loc2 = allocator.AllocateType<char>();

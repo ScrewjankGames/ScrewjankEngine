@@ -4,18 +4,24 @@
 #include <memory>
 #include <functional>
 
-// Library Headers
-
 // Screwjank Headers
-#include "core/Assert.hpp"
-#include "system/Allocator.hpp"
+#include <containers/Stack.hpp>
+#include <system/Allocator.hpp>
+#include <system/HeapZone.hpp>
 
 namespace sj {
 
-    /**
-     * Class that manage's engines default memory allocator and provides access to system memory
-     * info
-     */
+    // Forward declarations
+    class HeapZone;
+
+    // Common memory sizes
+    constexpr uint64_t k1_KiB = 1024;
+    constexpr uint64_t k1_MiB = k1_KiB * 1024;
+    constexpr uint64_t k1_GiB = k1_MiB * 1024;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Memory Manager
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     class MemorySystem
     {
       public:
@@ -24,38 +30,190 @@ namespace sj {
          */
         static MemorySystem* Get();
 
+        static void PushHeapZone(HeapZone* heap_zone);
+        static void PopHeapZone();
+
+        static HeapZone* GetRootHeapZone();
+
+#ifndef SJ_GOLD
         /**
-         * Provides global access to the engine's default allocator
-         * @note This allocator is invalid until the engine calls Initialize()
+         * Used to access debug heap for allocation
          */
-        static Allocator* GetDefaultAllocator();
+        static HeapZone* GetDebugHeapZone();
+#endif // !SJ_GOLD
 
         /**
-         * Provides global access to an unmanaged system allocator
-         * @note This allocator is valid at any time
+         * Users can push and pop heap zones off the stack to control allocations for scopes
+         * Allows custom allocators to be used with third party libraries.
          */
-        static Allocator* GetUnmanagedAllocator();
+        static HeapZone* GetCurrentHeapZone();
 
       private:
-        friend class Game;
-        /**
-         * Initializes memory system and reserves a block of memory for the default allocator
-         */
-        void Initialize();
+        HeapZone m_RootHeapZone;
+        HeapZone m_DebugHeapZone;
+        
+        /** Used to track the active heap zone. */
+        StaticStack<HeapZone*, 64> m_HeapZoneStack;
 
-      private:
-        /////////////////////////////////////////////////////////
-        /// Do not access variables and functions in this section
-        /////////////////////////////////////////////////////////
-
-        Allocator* m_DefaultAllocator;
         MemorySystem();
         ~MemorySystem();
     };
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Smart Pointers
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    template <typename T>
+    class UniquePtr
+    {
+      public:
+        /** Constructor */
+        UniquePtr();
+
+        /**
+         * Constructor
+         * @param heap Heap the pointer comes from
+         * @param p The pointer to be managed
+         */
+        UniquePtr(HeapZone* heap, T* ptr);
+
+        /**
+         * Copy constructor: disallowed
+         */
+        UniquePtr(const UniquePtr& other) = delete;
+
+        /**
+         * Move constructor
+         */
+        UniquePtr(UniquePtr&& other);
+
+        /** Destructor */
+        ~UniquePtr();
+
+        /**
+         * Copy Assignment Operator: disallowed
+         */
+        UniquePtr& operator=(const UniquePtr& other) = delete;
+
+        /**
+         * Move Assignment Operator
+         */
+        void operator=(UniquePtr&& other) noexcept;
+
+        /**
+         * Arrow operator overload
+         */
+        T* operator->() { return m_Pointer; }
+
+        /**
+         * Const arrow operator overload
+         */
+        const T* operator->() const { return m_Pointer; }
+
+        /**
+         * Dereference operator overload
+         */
+        T& operator*() { return *m_Pointer; }
+
+        /**
+         * Releases ownership of managed resource to caller
+         * @return A copy of m_Pointer
+         */
+        [[nodiscard]] T* Release() noexcept;
+
+        /**
+         * Releases currently managed resource (if present), and asumes ownership of ptr
+         * @param ptr The pointer to manage
+         * @note Assumes current deleter is sufficient (same allocator as old m_Pointer)
+         */
+        void Reset(HeapZone* heap = nullptr, T* ptr = nullptr);
+
+        /**
+         * Returns underlying raw pointer
+         */
+        T* Get() const { return m_Pointer; }
+
+
+
+      private:
+        /** The heap zone the pointer was allocated from */
+        HeapZone* m_HeapZone;
+
+        /** The resource being managed by this container */
+        T* m_Pointer;
+
+        /** Deletes managed pointer and resets smart pointer */
+        void CleanUp();
+    };
+
+    template <typename T, typename... Args>
+    constexpr UniquePtr<T> MakeUnique(HeapZone* zone, Args&&... args);
+
+    // Placeholder SharedPtr alias
+    template <typename T>
+    using SharedPtr = std::shared_ptr<T>;
+
+    template <typename T, typename... Args>
+    constexpr SharedPtr<T> MakeShared(Args&&... args)
+    {
+        return std::make_shared<T>(std::forward<Args>(args)...);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Management Utility Functions
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Global utility function to allocate and construct and object from the root heap
+     * @param args Arguments to forward to T's constructor
+     * @note This function should not be used until AFTER the engine initialized the allocator.
+     */
+    template <class T, class... Args>
+    T* New(Args&&... args)
+    {
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        return heap_zone->New<T>(std::forward<Args>(args)...);
+    }
+
+    /**
+     * Global utility function to allocate and construct and object from the root heap
+     * @param args Arguments to forward to T's constructor
+     * @note This function should not be used until AFTER the engine initialized the allocator.
+     */
+    template <class T, class... Args>
+    T* New(HeapZone* heap_zone, Args&&... args)
+    {
+        return heap_zone->New<T>(std::forward<Args>(args)...);
+    }
+
+    /**
+     * Global utility function to deallocate and destroy and object using the engine's default
+     * allocator
+     * @param allocator The allocator to use
+     * @param memory The memory address to free
+     * @note This function should not be used until AFTER the engine initialized the
+     * allocator.
+     */
+    template <class T, class... Args>
+    void Delete(T*& memory)
+    {
+        memory->~T();
+        delete memory;
+        memory = nullptr;
+    }
+
+    /**
+     * Global utility function to deallocate and destroy and object using the engine's default
+     * allocator
+     * @param allocator The allocator to use
+     * @param memory The memory address to free
+     * @note This function should not be used until AFTER the engine initialized the
+     * allocator.
+     */
+    template <class T, class... Args>
+    void Delete(HeapZone* heap_zone, T*& memory)
+    {
+        heap_zone->Delete(memory);
+    }
 
     /**
      * Function that returns the first aligned memory address given certain constraints
@@ -86,226 +244,7 @@ namespace sj {
      */
     bool IsMemoryAligned(const void* const memory_address, const size_t align_of);
 
-    /**
-     * Global utility function to allocate and construct and object using the engine's default
-     * allocator
-     * @param args Arguments to forward to T's constructor
-     * @note This function should not be used until AFTER the engine initialized the allocator.
-     */
-    template <class T, class... Args>
-    T* New(Args&&... args)
-    {
-        auto allocator = MemorySystem::GetDefaultAllocator();
-
-        SJ_ASSERT(allocator != nullptr, "Engine defualt allocator is not initialized.");
-
-        return allocator->New<T>(std::forward<Args>(args)...);
-    }
-
-    /**
-     * Global utility function to deallocate and destroy and object using the engine's default
-     * allocator
-     * @param allocator The allocator to use
-     * @param memory The memory address to free
-     * @note This function should not be used until AFTER the engine initialized the
-     * allocator.
-     */
-    template <class T, class... Args>
-    void Delete(T*& memory)
-    {
-        MemorySystem::GetDefaultAllocator()->Delete(memory);
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /// Smart Pointer Implementations
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Placeholder UniquePtr alias
-    // template <typename T>
-    // using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
-
-    template <typename T>
-    class UniquePtr
-    {
-        using Deleter = std::function<void(T*)>;
-
-      public:
-        /**
-         * Constructor
-         * @param p The pointer to be managed
-         * @Note Since a deleter is not supplied, it is assumed the Default Allocator deleter can be
-         * used
-         */
-        UniquePtr(T* ptr = nullptr) : m_Pointer(nullptr)
-        {
-            m_Deleter = std::move([](T* ptr) {
-                MemorySystem::GetDefaultAllocator()->Delete(ptr);
-            });
-        }
-
-        /**
-         * Constructor
-         * @param p The pointer to be managed
-         * @param deleter The deleter to be used when releasing the pointer
-         */
-        UniquePtr(T* ptr, Deleter deleter) : m_Pointer(ptr), m_Deleter(std::move(deleter))
-        {
-        }
-
-        /**
-         * Move constructor
-         */
-        UniquePtr(UniquePtr&& other)
-        {
-            m_Pointer = other.m_Pointer;
-            other.m_Pointer = nullptr;
-            m_Deleter = std::move(other.m_Deleter);
-        }
-
-        /**
-         * Destructor
-         */
-        ~UniquePtr()
-        {
-            CleanUp();
-        }
-
-        /**
-         * Move Assignment Operator
-         */
-        void operator=(UniquePtr&& other) noexcept
-        {
-            CleanUp();
-
-            m_Pointer = other.m_Pointer;
-            other.m_Pointer = nullptr;
-            m_Deleter = std::move(other.m_Deleter);
-        }
-
-        /**
-         * Arrow operator overload
-         */
-        T* operator->()
-        {
-            return m_Pointer;
-        }
-
-        /**
-         * Const arrow operator overload
-         */
-        const T* operator->() const
-        {
-            return m_Pointer;
-        }
-
-        /**
-         * Dereference operator overload
-         */
-        T& operator*()
-        {
-            return *m_Pointer;
-        }
-
-        /**
-         * Releases ownership of managed resource to caller
-         * @return A copy of m_Pointer
-         */
-        [[nodiscard]] T* Release() noexcept
-        {
-            auto ptr = m_Pointer;
-            m_Pointer = nullptr;
-            return ptr;
-        }
-
-        /**
-         * Releases currently managed resource (if present), and asumes ownership of ptr
-         * @param ptr The pointer to manage
-         * @note Assumes current deleter is sufficient (same allocator as old m_Pointer)
-         */
-        void Reset(T* ptr = nullptr)
-        {
-            CleanUp();
-            m_Pointer = ptr;
-        }
-
-        /**
-         * Returns underlying raw pointer
-         */
-        T* Get() const
-        {
-            return m_Pointer;
-        }
-
-        /**
-         * Copy constructor: disallowed
-         */
-        UniquePtr(const UniquePtr& other) = delete;
-
-        /**
-         * Copy Assignment Operator: disallowed
-         */
-        UniquePtr& operator=(const UniquePtr& other) = delete;
-
-      private:
-        /** The resource being managed by this container */
-        T* m_Pointer;
-
-        /** Function capable of deleting the contained pointer */
-        std::function<void(T*)> m_Deleter;
-
-        void CleanUp()
-        {
-            if (m_Pointer != nullptr) {
-                // Delete the resource with the supplied deleter
-                m_Deleter(m_Pointer);
-            }
-        }
-    };
-
-    template <typename T, AllocatorConcept Alloc_t, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(Alloc_t& allocator, Args&&... args)
-    {
-        // Allocate the memory using the desired allocator
-        auto memory = allocator.New<T>(std::forward<Args>(args)...);
-
-        //  Pass ownership of memory to the unique_ptr
-        //  Supply a custom deletion function that uses the correct allocator
-        return std::unique_ptr<T, std::function<void(T*)>>(memory, [&allocator](T* mem) {
-            allocator.Delete<T>(mem);
-        });
-    }
-
-    template <typename T, AllocatorPtrConcept Alloc_t, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(Alloc_t allocator, Args&&... args)
-    {
-        // Allocate the memory using the desired allocator
-        auto memory = allocator->New<T>(std::forward<Args>(args)...);
-
-        //  Pass ownership of memory to the unique_ptr
-        //  Supply a custom deletion function that uses the correct allocator
-        return UniquePtr<T>(memory, [allocator](T* mem) {
-            SJ_ASSERT(allocator != nullptr, "Allocator no longer valid at delete time!");
-            allocator->Delete<T>(mem);
-        });
-    }
-
-    template <typename T, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(Args&&... args)
-    {
-        // Get pointer to the engine's default allocator
-        auto allocator = MemorySystem::GetDefaultAllocator();
-
-        return MakeUnique<T>(allocator, std::forward<Args>(args)...);
-    }
-
-    // Placeholder SharedPtr alias
-    template <typename T>
-    using SharedPtr = std::shared_ptr<T>;
-
-    template <typename T, typename... Args>
-    constexpr SharedPtr<T> MakeShared(Args&&... args)
-    {
-        return std::make_shared<T>(std::forward<Args>(args)...);
-    }
-
 } // namespace sj
+
+// Include Inlines
+#include <system/Memory.inl>

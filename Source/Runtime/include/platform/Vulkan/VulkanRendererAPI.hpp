@@ -6,11 +6,11 @@
 #include <vulkan/vulkan.h>
 
 // Screwjank Headers
-#include "containers/Array.hpp"
-#include "containers/String.hpp"
-#include "containers/Vector.hpp"
-#include "platform/PlatformDetection.hpp"
-#include "rendering/RendererAPI.hpp"
+#include <containers/Array.hpp>
+#include <containers/String.hpp>
+#include <containers/Vector.hpp>
+#include <platform/PlatformDetection.hpp>
+#include <rendering/RendererAPI.hpp>
 
 namespace sj {
 

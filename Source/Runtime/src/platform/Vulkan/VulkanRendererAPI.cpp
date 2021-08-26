@@ -4,16 +4,16 @@
 // Library Headers
 
 // Screwjank Headers
-#include "platform/Vulkan/VulkanRendererAPI.hpp"
+#include <platform/Vulkan/VulkanRendererAPI.hpp>
 
-#include "core/Window.hpp"
-#include "containers/String.hpp"
-#include "containers/UnorderedSet.hpp"
-#include "platform/Vulkan/VulkanRenderDevice.hpp"
-#include "platform/Vulkan/VulkanSwapChain.hpp"
+#include <core/Window.hpp>
+#include <containers/String.hpp>
+#include <containers/UnorderedSet.hpp>
+#include <platform/Vulkan/VulkanRenderDevice.hpp>
+#include <platform/Vulkan/VulkanSwapChain.hpp>
 
 #ifdef SJ_PLATFORM_WINDOWS
-#include "platform/Windows/WindowsWindow.hpp"
+#include <platform/Windows/WindowsWindow.hpp>
 #endif // SJ_PLATFORM_WINDOWS
 
 
@@ -75,8 +75,8 @@ namespace sj {
 
         // Compile-time check for adding validation layers
         if constexpr (g_IsDebugBuild) {
-            static Vector<const char*> layers(
-                MemorySystem::GetDefaultAllocator(),
+            static Vector<const char*> layers( 
+                MemorySystem::GetRootHeapZone(),
                 {"VK_LAYER_KHRONOS_validation"}
             );
 
@@ -103,10 +103,10 @@ namespace sj {
         CreateRenderSurface();
 
         // Select physical device and create and logical render device
-        m_RenderDevice = MakeUnique<VulkanRenderDevice>(this);
+        m_RenderDevice = MakeUnique<VulkanRenderDevice>(MemorySystem::GetRootHeapZone(), this);
 
         // Create the vulkan swap chain connected to the current window
-        m_SwapChain = MakeUnique<VulkanSwapChain>(this, m_Window);
+        m_SwapChain = MakeUnique<VulkanSwapChain>(MemorySystem::GetRootHeapZone(), this, m_Window);
 
         // Log success
         uint32_t extensionCount = 0;
@@ -125,7 +125,7 @@ namespace sj {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
-        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetDefaultAllocator(),
+        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(),
                                                    queue_count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
 
@@ -172,11 +172,12 @@ namespace sj {
         // Check extension support
         uint32_t extension_count;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-        Vector<VkExtensionProperties> extension_props(MemorySystem::GetDefaultAllocator(), extension_count);
+        Vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
+                                                      extension_count);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, extension_props.Data());
 
         UnorderedSet<ConstString> missing_extensions(
-            MemorySystem::GetDefaultAllocator(),
+            MemorySystem::GetRootHeapZone(),
             kRequiredDeviceExtensions.begin(),
             kRequiredDeviceExtensions.end()
         );

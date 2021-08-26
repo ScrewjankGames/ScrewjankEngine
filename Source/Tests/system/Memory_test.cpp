@@ -4,10 +4,10 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "system/Allocator.hpp"
-#include "system/Memory.hpp"
-#include "system/allocators/StackAllocator.hpp"
-#include "system/allocators/LinearAllocator.hpp"
+#include <system/Allocator.hpp>
+#include <system/Memory.hpp>
+#include <system/allocators/StackAllocator.hpp>
+#include <system/allocators/LinearAllocator.hpp>
 
 using namespace sj;
 
@@ -43,9 +43,9 @@ namespace system_tests {
 
     TEST(MemoryTests, CustomNewDeleteTest)
     {
-        auto num_ptr = MemorySystem::GetUnmanagedAllocator()->New<int>(1);
+        auto num_ptr = New<int>(1);
         ASSERT_EQ(1, *num_ptr);
-        MemorySystem::GetUnmanagedAllocator()->Delete(num_ptr);
+        Delete<int>(num_ptr);
     }
 
     TEST(MemoryTests, UnmanagedAllocatorNewDeleteTest)

@@ -5,8 +5,8 @@
 // Library Headers
 
 // Engine Headers
-#include "system/Allocator.hpp"
-#include "system/Memory.hpp"
+#include <system/Allocator.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
 
@@ -16,11 +16,10 @@ namespace sj {
         /**
          * Constructor
          * @param buffer_size The size of this allocator's buffer in bytes
-         * @param backing_allocator The allocator this allocator get's it's memory from
+         * @param memory The memory managed by this allocator
          */
-        StackAllocator(size_t buffer_size,
-                       Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
-
+        StackAllocator(size_t buffer_size, void* memory);
+        
         /**
          * Destructor
          */
@@ -45,12 +44,12 @@ namespace sj {
         /**
          * See Allocate
          */
-        [[nodiscard]] void* Push(size_t size, size_t alignment = alignof(std::max_align_t));
+        [[nodiscard]] void* PushAlloc(size_t size, size_t alignment = alignof(std::max_align_t));
 
         /**
          * Calls Free() with the address of the last allocation
          */
-        void Pop();
+        void PopAlloc();
 
         /**
          * Calls allocate with the correct size and alignment for T
@@ -68,9 +67,6 @@ namespace sj {
             /** Stores how many bytes were used to pad this header in the stack */
             size_t HeaderOffset;
         };
-
-        /** Allocator from which this allocator requests memory */
-        Allocator* m_BackingAllocator;
 
         /** The size in bytes of the allocator's buffer */
         size_t m_Capacity;

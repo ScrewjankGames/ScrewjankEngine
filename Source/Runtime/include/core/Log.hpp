@@ -1,4 +1,7 @@
 #pragma once
+
+#ifndef SJ_GOLD
+
 // STD Headers
 #include <cstdio>
 #include <cassert>
@@ -7,7 +10,8 @@
 #include <spdlog/spdlog.h>
 
 // Screwjank Headers
-#include "core/Assert.hpp"
+#include <core/Assert.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
 
@@ -45,41 +49,49 @@ namespace sj {
     template <typename... Args>
     inline void Logger::LogTrace(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::trace(format, args...);
     }
 
     template <typename... Args>
     inline void Logger::LogDebug(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::debug(format, args...);
     }
 
     template <typename... Args>
     inline void Logger::LogInfo(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::info(format, args...);
     }
 
     template <typename... Args>
     inline void Logger::LogWarn(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::warn(format, args...);
     }
 
     template <typename... Args>
     inline void Logger::LogError(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::error(format, args...);
     }
 
     template <typename... Args>
     inline void Logger::LogFatal(const char* format, Args... args)
     {
+        ScopedHeapZone hz(MemorySystem::GetDebugHeapZone());
         spdlog::critical(format, args...);
     }
 } // namespace sj
 
-#ifdef NDEBUG
+#endif
+
+#ifdef SJ_GOLD
     #define SJ_ENGINE_LOG_TRACE(...)
     #define SJ_ENGINE_LOG_DEBUG(...)
     #define SJ_ENGINE_LOG_INFO(...)
@@ -96,7 +108,7 @@ namespace sj {
 #else
     #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
-    #define SJ_ENGINE_LOG_DEBUG(format, ...)                                                        \
+    #define SJ_ENGINE_LOG_DEBUG(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogDebug(format, __VA_ARGS__)
     #define SJ_ENGINE_LOG_INFO(format, ...)                                                        \
         sj::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
@@ -107,11 +119,11 @@ namespace sj {
     #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
         sj::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
 
-    #define SJ_GAME_LOG_TRACE(...) SJ_ASSERT_NYI();
-    #define SJ_GAME_LOG_DEBUG(...) SJ_ASSERT_NYI();
-    #define SJ_GAME_LOG_INFO(...) SJ_ASSERT_NYI();
-    #define SJ_GAME_LOG_WARN(...) SJ_ASSERT_NYI();
-    #define SJ_GAME_LOG_ERROR(...) SJ_ASSERT_NYI();
-    #define SJ_GAME_LOG_FATAL(...) SJ_ASSERT_NYI();
+    #define SJ_GAME_LOG_TRACE(...) SJ_ASSERT_NOT_IMPLEMENTED();
+    #define SJ_GAME_LOG_DEBUG(...) SJ_ASSERT_NOT_IMPLEMENTED();
+    #define SJ_GAME_LOG_INFO(...) SJ_ASSERT_NOT_IMPLEMENTED();
+    #define SJ_GAME_LOG_WARN(...) SJ_ASSERT_NOT_IMPLEMENTED();
+    #define SJ_GAME_LOG_ERROR(...) SJ_ASSERT_NOT_IMPLEMENTED();
+    #define SJ_GAME_LOG_FATAL(...) SJ_ASSERT_NOT_IMPLEMENTED();
 
 #endif

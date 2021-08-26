@@ -3,19 +3,17 @@
 // Library Headers
 
 // Screwjank Headers
-#include "system/allocators/LinearAllocator.hpp"
+#include <system/allocators/LinearAllocator.hpp>
 
-#include "core/Assert.hpp"
-#include "core/Log.hpp"
-#include "system/Memory.hpp"
+#include <core/Assert.hpp>
+#include <core/Log.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
-    LinearAllocator::LinearAllocator(size_t buffer_size, Allocator* backing_allocator)
-        : m_BackingAllocator(backing_allocator)
+
+    LinearAllocator::LinearAllocator(size_t buffer_size, void* memory)
     {
-        m_AllocatorStats.Capacity = buffer_size;
-        m_BufferStart = m_BackingAllocator->Allocate(buffer_size);
-        m_CurrFrameStart = m_BufferStart;
+        Init(buffer_size, memory);
     }
 
     LinearAllocator::~LinearAllocator()
@@ -27,45 +25,67 @@ namespace sj {
             SJ_ENGINE_LOG_WARN("Linear allocator was not properly reset before destruction.");
             Reset();
         }
+    }
 
-        m_BackingAllocator->Free(m_BufferStart);
+    void LinearAllocator::Init(size_t buffer_size, void* memory)
+    {
+        m_BufferStart = memory;
+        m_BufferEnd =
+            reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(m_BufferStart) + buffer_size);
+
+        m_CurrFrameStart = memory;
+        m_AllocatorStats.Capacity = buffer_size;
     }
 
     void* LinearAllocator::Allocate(const size_t size, const size_t alignment)
     {
+        size_t free_space = m_AllocatorStats.FreeSpace();
+
+        SJ_ASSERT(IsInitialized(), "Trying to allocate with uninitialized allocator!");
+
         // Ensure there is enough space to satisfy allocation
-        if (m_AllocatorStats.FreeSpace() < size + GetAlignmentOffset(alignment, m_CurrFrameStart)) {
+        if (free_space < size + GetAlignmentOffset(alignment, m_CurrFrameStart))
+        {
             SJ_ENGINE_LOG_FATAL("Allocator has insufficient memory to perform requested allocation");
             return nullptr;
         }
 
-        auto allocated_memory =
-            AlignMemory(alignment, size, m_CurrFrameStart, m_AllocatorStats.FreeSpace());
+        auto num_bytes_allocated = size + GetAlignmentOffset(alignment, m_CurrFrameStart);
+        auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, free_space);
+
+        SJ_ASSERT(num_bytes_allocated <= m_AllocatorStats.FreeSpace(), "Linear Allocator is out of memory!");
+
+        // Bump allocation pointer to the first free byte after the current allocation
+        m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);
 
         // Track allocation data
         m_AllocatorStats.ActiveAllocationCount++;
         m_AllocatorStats.TotalAllocationCount++;
-
-        auto num_bytes_allocated = size + GetAlignmentOffset(alignment, m_CurrFrameStart);
         m_AllocatorStats.TotalBytesAllocated += num_bytes_allocated;
         m_AllocatorStats.ActiveBytesAllocated += num_bytes_allocated;
 
-        // Bump allocation pointer to the first free byte after the current allocation
-        m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);
 
         return allocated_memory;
     }
 
     void LinearAllocator::Free(void* memory)
     {
+        SJ_ASSERT(IsInitialized(), "Trying to free with uninitialized allocator!");
         SJ_ASSERT(false, "Linear allocators do not allow memory to be freed.");
     }
 
     void LinearAllocator::Reset()
     {
+        SJ_ASSERT(IsInitialized(), "Trying to reset uninitialized allocator!");
+
         // Track allocation data
         m_AllocatorStats.ActiveAllocationCount = 0;
         m_AllocatorStats.ActiveBytesAllocated = 0;
         m_CurrFrameStart = m_BufferStart;
+    }
+
+    bool LinearAllocator::IsInitialized() const
+    {
+        return m_BufferStart != nullptr;
     }
 } // namespace sj

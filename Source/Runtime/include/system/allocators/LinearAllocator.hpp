@@ -4,21 +4,24 @@
 // Library Headers
 
 // Engine Headers
-#include "system/Memory.hpp"
-#include "system/Allocator.hpp"
+#include <system/Memory.hpp>
+#include <system/Allocator.hpp>
 
 namespace sj {
 
     class LinearAllocator : public Allocator
     {
       public:
+        
         /**
-         * Constructor
-         * @param buffer_size The size of this allocator's buffer in bytes
-         * @param backing_allocator The allocator this allocator get's it's memory from
+         * Defualt constructor 
          */
-        LinearAllocator(size_t buffer_size,
-                        Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
+        LinearAllocator();
+
+        /**
+         * Initializing Constructor
+         */
+        explicit LinearAllocator(size_t buffer_size, void* memory);
 
         /**
          * Destructor
@@ -32,6 +35,12 @@ namespace sj {
          */
         [[nodiscard]] void* Allocate(const size_t size,
                                      const size_t alignment = alignof(std::max_align_t)) override;
+
+        /*
+         * @param buffer_size The size (in bytes) of the memory buffer being managed
+         * @param memory The memory this allocator should manage
+         */
+        void Init(size_t buffer_size, void* memory);
 
         /**
          * Attempts to free a memory address
@@ -47,12 +56,18 @@ namespace sj {
          */
         void Reset();
 
+        /**
+         * @return whether the allocator is in a valid state
+         */
+        bool IsInitialized() const;
+
       private:
-        /** Allocator used to aquire and release this allocators buffer */
-        Allocator* m_BackingAllocator;
 
         /** Pointer to the start of the allocator's managed memory */
         void* m_BufferStart;
+
+        /** Pointer to the end of the allocator's managed memory */
+        void* m_BufferEnd;
 
         /** Pointer to the first free byte in the linear allocator */
         void* m_CurrFrameStart;

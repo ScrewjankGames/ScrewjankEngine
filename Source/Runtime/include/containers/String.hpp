@@ -23,6 +23,24 @@ namespace sj {
             return FNV1aHash(&input[1], (value ^ input[0]) * prime);
         }
     }
+    
+    // Jesus fuck why is strncpy's default behavior not to null terminate on overrun
+    inline char* sj_strncpy(char* destination, const char* source, size_t count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (source[i] == '\0')
+            {
+                break;
+            }
+
+            destination[i] = source[i];
+        }
+
+        // Always force null termination of string.
+        destination[count-1] = '\0';
+        return destination;
+    }
 
     /**
      * C String wrapper for immutable strings, with conversion and comparison operators  
@@ -60,48 +78,6 @@ namespace sj {
         const char* m_CStr;
     };
 
-    inline constexpr ConstString::ConstString(const char* str)
-    {
-        m_CStr = str;
-    }
-
-    inline bool operator==(const ConstString& left, const ConstString& right)
-    {
-        return strcmp(left.c_str(), right.c_str()) == 0;
-    }
-
-    inline bool operator!=(const ConstString& left, const ConstString& right)
-    {
-        return !(left == right);
-    }
-
-    inline std::strong_ordering operator<=>(const ConstString& left, const ConstString& right)
-    {
-        auto res = strcmp(left.c_str(), right.c_str());
-        if (res < 0)
-        {
-            return std::strong_ordering::less;
-        }
-        else if (res == 0)
-        {
-            return std::strong_ordering::equal;
-        }
-        else
-        {
-            return std::strong_ordering::greater;
-        }
-    }
-
-    inline const char* ConstString::c_str() const
-    {
-        return m_CStr;
-    }
-
-    inline ConstString::operator const char*() const
-    {
-        return m_CStr;
-    }
-
 } // namespace sj
 
 namespace std
@@ -116,3 +92,6 @@ namespace std
     };
 
 } // namespace std
+
+// Include inlines
+#include <containers/String.inl>

@@ -4,8 +4,8 @@
 // Library Headers
 
 // Engine Headers
-#include "core/Log.hpp"
-#include "system/Memory.hpp"
+#include <core/Log.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
     // Forward declarations
@@ -16,6 +16,7 @@ namespace sj {
     class Game
     {
       public:
+
         /**
          * Constructor
          */
@@ -31,6 +32,9 @@ namespace sj {
          */
         void Start();
 
+        /** Returns number of frames fully simulated since game start */
+        static uint64_t GetFrameCount(); 
+
       protected:
         /**
          * Main game loop
@@ -38,8 +42,7 @@ namespace sj {
         void Run();
 
       private:
-        /** Engine's memory system */
-        MemorySystem* m_MemorySystem;
+        static uint64_t m_FrameCount;
 
         /** Handle to game's window */
         UniquePtr<Window> m_Window;

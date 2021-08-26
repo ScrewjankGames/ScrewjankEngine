@@ -1,35 +1,61 @@
-// STD Headers
-
-// Library Headers
+// Parent Include
+#include <system/allocators/FreeListAllocator.hpp>
 
 // Screwjank Headers
-#include "system/Memory.hpp"
-#include "system/allocators/FreeListAllocator.hpp"
+#include <system/Memory.hpp>
 
 namespace sj {
-    FreeListAllocator::FreeListAllocator(size_t buffer_size, Allocator* backing_allocator)
-        : m_BackingAllocator(backing_allocator), m_FreeBlocks(nullptr)
+    FreeListAllocator::FreeListAllocator()
+        : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
     {
-        SJ_ASSERT(buffer_size > sizeof(FreeBlock) && buffer_size > sizeof(AllocationHeader),
-                  "FreeListAllocator is not large enough to hold data");
 
-        // Allocate memory from backing allocator
-        m_BufferStart = m_BackingAllocator->Allocate(buffer_size);
+    }
 
-        // Initialize free list to be a single block of buffer_size situated at start of buffer
-        FreeBlock* initial_block = new (m_BufferStart) FreeBlock(buffer_size);
-        AddFreeBlock(initial_block);
+    FreeListAllocator::FreeListAllocator(size_t buffer_size, void* memory)
+        : FreeListAllocator()
+    {
+        Init(buffer_size, memory);
+    }
+
+    FreeListAllocator::FreeListAllocator(FreeListAllocator&& other) noexcept 
+    {
+        m_FreeBlocks = other.m_FreeBlocks;
+        m_BufferStart = other.m_BufferStart;
+        m_BufferEnd = other.m_BufferEnd;
+        m_AllocatorStats = other.m_AllocatorStats;
+
+        other.m_FreeBlocks = nullptr;
+        other.m_BufferStart = nullptr;
+        other.m_AllocatorStats = {};
     }
 
     FreeListAllocator::~FreeListAllocator()
     {
         SJ_ASSERT(m_AllocatorStats.ActiveAllocationCount == 0,
                   "Memory leak detected in FreeListAllocator!");
-        m_BackingAllocator->Free(m_BufferStart);
+    }
+    
+    void FreeListAllocator::Init(size_t buffer_size, void* memory) 
+    {
+        SJ_ASSERT(!IsInitialized(),
+                  "Double initialization of free list allocator detected");
+
+        SJ_ASSERT(buffer_size > sizeof(FreeBlock) && buffer_size > sizeof(AllocationHeader),
+                  "FreeListAllocator is not large enough to hold data");
+
+        // Allocate memory from backing allocator
+        m_BufferStart = memory;
+        m_BufferEnd = (void*)(uintptr_t(memory) + buffer_size);
+
+        // Initialize free list to be a single block of buffer_size situated at start of buffer
+        FreeBlock* initial_block = new (m_BufferStart) FreeBlock(buffer_size);
+        AddFreeBlock(initial_block);
     }
 
     void* FreeListAllocator::Allocate(const size_t size, const size_t alignment)
     {
+        SJ_ASSERT(IsInitialized(), "Trying to allocate with uninitialized allocator");
+
         // Search the free list, and return the most suitable free block and the padding required to
         // use it
         auto free_list_search_result = FindFreeBlock(size, alignment);
@@ -93,7 +119,11 @@ namespace sj {
 
     void FreeListAllocator::Free(void* memory)
     {
+        SJ_ASSERT(IsInitialized(), "Trying to deallocate with uninitialized allocator");
+
         SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
+
+        SJ_ASSERT(IsMemoryInRange(memory), "Pointer is not managed by this allocator!");
 
         AllocationHeader* block_header =
             (AllocationHeader*)((uintptr_t)memory - sizeof(AllocationHeader));
@@ -110,6 +140,17 @@ namespace sj {
         FreeBlock* new_block = new (block_start) FreeBlock(block_size);
 
         AddFreeBlock(new_block);
+    }
+
+    bool FreeListAllocator::IsInitialized() const
+    {
+        return m_BufferStart != nullptr;
+    }
+
+    bool FreeListAllocator::IsMemoryInRange(void* memory) const
+    {
+        return uintptr_t(memory) >= uintptr_t(m_BufferStart) &&
+               uintptr_t(memory) <= uintptr_t(m_BufferEnd);
     }
 
     std::pair<FreeListAllocator::FreeBlock*, size_t>

@@ -1,10 +1,10 @@
 // STD Headers
 
 // Library Headers
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 // Void Engine Headers
-#include "containers/Array.hpp"
+#include <containers/Array.hpp>
 
 using namespace sj;
 

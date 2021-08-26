@@ -5,28 +5,43 @@
 // Library Headers
 
 // Screwjank Headers
-#include "system/Memory.hpp"
-#include "containers/ForwardList.hpp"
-#include "system/Allocator.hpp"
+#include <system/Allocator.hpp>
 
 namespace sj {
 
     class FreeListAllocator : public Allocator
     {
       public:
-        /*
-         * Constructor
-         * @param buffer_size The size (in bytes) you'd wish for this allocator to reserve
-         * @param backing_allocator The memory allocator this one should use to request it's backing
-         *        buffer.
+        /**
+         * Constructor  
          */
-        FreeListAllocator(size_t buffer_size,
-                          Allocator* backing_allocator = MemorySystem::GetDefaultAllocator());
+        FreeListAllocator();
+
+        /**
+         * Initializing Constructor
+         */
+        FreeListAllocator(size_t buffer_size, void* memory);
+
+        /**
+         * Copy Constructor 
+         */
+        FreeListAllocator(const FreeListAllocator& other) = delete;
+
+        /**
+         * Move Constructor 
+         */
+        FreeListAllocator(FreeListAllocator&& other) noexcept;
 
         /**
          * Destructor
          */
         ~FreeListAllocator();
+
+        /*
+         * @param buffer_size The size (in bytes) of the memory buffer being managed
+         * @param memory The memory this allocator should manage
+         */
+        void Init(size_t buffer_size, void* memory);
 
         /**
          * Allocates size bites with given alignment in a best-fit manner
@@ -40,6 +55,16 @@ namespace sj {
          * @param memory Pointer to the memory to free
          */
         void Free(void* memory = nullptr) override;
+
+        /**
+         * @return whether the allocator is in a valid state 
+         */
+        bool IsInitialized() const;
+
+        /**
+         * @return whether memory provided is managed by this allocator 
+         */
+        bool IsMemoryInRange(void* memory) const;
 
       private:
         /** Linked list node structure inserted in-place into the allocator's buffer */
@@ -97,14 +122,14 @@ namespace sj {
          */
         void AttemptCoalesceBlock(FreeBlock* block);
 
-        /** Allocator used by this allocator to get and free memory */
-        Allocator* m_BackingAllocator;
-
         /** The free list of allocation blocks */
         FreeBlock* m_FreeBlocks;
 
         /** Pointer to the start of the allocator's memory block */
         void* m_BufferStart;
+
+        /** Pointer to the end of the allocator's memory block */
+        void* m_BufferEnd;
 
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;

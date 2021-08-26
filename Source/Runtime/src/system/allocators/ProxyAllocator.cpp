@@ -3,8 +3,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include "core/Assert.hpp"
-#include "system/allocators/ProxyAllocator.hpp"
+#include <core/Assert.hpp>
+#include <system/allocators/ProxyAllocator.hpp>
 
 namespace sj {
     ProxyAllocator::ProxyAllocator(Allocator* backing_allocator, const char* debug_name)

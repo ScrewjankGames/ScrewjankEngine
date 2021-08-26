@@ -6,8 +6,8 @@
 
 
 // Screwjank Headers
-#include "containers/Vector.hpp"
-#include "system/Memory.hpp"
+#include <containers/Vector.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
 

@@ -2,7 +2,7 @@
 #include <iostream>
 
 // Engine Headers
-#include "core/Game.hpp"
+#include <core/Game.hpp>
 
 int main(int arc, char** argv)
 {

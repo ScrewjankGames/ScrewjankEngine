@@ -2,35 +2,57 @@
 #include <memory>
 #include <cassert>
 
-// Library Headers
-
 // Screwjank Headers
-#include "system/Memory.hpp"
+#include <system/Memory.hpp>
+#include <core/Assert.hpp>
+#include <core/Log.hpp>
+#include <system/allocators/UnmanagedAllocator.hpp>
+#include <system/allocators/FreeListAllocator.hpp>
 
-#include "core/Assert.hpp"
-#include "core/Log.hpp"
-#include "system/allocators/UnmanagedAllocator.hpp"
-#include "system/allocators/FreeListAllocator.hpp"
+// Root heap sizes
+constexpr uint64_t kRootHeapSize = sj::k1_KiB * 64;
+constexpr uint64_t kDebugHeapSize = sj::k1_GiB;
 
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {
-    return sj::MemorySystem::GetUnmanagedAllocator()->Allocate(num_bytes);
+    return sj::MemorySystem::GetCurrentHeapZone()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) noexcept
 {
-    sj::MemorySystem::GetUnmanagedAllocator()->Free(memory);
+    if (sj::MemorySystem::GetCurrentHeapZone()->ContainsPointer(memory))
+    {
+        sj::MemorySystem::GetCurrentHeapZone()->Free(memory);
+    }
+    else
+    {
+        // Search for correct heapzone for pointer supplied
+        sj::HeapZone* heap_zone = sj::HeapZone::FindHeapZoneForPointer(memory);
+
+        SJ_ASSERT(heap_zone != nullptr,
+                  "Failed to find heapzone for pointer! Was heapzone destroyed before the pointer "
+                  "was deleted?");
+
+        heap_zone->Free(memory);
+    }
 }
 
 namespace sj {
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Memory Manager
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    MemorySystem::MemorySystem() : m_DefaultAllocator(nullptr)
+    MemorySystem::MemorySystem() 
+        : m_RootHeapZone(nullptr, kRootHeapSize, "Root Heap")
+#ifndef GOLD_VERSION
+          , m_DebugHeapZone(nullptr, kDebugHeapSize, "Debug Heap")
+#endif // !GOLD_VERSION
     {
+
     }
 
     MemorySystem::~MemorySystem()
     {
-        delete m_DefaultAllocator;
     }
 
     MemorySystem* MemorySystem::Get()
@@ -39,27 +61,48 @@ namespace sj {
         return &memSys;
     }
 
-    Allocator* MemorySystem::GetDefaultAllocator()
+    void MemorySystem::PushHeapZone(HeapZone* heap_zone)
     {
-        SJ_ASSERT(Get()->m_DefaultAllocator != nullptr,
-                  "Memory system has not been initialized by engine yet.");
-        return Get()->m_DefaultAllocator;
+        Get()->m_HeapZoneStack.Push(heap_zone);
     }
 
-    Allocator* MemorySystem::GetUnmanagedAllocator()
+    void MemorySystem::PopHeapZone()
     {
-        static UnmanagedAllocator s_Allocator;
-        return &s_Allocator;
+        Get()->m_HeapZoneStack.Pop();
     }
 
-    void MemorySystem::Initialize()
+    HeapZone* MemorySystem::GetRootHeapZone()
     {
-        auto memory_reserve = 67108864;
-        // Reserve 64MB of free space by default
-        m_DefaultAllocator = new FreeListAllocator(memory_reserve, GetUnmanagedAllocator());
-        
-        SJ_ENGINE_LOG_INFO("Memory system initialized with {} KB of memory", memory_reserve / 1024);
+        return &(Get()->m_RootHeapZone);
+        return nullptr;
     }
+
+#ifndef SJ_GOLD
+    HeapZone* MemorySystem::GetDebugHeapZone()
+    {
+        return &(Get()->m_DebugHeapZone);
+    }
+#endif
+
+    HeapZone* MemorySystem::GetCurrentHeapZone()
+    {
+        MemorySystem* system = Get();
+
+        if (system->m_HeapZoneStack.IsEmpty())
+        {
+            return GetRootHeapZone();
+        }
+        else
+        {
+            return system->m_HeapZoneStack.Top();
+        }
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /// Memory Management Utility Functions
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     void* AlignMemory(size_t align_of, size_t size, void* buffer_start, size_t buffer_size)
     {

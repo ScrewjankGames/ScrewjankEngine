@@ -3,12 +3,12 @@
 // Library Headers
 
 // Screwjank Headers
-#include "platform/Vulkan/VulkanRenderDevice.hpp"
+#include <platform/Vulkan/VulkanRenderDevice.hpp>
 
-#include "containers/Vector.hpp"
-#include "containers/UnorderedSet.hpp"
-#include "platform/Vulkan/VulkanRendererAPI.hpp"
-#include "platform/PlatformDetection.hpp"
+#include <containers/Vector.hpp>
+#include <containers/UnorderedSet.hpp>
+#include <platform/Vulkan/VulkanRendererAPI.hpp>
+#include <platform/PlatformDetection.hpp>
 
 namespace sj {
 
@@ -45,7 +45,7 @@ namespace sj {
         vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", device_count);
 
-        Vector<VkPhysicalDevice> devices(MemorySystem::GetDefaultAllocator(), device_count);
+        Vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), device_count);
         vkEnumeratePhysicalDevices(instance, &device_count, devices.Data());
         
         int best_score = -1; 
@@ -86,14 +86,14 @@ namespace sj {
     
         DeviceQueueFamilyIndices indices = m_API->GetDeviceQueueFamilyIndices(m_PhysicalDevice);
 
-        UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetDefaultAllocator());
+        UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
         unique_queue_families = 
         {
             indices.GraphicsFamilyIndex.Value(),
             indices.PresentationFamilyIndex.Value()
         };
 
-        Vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetDefaultAllocator());
+        Vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());
         float queue_priorities = 1.0f;
         for (auto family : unique_queue_families)
         {

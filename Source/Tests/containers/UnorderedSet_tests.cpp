@@ -6,10 +6,10 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "containers/UnorderedSet.hpp"
+#include <containers/UnorderedSet.hpp>
 
-#include "containers/Array.hpp"
-#include "containers/Vector.hpp"
+#include <containers/Array.hpp>
+#include <containers/Vector.hpp>
 
 using namespace sj;
 
@@ -17,7 +17,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, IterationTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
         set = {"Foo", "Bar", "Biz", "Baz"};
 
         // Assert that iterator to begin actually points to an element
@@ -40,7 +40,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, InitializerListTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
         set = {"Foo", "Bar", "Biz", "Baz"};
 
         ASSERT_EQ(4, set.Count());
@@ -54,10 +54,10 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, RangeConstructionTest)
     {
-        Vector<std::string> vec(MemorySystem::GetUnmanagedAllocator());
+        Vector<std::string> vec(MemorySystem::GetRootHeapZone());
         vec = {"FOO", "BAR", "BIZ", "BAZ", "BUZZ"};
 
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator(),
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone(),
                                       vec.begin(),
                                       vec.end());
 
@@ -76,7 +76,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, CopyConstructorTest)
     {
-        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set1(MemorySystem::GetRootHeapZone());
         set1 = {"Foo", "Bar", "Biz", "Baz"};
 
         UnorderedSet<std::string> set2(set1);
@@ -97,7 +97,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, MoveConstructorTest)
     {
-        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+        UnorderedSet<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
         UnorderedSet<std::string> set2(std::move(set1));
@@ -113,7 +113,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, CopyAssignmentTest)
     {
-        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+        UnorderedSet<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
         auto set2 = set1;
@@ -127,7 +127,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, MoveAssignmentTest)
     {
-        UnorderedSet<std::string> set1(MemorySystem::GetUnmanagedAllocator(),
+        UnorderedSet<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
         auto set2 = std::move(set1);
@@ -144,7 +144,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, InsertTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
 
         auto res = set.Insert("Foo");
         ASSERT_EQ(true, res.second);
@@ -185,7 +185,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, DeleteTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -230,7 +230,7 @@ namespace container_tests {
 
         // Degenerate Case: After Range Insertion?
         Array<const char*, 1> arr = {"VK_KHR_swapchain"};
-        UnorderedSet<const char*> set2( MemorySystem::GetUnmanagedAllocator(), arr.begin(), arr.end() );
+        UnorderedSet<const char*> set2( MemorySystem::GetRootHeapZone(), arr.begin(), arr.end() );
 
         ASSERT_TRUE(set2.Contains(arr[0]));
         ASSERT_TRUE(set2.Erase(arr[0]));
@@ -239,7 +239,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, FindTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -291,7 +291,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, ContainsTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -310,7 +310,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, ClearTest)
     {
-        UnorderedSet<std::string> set(MemorySystem::GetUnmanagedAllocator());
+        UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");

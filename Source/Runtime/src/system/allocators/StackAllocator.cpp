@@ -3,26 +3,23 @@
 // Library Headers
 
 // Engine Headers
-#include "core/Assert.hpp"
-#include "core/Log.hpp"
-#include "system/allocators/StackAllocator.hpp"
-#include "system/Memory.hpp"
+#include <core/Assert.hpp>
+#include <core/Log.hpp>
+#include <system/allocators/StackAllocator.hpp>
+#include <system/Memory.hpp>
 
 namespace sj {
 
-    StackAllocator::StackAllocator(size_t buffer_size, Allocator* backing_allocator)
-        : m_BackingAllocator(backing_allocator), m_CurrentHeader(nullptr), m_Offset(nullptr),
+    StackAllocator::StackAllocator(size_t buffer_size, void* memory)
+        : m_BufferStart(memory), m_Offset(m_BufferStart), m_CurrentHeader(nullptr),
           m_Capacity(buffer_size)
     {
-        m_BufferStart = m_BackingAllocator->Allocate(buffer_size);
-        m_Offset = m_BufferStart;
+
     }
 
     StackAllocator::~StackAllocator()
     {
         SJ_ASSERT(m_Offset == m_BufferStart, "Memory leak detected in stack allocator");
-
-        m_BackingAllocator->Free(m_BufferStart);
     }
 
     void* StackAllocator::Allocate(const size_t size, const size_t alignment)
@@ -88,12 +85,12 @@ namespace sj {
         return;
     }
 
-    void* StackAllocator::Push(size_t size, size_t alignment)
+    void* StackAllocator::PushAlloc(size_t size, size_t alignment)
     {
         return Allocate(size, alignment);
     }
 
-    void StackAllocator::Pop()
+    void StackAllocator::PopAlloc()
     {
         Free(nullptr);
         return;

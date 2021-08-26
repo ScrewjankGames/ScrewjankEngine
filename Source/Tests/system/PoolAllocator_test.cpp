@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "platform/PlatformDetection.hpp"
-#include "system/Memory.hpp"
-#include "system/allocators/PoolAllocator.hpp"
+#include <platform/PlatformDetection.hpp>
+#include <system/Memory.hpp>
+#include <system/allocators/PoolAllocator.hpp>
 
 using namespace sj;
 
@@ -20,8 +20,10 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, AllocationTest)
     {
-        PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4,
-                                                            MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        void* memory = heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
+
+        PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4, memory);
 
         auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc1);
@@ -81,11 +83,17 @@ namespace system_tests {
         allocator.Free(mem_loc2);
         allocator.Free(mem_loc3);
         allocator.Free(mem_loc4);
+
+        heap_zone->Free(memory);
     }
 
     TEST(PoolAllocatorTests, ObjectPoolTest)
     {
-        ObjectPoolAllocator<PoolAllocatorDummy> allocator(4, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        void* memory =
+            heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
+
+        ObjectPoolAllocator<PoolAllocatorDummy> allocator(4, memory);
 
         auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc1);
@@ -145,6 +153,8 @@ namespace system_tests {
         allocator.Free(mem_loc2);
         allocator.Free(mem_loc3);
         allocator.Free(mem_loc4);
+
+        heap_zone->Free(memory);
     }
 
 } // namespace system_tests

@@ -8,9 +8,9 @@
 #endif
 
 // Screwjank Headers
-#include "core/Window.hpp"
-#include "containers/Vector.hpp"
-#include "platform/PlatformDetection.hpp"
+#include <core/Window.hpp>
+#include <containers/Vector.hpp>
+#include <platform/PlatformDetection.hpp>
 
 struct GLFWwindow;
 

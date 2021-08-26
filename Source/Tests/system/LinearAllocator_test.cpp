@@ -4,11 +4,11 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "platform/PlatformDetection.hpp"
-#include "system/Allocator.hpp"
-#include "system/Memory.hpp"
-#include "system/allocators/StackAllocator.hpp"
-#include "system/allocators/LinearAllocator.hpp"
+#include <platform/PlatformDetection.hpp>
+#include <system/Allocator.hpp>
+#include <system/Memory.hpp>
+#include <system/allocators/StackAllocator.hpp>
+#include <system/allocators/LinearAllocator.hpp>
 
 using namespace sj;
 
@@ -33,28 +33,34 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
-        // Create a stack allocator with a 128 byte buffer
-        LinearAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        void* memory = heap_zone->Allocate(128);
+        LinearAllocator allocator(128, memory);
 
-        void* dummyMemory = allocator.AllocateType<LinearAllocatorDummy>();
-        ASSERT_NE(nullptr, dummyMemory);
+        void* dummy_memory = allocator.AllocateType<LinearAllocatorDummy>();
+        ASSERT_NE(nullptr, dummy_memory);
 
-        void* alignedDummyMemory = dummyMemory;
+        void* aligned_dummy_memory = dummy_memory;
         size_t space = sizeof(LinearAllocatorDummy) + alignof(LinearAllocatorDummy) - 1;
         std::align(alignof(LinearAllocatorDummy),
                    sizeof(LinearAllocatorDummy),
-                   alignedDummyMemory,
+                   aligned_dummy_memory,
                    space);
 
-        ASSERT_EQ(dummyMemory, alignedDummyMemory);
+        ASSERT_EQ(dummy_memory, aligned_dummy_memory);
 
         allocator.Reset();
+
+        heap_zone->Free(memory);
     }
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        size_t mem_size = sizeof(SBS) * 10;
+        void* memory = heap_zone->Allocate(mem_size);
 
-        LinearAllocator packingTest(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
+        LinearAllocator packingTest(mem_size, memory);
 
         auto mem = packingTest.Allocate(sizeof(SBS) * 10);
         packingTest.Reset();
@@ -64,27 +70,46 @@ namespace system_tests {
         for (int i = 0; i < 10; i++) {
             mem = packingTest.AllocateType<SBS>();
         }
+
+        heap_zone->Free(memory);
     }
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        size_t mem_size = sizeof(SBS) * 10;
+        void* memory = heap_zone->Allocate(mem_size);
+
+        LinearAllocator allocator(mem_size, memory);
         auto mem = allocator.Allocate(sizeof(SBS) * 10);
         ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
+
+        heap_zone->Free(memory);
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        LinearAllocator allocator(sizeof(SBS) * 10, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        size_t mem_size = sizeof(SBS) * 10;
+        void* memory = heap_zone->Allocate(mem_size);
+        
+        LinearAllocator allocator(mem_size, memory);
+
         auto mem = allocator.Allocate(sizeof(SBS) * 9);
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
+
+        heap_zone->Free(memory);
     }
 
     TEST(LinearAllocatorTests, MemoryStompTest)
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        LinearAllocator allocator(256, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        size_t mem_size = 256;
+        void* memory = heap_zone->Allocate(mem_size);
+
+        LinearAllocator allocator(mem_size, memory);
 
         LinearAllocatorDummy* dummy1 = allocator.New<LinearAllocatorDummy>(1, 1.0);
         auto dummy2 = allocator.New<LinearAllocatorDummy>(2, 2.0);
@@ -96,5 +121,7 @@ namespace system_tests {
         ASSERT_EQ(2.0, dummy2->m_double);
         ASSERT_EQ(3, dummy3->m_num);
         ASSERT_EQ(3.0, dummy3->m_double);
+
+        heap_zone->Free(memory);
     }
 } // namespace system_tests

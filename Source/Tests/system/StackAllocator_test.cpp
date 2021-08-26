@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include "platform/PlatformDetection.hpp"
-#include "system/Memory.hpp"
-#include "system/allocators/StackAllocator.hpp"
+#include <platform/PlatformDetection.hpp>
+#include <system/Memory.hpp>
+#include <system/allocators/StackAllocator.hpp>
 
 using namespace sj;
 
@@ -21,7 +21,9 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, PushPopTest)
     {
-        StackAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
+        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        void* memory = heap_zone->Allocate(128);
+        StackAllocator allocator(128, memory);
 
         // Assign memory and construct test data in the addresses
         auto mem1 = allocator.AllocateType<StackAllocatorDummy>();
@@ -47,9 +49,9 @@ namespace system_tests {
         EXPECT_EQ(3, sd3->c);
 
         // free mem3
-        allocator.Pop();
+        allocator.PopAlloc();
 
-        auto mem4 = allocator.Push(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
+        auto mem4 = allocator.PushAlloc(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
         auto sd4 = new (mem4) StackAllocatorDummy {4, 4, 4};
 
         // mem4 should re-use mem3's space
@@ -66,9 +68,9 @@ namespace system_tests {
         EXPECT_EQ(4, sd4->c);
 
         // There are now three allocations on the stack. Pop them all
-        allocator.Pop();
-        allocator.Pop();
-        allocator.Pop();
+        allocator.PopAlloc();
+        allocator.PopAlloc();
+        allocator.PopAlloc();
 
         auto mem5 = allocator.PushType<int>();
         auto sd5 = new (mem5) int(5);
@@ -90,39 +92,11 @@ namespace system_tests {
         EXPECT_EQ(7, sd7->b);
         EXPECT_EQ(7, sd7->c);
 
-        allocator.Pop();
-        allocator.Pop();
-        allocator.Pop();
-    }
+        allocator.PopAlloc();
+        allocator.PopAlloc();
+        allocator.PopAlloc();
 
-    TEST(StackAllocatorTests, InvalidPopTest)
-    {
-        StackAllocator allocator(128, MemorySystem::GetUnmanagedAllocator());
-
-#ifdef SJ_DEBUG
-        ASSERT_DEATH(allocator.Pop(), ".*");
-#endif
-
-        StackAllocator allocator2(128, MemorySystem::GetUnmanagedAllocator());
-        auto mem1 = allocator2.PushType<char>();
-        auto mem2 = allocator2.PushType<double>();
-
-#ifdef SJ_DEBUG
-        ASSERT_DEATH(allocator2.Free(mem1), ".*");
-#endif
-        allocator2.Pop();
-        allocator2.Pop();
-    }
-
-    TEST(StackAllocatorTests, MemoryLeakDetectionTest)
-    {
-        StackAllocator* allocator = new StackAllocator(128, MemorySystem::GetUnmanagedAllocator());
-
-        auto mem = allocator->PushType<StackAllocatorDummy>();
-
-#ifdef SJ_DEBUG
-        ASSERT_DEATH(delete allocator, ".*");
-#endif // SJ_DEBUG
+        heap_zone->Free(memory);
     }
 
 } // namespace system_tests

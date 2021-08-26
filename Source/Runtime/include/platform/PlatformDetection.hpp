@@ -1,13 +1,4 @@
 #pragma once
-// STD Headers
-
-// Library Headers
-
-// Screwjank Headers
-
-/**
- * Detect operating systems
- */
 
 namespace sj {
 
