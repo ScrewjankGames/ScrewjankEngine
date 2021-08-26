@@ -3,11 +3,11 @@
 // Library Headers
 
 // Screwjank Headers
-#include <system/allocators/LinearAllocator.hpp>
+#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
 
-#include <core/Assert.hpp>
-#include <core/Log.hpp>
-#include <system/Memory.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
 
 namespace sj {
 

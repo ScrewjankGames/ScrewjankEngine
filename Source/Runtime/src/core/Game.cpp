@@ -1,4 +1,4 @@
-#include <core/Game.hpp>
+#include <ScrewjankEngine/core/Game.hpp>
 
 // STD Headers
 #include <chrono>
@@ -8,8 +8,8 @@
 #include <GLFW/glfw3.h>
 
 // Engine Headers
-#include <core/Window.hpp>
-#include <rendering/Renderer.hpp>
+#include <ScrewjankEngine/core/Window.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 
 namespace sj {
 

@@ -3,8 +3,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include <core/Assert.hpp>
-#include <system/allocators/UnmanagedAllocator.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/system/allocators/UnmanagedAllocator.hpp>
 
 namespace sj {
     UnmanagedAllocator::UnmanagedAllocator() : m_ActiveAllocationCount(0)

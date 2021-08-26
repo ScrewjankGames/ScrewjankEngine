@@ -3,13 +3,13 @@
 // Library Headers
 
 // Screwjank Headers
-#include <core/Window.hpp>
+#include <ScrewjankEngine/core/Window.hpp>
 
 // Platform specific headers
 #ifdef SJ_PLATFORM_WINDOWS
-    #include <platform/Windows/WindowsWindow.hpp>
+    #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
 #elif SJ_PLATFORM_LINUX
-//#include <platform/Linux/LinuxWindow.hpp>
+//#include <ScrewjankEngine/platform/Linux/LinuxWindow.hpp>
     #error Linux platform unsupported
 #elif SJ_PLATFORM_IOS
     #error IOS Platform unsupported

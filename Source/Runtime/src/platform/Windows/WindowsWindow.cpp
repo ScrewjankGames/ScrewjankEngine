@@ -8,8 +8,8 @@
 #include <glm/glm.hpp>
 
 // Screwjank Headers
-#include <platform/PlatformDetection.hpp>
-#include <platform/Windows/WindowsWindow.hpp>
+#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
 
 namespace sj {
     WindowsWindow::WindowsWindow()

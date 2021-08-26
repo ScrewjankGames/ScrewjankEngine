@@ -3,7 +3,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <core/Log.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
 
 namespace sj {
     Logger::Logger(const char* name) : m_Name(name)

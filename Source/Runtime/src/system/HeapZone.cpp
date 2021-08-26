@@ -1,9 +1,9 @@
 // Screwjank Engine Headers
-#include <system/HeapZone.hpp>
+#include <ScrewjankEngine/system/HeapZone.hpp>
 
-#include <containers/Vector.hpp>
-#include <system/Memory.hpp>
-#include <containers/String.hpp>
+#include <ScrewjankEngine/containers/Vector.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/containers/String.hpp>
 
 namespace sj
 {

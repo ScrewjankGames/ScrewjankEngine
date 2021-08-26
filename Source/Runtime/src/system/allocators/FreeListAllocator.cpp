@@ -1,8 +1,8 @@
 // Parent Include
-#include <system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
 // Screwjank Headers
-#include <system/Memory.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
 
 namespace sj {
     FreeListAllocator::FreeListAllocator()

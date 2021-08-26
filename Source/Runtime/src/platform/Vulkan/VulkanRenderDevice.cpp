@@ -3,12 +3,12 @@
 // Library Headers
 
 // Screwjank Headers
-#include <platform/Vulkan/VulkanRenderDevice.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 
-#include <containers/Vector.hpp>
-#include <containers/UnorderedSet.hpp>
-#include <platform/Vulkan/VulkanRendererAPI.hpp>
-#include <platform/PlatformDetection.hpp>
+#include <ScrewjankEngine/containers/Vector.hpp>
+#include <ScrewjankEngine/containers/UnorderedSet.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
+#include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
 namespace sj {
 

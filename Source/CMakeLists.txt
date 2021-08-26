@@ -1,6 +1,5 @@
 add_subdirectory(Runtime)
 add_subdirectory(Tools)
-add_subdirectory(Shared)
 
 # TODO: Make optional
 add_subdirectory(Tests)

@@ -3,8 +3,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include <rendering/RenderDevice.hpp>
-#include <rendering/RendererAPI.hpp>
+#include <ScrewjankEngine/rendering/RenderDevice.hpp>
+#include <ScrewjankEngine/rendering/RendererAPI.hpp>
 
 namespace sj {
 

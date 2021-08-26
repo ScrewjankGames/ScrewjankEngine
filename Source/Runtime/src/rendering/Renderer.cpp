@@ -3,11 +3,11 @@
 // Library Headers
 
 // Screwjank Headers
-#include <core/Assert.hpp>
-#include <core/Log.hpp>
-#include <core/Window.hpp>
-#include <rendering/Renderer.hpp>
-#include <rendering/RendererAPI.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/core/Window.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
+#include <ScrewjankEngine/rendering/RendererAPI.hpp>
 
 namespace sj {
 

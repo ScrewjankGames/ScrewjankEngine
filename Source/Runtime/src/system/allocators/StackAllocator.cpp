@@ -3,10 +3,10 @@
 // Library Headers
 
 // Engine Headers
-#include <core/Assert.hpp>
-#include <core/Log.hpp>
-#include <system/allocators/StackAllocator.hpp>
-#include <system/Memory.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
 
 namespace sj {
 

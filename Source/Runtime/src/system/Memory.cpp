@@ -3,11 +3,11 @@
 #include <cassert>
 
 // Screwjank Headers
-#include <system/Memory.hpp>
-#include <core/Assert.hpp>
-#include <core/Log.hpp>
-#include <system/allocators/UnmanagedAllocator.hpp>
-#include <system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/system/allocators/UnmanagedAllocator.hpp>
+#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
 // Root heap sizes
 constexpr uint64_t kRootHeapSize = sj::k1_KiB * 64;

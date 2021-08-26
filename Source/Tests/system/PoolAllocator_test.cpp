@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <platform/PlatformDetection.hpp>
-#include <system/Memory.hpp>
-#include <system/allocators/PoolAllocator.hpp>
+#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
 
 using namespace sj;
 

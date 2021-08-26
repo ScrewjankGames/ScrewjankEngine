@@ -5,8 +5,8 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <containers/Vector.hpp>
-#include <core/Log.hpp>
+#include <ScrewjankEngine/containers/Vector.hpp>
+#include <ScrewjankEngine/core/Log.hpp>
 
 using namespace sj;
 
