@@ -61,19 +61,12 @@ namespace sj {
 #endif // !SJ_GOLD
 
 
-#ifndef NDEBUG
-    #define SJ_DEBUG
+#if defined(NDEBUG)
+    #define SJ_RELEASE
+    constexpr bool g_IsDebugBuild = false;
+#elif !defined(NDEBUG)
+    #define SJ_RELEASE
     constexpr bool g_IsDebugBuild = true;
-#endif
-
-#ifdef NDEBUG
-    #define SJ_RELEASE
-    constexpr bool g_IsDebugBuild = false;
-#endif // NDEBUG
-
-#ifdef SJ_GOLD
-    #define SJ_RELEASE
-    constexpr bool g_IsDebugBuild = false;
 #endif
 
 

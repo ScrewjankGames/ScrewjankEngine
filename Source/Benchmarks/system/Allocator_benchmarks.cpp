@@ -9,6 +9,8 @@
 #include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
+sj::HeapZone g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
+
 static void BM_Malloc(benchmark::State& state)
 {
     // Reserve a vector to store memory addresses so things can be freed properly
@@ -31,10 +33,9 @@ static void BM_Malloc(benchmark::State& state)
 
 static void BM_LinearAllocator(benchmark::State& state)
 {
-    sj::HeapZone* heap = sj::MemorySystem::GetDebugHeapZone();
     size_t alloc_size = state.range(0) * state.range(1);
 
-    void* test_memory = heap->Allocate(alloc_size);
+    void* test_memory = g_BenchmarkHeap.Allocate(alloc_size);
 
     // Reserve a buffer that is alloc_size * num_allocs large
     sj::LinearAllocator allocator(alloc_size, test_memory);
@@ -46,14 +47,14 @@ static void BM_LinearAllocator(benchmark::State& state)
         allocator.Reset();
     }
 
-    heap->Free(test_memory);
+    g_BenchmarkHeap.Free(test_memory);
 }
 
 static void BM_StackAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
     size_t alloc_size = state.range(0) * (size_t)std::ceil(state.range(1) * 1.5);
-    void* memory = sj::MemorySystem::GetDebugHeapZone()->Allocate(alloc_size);
+    void* memory = g_BenchmarkHeap.Allocate(alloc_size);
     sj::StackAllocator allocator(alloc_size, memory);
 
     while (state.KeepRunning()) {
@@ -67,7 +68,7 @@ static void BM_StackAllocator(benchmark::State& state)
         }
     }
 
-    sj::MemorySystem::GetDebugHeapZone()->Free(memory);
+    g_BenchmarkHeap.Free(memory);
 }
 
 template <size_t kBlockSize>
@@ -75,7 +76,7 @@ void BM_PoolAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
     size_t alloc_size = state.range(1);
-    void* memory = sj::MemorySystem::GetDebugHeapZone()->Allocate(alloc_size);
+    void* memory = g_BenchmarkHeap.Allocate(alloc_size);
     sj::PoolAllocator<kBlockSize> allocator(alloc_size, memory);
 
     // Reserve a vector to store memory addresses so things can be freed properly
@@ -91,16 +92,14 @@ void BM_PoolAllocator(benchmark::State& state)
         }
     }
 
-    sj::MemorySystem::GetDebugHeapZone()->Free(memory);
+    g_BenchmarkHeap.Free(memory);
 }
 
 static void BM_FreeListAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
-    sj::HeapZone* heap = sj::MemorySystem::GetDebugHeapZone();
-
     size_t alloc_size = state.range(0) * (size_t)std::ceil(state.range(1) * 1.5);
-    void* test_memory = heap->Allocate(alloc_size);
+    void* test_memory = g_BenchmarkHeap.Allocate(alloc_size);
 
     sj::FreeListAllocator allocator(alloc_size, test_memory);
 
@@ -119,7 +118,7 @@ static void BM_FreeListAllocator(benchmark::State& state)
         }
     }
 
-    heap->Free(test_memory);
+    g_BenchmarkHeap.Free(test_memory);
 }
 
 // Run the benchmark with allocation sizes from 32 bytes to 16 MB, 1 to 256 times

@@ -6,9 +6,11 @@ cmake_minimum_required(VERSION 3.13.0 FATAL_ERROR)
 project(ScrewjankEngine C CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(ScrewjankEngine_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
-set(ScrewjankEngine_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
+set(ScrewjankEngine_VERSION_MAJOR 0 CACHE STRING "major version" FORCE)
+set(ScrewjankEngine_VERSION_MINOR 1 CACHE STRING "minor version" FORCE)
 set(ScrewjankEngine_VERSION ${ScrewjankEngine_VERSION_MAJOR}.${ScrewjankEngine_VERSION_MINOR} CACHE STRING "version" FORCE)
+
+set(ENGINE_ASSETS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
 
 ################################################################################
 # CMake build options
@@ -27,8 +29,7 @@ set(CMAKE_CONFIGURATION_TYPES
 
 set(CMAKE_CXX_FLAGS_GOLD, CMAKE_CXX_FLAGS_RELEASE)
 set(CMAKE_C_FLAGS_GOLD, CMAKE_C_FLAGS_RELEASE)
-add_compile_definitions($<$<CONFIG:Gold>:-DSJ_GOLD>)
-
+add_compile_definitions($<$<CONFIG:Gold>:SJ_GOLD>)
 
 ################################################################################
 # Define project-wide locations
