@@ -10,7 +10,9 @@ set(ScrewjankEngine_VERSION_MAJOR 0 CACHE STRING "major version" FORCE)
 set(ScrewjankEngine_VERSION_MINOR 1 CACHE STRING "minor version" FORCE)
 set(ScrewjankEngine_VERSION ${ScrewjankEngine_VERSION_MAJOR}.${ScrewjankEngine_VERSION_MINOR} CACHE STRING "version" FORCE)
 
-set(ENGINE_ASSETS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
+set(Engine_Asset_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
+set(Game_Asset_Dir ${CMAKE_SOURCE_DIR}/Assets/)
+set(Game_Data_Dir ${CMAKE_SOURCE_DIR}/Data/)
 
 ################################################################################
 # CMake build options

@@ -3,8 +3,6 @@
 #include <cstddef>
 #include <concepts>
 
-// Library Headers
-
 // Screwjank Headers
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>

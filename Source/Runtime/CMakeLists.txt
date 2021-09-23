@@ -3,11 +3,6 @@
 ################################################################################
 project(ScrewjankEngine)
 
-################################################################################
-# Set output directory for engine
-################################################################################
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/engine)
-
 file(GLOB_RECURSE RUNTIME_HEADERS CONFIGURE_DEPENDS "*.hpp")
 file(GLOB_RECURSE RUNTIME_INLINES CONFIGURE_DEPENDS "*.inl")
 file(GLOB_RECURSE RUNTIME_SOURCE CONFIGURE_DEPENDS "*.cpp")
@@ -22,9 +17,8 @@ set_target_properties(${PROJECT_NAME}
         FOLDER Engine/
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${PROJECT_NAME}"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${PROJECT_NAME}"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${PROJECT_NAME}"
 )
 
 ################################################################################
