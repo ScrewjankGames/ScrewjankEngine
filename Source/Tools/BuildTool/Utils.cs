@@ -1,22 +1,45 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace build_tool 
 {
 	class Utils 
 	{
-		public static void GlobFiles(System.IO.DirectoryInfo root, string pattern, List<System.IO.FileInfo> out_files)
+		public static void GlobFiles(DirectoryInfo root, string[] patterns, List<FileInfo> out_files)
 		{
-			out_files.AddRange(root.GetFiles(pattern));
+			foreach (string pattern in patterns) 
+			{
+				out_files.AddRange(root.GetFiles(pattern));
+			}
 
-			System.IO.DirectoryInfo[] subdirectories = root.GetDirectories();
+			DirectoryInfo[] subdirectories = root.GetDirectories();
 
 			foreach (var dir in subdirectories)
 			{
-				GlobFiles(dir, pattern, out_files);
+				GlobFiles(dir, patterns, out_files);
 			}
-
-			return;
 		}
 
-	}
+        public static string CleanPath(string path) 
+        {
+            return path.Replace("\\", "/");
+        }
+
+		public static string GetRelativePath(DirectoryInfo dir, FileInfo file) 
+		{
+			string dir_path = CleanPath(dir.FullName);
+			string file_path = CleanPath(file.FullName);
+
+			if (!file_path.Contains(dir_path))
+			{
+				throw new ArgumentException("File is not in directory");
+			}
+
+			string relative_path = file_path.Remove(0, dir_path.Length);
+			return relative_path;
+		}
+    }
 }
