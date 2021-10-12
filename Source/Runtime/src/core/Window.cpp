@@ -25,6 +25,7 @@ namespace sj {
 
         if constexpr (g_Platform == Platform::Windows) 
         {
+            SJ_ENGINE_LOG_INFO("Creating Windows window");
             WindowsWindow* window = New<WindowsWindow>();
             return UniquePtr<Window>(MemorySystem::GetRootHeapZone(), window);
         } 

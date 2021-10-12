@@ -10,7 +10,7 @@
 // Engine Headers
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-
+#include <ScrewjankEngine/system/threading/ThreadPool.hpp>
 namespace sj {
 
     uint64_t Game::m_FrameCount = 0;
@@ -31,9 +31,10 @@ namespace sj {
 
     void Game::Start()
     {
-        SJ_ENGINE_LOG_INFO("Creating window");
-        m_Window = Window::Create();
+        // First access kicks off thread pool
+        ThreadPool::Get();
 
+        m_Window = Window::Create();
         m_Renderer = MakeUnique<Renderer>(MemorySystem::GetRootHeapZone(), m_Window.Get());
 
         Run();
