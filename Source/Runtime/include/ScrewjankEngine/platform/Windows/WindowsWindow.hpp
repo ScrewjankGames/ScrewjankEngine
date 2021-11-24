@@ -1,5 +1,6 @@
 #pragma once
-
+#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#ifdef SJ_PLATFORM_WINDOWS
 // STD Headers
 
 // Library Headers
@@ -10,7 +11,6 @@
 // Screwjank Headers
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
 struct GLFWwindow;
 
@@ -19,33 +19,28 @@ namespace sj {
     /**
      * @brief Platform-specific implementation of a windows window
      */
-    class WindowsWindow : public Window
+    class Window
     {
       public:
         /**
-         * Constructor
+         * Provides global access to the primary render surface 
          */
-        WindowsWindow();
-
-        /**
-         * Destructor
-         */
-        ~WindowsWindow();
-
+        static Window* GetInstance();
+        
         /**
          * Pump the window's event queue
          */
-        void ProcessEvents() override;
+        void ProcessEvents();
 
         /**
          * @return true If the window has been instructed to close, else false
          */
-        bool WindowClosed() const override;
+        bool IsWindowClosed() const;
 
         /**
          * @return Window size in pixels
          */
-        FrameBufferSize GetFrameBufferSize() const override;
+        Viewport GetViewportSize() const;
 
 #ifdef SJ_VULKAN_SUPPORT
         /**
@@ -60,7 +55,18 @@ namespace sj {
 #endif
 
       private:
+        /**
+         * Constructor
+         */
+        Window();
+
+        /**
+         * Destructor
+         */
+        ~Window();
+
         GLFWwindow* m_NativeWindow;
     };
 
 } // namespace sj
+#endif

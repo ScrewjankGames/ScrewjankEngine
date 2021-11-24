@@ -35,7 +35,7 @@ namespace sj
             return capabilities.currentExtent;
         }
 
-        Window::FrameBufferSize frame_buffer_size = m_TargetWindow->GetFrameBufferSize();
+        Viewport frame_buffer_size = m_TargetWindow->GetViewportSize();
         VkExtent2D extent {frame_buffer_size.Width, frame_buffer_size.Height};
 
         // Clamp values to max supported by implementation

@@ -17,8 +17,8 @@ set_target_properties(${PROJECT_NAME}
         FOLDER Engine/
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${PROJECT_NAME}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${PROJECT_NAME}"
+        ARCHIVE_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"
+        LIBRARY_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"
 )
 
 ################################################################################

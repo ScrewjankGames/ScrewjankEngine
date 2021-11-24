@@ -29,12 +29,7 @@ namespace sj {
         /**
          * Creates and initializes graphics API
          */
-        static UniquePtr<RendererAPI> Create(Window* window);
-
-        /**
-         * @return The currently selected Graphics API
-         */
-        static API GetVendorAPI();
+        static UniquePtr<RendererAPI> Create();
 
         /**
          * Destructor
@@ -45,21 +40,6 @@ namespace sj {
          * Allows user to get a handle to the logical device being used by the graphics API
          */
         virtual RenderDevice* GetRenderDevice() = 0;
-
-      protected:
-        /** Reference to the engine's window */
-        Window* m_Window;
-        
-        /**
-         * Constructor
-         */
-        RendererAPI(Window* window);
-
-      private:
-        /** Allows other systems to query the currently active rendering API*/
-        static API s_VendorAPI;
-
-
     };
 
 } // namespace sj

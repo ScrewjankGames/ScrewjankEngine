@@ -34,8 +34,8 @@ namespace sj {
         // First access kicks off thread pool
         ThreadPool::Get();
 
-        m_Window = Window::Create();
-        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetRootHeapZone(), m_Window.Get());
+        m_Window = Window::GetInstance();
+        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetRootHeapZone());
 
         Run();
     }
@@ -46,7 +46,7 @@ namespace sj {
         auto previousTime = Timer::now();
         auto currentTime = Timer::now();
 
-        while (!m_Window->WindowClosed()) {
+        while (!m_Window->IsWindowClosed()) {
             currentTime = Timer::now();
             m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
 

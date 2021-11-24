@@ -1,4 +1,5 @@
-#include "..\..\..\include\ScrewjankEngine\system\threading\Thread.hpp"
+#include "ScrewjankEngine/system/threading/Thread.hpp"
+
 namespace sj
 {
     Thread::Thread(Thread&& other) noexcept 

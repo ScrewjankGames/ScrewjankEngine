@@ -7,51 +7,29 @@
 // Screwjank Headers
 #include <ScrewjankEngine/system/Memory.hpp>
 
-namespace sj {
-
-    class Window
+namespace sj
+{
+    /**
+     * Struct to represent the window width and height in pixels
+     */
+    struct Viewport
     {
-      public:
-        /**
-         * Struct to represent the window width and height in pixels
-         */
-        struct FrameBufferSize
-        {
-            uint32_t Width;
-            uint32_t Height;
-        };
-
-        /**
-         * Factory function to construct Window interface appropriate to the current operating
-         * system
-         */
-        static UniquePtr<Window> Create();
-
-        /**
-         * Destructor
-         */
-        ~Window() = default;
-
-        /**
-         * Pump the window's event queue
-         */
-        virtual void ProcessEvents() = 0;
-
-        /**
-         * @return true If the window has been instructed to close, else false
-         */
-        virtual bool WindowClosed() const = 0;
-
-        /**
-         * @return Window size in pixels  
-         */
-        virtual FrameBufferSize GetFrameBufferSize() const = 0;
-
-      protected:
-        /**
-         * Constructor
-         */
-        Window() = default;
+        uint32_t Width;
+        uint32_t Height;
     };
-
 } // namespace sj
+
+
+// Platform specific implementations
+#ifdef SJ_PLATFORM_WINDOWS
+    #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
+#elif SJ_PLATFORM_LINUX
+//#include <ScrewjankEngine/platform/Linux/LinuxWindow.hpp>
+    #error Linux platform unsupported
+#elif SJ_PLATFORM_IOS
+    #error IOS Platform unsupported
+#elif
+    #error Unknown Platform
+#endif
+
+

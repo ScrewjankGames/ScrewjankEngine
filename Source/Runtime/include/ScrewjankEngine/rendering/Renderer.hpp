@@ -13,13 +13,21 @@ namespace sj {
 
     class RendererAPI;
     class Window;
+
     class Renderer
     {
-      public:
+    public:
+        static HeapZone* WorkBuffer();
+
         /**
          * Constructor
          */
-        Renderer(Window* window);
+        Renderer();
+
+        /**
+         * Execute draw commands 
+         */
+        void Render();
 
         /**
          * Destructor

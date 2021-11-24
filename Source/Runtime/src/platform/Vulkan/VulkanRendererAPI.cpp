@@ -11,6 +11,7 @@
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
 
 #ifdef SJ_PLATFORM_WINDOWS
 #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
@@ -19,14 +20,13 @@
 
 namespace sj {
 
-    VulkanRendererAPI::VulkanRendererAPI(Window* window) : RendererAPI(window)
+    VulkanRendererAPI::VulkanRendererAPI()
     {
         InitializeVulkan();
 
         SJ_ASSERT(m_RenderDevice.Get() != nullptr, "Failed to create render device");
         SJ_ASSERT(m_SwapChain.Get() != nullptr, "Failed to create swap chain");
     }
-
     
     VulkanRendererAPI::~VulkanRendererAPI()
     {
@@ -74,7 +74,8 @@ namespace sj {
         create_info.ppEnabledExtensionNames = extenstions.Data();
 
         // Compile-time check for adding validation layers
-        if constexpr (g_IsDebugBuild) {
+        if constexpr (g_IsDebugBuild) 
+        {
             static Vector<const char*> layers( 
                 MemorySystem::GetRootHeapZone(),
                 {"VK_LAYER_KHRONOS_validation"}
@@ -106,7 +107,7 @@ namespace sj {
         m_RenderDevice = MakeUnique<VulkanRenderDevice>(MemorySystem::GetRootHeapZone(), this);
 
         // Create the vulkan swap chain connected to the current window
-        m_SwapChain = MakeUnique<VulkanSwapChain>(MemorySystem::GetRootHeapZone(), this, m_Window);
+        m_SwapChain = MakeUnique<VulkanSwapChain>(MemorySystem::GetRootHeapZone(), this, Window::GetInstance());
 
         // Log success
         uint32_t extensionCount = 0;
@@ -217,11 +218,8 @@ namespace sj {
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
     {
         Vector<const char*> extensions_vector;
-#ifdef SJ_PLATFORM_WINDOWS
-        extensions_vector = reinterpret_cast<WindowsWindow*>(m_Window)->GetRequiredVulkanExtenstions();
-#else
-        #error
-#endif 
+
+        extensions_vector = Window::GetInstance()->GetRequiredVulkanExtenstions();
 
         if constexpr (g_IsDebugBuild)
         {
@@ -233,12 +231,7 @@ namespace sj {
 
     void VulkanRendererAPI::CreateRenderSurface()
     {
-#ifdef SJ_PLATFORM_WINDOWS
-        m_RenderingSurface =
-            reinterpret_cast<WindowsWindow*>(m_Window)->CreateWindowSurface(m_VkInstance);
-#else
-    #error
-#endif 
+        m_RenderingSurface = Window::GetInstance()->CreateWindowSurface(m_VkInstance);
     }
 
     void

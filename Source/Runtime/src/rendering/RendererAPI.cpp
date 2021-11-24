@@ -4,6 +4,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/rendering/RendererAPI.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/rendering/RenderDevice.hpp>
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
@@ -20,22 +21,18 @@
 
 namespace sj {
 
-    /** Defaults to Vulkan API */
-    RendererAPI::API RendererAPI::s_VendorAPI = RendererAPI::API::Unkown;
-
-    UniquePtr<RendererAPI> RendererAPI::Create(Window* window)
+    UniquePtr<RendererAPI> RendererAPI::Create()
     {
         static_assert(g_Platform != Platform::Unknown, "Renderer does not support this platform");
 
         RendererAPI* api = nullptr;
 
-        ScopedHeapZone rendererZone(MemorySystem::GetRootHeapZone());
+        ScopedHeapZone rendererZone(Renderer::WorkBuffer());
 
         // Chose the rendering API
         if constexpr (g_Platform == Platform::Windows) 
         {
-            s_VendorAPI = API::Vulkan;
-            api = New<VulkanRendererAPI>(window);
+            api = New<VulkanRendererAPI>();
         } 
         else if constexpr (g_Platform == Platform::Linux) 
         {
@@ -50,15 +47,4 @@ namespace sj {
 
         return UniquePtr<RendererAPI>(rendererZone.Get(), api);
     }
-
-    RendererAPI::API RendererAPI::GetVendorAPI()
-    {
-        return s_VendorAPI;
-    }
-
-    RendererAPI::RendererAPI(Window* window)
-    {
-        m_Window = window;
-    }
-
 } // namespace sj

@@ -34,8 +34,8 @@ namespace sj
         for (int i = 0; i < worker_count; i++)
         {
             int worker_id = i + 1;
-            auto worker_function = [worker_id]() {
-                while (true)
+            auto worker_function = [this, worker_id]() {
+                while (!m_Terminated)
                 {
                     //std::lock_guard<std::mutex> ioGuard(g_TestIoMutex);
 
@@ -54,6 +54,7 @@ namespace sj
     
     ThreadPool::~ThreadPool()
     {
+        m_Terminated = true;
         for (Thread& thread : m_Threads)
         {
             thread.Join();

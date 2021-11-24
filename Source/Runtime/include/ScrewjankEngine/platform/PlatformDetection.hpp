@@ -60,12 +60,12 @@ namespace sj {
     #define SJ_ENABLE_ASSERTS
 #endif // !SJ_GOLD
 
-
-#if defined(NDEBUG)
-    #define SJ_RELEASE
+    
+#ifndef SJ_DEBUG
+    // Debug and Release builds are considered debug builds.
     constexpr bool g_IsDebugBuild = false;
-#elif !defined(NDEBUG)
-    #define SJ_RELEASE
+#else
+    // Gold builds have all debug functionalities removed.
     constexpr bool g_IsDebugBuild = true;
 #endif
 

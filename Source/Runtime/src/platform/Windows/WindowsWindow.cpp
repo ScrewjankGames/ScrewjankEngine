@@ -1,3 +1,6 @@
+#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+
+#ifdef SJ_PLATFORM_WINDOWS
 // STD Headers
 
 // Library Headers
@@ -8,24 +11,31 @@
 #include <glm/glm.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
 
 namespace sj {
-    WindowsWindow::WindowsWindow()
+    Window* Window::GetInstance()
     {
+        static Window window;
+        return &window;
+    }
+
+    Window::Window()
+    {
+        SJ_ENGINE_LOG_INFO("Creating Windows window");
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_NativeWindow = glfwCreateWindow(1280, 720, "Vulkan window", nullptr, nullptr);
     }
 
-    WindowsWindow::~WindowsWindow()
+    Window::~Window()
     {
+        SJ_ENGINE_LOG_INFO("Terminating Windows window");
         glfwDestroyWindow(m_NativeWindow);
         glfwTerminate();
     }
 
-    void WindowsWindow::ProcessEvents()
+    void Window::ProcessEvents()
     {
         // Update
         glfwPollEvents();
@@ -33,24 +43,24 @@ namespace sj {
         return;
     }
 
-    bool WindowsWindow::WindowClosed() const
+    bool Window::IsWindowClosed() const
     {
         return glfwWindowShouldClose(m_NativeWindow);
     }
 
-    Window::FrameBufferSize WindowsWindow::GetFrameBufferSize() const
+    Viewport Window::GetViewportSize() const
     {
         int width;
         int height;
 
         glfwGetFramebufferSize(m_NativeWindow, &width, &height);
         
-        FrameBufferSize size = {(uint32_t)width, (uint32_t)height};
+        Viewport size = {(uint32_t)width, (uint32_t)height};
         return size;
     }
 
 #ifdef SJ_VULKAN_SUPPORT
-    Vector<const char*> WindowsWindow::GetRequiredVulkanExtenstions() const
+    Vector<const char*> Window::GetRequiredVulkanExtenstions() const
     {
         uint32_t extension_count = 0;
         const char** extensions;
@@ -67,7 +77,7 @@ namespace sj {
         return extensions_vector;
     }
 
-    VkSurfaceKHR WindowsWindow::CreateWindowSurface(VkInstance instance) const
+    VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance) const
     {
         VkSurfaceKHR surface;
         VkResult success = glfwCreateWindowSurface(instance, m_NativeWindow, nullptr, &surface);
@@ -77,3 +87,4 @@ namespace sj {
     }
 #endif
 } // namespace sj
+#endif

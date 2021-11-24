@@ -15,6 +15,7 @@
 namespace sj {
 
     // Forward declarations
+    class VulkanPipeline;
     class VulkanRenderDevice;
     class VulkanSwapChain;
     class Window;
@@ -32,7 +33,7 @@ namespace sj {
         /**
          * Constructor
          */
-        VulkanRendererAPI(Window* window);
+        VulkanRendererAPI();
 
         /**
          * Destructor
@@ -43,7 +44,6 @@ namespace sj {
          * Returns a pointer to the Vulkan render device
          */
         RenderDevice* GetRenderDevice() override;
-
 
         /**
          * @return The active VkInstance
@@ -76,20 +76,15 @@ namespace sj {
         bool IsDeviceSuitable(VkPhysicalDevice device) const;
 
       private:
-        /** The Vulkan instance is the engine's connection to the vulkan library */
-        VkInstance m_VkInstance;
-
-        /** Handle to manage Vulkan's debug callbacks */
-        VkDebugUtilsMessengerEXT m_VkDebugMessenger;
-
-        /** Handle to the surface vulkan renders to */
-        VkSurfaceKHR m_RenderingSurface;
-
-        /** Owning pointer to the render device used to back API operations */
-        UniquePtr<VulkanRenderDevice> m_RenderDevice;
-
-        /** Owning pointer to the swap chain used for image presentation */
-        UniquePtr<VulkanSwapChain> m_SwapChain;
+        /**
+         * Callback function that allows the Vulkan API to use the engine's logging system
+         * @note See Vulkan API for description of arguments
+         */
+        static VKAPI_ATTR VkBool32 VKAPI_CALL
+        VulkanDebugLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                               VkDebugUtilsMessageTypeFlagsEXT message_type,
+                               const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                               void* user_data);
 
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
@@ -116,16 +111,23 @@ namespace sj {
          */
         void EnableDebugMessaging();
 
-        /**
-         * Callback function that allows the Vulkan API to use the engine's logging system
-         * @note See Vulkan API for description of arguments
-         */
-        static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugLogCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-            VkDebugUtilsMessageTypeFlagsEXT message_type,
-            const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-            void* user_data
-        );
+        /** The Vulkan instance is the engine's connection to the vulkan library */
+        VkInstance m_VkInstance;
+
+        /** Handle to manage Vulkan's debug callbacks */
+        VkDebugUtilsMessengerEXT m_VkDebugMessenger;
+
+        /** Handle to the surface vulkan renders to */
+        VkSurfaceKHR m_RenderingSurface;
+
+        /** Used to back API operations */
+        UniquePtr<VulkanRenderDevice> m_RenderDevice;
+
+        /** Used for image presentation */
+        UniquePtr<VulkanSwapChain> m_SwapChain;
+
+        /** Pipeline used to describe rendering process */
+        UniquePtr<VulkanPipeline> m_Pipeline;
     };
 
 } // namespace sj

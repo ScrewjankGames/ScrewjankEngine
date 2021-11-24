@@ -34,7 +34,7 @@ target_include_directories(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 
         FOLDER Tools/
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Tools
+        RUNTIME_OUTPUT_DIRECTORY ${Binaries_Directory}/Tools
         DOTNET_TARGET_FRAMEWORK_VERSION "v4.7.2"
         VS_PACKAGE_REFERENCES "Serilog_2.10.0;Serilog.Sinks.Console_4.0.0"           
 )

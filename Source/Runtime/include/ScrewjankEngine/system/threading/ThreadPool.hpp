@@ -18,6 +18,7 @@ namespace sj
         ThreadPool();
         ~ThreadPool();
 
+        std::atomic<bool> m_Terminated = false;
         StaticVector<Thread, 32> m_Threads;
     };
 }

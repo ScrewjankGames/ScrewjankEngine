@@ -13,9 +13,9 @@ namespace sj
 
     HeapZone* HeapZone::FindHeapZoneForPointer(void* ptr)
     {
-        for (HeapZone* zone : g_HeapZoneList)
+        for(HeapZone* zone : g_HeapZoneList)
         {
-            if (zone && zone->ContainsPointer(ptr))
+            if(zone && zone->ContainsPointer(ptr))
             {
                 return zone;
             }
@@ -29,7 +29,7 @@ namespace sj
     {
         g_HeapZoneList.Add(this);
 
-        if (m_ParentZone)
+        if(m_ParentZone)
         {
             m_ZoneStart = parent->Allocate(size);
         }
@@ -49,7 +49,7 @@ namespace sj
     {
         g_HeapZoneList.EraseElement(this);
 
-        if (m_ParentZone)
+        if(m_ParentZone)
         {
             m_ParentZone->Free(m_ZoneStart);
             m_ZoneStart = nullptr;

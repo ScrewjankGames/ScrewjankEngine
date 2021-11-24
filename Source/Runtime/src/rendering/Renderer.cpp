@@ -9,11 +9,22 @@
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/rendering/RendererAPI.hpp>
 
-namespace sj {
-
-    Renderer::Renderer(Window* window)
+namespace sj
+{
+    HeapZone* Renderer::WorkBuffer()
     {
-        m_RendererAPI = RendererAPI::Create(window);
+        static HeapZone zone(MemorySystem::GetRootHeapZone(), k1_KiB, "Renderer Work Buffer");
+        return &zone;
+    }
+
+    Renderer::Renderer()
+    {
+        m_RendererAPI = RendererAPI::Create();
+    }
+
+    void Renderer::Render()
+    {
+
     }
 
     Renderer::~Renderer()

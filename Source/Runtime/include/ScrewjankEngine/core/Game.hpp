@@ -45,7 +45,7 @@ namespace sj {
         static uint64_t m_FrameCount;
 
         /** Handle to game's window */
-        UniquePtr<Window> m_Window;
+        Window* m_Window;
 
         /** Engine's rendering subsystem */
         UniquePtr<Renderer> m_Renderer;

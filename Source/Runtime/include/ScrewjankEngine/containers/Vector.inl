@@ -84,7 +84,7 @@ namespace sj
     template <class T, size_t N>
     inline T* StaticVector<T, N>::end()
     {
-        return std::end(m_cArray);
+        return std::begin(m_cArray) + m_Count;
     }
 
     template <class T>
