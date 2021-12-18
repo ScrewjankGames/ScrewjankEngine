@@ -1,8 +1,8 @@
 #pragma once
 // Screwjank Engine Headers
-//#include <ScrewjankEngine/containers/Array.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <Mutex>
 
 namespace sj
 {
@@ -18,7 +18,7 @@ namespace sj
         ~HeapZone();
 
         [[nodiscard]] void* Allocate(const size_t size,
-                                             const size_t alignment = alignof(std::max_align_t));
+                                     const size_t alignment = alignof(std::max_align_t));
 
         /**
          * Deallocates memory from this heapzone 
@@ -48,6 +48,7 @@ namespace sj
         HeapZone* m_ParentZone;
         void* m_ZoneStart;
         FreeListAllocator m_Allocator;
+        std::mutex m_AllocMutex;
 
         #ifndef GOLD_VERSION
         char m_DebugName[256]; 

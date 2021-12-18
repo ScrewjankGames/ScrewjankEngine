@@ -63,11 +63,13 @@ namespace sj
     
     void* HeapZone::Allocate(const size_t size, const size_t alignment)
     {
+        std::lock_guard<std::mutex> allocGuard(m_AllocMutex);
         return m_Allocator.Allocate(size, alignment);
     }
     
     void HeapZone::Free(void* memory)
     {
+        std::lock_guard<std::mutex> allocGuard(m_AllocMutex);
         m_Allocator.Free(memory);
     }
 

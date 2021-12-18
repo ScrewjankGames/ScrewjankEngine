@@ -52,9 +52,6 @@ namespace sj {
         HeapZone m_RootHeapZone;
         HeapZone m_DebugHeapZone;
         
-        /** Used to track the active heap zone. */
-        StaticStack<HeapZone*, 64> m_HeapZoneStack;
-
         MemorySystem();
         ~MemorySystem();
     };

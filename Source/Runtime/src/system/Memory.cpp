@@ -38,6 +38,9 @@ void operator delete(void* memory) noexcept
 }
 
 namespace sj {
+    /** Used to track the active heap zone. */
+    thread_local StaticStack<HeapZone*, 64> g_HeapZoneStack;
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,12 +66,12 @@ namespace sj {
 
     void MemorySystem::PushHeapZone(HeapZone* heap_zone)
     {
-        Get()->m_HeapZoneStack.Push(heap_zone);
+        g_HeapZoneStack.Push(heap_zone);
     }
 
     void MemorySystem::PopHeapZone()
     {
-        Get()->m_HeapZoneStack.Pop();
+        g_HeapZoneStack.Pop();
     }
 
     HeapZone* MemorySystem::GetRootHeapZone()
@@ -88,13 +91,13 @@ namespace sj {
     {
         MemorySystem* system = Get();
 
-        if (system->m_HeapZoneStack.IsEmpty())
+        if(g_HeapZoneStack.IsEmpty())
         {
             return GetRootHeapZone();
         }
         else
         {
-            return system->m_HeapZoneStack.Top();
+            return g_HeapZoneStack.Top();
         }
     }
 

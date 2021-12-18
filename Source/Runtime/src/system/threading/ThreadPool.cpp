@@ -14,9 +14,6 @@
 
 namespace sj
 {
-    // TODO [NL]: Remove me
-    std::mutex g_TestIoMutex;
-
     ThreadPool& ThreadPool::Get()
     {
         static ThreadPool s_pool;
@@ -37,8 +34,6 @@ namespace sj
             auto worker_function = [this, worker_id]() {
                 while (!m_Terminated)
                 {
-                    //std::lock_guard<std::mutex> ioGuard(g_TestIoMutex);
-
                     SJ_ENGINE_LOG_INFO("Worker thread {} running on core {}",
                                        worker_id,
                                        GetCurrentProcessorNumber());

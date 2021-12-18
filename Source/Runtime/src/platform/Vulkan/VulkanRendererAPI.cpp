@@ -9,6 +9,7 @@
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
@@ -240,8 +241,8 @@ namespace sj {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-        std::vector<VkLayerProperties> available_layers(layer_count);
-        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+        Vector<VkLayerProperties> available_layers(Renderer::WorkBuffer(), layer_count);
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.Data());
 
         // Verify required validation layers are supported
         for (auto layer_name : required_validation_layers) {
