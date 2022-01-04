@@ -9,7 +9,7 @@
 #include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
-sj::HeapZone g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
+sj::THeapZone<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
 
 static void BM_Malloc(benchmark::State& state)
 {

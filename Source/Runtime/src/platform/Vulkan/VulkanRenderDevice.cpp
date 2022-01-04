@@ -41,17 +41,18 @@ namespace sj {
     {
         VkInstance instance = m_API->GetInstance();
         
-        uint32_t device_count = 0;
-        vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-        SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", device_count);
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
-        Vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), device_count);
-        vkEnumeratePhysicalDevices(instance, &device_count, devices.Data());
+        Vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.Data());
         
         int best_score = -1; 
 
         // Picks the best compatible GPU found, prefering discrete GPUs  
-        for (const auto& device : devices) {
+        for(const VkPhysicalDevice& device : devices)
+        {
             int score = 0;
 
             if (!m_API->IsDeviceSuitable(device))
@@ -59,13 +60,14 @@ namespace sj {
                 continue;
             }
 
-            VkPhysicalDeviceProperties device_props;
-            VkPhysicalDeviceFeatures device_features;
+            VkPhysicalDeviceProperties deviceProps;
+            VkPhysicalDeviceFeatures deviceFeatures;
 
-            vkGetPhysicalDeviceProperties(device, &device_props);
-            vkGetPhysicalDeviceFeatures(device, &device_features);
+            vkGetPhysicalDeviceProperties(device, &deviceProps);
+            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-            if (device_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            if (deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
+            {
                 score += 1000;
             }
 
@@ -73,6 +75,14 @@ namespace sj {
                 best_score = score;
                 m_PhysicalDevice = device;
             }
+        }
+
+        if constexpr(g_IsDebugBuild)
+        {
+            VkPhysicalDeviceProperties device_props;
+            vkGetPhysicalDeviceProperties(m_PhysicalDevice, &device_props);
+
+            SJ_ENGINE_LOG_INFO("Selected render device: {}", device_props.deviceName);
         }
 
         SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE,

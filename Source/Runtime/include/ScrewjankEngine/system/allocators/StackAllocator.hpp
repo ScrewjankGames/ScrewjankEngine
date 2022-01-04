@@ -25,6 +25,8 @@ namespace sj {
          */
         ~StackAllocator();
 
+        void Init(size_t buffer_size, void* memory) override;
+
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
@@ -69,16 +71,16 @@ namespace sj {
         };
 
         /** The size in bytes of the allocator's buffer */
-        size_t m_Capacity;
+        size_t m_Capacity = 0;
 
         /** Buffer the allocator manages */
-        void* m_BufferStart;
+        void* m_BufferStart = nullptr;
 
         /** Pointer to the latest allocation's header block */
-        StackAllocatorHeader* m_CurrentHeader;
+        StackAllocatorHeader* m_CurrentHeader = nullptr;
 
         /** Pointer to the first free byte in the stack */
-        void* m_Offset;
+        void* m_Offset = nullptr;
 
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;

@@ -27,7 +27,7 @@ namespace sj {
 
         RendererAPI* api = nullptr;
 
-        ScopedHeapZone rendererZone(Renderer::WorkBuffer());
+        HeapZoneScope rendererZone(Renderer::WorkBuffer());
 
         // Chose the rendering API
         if constexpr (g_Platform == Platform::Windows) 

@@ -8,6 +8,7 @@
 #include <ScrewjankEngine/containers/Stack.hpp>
 #include <ScrewjankEngine/system/Allocator.hpp>
 #include <ScrewjankEngine/system/HeapZone.hpp>
+#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
 namespace sj {
 
@@ -49,8 +50,8 @@ namespace sj {
         static HeapZone* GetCurrentHeapZone();
 
       private:
-        HeapZone m_RootHeapZone;
-        HeapZone m_DebugHeapZone;
+        THeapZone<FreeListAllocator> m_RootHeapZone;
+        THeapZone<FreeListAllocator> m_DebugHeapZone;
         
         MemorySystem();
         ~MemorySystem();

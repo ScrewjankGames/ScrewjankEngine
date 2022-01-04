@@ -1,34 +1,36 @@
 #pragma once
 // STD Headers
+#include <concepts>
 #include <initializer_list>
 #include <utility>
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/containers/UnmanagedForwardList.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>
 
-namespace sj {
-
-    template <class T>
-    struct ForwardListNode
-    {
-        /** Constructor */
-        ForwardListNode(const T& data, ForwardListNode* next = nullptr) : Data(data), Next(next)
-        {
-        }
-
-        bool operator==(const ForwardListNode& other) const
-        {
-            return Data == other.Data && Next = other.Next;
-        }
-
-        T Data;
-        ForwardListNode* Next;
-    };
-
+namespace sj 
+{
     template <class T>
     class ForwardList
     {
+        template <class T>
+        struct ForwardListNode
+        {
+            /** Constructor */
+            ForwardListNode(const T& data, ForwardListNode* next = nullptr) : Data(data), Next(next)
+            {
+            }
+
+            bool operator==(const ForwardListNode& other) const
+            {
+                return Data == other.Data && Next = other.Next;
+            }
+
+            T Data;
+            ForwardListNode* Next;
+        };
+
       public:
         // Node type definitions
         using node_type = ForwardListNode<T>;
@@ -51,25 +53,6 @@ namespace sj {
         {
             template <bool tOtherIsConst>
             friend class ForwardListIteratorBase;
-
-            // Iteratory concept
-            using iterator_category = std::forward_iterator_tag;
-
-            // Node type definitions
-            using node_type = std::conditional_t<tIsConst,
-                                                 typename const ForwardList::node_type,
-                                                 typename ForwardList::node_type>;
-
-            using node_pointer = typename node_type*;
-            using node_reference = const node_type&;
-
-            // Value type definitions
-            using value_type = std::conditional_t<tIsConst,
-                                                  typename const ForwardList::value_type,
-                                                  typename ForwardList::value_type>;
-
-            using reference = value_type&;
-            using pointer = value_type*;
 
           public:
             ForwardListIteratorBase(node_pointer node) : m_Node(node) {}

@@ -9,7 +9,7 @@ namespace sj {
      * Concept for template deduction required when supplying allocators to containers
      */
     template <class T>
-    concept AllocatorConcept = requires(T obj)
+    concept is_allocator = requires(T obj)
     {
         // These statements must compile for something to be considered an allocator
         {obj.Allocate(size_t())};
@@ -20,7 +20,7 @@ namespace sj {
      * Concept for template deduction required when supplying allocators to containers
      */
     template <class T>
-    concept AllocatorPtrConcept = requires(T obj)
+    concept is_allocator_ptr = requires(T obj)
     {
         // These statements must compile for something to be considered an allocator pointer
         {obj->Allocate(size_t())};
@@ -62,6 +62,12 @@ namespace sj {
          * Destructor
          */
         virtual ~Allocator() = default;
+
+        /*
+         * @param buffer_size The size (in bytes) of the memory buffer being managed
+         * @param memory The memory this allocator should manage
+         */
+        virtual void Init(size_t buffer_size, void* memory) = 0;
 
         /**
          * Allocates size bites from the heap

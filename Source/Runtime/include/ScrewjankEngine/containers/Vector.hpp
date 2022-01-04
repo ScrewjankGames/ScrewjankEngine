@@ -11,7 +11,6 @@
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>
-#include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
 
 namespace sj {
 
@@ -131,40 +130,6 @@ namespace sj {
 
       private:
         pointer m_CurrElement;
-    };
-
-    /**
-     * Statically sized vector class 
-     */
-    template <class T, size_t N>
-    class StaticVector
-    {
-      public:
-        StaticVector();
-        ~StaticVector() = default;
-
-        /** Array Index Operator */
-        T& operator[](const size_t index);
-
-        /** Array Index Operator */
-        const T& operator[](const size_t index) const;
-
-        void Add(const T& value);
-        void Add(T&& value);
-
-        void EraseElement(const T& value);
-        void Erase(size_t idx);
-
-        size_t Count() const;
-
-        size_t Capacity() const;
-
-        T* begin();
-        T* end();
-
-      private:
-        T m_cArray[N];
-        size_t m_Count;
     };
 
     template <class T>

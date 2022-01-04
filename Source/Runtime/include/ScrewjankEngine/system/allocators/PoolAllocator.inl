@@ -10,32 +10,9 @@ namespace sj
     };
 
     template <size_t kBlockSize>
-    inline PoolAllocator<kBlockSize>::PoolAllocator(size_t num_blocks, void* memory)
-        : m_BufferStart(memory), m_NumBlocks(num_blocks)
+    inline PoolAllocator<kBlockSize>::PoolAllocator(size_t buffer_size, void* memory)
     {
-        // Ensure block size is large enough to store an allocation header
-        static_assert(kBlockSize > sizeof(FreeBlock),
-                      "Block size is not large enough to maintain free list");
-
-        SJ_ASSERT(num_blocks > 0, "Cannot create a pool allocator with zero blocks");
-
-        // Create first free block at start of buffer
-        m_FreeListHead = new (m_BufferStart) FreeBlock {nullptr};
-        FreeBlock* curr_block = m_FreeListHead;
-        uintptr_t curr_block_address = (uintptr_t)m_BufferStart;
-
-        // Build free list in the buffer
-        for (size_t i = 1; i < num_blocks; i++)
-        {
-            // Calculate the block address of the next block
-            curr_block_address += kBlockSize;
-
-            // Create new free-list block
-            curr_block->Next = new ((void*)curr_block_address) FreeBlock();
-
-            // Move the curr block forward
-            curr_block = curr_block->Next;
-        }
+        Init(buffer_size, memory);
     }
 
     template <size_t kBlockSize>
@@ -45,24 +22,55 @@ namespace sj
     }
 
     template <size_t kBlockSize>
+    inline void PoolAllocator<kBlockSize>::Init(size_t buffer_size, void* memory)
+    {
+        m_BufferStart = memory;
+        m_NumBlocks = buffer_size / kBlockSize;
+
+        // Ensure block size is large enough to store an allocation header
+        static_assert(kBlockSize > sizeof(FreeBlock),
+                      "Block size is not large enough to maintain free list");
+
+        SJ_ASSERT(m_NumBlocks > 0, "Cannot create a pool allocator with zero blocks");
+
+        // Create first free block at start of buffer
+        m_FreeList.PushFront(new(m_BufferStart) FreeBlock());
+        FreeBlock* curr_block = m_FreeList.Front();
+        uintptr_t curr_block_address = (uintptr_t)m_BufferStart;
+
+        // Build free list in the buffer
+        for(size_t i = 1; i < m_NumBlocks; i++)
+        {
+            // Calculate the block address of the next block
+            curr_block_address += kBlockSize;
+
+            // Create new free-list block
+            m_FreeList.InsertAfter(curr_block, new((void*)curr_block_address) FreeBlock());
+
+            // Move the curr block forward
+            curr_block = curr_block->Next;
+        }
+    }
+
+    template <size_t kBlockSize>
     inline void* PoolAllocator<kBlockSize>::Allocate(const size_t size, const size_t alignment)
     {
         SJ_ASSERT(size <= kBlockSize,
                   "Pool allocator cannot satisfy allocation of size > block size");
 
-        if (m_FreeListHead == nullptr)
+        if(m_FreeList.Front() == nullptr)
         {
             SJ_ENGINE_LOG_ERROR("Pool allocator has run out of blocks");
             return nullptr;
         }
 
         // Take the first available free block
-        auto free_block = m_FreeListHead;
+        auto free_block = m_FreeList.Front();
         SJ_ASSERT(IsMemoryAligned(free_block, alignment),
                   "PoolAllocator does not support over-aligned types");
-
+        
         // Remove the free block from the free list
-        m_FreeListHead = m_FreeListHead->Next;
+        m_FreeList.PopFront();
 
         m_AllocatorStats.TotalAllocationCount++;
         m_AllocatorStats.TotalBytesAllocated += kBlockSize;
@@ -81,11 +89,8 @@ namespace sj
         SJ_ASSERT((uintptr_t)memory <= (uintptr_t)m_BufferStart + (kBlockSize * m_NumBlocks),
                   "Memory is not managed by this allocator");
 
-        // Place a free-list node into the block
-        auto new_block = new (memory) FreeBlock {m_FreeListHead};
-
-        // Push block onto head of free list
-        m_FreeListHead = new_block;
+        // Place a free-list node into the block and push to head of list
+        m_FreeList.PushFront(new(memory) FreeBlock ());
 
         m_AllocatorStats.ActiveAllocationCount--;
         m_AllocatorStats.ActiveBytesAllocated -= kBlockSize;

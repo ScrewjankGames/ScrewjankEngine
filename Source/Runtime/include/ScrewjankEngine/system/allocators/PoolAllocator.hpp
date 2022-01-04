@@ -4,6 +4,7 @@
 // Library Headers
 
 // Engine Headers
+#include <ScrewjankEngine/containers/UnmanagedForwardList.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>
@@ -21,15 +22,22 @@ namespace sj {
     {
       public:
         /**
+         * Default constructor 
+         */
+        PoolAllocator() = default;
+
+        /**
          * Constructor
          * @param block_count The number of blocks of size kBlockSize
          */
-        PoolAllocator(size_t block_count, void* memory);
+        PoolAllocator(size_t buffer_size, void* memory);
 
         /**
          * Destructor
          */
         ~PoolAllocator();
+
+        void Init(size_t buffer_size, void* memory) override;
 
         /**
          * Allocates size bites from the heap
@@ -48,14 +56,17 @@ namespace sj {
         /** Node structure for the for the free block linked list */
         struct FreeBlock
         {
-            FreeBlock* Next;
+            FreeBlock* Next = nullptr;
+
+            FreeBlock* GetNext() { return Next; }
+            void SetNext(FreeBlock* next) { Next = next; }
         };
 
         /** The beginning of this allocator's data buffer */
         void* m_BufferStart;
 
         /** Pointer head of singly linked list of free blocks */
-        FreeBlock* m_FreeListHead;
+        UnmanagedForwardList<FreeBlock> m_FreeList;
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks;

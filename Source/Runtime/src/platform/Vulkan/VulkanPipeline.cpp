@@ -21,7 +21,7 @@ namespace sj
 
     VkShaderModule VulkanPipeline::LoadShaderModule(const char* path)
     {
-        ScopedHeapZone rendererWorkBuffer(Renderer::WorkBuffer());
+        HeapZoneScope rendererWorkBuffer(Renderer::WorkBuffer());
         File shader;
         shader.Open(path, File::OpenMode::kRead);
 

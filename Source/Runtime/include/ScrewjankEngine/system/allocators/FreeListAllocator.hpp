@@ -41,7 +41,7 @@ namespace sj {
          * @param buffer_size The size (in bytes) of the memory buffer being managed
          * @param memory The memory this allocator should manage
          */
-        void Init(size_t buffer_size, void* memory);
+        void Init(size_t buffer_size, void* memory) override;
 
         /**
          * Allocates size bites with given alignment in a best-fit manner

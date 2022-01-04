@@ -105,10 +105,10 @@ namespace sj {
         CreateRenderSurface();
 
         // Select physical device and create and logical render device
-        m_RenderDevice = MakeUnique<VulkanRenderDevice>(MemorySystem::GetRootHeapZone(), this);
+        m_RenderDevice = MakeUnique<VulkanRenderDevice>(Renderer::WorkBuffer(), this);
 
         // Create the vulkan swap chain connected to the current window
-        m_SwapChain = MakeUnique<VulkanSwapChain>(MemorySystem::GetRootHeapZone(), this, Window::GetInstance());
+        m_SwapChain = MakeUnique<VulkanSwapChain>(Renderer::WorkBuffer(), this, Window::GetInstance());
 
         // Log success
         uint32_t extensionCount = 0;

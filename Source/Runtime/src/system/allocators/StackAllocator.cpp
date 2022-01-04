@@ -11,10 +11,8 @@
 namespace sj {
 
     StackAllocator::StackAllocator(size_t buffer_size, void* memory)
-        : m_BufferStart(memory), m_Offset(m_BufferStart), m_CurrentHeader(nullptr),
-          m_Capacity(buffer_size)
     {
-
+        Init(buffer_size, memory);
     }
 
     StackAllocator::~StackAllocator()
@@ -22,8 +20,18 @@ namespace sj {
         SJ_ASSERT(m_Offset == m_BufferStart, "Memory leak detected in stack allocator");
     }
 
+    void StackAllocator::Init(size_t buffer_size, void* memory)
+    {
+        m_BufferStart = memory;
+        m_Offset = m_BufferStart;
+        m_CurrentHeader = nullptr;
+        m_Capacity = buffer_size;
+    }
+
     void* StackAllocator::Allocate(const size_t size, const size_t alignment)
     {
+        SJ_ASSERT(m_BufferStart != nullptr, "Uninitialized allocator use.");
+
         // Calculate padding needed to align header and payload
         size_t alignment_requirement = std::max(alignment, alignof(StackAllocatorHeader));
 
