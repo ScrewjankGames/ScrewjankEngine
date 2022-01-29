@@ -1,12 +1,11 @@
+// Parent Include
 #include <ScrewjankEngine/containers/StaticVector.hpp>
+
+// Engine Includes
+#include <ScrewjankEngine/core/Assert.hpp>
 
 namespace sj
 {
-    template <class T, size_t N>
-    inline StaticVector<T, N>::StaticVector() : m_Count(0)
-    {
-    }
-
     template <class T, size_t N>
     inline T& StaticVector<T, N>::operator[](const size_t index)
     {

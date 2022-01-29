@@ -22,7 +22,7 @@ namespace sj
     }
 
     ThreadPool::ThreadPool()
-        : m_ThreadPoolWorkBuffer(MemorySystem::GetRootHeapZone(), sizeof(ThreadJob) * 128, "Thread pool work buffer")
+       // : m_ThreadPoolWorkBuffer(MemorySystem::GetRootHeapZone(), sizeof(ThreadJob) * 128, "Thread pool work buffer")
     {
         // Main thread + n worker threads
         int worker_count = std::thread::hardware_concurrency() - 1;

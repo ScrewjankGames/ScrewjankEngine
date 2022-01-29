@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 
 // Void Engine Headers
-#include <ScrewjankEngine/containers/Stack.hpp>
+#include <ScrewjankEngine/containers/StaticStack.hpp>
 
 using namespace sj;
 

@@ -4,7 +4,7 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/containers/UnmanagedForwardList.hpp>
+#include <ScrewjankEngine/containers/UnmanagedList.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>
@@ -66,7 +66,7 @@ namespace sj {
         void* m_BufferStart;
 
         /** Pointer head of singly linked list of free blocks */
-        UnmanagedForwardList<FreeBlock> m_FreeList;
+        UnmanagedList<FreeBlock> m_FreeList;
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks;

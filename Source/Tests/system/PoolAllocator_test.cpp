@@ -23,7 +23,7 @@ namespace system_tests {
         HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
         void* memory = heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
-        PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4, memory);
+        PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
         auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc1);
@@ -93,7 +93,7 @@ namespace system_tests {
         void* memory =
             heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
-        ObjectPoolAllocator<PoolAllocatorDummy> allocator(4, memory);
+        ObjectPoolAllocator<PoolAllocatorDummy> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
         auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
         ASSERT_NE(nullptr, mem_loc1);

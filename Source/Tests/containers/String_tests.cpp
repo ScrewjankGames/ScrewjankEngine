@@ -28,7 +28,7 @@ namespace container_tests
         const char* s2 = "Foo";
         ConstString s3 = "Biz";
 
-        ASSERT_EQ(s1.c_str(), s2);
+        ASSERT_EQ(0, strcmp(s1.c_str(), s2));
         ASSERT_NE(s1, s3);
         ASSERT_NE(s2, s3);
     }

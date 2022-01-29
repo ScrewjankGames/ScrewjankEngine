@@ -5,7 +5,6 @@
 #include <functional>
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/Stack.hpp>
 #include <ScrewjankEngine/system/Allocator.hpp>
 #include <ScrewjankEngine/system/HeapZone.hpp>
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>

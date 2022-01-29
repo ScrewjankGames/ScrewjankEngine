@@ -35,7 +35,7 @@ namespace sj
 
         // Create first free block at start of buffer
         m_FreeList.PushFront(new(m_BufferStart) FreeBlock());
-        FreeBlock* curr_block = m_FreeList.Front();
+        FreeBlock* curr_block = &m_FreeList.Front();
         uintptr_t curr_block_address = (uintptr_t)m_BufferStart;
 
         // Build free list in the buffer
@@ -58,14 +58,14 @@ namespace sj
         SJ_ASSERT(size <= kBlockSize,
                   "Pool allocator cannot satisfy allocation of size > block size");
 
-        if(m_FreeList.Front() == nullptr)
+        if(m_FreeList.Size() == 0)
         {
             SJ_ENGINE_LOG_ERROR("Pool allocator has run out of blocks");
             return nullptr;
         }
 
         // Take the first available free block
-        auto free_block = m_FreeList.Front();
+        FreeBlock* free_block = &(m_FreeList.Front());
         SJ_ASSERT(IsMemoryAligned(free_block, alignment),
                   "PoolAllocator does not support over-aligned types");
         

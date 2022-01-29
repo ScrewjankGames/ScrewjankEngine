@@ -12,8 +12,8 @@ namespace sj
     class StaticVector
     {
     public:
-        StaticVector();
-        ~StaticVector() = default;
+        constexpr StaticVector() = default;
+        constexpr ~StaticVector() = default;
 
         /** Array Index Operator */
         T& operator[](const size_t index);
@@ -35,8 +35,8 @@ namespace sj
         T* end();
 
     private:
-        T m_cArray[N];
-        size_t m_Count;
+        T m_cArray[N] = {};
+        size_t m_Count = 0;
     };
 }
 

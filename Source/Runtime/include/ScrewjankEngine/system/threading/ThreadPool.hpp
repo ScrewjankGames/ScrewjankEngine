@@ -30,6 +30,6 @@ namespace sj
 
         std::atomic<bool> m_Terminated = false;
         StaticVector<Thread, 32> m_Threads;
-        THeapZone<PoolAllocator<sizeof(ThreadJob)>> m_ThreadPoolWorkBuffer;
+        //Queue<ThreadJob> m_JobQueue;
     };
 }
