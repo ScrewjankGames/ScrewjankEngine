@@ -38,19 +38,24 @@ namespace sj
      * It can accept singly or doubly linked list node types. Some functions are only
      * available for doubly linked list nodes
      */
-    template <class NodeType>
-    requires(is_list_node<NodeType>)
+    template <class NodeType> requires(is_list_node<NodeType>)
     class UnmanagedList
     {
-        template<bool IsConst>
+    public:
+        template<bool tIsConst>
         class IteratorBase
         {
-        private:
-            using node_type = std::conditional<IsConst, const NodeType, NodeType>;
-            using node_ptr = node_type*;
-
         public:
+            using node_type = std::conditional<tIsConst, const NodeType, NodeType>::value;
+            using node_ptr = node_type*;
+            using node_ref = node_type&;
+
             IteratorBase(NodeType* node);
+            /** Allow const iterators to be constructed from non-const ones.*/
+            IteratorBase(const IteratorBase<false>& other);
+
+            node_ref operator*();
+            node_ptr operator->();
 
             /** Pre-increment operator overload */
             IteratorBase& operator++();
@@ -61,19 +66,23 @@ namespace sj
             /** Pre-Decrement operator overload */
             IteratorBase& operator--() requires is_dl_list_node<NodeType>;
 
-            /** Pre-Decrement operator overload */
-            IteratorBase& operator--(int) requires is_dl_list_node<NodeType>;
+            /** Post-Decrement operator overload */
+            IteratorBase operator--(int) requires is_dl_list_node<NodeType>;
 
         private:
             node_ptr m_CurrNode;
         };
 
-    public:
         using Iterator = IteratorBase<false>;
         using ConstIterator = IteratorBase<true>;
 
         UnmanagedList() = default;
         ~UnmanagedList() = default;
+
+        /**
+         * Can't perform deep copies and shallow copies probably won't work too good
+         */
+        UnmanagedList(const UnmanagedList<NodeType>& other) = delete;
 
         NodeType& Front();
         const NodeType& Front() const;
@@ -83,6 +92,7 @@ namespace sj
 
         void PushFront(NodeType* node);
         void InsertAfter(NodeType* oldNode, NodeType* newNode);
+        void EraseAfter(NodeType* node);
         void PopFront();
 
         void PushBack(NodeType* node);
@@ -92,6 +102,7 @@ namespace sj
         void PopBack() requires(is_dl_list_node<NodeType>);
 
         size_t Size() const;
+        bool IsEmpty() const;
 
         Iterator Begin();
         Iterator End();

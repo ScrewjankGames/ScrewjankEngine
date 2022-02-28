@@ -5,24 +5,15 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <ScrewjankEngine/containers/ForwardList.hpp>
+#include <ScrewjankEngine/containers/List.hpp>
 
 using namespace sj;
 
 namespace container_tests {
 
-    struct ListDummy
+    TEST(ListTests, InitializerListConstructionTest)
     {
-        ListDummy(int val) : Value(val)
-        {
-        }
-
-        int Value;
-    };
-
-    TEST(ForwardListTests, InitializerListConstructionTest)
-    {
-        ForwardList<std::string> list = {"Foo", "Bar", "Biz", "Baz"};
+        List<std::string> list = {"Foo", "Bar", "Biz", "Baz"};
 
         ASSERT_EQ("Foo", list.Front());
         list.PopFront();
@@ -36,9 +27,9 @@ namespace container_tests {
         ASSERT_EQ("Baz", list.Front());
     }
 
-    TEST(ForwardListTests, InitializerListAssignmentTest)
+    TEST(ListTests, InitializerListAssignmentTest)
     {
-        ForwardList<std::string> list;
+        List<std::string> list;
         list = {"Foo", "Bar", "Biz", "Baz"};
 
         ASSERT_EQ("Foo", list.Front());
@@ -53,11 +44,11 @@ namespace container_tests {
         ASSERT_EQ("Baz", list.Front());
     }
 
-    TEST(ForwardListTests, CopyConstructionTest)
+    TEST(ListTests, CopyConstructionTest)
     {
-        ForwardList<std::string> list1 = {"Foo", "Bar", "Biz", "Baz"};
+        List<std::string> list1 = {"Foo", "Bar", "Biz", "Baz"};
 
-        ForwardList<std::string> list2(list1);
+        List<std::string> list2(list1);
 
         ASSERT_EQ("Foo", list2.Front());
         list2.PopFront();
@@ -83,11 +74,11 @@ namespace container_tests {
         ASSERT_EQ("Baz", list1.Front());
     }
 
-    TEST(ForwardListTests, CopyAssignmentTest)
+    TEST(ListTests, CopyAssignmentTest)
     {
-        ForwardList<std::string> list1 = {"Foo", "Bar", "Biz", "Baz"};
+        List<std::string> list1 = {"Foo", "Bar", "Biz", "Baz"};
 
-        ForwardList<std::string> list2;
+        List<std::string> list2;
         list2 = list1;
 
         ASSERT_EQ("Foo", list2.Front());
@@ -114,11 +105,11 @@ namespace container_tests {
         ASSERT_EQ("Baz", list1.Front());
     }
 
-    TEST(ForwardListTests, MoveConstructionTest)
+    TEST(ListTests, MoveConstructionTest)
     {
-        ForwardList<std::string> list1({"Foo", "Bar", "Biz", "Baz"});
+        List<std::string> list1({"Foo", "Bar", "Biz", "Baz"});
 
-        ForwardList<std::string> list2(std::move(list1));
+        List<std::string> list2(std::move(list1));
 
         ASSERT_EQ("Foo", list2.Front());
         list2.PopFront();
@@ -132,9 +123,9 @@ namespace container_tests {
         ASSERT_EQ("Baz", list2.Front());
     }
 
-    TEST(ForwardListTests, MoveAssignmentTest)
+    TEST(ListTests, MoveAssignmentTest)
     {
-        ForwardList<std::string> list = ForwardList<std::string>({"Foo", "Bar", "Biz", "Baz"});
+        List<std::string> list = List<std::string>({"Foo", "Bar", "Biz", "Baz"});
 
         ASSERT_EQ("Foo", list.Front());
         list.PopFront();
@@ -148,24 +139,24 @@ namespace container_tests {
         ASSERT_EQ("Baz", list.Front());
     }
 
-    TEST(ForwardListTests, PushPopFrontTest)
+    TEST(ListTests, PushPopFrontTest)
     {
-        ForwardList<ListDummy> list;
+        List<int> list;
 
-        list.PushFront(ListDummy {1});
-        ASSERT_EQ(1, list.Front().Value);
+        list.PushFront(1);
+        ASSERT_EQ(1, list.Front());
 
-        list.PushFront(ListDummy {2});
-        ASSERT_EQ(2, list.Front().Value);
+        list.PushFront(2);
+        ASSERT_EQ(2, list.Front());
 
-        list.PushFront(ListDummy {3});
-        ASSERT_EQ(3, list.Front().Value);
-
-        list.PopFront();
-        ASSERT_EQ(2, list.Front().Value);
+        list.PushFront(3);
+        ASSERT_EQ(3, list.Front());
 
         list.PopFront();
-        ASSERT_EQ(1, list.Front().Value);
+        ASSERT_EQ(2, list.Front());
+
+        list.PopFront();
+        ASSERT_EQ(1, list.Front());
 
         list.PopFront();
 
@@ -174,55 +165,55 @@ namespace container_tests {
 #endif // SJ_DEBUG
     }
 
-    TEST(ForwardListTests, EmplaceFrontTest)
+    TEST(ListTests, EmplaceFrontTest)
     {
-        ForwardList<ListDummy> list;
-        list.EmplaceFront(ListDummy {1});
-        ASSERT_EQ(1, list.Front().Value);
+        List<std::string> list;
+        list.EmplaceFront("Foo");
+        ASSERT_EQ("Foo", list.Front());
 
-        list.EmplaceFront(2);
-        ASSERT_EQ(2, list.Front().Value);
+        list.EmplaceFront(std::string("Bar"));
+        ASSERT_EQ("Bar", list.Front());
     }
 
-    TEST(ForwardListTests, InsertAfterTest)
+    TEST(ListTests, InsertAfterTest)
     {
-        ForwardList<ListDummy> list;
+        List<int> list;
         list.EmplaceFront(1);
 
         auto it = list.begin();
-        auto next = list.InsertAfter(it, ListDummy(2));
+        auto next = list.InsertAfter(it, 2);
         it++;
         ASSERT_EQ(next, it);
-        ASSERT_EQ(2, it->Value);
+        ASSERT_EQ(2, *it);
     }
 
-    TEST(ForwardListTests, EmplaceAfterTest)
+    TEST(ListTests, EmplaceAfterTest)
     {
-        ForwardList<ListDummy> list;
-        list.EmplaceFront(1);
+        List<std::string> list;
+        list.EmplaceFront("Foo");
 
         auto it = list.begin();
-        auto next = list.EmplaceAfter(it, ListDummy(2));
+        auto next = list.EmplaceAfter(it, "Bar");
         it++;
         ASSERT_EQ(next, it);
-        ASSERT_EQ(2, it->Value);
+        ASSERT_EQ("Bar", *it);
     }
 
-    TEST(ForwardListTests, EraseAfterTest)
+    TEST(ListTests, EraseAfterTest)
     {
-        ForwardList<ListDummy> list;
-        list.PushFront(ListDummy {4});
-        list.PushFront(ListDummy {3});
-        list.PushFront(ListDummy {2});
-        list.PushFront(ListDummy {1});
-        list.PushFront(ListDummy {0});
+        List<std::string> list;
+        list.PushFront("Four");
+        list.PushFront("Three");
+        list.PushFront("Two");
+        list.PushFront("One");
+        list.PushFront("Zero");
 
         auto it = list.begin();
         auto next_node = list.EraseAfter(it);
         it++;
         ASSERT_EQ(it, next_node);
-        ASSERT_EQ(2, next_node->Value);
-        ASSERT_EQ(2, it->Value);
+        ASSERT_EQ("Two", *next_node);
+        ASSERT_EQ("Two", *it);
 
         int i = 0;
         for (auto& element : list) {
@@ -232,30 +223,32 @@ namespace container_tests {
         ASSERT_EQ(4, i);
     }
 
-    TEST(ForwardListTests, DestructionLeakTest)
+    TEST(ListTests, DestructionLeakTest)
     {
-        auto list = new ForwardList<ListDummy>;
-        list->PushFront(ListDummy {1});
-        list->PushFront(ListDummy {1});
-        list->PushFront(ListDummy {1});
-        list->PushFront(ListDummy {1});
-        list->PushFront(ListDummy {1});
+        auto list = new List<std::string>;
+        list->PushFront("Foo");
+        list->PushFront("Bar");
+        list->PushFront("Biz");
+        list->PushFront("Baz");
+        list->PushFront("Buzz");
 
         // Destroy list
-        list->~ForwardList();
+        list->~List();
+
+        delete list;
 
         // Memory allocator will assert if there was a memory leak
     }
 
-    TEST(ForwardListTests, IterationTest)
+    TEST(ListTests, IterationTest)
     {
-        ForwardList<ListDummy> list;
+        List<int> list;
 
-        list.PushFront(ListDummy {4});
-        list.PushFront(ListDummy {3});
-        list.PushFront(ListDummy {2});
-        list.PushFront(ListDummy {1});
-        list.PushFront(ListDummy {0});
+        list.PushFront(4);
+        list.PushFront(3);
+        list.PushFront(2);
+        list.PushFront(1);
+        list.PushFront(0);
 
         int i = 0;
         for (auto it = list.begin(); it != list.end(); ++it, i++) {
@@ -264,22 +257,35 @@ namespace container_tests {
                 ASSERT_FALSE(true);
             }
 
-            ASSERT_EQ(i, it->Value);
+            ASSERT_EQ(i, *it);
         }
 
         ASSERT_EQ(5, i);
         list.Clear();
-        list.PushFront(ListDummy {2});
-        list.PushFront(ListDummy {2});
-        list.PushFront(ListDummy {2});
-        list.PushFront(ListDummy {2});
+        list.PushFront(2);
+        list.PushFront(2);
+        list.PushFront(2);
+        list.PushFront(2);
 
         i = 0;
-        for (const auto& element : list) {
-            ASSERT_EQ(2, element.Value);
+        for (const int& element : list) {
+            ASSERT_EQ(2, element);
             i++;
         }
 
         ASSERT_EQ(4, i);
+    }
+
+    TEST(ListTests, IteratorConversionTest)
+    {
+        List<int> list;
+        list.PushFront(0);
+        list.PushFront(1);
+
+        List<int>::Iterator nonConstIt = list.begin();
+        List<int>::ConstIterator constIt(nonConstIt);
+
+        nonConstIt++;
+        constIt = nonConstIt;
     }
 } // namespace container_tests

@@ -6,7 +6,13 @@ namespace sj
     /// Base Heap Zone
     ///////////////////////////////////////////////////////////////////////
 
-	template<class T, class... Args>
+	template <class T>
+    inline void* HeapZone::AllocateType()
+    {
+        return Allocate(sizeof(T), alignof(T));
+    }
+
+    template <class T, class... Args>
     inline T* HeapZone::New(Args&&... args)
     {
         return new(this->Allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);

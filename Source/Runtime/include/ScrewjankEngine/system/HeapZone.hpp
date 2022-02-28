@@ -23,6 +23,9 @@ namespace sj
         [[nodiscard]] 
         virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
 
+        template <class T>
+        void* AllocateType();
+
         /**
          * Deallocates memory from this heapzone 
          */
