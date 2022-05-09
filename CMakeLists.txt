@@ -11,6 +11,28 @@ set(ScrewjankEngine_VERSION_MINOR 1 CACHE STRING "minor version" FORCE)
 set(ScrewjankEngine_VERSION ${ScrewjankEngine_VERSION_MAJOR}.${ScrewjankEngine_VERSION_MINOR} CACHE STRING "version" FORCE)
 
 ################################################################################
+# Define project-wide locations
+################################################################################
+# Assets
+set(Engine_Asset_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
+set(Game_Asset_Dir ${CMAKE_SOURCE_DIR}/Assets/)
+set(Game_Data_Dir ${CMAKE_SOURCE_DIR}/Data/)
+
+# Shaders
+set(Engine_Shader_Source_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Source/Shaders/)
+set(Game_Shader_Source_Dir ${CMAKE_SOURCE_DIR}/Source/Shaders/ )
+set(Engine_Shader_Data_Dir ${CMAKE_SOURCE_DIR}/Data/Engine/Shaders/ )
+set(Game_Shader_Data_Dir ${CMAKE_SOURCE_DIR}/Data/Shaders/ )
+
+# Binaries
+set(Binaries_Directory ${CMAKE_SOURCE_DIR}/bin)
+set(Game_Binaries_Directory ${Binaries_Directory}/Game PARENT_SCOPE)
+
+# Engine crap
+set(ENGINE_DEPENDENCIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies)
+set(SAMPLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SampleProject)
+
+################################################################################
 # CMake build options
 ################################################################################
 option(ENGINE_BUILD_SAMPLE "Build the Engine's sample project" ON)
@@ -30,15 +52,6 @@ set(CMAKE_C_FLAGS_GOLD, CMAKE_C_FLAGS_RELEASE)
 add_compile_definitions($<$<CONFIG:Debug>:SJ_DEBUG>)
 add_compile_definitions($<$<CONFIG:Release>:SJ_DEBUG>)
 add_compile_definitions($<$<CONFIG:Gold>:SJ_GOLD>)
-
-################################################################################
-# Define project-wide locations
-################################################################################
-set(ENGINE_DEPENDENCIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies)
-set(SAMPLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SampleProject)
-set(Engine_Asset_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
-set(Game_Asset_Dir ${CMAKE_SOURCE_DIR}/Assets/)
-set(Game_Data_Dir ${CMAKE_SOURCE_DIR}/Data/)
 
 ################################################################################
 # Setup symlinks
