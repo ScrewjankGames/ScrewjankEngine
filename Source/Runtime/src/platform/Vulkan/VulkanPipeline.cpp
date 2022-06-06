@@ -11,15 +11,22 @@
 
 namespace sj
 {
-    VulkanPipeline::VulkanPipeline()
+    VulkanPipeline::VulkanPipeline(VkDevice device,
+                                   const char* vertexShaderPath,
+                                   const char* fragmentShaderPath)
     {
+        VkShaderModule vertexShaderModule = LoadShaderModule(device, vertexShaderPath);
+        VkShaderModule fragmentShaderModule = LoadShaderModule(device, fragmentShaderPath);
+
+        vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
+        vkDestroyShaderModule(device, vertexShaderModule, nullptr);
     }
 
     VulkanPipeline::~VulkanPipeline()
     {
     }
 
-    VkShaderModule VulkanPipeline::LoadShaderModule(const char* path)
+    VkShaderModule VulkanPipeline::LoadShaderModule(VkDevice device, const char* path)
     {
         HeapZoneScope rendererWorkBuffer(Renderer::WorkBuffer());
         File shader;
@@ -34,7 +41,7 @@ namespace sj
         createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
 
         VkShaderModule shaderModule;
-        //VkResult res = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
+        VkResult res = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
         return shaderModule;
     }
 

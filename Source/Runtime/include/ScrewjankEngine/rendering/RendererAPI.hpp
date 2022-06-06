@@ -28,18 +28,19 @@ namespace sj {
 
         /**
          * Creates and initializes graphics API
+         * Does not allocate memory.
          */
-        static UniquePtr<RendererAPI> Create();
+        static RendererAPI* Create();
 
         /**
          * Destructor
          */
         virtual ~RendererAPI() = default;
 
-        /**
-         * Allows user to get a handle to the logical device being used by the graphics API
-         */
-        virtual RenderDevice* GetRenderDevice() = 0;
+      private:
+        virtual void Init() = 0;
+        virtual void DeInit() = 0;
+
     };
 
 } // namespace sj

@@ -21,18 +21,18 @@
 
 namespace sj {
 
-    UniquePtr<RendererAPI> RendererAPI::Create()
+    RendererAPI* RendererAPI::Create()
     {
         static_assert(g_Platform != Platform::Unknown, "Renderer does not support this platform");
 
         RendererAPI* api = nullptr;
 
-        HeapZoneScope rendererZone(Renderer::WorkBuffer());
+        HeapZoneScope rendererZoneScope(Renderer::WorkBuffer());
 
         // Chose the rendering API
         if constexpr (g_Platform == Platform::Windows) 
         {
-            api = New<VulkanRendererAPI>();
+            api = VulkanRendererAPI::GetInstance();
         } 
         else if constexpr (g_Platform == Platform::Linux) 
         {
@@ -45,6 +45,7 @@ namespace sj {
 
         SJ_ASSERT(api != nullptr, "Failed to initialize rendering API");
 
-        return UniquePtr<RendererAPI>(rendererZone.Get(), api);
+        api->Init();
+        return api;
     }
 } // namespace sj

@@ -26,22 +26,21 @@ namespace sj {
             Vector<VkPresentModeKHR> PresentModes;
         };
 
-        /**
-         * Constructor 
-         * @param physical_device Non-owning handle to the physical device the swap chain will be running on
-         */
-        VulkanSwapChain(VulkanRendererAPI* api, Window* target_window);
-
-        /**
-         * Destructor  
-         */
+        VulkanSwapChain() = default;
         ~VulkanSwapChain();
+
+        void Init(Window* targetWindow,
+                  VkPhysicalDevice physicalDevice,
+                  VkDevice logicalDevice,
+                  VkSurfaceKHR renderingSurface);
+
+        void DeInit();
 
         /**
          * Query swap chain support parameters
          */
-        SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device,
-                                             VkSurfaceKHR surface) const;
+        static SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, 
+                                                    VkSurfaceKHR surface);
 
         /**
          * Communicates with the window to query swap chain extents
@@ -49,14 +48,16 @@ namespace sj {
         VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
       private:
-        /** Vulkan API implementation for device and surface querying */
-        VulkanRendererAPI* m_API;
+        
+        bool m_IsInitialized = false;
 
         /** Non-owning handle to the window the swap chain presents to */
-        Window* m_TargetWindow;
+        Window* m_TargetWindow = nullptr;
+
+        VkDevice m_LogicalDevice = VK_NULL_HANDLE;
 
         /** Pointer to the swap chain that controls image presenation */
-        VkSwapchainKHR m_SwapChain;
+        VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
         /** List of handles to images in the swap chain */
         Vector<VkImage> m_Images;
@@ -65,7 +66,7 @@ namespace sj {
         Vector<VkImageView> m_ImageViews;
 
         /** Format for images in the swap chain */
-        VkFormat m_ChainImageFormat;
+        VkFormat m_ChainImageFormat = VK_FORMAT_UNDEFINED;
 
         /** Size of the images in the swap chain (in pixels) */
         VkExtent2D m_ImageExtent;
@@ -73,7 +74,9 @@ namespace sj {
         /**
          * Handles initial swap chain setup
          */
-        void InitializeSwapChain(const SwapChainParams& params);
+        void InitializeSwapChain(VkSurfaceKHR renderingSurface,
+                                 VkPhysicalDevice physicalDevice, 
+                                 const SwapChainParams& params);
     };
 
 }

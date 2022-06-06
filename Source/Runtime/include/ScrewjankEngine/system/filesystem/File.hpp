@@ -28,6 +28,6 @@ namespace sj
         bool IsOpen() const;
 
     private:
-        FILE* m_File;
+        FILE* m_File = NULL;
     };
 }

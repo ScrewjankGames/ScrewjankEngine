@@ -21,17 +21,38 @@
 
 namespace sj {
 
-    VulkanRendererAPI::VulkanRendererAPI()
+    void VulkanRendererAPI::Init()
     {
+        SJ_ASSERT(!m_IsInitialized, "Double initialization of Vulkan detected");
         InitializeVulkan();
+        m_IsInitialized = true;
 
-        SJ_ASSERT(m_RenderDevice.Get() != nullptr, "Failed to create render device");
-        SJ_ASSERT(m_SwapChain.Get() != nullptr, "Failed to create swap chain");
+        // Create rendering surface
+        CreateRenderSurface();
+
+        // Select physical device and create and logical render device
+        m_RenderDevice.Init(m_RenderingSurface);
+
+        // Create the vulkan swap chain connected to the current window and device
+        m_SwapChain.Init(Window::GetInstance(),
+                         m_RenderDevice.GetPhysicalDevice(),
+                         m_RenderDevice.GetLogicalDevice(),
+                         m_RenderingSurface);
+
+        m_DefaultPipeline = MakeUnique<VulkanPipeline>(Renderer::WorkBuffer(),
+                                                       m_RenderDevice.GetLogicalDevice(), 
+                                                       "Data/Engine/Shaders/Default.vert.spv",
+                                                       "Data/Engine/Shaders/Default.frag.spv");
     }
-    
-    VulkanRendererAPI::~VulkanRendererAPI()
+
+    void VulkanRendererAPI::DeInit()
     {
-        if constexpr (g_IsDebugBuild)
+        if(!m_IsInitialized)
+        {
+            return;
+        }
+
+        if constexpr(g_IsDebugBuild)
         {
             auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
                 vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
@@ -41,10 +62,10 @@ namespace sj {
 
             messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
         }
-    
-        // Important: Component Unique pointers must be released in a specific order
-        m_SwapChain.Reset();
-        m_RenderDevice.Reset();
+
+        // Important: swap chain needs to be torn down before render device
+        m_SwapChain.DeInit();
+        m_RenderDevice.DeInit();
 
         vkDestroySurfaceKHR(m_VkInstance, m_RenderingSurface, nullptr);
         vkDestroyInstance(m_VkInstance, nullptr);
@@ -101,119 +122,27 @@ namespace sj {
             EnableDebugMessaging();
         }
 
-        // Create rendering surface
-        CreateRenderSurface();
-
-        // Select physical device and create and logical render device
-        m_RenderDevice = MakeUnique<VulkanRenderDevice>(Renderer::WorkBuffer(), this);
-
-        // Create the vulkan swap chain connected to the current window
-        m_SwapChain = MakeUnique<VulkanSwapChain>(Renderer::WorkBuffer(), this, Window::GetInstance());
-
         // Log success
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
     }
 
-    RenderDevice* VulkanRendererAPI::GetRenderDevice()
+    VulkanRendererAPI* VulkanRendererAPI::GetInstance()
     {
-        return m_RenderDevice.Get();
+        static VulkanRendererAPI api;
+        return &api;
     }
 
-    DeviceQueueFamilyIndices
-    VulkanRendererAPI::GetDeviceQueueFamilyIndices(VkPhysicalDevice device) const
+    const VulkanRenderDevice& VulkanRendererAPI::GetRenderDevice() const
     {
-        uint32_t queue_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
-
-        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(),
-                                                   queue_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
-
-        DeviceQueueFamilyIndices indices;
-
-        int i = 0;
-        for (const auto& family : queue_data)
-        {
-            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                indices.GraphicsFamilyIndex = i;
-            }
-
-            if (m_RenderingSurface != VK_NULL_HANDLE)
-            {
-                VkBool32 presentation_support = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(
-                    device,
-                    i,
-                    m_RenderingSurface,
-                    &presentation_support
-                );
-
-                if (presentation_support)
-                {
-                    indices.PresentationFamilyIndex = i;
-                }
-            }
-
-            i++;
-        }
-
-        return indices;
+        return m_RenderDevice;
     }
 
-    bool VulkanRendererAPI::IsDeviceSuitable(VkPhysicalDevice device) const
+    VkInstance VulkanRendererAPI::GetVkInstanceHandle() const
     {
-        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
-
-        // Query queue support
-        bool indicies_complete =
-            indices.GraphicsFamilyIndex.HasValue() && indices.PresentationFamilyIndex.HasValue();
-
-        // Check extension support
-        uint32_t extension_count;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-        Vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
-                                                      extension_count);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, extension_props.Data());
-
-        UnorderedSet<ConstString> missing_extensions(
-            MemorySystem::GetRootHeapZone(),
-            kRequiredDeviceExtensions.begin(),
-            kRequiredDeviceExtensions.end()
-        );
-
-        for (const VkExtensionProperties& extension : extension_props)
-        {
-            missing_extensions.Erase(extension.extensionName);
-        }
-
-        // Check swap chain dupport
-        VulkanSwapChain::SwapChainParams params = m_SwapChain->QuerySwapChainParams(device, m_RenderingSurface);
-        bool swap_chain_supported = !params.Formats.Empty() && !params.PresentModes.Empty();
-        
-        return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
-    }
-
-    VkInstance VulkanRendererAPI::GetInstance() const
-    {
+        SJ_ASSERT(m_IsInitialized, "Attempting to access uninitialized VkInstance");
         return m_VkInstance;
-    }
-
-    VkSurfaceKHR VulkanRendererAPI::GetRenderingSurface() const
-    {
-        return m_RenderingSurface;
-    }
-
-    VkPhysicalDevice VulkanRendererAPI::GetPhysicalDevice() const
-    {
-        return m_RenderDevice->GetPhysicalDevice();
-    }
-
-    VkDevice VulkanRendererAPI::GetLogicalDevice() const
-    {
-        return m_RenderDevice->GetLogicalDevice();
     }
 
     Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const

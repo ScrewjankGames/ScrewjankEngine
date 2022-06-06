@@ -1,45 +1,94 @@
+// Parent Include
+#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
+
 // STD Headers
 
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
+
 namespace sj {
+    
+    /** List of extensions devices must support */
+    static constexpr Array<ConstString, 1> kRequiredDeviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-    VulkanRenderDevice::VulkanRenderDevice(VulkanRendererAPI* api)
-        : m_PhysicalDevice(VK_NULL_HANDLE), m_API(api)
+    void VulkanRenderDevice::Init(VkSurfaceKHR renderSurface)
     {
-        SJ_ASSERT(api != nullptr,
-                  "Render device did not receive a valid vulkan api");
+        SelectPhysicalDevice(renderSurface);
+        CreateLogicalDevice(renderSurface);
 
-        SelectPhysicalDevice();
-        CreateLogicalDevice();
+        m_IsInitialized = true;
     }
 
-    VulkanRenderDevice::~VulkanRenderDevice()
+    void VulkanRenderDevice::DeInit()
     {
-        vkDestroyDevice(m_Device, nullptr);
+        if(m_Device != VK_NULL_HANDLE)
+        {
+            vkDestroyDevice(m_Device, nullptr);
+        }
     }
 
     VkPhysicalDevice VulkanRenderDevice::GetPhysicalDevice() const
     {
+        SJ_ASSERT(m_IsInitialized, "Accessing uninitialized render device");
         return m_PhysicalDevice;
     }
 
     VkDevice VulkanRenderDevice::GetLogicalDevice() const
     {
+        SJ_ASSERT(m_IsInitialized, "Accessing uninitialized render device");
         return m_Device;
     }
 
-    void VulkanRenderDevice::SelectPhysicalDevice()
+    
+    bool VulkanRenderDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
-        VkInstance instance = m_API->GetInstance();
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
+
+        // Query queue support
+        bool indicies_complete =
+            indices.GraphicsFamilyIndex.HasValue() && indices.PresentationFamilyIndex.HasValue();
+
+        // Check extension support
+        uint32_t extension_count;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+        Vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
+                                                      extension_count);
+        vkEnumerateDeviceExtensionProperties(device,
+                                             nullptr,
+                                             &extension_count,
+                                             extension_props.Data());
+
+        UnorderedSet<ConstString> missing_extensions(MemorySystem::GetRootHeapZone(),
+                                                     kRequiredDeviceExtensions.begin(),
+                                                     kRequiredDeviceExtensions.end());
+
+        for(const VkExtensionProperties& extension : extension_props)
+        {
+            missing_extensions.Erase(extension.extensionName);
+        }
+
+        // Check swap chain support
+        VulkanSwapChain::SwapChainParams params =
+            VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
+        bool swap_chain_supported = !params.Formats.Empty() && !params.PresentModes.Empty();
+
+        return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
+    }
+
+
+    void VulkanRenderDevice::SelectPhysicalDevice(VkSurfaceKHR renderSurface)
+    {
+        VulkanRendererAPI* vulkanAPI = VulkanRendererAPI::GetInstance();
+        VkInstance instance = vulkanAPI->GetVkInstanceHandle();
         
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -55,7 +104,7 @@ namespace sj {
         {
             int score = 0;
 
-            if (!m_API->IsDeviceSuitable(device))
+            if(IsDeviceSuitable(device, renderSurface))
             {
                 continue;
             }
@@ -89,12 +138,14 @@ namespace sj {
                   "Screwjank Engine failed to select suitable physical device.");
     }
 
-    void VulkanRenderDevice::CreateLogicalDevice()
+    void VulkanRenderDevice::CreateLogicalDevice(VkSurfaceKHR renderSurface)
     {
+        VulkanRendererAPI* vulkanAPI = VulkanRendererAPI::GetInstance();
         SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "CreateLogicalDevice requires a selected physical device");
         SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
     
-        DeviceQueueFamilyIndices indices = m_API->GetDeviceQueueFamilyIndices(m_PhysicalDevice);
+        DeviceQueueFamilyIndices indices =
+            GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
         UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
         unique_queue_families = 
@@ -124,9 +175,9 @@ namespace sj {
         device_create_info.enabledLayerCount = 0;
         device_create_info.pEnabledFeatures = &device_features;
         
-        const char** deviceExtensionNames = (const char**)(VulkanRendererAPI::kRequiredDeviceExtensions.Data());
+        const char** deviceExtensionNames = (const char**)(kRequiredDeviceExtensions.Data());
         device_create_info.enabledExtensionCount = 
-            static_cast<uint32_t>(VulkanRendererAPI::kRequiredDeviceExtensions.Size());
+            static_cast<uint32_t>(kRequiredDeviceExtensions.Size());
         device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
 
         VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);
@@ -134,6 +185,45 @@ namespace sj {
 
         vkGetDeviceQueue(m_Device, *indices.GraphicsFamilyIndex, 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_Device, *indices.PresentationFamilyIndex, 0, &m_PresentationQueue);
+    }
+
+    DeviceQueueFamilyIndices
+    VulkanRenderDevice::GetDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
+    {
+        uint32_t queue_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
+
+        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(), queue_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
+
+        DeviceQueueFamilyIndices indices;
+
+        int i = 0;
+        for(const VkQueueFamilyProperties& family : queue_data)
+        {
+            if(family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.GraphicsFamilyIndex = i;
+            }
+
+            if(renderSurface != VK_NULL_HANDLE)
+            {
+                VkBool32 presentation_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device,
+                                                     i,
+                                                     renderSurface,
+                                                     &presentation_support);
+
+                if(presentation_support)
+                {
+                    indices.PresentationFamilyIndex = i;
+                }
+            }
+
+            i++;
+        }
+
+        return indices;
     }
 
 } // namespace sj

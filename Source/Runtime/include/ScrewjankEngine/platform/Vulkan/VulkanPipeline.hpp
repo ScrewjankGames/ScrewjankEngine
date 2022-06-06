@@ -8,10 +8,10 @@ namespace sj
     class VulkanPipeline
     {
     public:
-        VulkanPipeline();
+        VulkanPipeline(VkDevice device, const char* vertexShaderPath, const char* fragmentShaderPath);
         ~VulkanPipeline();
 
     private:
-        VkShaderModule LoadShaderModule(const char* path);
+        VkShaderModule LoadShaderModule(VkDevice device, const char* path);
     };
 } // namespace sj

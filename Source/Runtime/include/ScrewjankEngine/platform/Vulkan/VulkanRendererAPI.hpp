@@ -10,6 +10,9 @@
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
 #include <ScrewjankEngine/rendering/RendererAPI.hpp>
 
 namespace sj {
@@ -24,58 +27,16 @@ namespace sj {
     class VulkanRendererAPI : public RendererAPI
     {
       public:
-
-        /** List of extensions devices must support */
-        static constexpr Array<ConstString, 1> kRequiredDeviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
-
-        /**
-         * Constructor
-         */
-        VulkanRendererAPI();
-
-        /**
-         * Destructor
-         */
-        ~VulkanRendererAPI();
-
-        /**
-         * Returns a pointer to the Vulkan render device
-         */
-        RenderDevice* GetRenderDevice() override;
+        static VulkanRendererAPI* GetInstance();
 
         /**
          * @return The active VkInstance
          */
-        VkInstance GetInstance() const;
-
-        /**
-         * @return The window surface
-         */
-        VkSurfaceKHR GetRenderingSurface() const; 
-
-        /**
-         * @return Handle to the physical device being used by the engine  
-         */
-        VkPhysicalDevice GetPhysicalDevice() const;
-
-        /**
-         * @return Handle to the logical device being used by the engine
-         */
-        VkDevice GetLogicalDevice() const;
-
-        /**
-         * Returns the queue families available for the supplied VkPhysicalDevice 
-         */
-        DeviceQueueFamilyIndices GetDeviceQueueFamilyIndices(VkPhysicalDevice device) const;
-
-        /**
-         * Queries physical device suitability for use in engine  
-         */
-        bool IsDeviceSuitable(VkPhysicalDevice device) const;
+        VkInstance GetVkInstanceHandle() const;
 
       private:
+        const VulkanRenderDevice& GetRenderDevice() const;
+
         /**
          * Callback function that allows the Vulkan API to use the engine's logging system
          * @note See Vulkan API for description of arguments
@@ -85,6 +46,19 @@ namespace sj {
                                VkDebugUtilsMessageTypeFlagsEXT message_type,
                                const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                                void* user_data);
+
+        /**
+         * Constructor
+         */
+        VulkanRendererAPI() = default;
+
+        /**
+         * Destructor
+         */
+        ~VulkanRendererAPI() = default;
+
+        void Init() override;
+        void DeInit() override;
 
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
@@ -111,6 +85,8 @@ namespace sj {
          */
         void EnableDebugMessaging();
 
+        bool m_IsInitialized = false;
+
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_VkInstance;
 
@@ -121,13 +97,13 @@ namespace sj {
         VkSurfaceKHR m_RenderingSurface;
 
         /** Used to back API operations */
-        UniquePtr<VulkanRenderDevice> m_RenderDevice;
+        VulkanRenderDevice m_RenderDevice;
 
         /** Used for image presentation */
-        UniquePtr<VulkanSwapChain> m_SwapChain;
+        VulkanSwapChain m_SwapChain;
 
         /** Pipeline used to describe rendering process */
-        UniquePtr<VulkanPipeline> m_Pipeline;
+        UniquePtr<VulkanPipeline> m_DefaultPipeline;
     };
 
 } // namespace sj

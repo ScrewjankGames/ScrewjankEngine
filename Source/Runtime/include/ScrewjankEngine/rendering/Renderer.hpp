@@ -25,17 +25,17 @@ namespace sj {
         Renderer();
 
         /**
-         * Execute draw commands 
-         */
-        void Render();
-
-        /**
          * Destructor
          */
         ~Renderer();
 
+        /**
+         * Execute draw commands 
+         */
+        void Render();
+
       private:
-        UniquePtr<RendererAPI> m_RendererAPI;
+        RendererAPI* m_RendererAPI = nullptr;
     };
 
 } // namespace sj

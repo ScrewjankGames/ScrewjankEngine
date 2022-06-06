@@ -24,14 +24,16 @@ namespace sj {
     {
       public:
         /**
-         * Constructor
+         * Returns the queue families available for the supplied VkPhysicalDevice
          */
-        VulkanRenderDevice(VulkanRendererAPI* api);
+          static DeviceQueueFamilyIndices GetDeviceQueueFamilyIndices(VkPhysicalDevice device,
+                                                                      VkSurfaceKHR renderSurface = VK_NULL_HANDLE);
 
-        /**
-         * Destructor
-         */
-        ~VulkanRenderDevice();
+        VulkanRenderDevice() = default;
+        ~VulkanRenderDevice() = default;
+
+        void Init(VkSurfaceKHR renderSurface);
+        void DeInit();
 
         /**
          * @return The vulkan handle for the logical device
@@ -48,21 +50,26 @@ namespace sj {
          * Iterates over the system's rendering hardware, and selects the most suitable GPU for
          * rendering
          */
-        void SelectPhysicalDevice();
+        void SelectPhysicalDevice(VkSurfaceKHR renderSurface);
         
         /**
          * After selecting a physical device, construct the corresponding logical device  
          */
-        void CreateLogicalDevice();
+        void CreateLogicalDevice(VkSurfaceKHR renderSurface);
+
+        /**
+         * Queries physical device suitability for use in engine
+         */
+        static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface);
 
         /** Vulkan's logical representation of the physical device */
-        VkDevice m_Device;
+        VkDevice m_Device = VK_NULL_HANDLE;
 
         /** Queue used to handle graphics commands */
-        VkQueue m_GraphicsQueue;
+        VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
 
         /** Used to execute presentation commands */
-        VkQueue m_PresentationQueue;
+        VkQueue m_PresentationQueue = VK_NULL_HANDLE;
 
         /**
          * Vulkan's representation of the physical rendering device
@@ -70,8 +77,8 @@ namespace sj {
          */
         VkPhysicalDevice m_PhysicalDevice;
 
-        /** Non-owning handle to the API for access to API settings */
-        VulkanRendererAPI* m_API;
+    private:
+        bool m_IsInitialized = false;
     };
 
 } // namespace sj

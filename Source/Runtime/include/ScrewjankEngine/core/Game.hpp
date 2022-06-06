@@ -5,6 +5,7 @@
 
 // Engine Headers
 #include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/Memory.hpp>
 
 namespace sj {
@@ -48,7 +49,7 @@ namespace sj {
         Window* m_Window;
 
         /** Engine's rendering subsystem */
-        UniquePtr<Renderer> m_Renderer;
+        Renderer m_Renderer;
 
         /** Current frame time */
         float m_DeltaTime;

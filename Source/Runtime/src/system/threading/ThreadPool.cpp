@@ -17,12 +17,10 @@ namespace sj
     ThreadPool& ThreadPool::Get()
     {
         static ThreadPool s_pool;
-
         return s_pool;
     }
 
     ThreadPool::ThreadPool()
-       // : m_ThreadPoolWorkBuffer(MemorySystem::GetRootHeapZone(), sizeof(ThreadJob) * 128, "Thread pool work buffer")
     {
         // Main thread + n worker threads
         int worker_count = std::thread::hardware_concurrency() - 1;
@@ -45,7 +43,6 @@ namespace sj
 
             m_Threads.Add(Thread(i+1, worker_function));
         }
-
     }
     
     ThreadPool::~ThreadPool()

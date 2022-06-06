@@ -31,11 +31,7 @@ namespace sj {
 
     void Game::Start()
     {
-        // First access kicks off thread pool
-        ThreadPool::Get();
-
         m_Window = Window::GetInstance();
-        m_Renderer = MakeUnique<Renderer>(MemorySystem::GetRootHeapZone());
 
         Run();
     }
@@ -54,6 +50,7 @@ namespace sj {
 
             previousTime = currentTime;
 
+            m_Renderer.Render();
             m_FrameCount++;
         }
     }
