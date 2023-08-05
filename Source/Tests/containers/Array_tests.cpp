@@ -54,7 +54,7 @@ namespace container_tests {
         Array<int, 3> arr({1, 2, 3});
         Array<int, 3> arr2(arr);
 
-        for (size_t i = 0; i < arr.Size(); i++) {
+        for (size_t i = 0; i < arr.Capacity(); i++) {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
         }
@@ -65,7 +65,7 @@ namespace container_tests {
         Array<int, 3> arr({1, 2, 3});
         Array<int, 3> arr2 = arr;
 
-        for (size_t i = 0; i < arr.Size(); i++) {
+        for (size_t i = 0; i < arr.Capacity(); i++) {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
         }
@@ -75,7 +75,8 @@ namespace container_tests {
     {
         Array<int, 3> arr(Array<int, 3>({1, 2, 3}));
 
-        for (size_t i = 0; i < arr.Size(); i++) {
+        for(size_t i = 0; i < arr.Capacity(); i++)
+        {
             ASSERT_EQ(i + 1, arr[i]);
         }
     }
@@ -84,7 +85,8 @@ namespace container_tests {
     {
         Array<int, 3> arr = Array<int, 3>({1, 2, 3});
 
-        for (size_t i = 0; i < arr.Size(); i++) {
+        for(size_t i = 0; i < arr.Capacity(); i++)
+        {
             ASSERT_EQ(i + 1, arr[i]);
         }
     }

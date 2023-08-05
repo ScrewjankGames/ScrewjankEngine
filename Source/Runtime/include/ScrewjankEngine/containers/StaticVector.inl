@@ -7,6 +7,27 @@
 namespace sj
 {
     template <class T, size_t N>
+    inline StaticVector<T, N>::StaticVector(std::initializer_list<T> vals)
+    {
+        for(const T& val : vals)
+        {
+            Add(val);
+        }
+    }
+
+    template <class T, size_t N>
+    inline StaticVector<T, N>& StaticVector<T, N>::operator=(std::initializer_list<T> vals)
+    {
+        Clear();
+
+        for(const T& val : vals)
+        {
+            Add(val);
+        }
+
+        return *this;
+    }
+    template <class T, size_t N>
     inline T& StaticVector<T, N>::operator[](const size_t index)
     {
         SJ_ASSERT(index >= 0 && index < N, "Error: Array Index Out of Bounds");
@@ -71,6 +92,26 @@ namespace sj
     inline size_t StaticVector<T, N>::Capacity() const
     {
         return N;
+    }
+
+    template <class T, size_t N>
+    inline T* StaticVector<T, N>::Data()
+    {
+        return m_cArray;
+    }
+
+    template <class T, size_t N>
+    inline void StaticVector<T, N>::Clear()
+    {
+        if constexpr(!std::is_trivially_destructible<T>::value)
+        {
+            for(T& entry : *this)
+            {
+                entry.~T();
+            }
+        }
+
+        m_Count = 0;
     }
 
     template <class T, size_t N>

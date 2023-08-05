@@ -177,7 +177,7 @@ namespace sj {
         
         const char** deviceExtensionNames = (const char**)(kRequiredDeviceExtensions.Data());
         device_create_info.enabledExtensionCount = 
-            static_cast<uint32_t>(kRequiredDeviceExtensions.Size());
+            static_cast<uint32_t>(kRequiredDeviceExtensions.Capacity());
         device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
 
         VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);

@@ -12,8 +12,13 @@ namespace sj
         enum class OpenMode : uint8_t
         {
             kRead,
-            kWrite
+            kWrite,
+            kReadBinary,
+            kWriteBinary
         };
+
+        File() = default;
+        ~File();
 
         bool Open(const char* path, OpenMode mode);
         void Close();
@@ -22,6 +27,8 @@ namespace sj
          * @return The number of bytes read 
          */
         size_t Read(void* buffer, size_t size, size_t count = 1);
+
+        size_t Write(const void* buffer, size_t size, size_t count = 1);
 
         uint64_t Size();
 

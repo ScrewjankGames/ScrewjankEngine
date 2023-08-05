@@ -19,7 +19,12 @@
 #endif // SJ_PLATFORM_WINDOWS
 
 
-namespace sj {
+namespace sj
+{
+    VulkanRendererAPI::~VulkanRendererAPI()
+    {
+        DeInit();
+    }
 
     void VulkanRendererAPI::Init()
     {
@@ -39,10 +44,15 @@ namespace sj {
                          m_RenderDevice.GetLogicalDevice(),
                          m_RenderingSurface);
 
-        m_DefaultPipeline = MakeUnique<VulkanPipeline>(Renderer::WorkBuffer(),
-                                                       m_RenderDevice.GetLogicalDevice(), 
-                                                       "Data/Engine/Shaders/Default.vert.spv",
-                                                       "Data/Engine/Shaders/Default.frag.spv");
+        CreateRenderPass();
+
+        m_DefaultPipeline.Init(
+            m_RenderDevice.GetLogicalDevice(),
+            m_SwapChain.GetExtent(),
+            m_DefaultRenderPass,
+            "Data/Engine/Shaders/Default.vert.spv",
+            "Data/Engine/Shaders/Default.frag.spv"
+        );
     }
 
     void VulkanRendererAPI::DeInit()
@@ -63,8 +73,10 @@ namespace sj {
             messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
         }
 
-        // Important: swap chain needs to be torn down before render device
+        // Important: All things attached to the device need to be torn down first
         m_SwapChain.DeInit();
+        m_DefaultPipeline.DeInit();
+        vkDestroyRenderPass(m_RenderDevice.GetLogicalDevice(), m_DefaultRenderPass, nullptr);
         m_RenderDevice.DeInit();
 
         vkDestroySurfaceKHR(m_VkInstance, m_RenderingSurface, nullptr);
@@ -134,11 +146,6 @@ namespace sj {
         return &api;
     }
 
-    const VulkanRenderDevice& VulkanRendererAPI::GetRenderDevice() const
-    {
-        return m_RenderDevice;
-    }
-
     VkInstance VulkanRendererAPI::GetVkInstanceHandle() const
     {
         SJ_ASSERT(m_IsInitialized, "Attempting to access uninitialized VkInstance");
@@ -164,13 +171,50 @@ namespace sj {
         m_RenderingSurface = Window::GetInstance()->CreateWindowSurface(m_VkInstance);
     }
 
+    void VulkanRendererAPI::CreateRenderPass()
+    {
+        VkAttachmentDescription colorAttachment {};
+        colorAttachment.format = m_SwapChain.GetImageFormat();
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference colorAttachmentRef {};
+        colorAttachmentRef.attachment = 0;
+        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorAttachmentRef;
+
+        VkRenderPassCreateInfo renderPassInfo {};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = 1;
+        renderPassInfo.pAttachments = &colorAttachment;
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;
+
+        VkResult res = vkCreateRenderPass(m_RenderDevice.GetLogicalDevice(),
+                                          &renderPassInfo,
+                                          nullptr,
+                                          &m_DefaultRenderPass);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create render pass.");
+    }
+
     void
     VulkanRendererAPI::EnableValidationLayers(const Vector<const char*>& required_validation_layers)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-        Vector<VkLayerProperties> available_layers(Renderer::WorkBuffer(), layer_count);
+        SJ_ASSERT(layer_count <= 64, "Overflow");
+        Array<VkLayerProperties, 64> available_layers;
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers.Data());
 
         // Verify required validation layers are supported

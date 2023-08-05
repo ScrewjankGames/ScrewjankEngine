@@ -76,7 +76,7 @@ namespace sj
     }
 
     template <class T, size_t N>
-    inline constexpr typename Array<T, N>::size_type Array<T, N>::Size() const
+    inline constexpr typename Array<T, N>::size_type Array<T, N>::Capacity() const
     {
         return N;
     }

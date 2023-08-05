@@ -36,18 +36,28 @@ namespace sj {
 
         void DeInit();
 
+        VkExtent2D GetExtent() const;
+        
+        VkFormat GetImageFormat() const;
+
         /**
          * Query swap chain support parameters
          */
         static SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, 
                                                     VkSurfaceKHR surface);
 
+      private:
+        /**
+         * Handles initial swap chain setup
+         */
+        void InitializeSwapChain(VkSurfaceKHR renderingSurface,
+                                 VkPhysicalDevice physicalDevice, 
+                                 const SwapChainParams& params);
+
         /**
          * Communicates with the window to query swap chain extents
          */
         VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-      private:
         
         bool m_IsInitialized = false;
 
@@ -71,12 +81,6 @@ namespace sj {
         /** Size of the images in the swap chain (in pixels) */
         VkExtent2D m_ImageExtent;
 
-        /**
-         * Handles initial swap chain setup
-         */
-        void InitializeSwapChain(VkSurfaceKHR renderingSurface,
-                                 VkPhysicalDevice physicalDevice, 
-                                 const SwapChainParams& params);
     };
 
 }

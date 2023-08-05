@@ -171,6 +171,16 @@ namespace sj
         vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
     }
 
+    VkExtent2D VulkanSwapChain::GetExtent() const
+    {
+        return m_ImageExtent;
+    }
+
+    VkFormat VulkanSwapChain::GetImageFormat() const
+    {
+        return m_ChainImageFormat;
+    }
+
     VkExtent2D VulkanSwapChain::QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())

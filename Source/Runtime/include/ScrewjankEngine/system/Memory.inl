@@ -3,23 +3,19 @@
 namespace sj
 {
     template<class T>
-    UniquePtr<T>::UniquePtr() : m_HeapZone(nullptr), m_Pointer(nullptr)
+    UniquePtr<T>::UniquePtr() : m_Pointer(nullptr)
     {
 
     }
 
     template <class T>
-    UniquePtr<T>::UniquePtr(HeapZone* heap, T* ptr) 
-        : m_HeapZone(heap), m_Pointer(ptr)
+    UniquePtr<T>::UniquePtr(T* ptr) : m_Pointer(ptr)
     {
     }
 
     template <class T>
     UniquePtr<T>::UniquePtr(UniquePtr&& other)
     {
-        m_HeapZone = other.m_HeapZone;
-        other.m_HeapZone = nullptr;
-
         m_Pointer = other.m_Pointer;
         other.m_Pointer = nullptr;
     }
@@ -35,9 +31,6 @@ namespace sj
     {
         CleanUp();
 
-        m_HeapZone = other.m_HeapZone;
-        other.m_HeapZone = nullptr;
-
         m_Pointer = other.m_Pointer;
         other.m_Pointer = nullptr;
     }
@@ -46,16 +39,14 @@ namespace sj
     T* UniquePtr<T>::Release() noexcept
     {
         auto ptr = m_Pointer;
-        m_HeapZone = nullptr;
         m_Pointer = nullptr;
         return ptr;
     }
 
     template <class T>
-    void UniquePtr<T>::Reset(HeapZone* heap, T* ptr)
+    void UniquePtr<T>::Reset(T* ptr)
     {
         CleanUp();
-        m_HeapZone = heap;
         m_Pointer = ptr;
     }
 
@@ -64,8 +55,7 @@ namespace sj
     {
         if (m_Pointer != nullptr)
         {
-            m_HeapZone->Delete(m_Pointer);
-            m_HeapZone = nullptr;
+            delete m_Pointer;
         }
     }
 
@@ -77,7 +67,7 @@ namespace sj
 
         //  Pass ownership of memory to the unique_ptr
         //  Supply a custom deletion function that uses the correct allocator
-        return UniquePtr<T>(zone, memory);
+        return UniquePtr<T>(memory);
     }
 
 }

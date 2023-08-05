@@ -91,7 +91,7 @@ namespace sj {
         /**
          * @return Size of the array
          */
-        constexpr size_type Size() const;
+        constexpr size_type Capacity() const;
 
         /**
          * Returns pointer to backing raw C array, allows modification of elements

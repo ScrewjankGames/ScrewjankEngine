@@ -19,6 +19,9 @@ namespace sj {
     constexpr uint64_t k1_MiB = k1_KiB * 1024;
     constexpr uint64_t k1_GiB = k1_MiB * 1024;
 
+    inline uint64_t operator""_KiB(unsigned long long val) {return val * 1024;}
+    inline uint64_t operator""_MiB(unsigned long long val) {return val * 1024 * 1024;} 
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +74,7 @@ namespace sj {
          * @param heap Heap the pointer comes from
          * @param p The pointer to be managed
          */
-        UniquePtr(HeapZone* heap, T* ptr);
+        UniquePtr(T* ptr);
 
         /**
          * Copy constructor: disallowed
@@ -122,7 +125,7 @@ namespace sj {
          * @param ptr The pointer to manage
          * @note Assumes current deleter is sufficient (same allocator as old m_Pointer)
          */
-        void Reset(HeapZone* heap = nullptr, T* ptr = nullptr);
+        void Reset(T* ptr = nullptr);
 
         /**
          * Returns underlying raw pointer
@@ -132,9 +135,6 @@ namespace sj {
 
 
       private:
-        /** The heap zone the pointer was allocated from */
-        HeapZone* m_HeapZone;
-
         /** The resource being managed by this container */
         T* m_Pointer;
 

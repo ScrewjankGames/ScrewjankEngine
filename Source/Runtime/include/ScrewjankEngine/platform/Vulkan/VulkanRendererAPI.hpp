@@ -35,7 +35,6 @@ namespace sj {
         VkInstance GetVkInstanceHandle() const;
 
       private:
-        const VulkanRenderDevice& GetRenderDevice() const;
 
         /**
          * Callback function that allows the Vulkan API to use the engine's logging system
@@ -55,7 +54,7 @@ namespace sj {
         /**
          * Destructor
          */
-        ~VulkanRendererAPI() = default;
+        ~VulkanRendererAPI();
 
         void Init() override;
         void DeInit() override;
@@ -74,6 +73,11 @@ namespace sj {
          * Communicates with the Window to creates the rendering surface 
          */
         void CreateRenderSurface();
+
+        /**
+         * Creates default render pass 
+         */
+        void CreateRenderPass();
 
         /**
          * Turns on Vulkan validation layers
@@ -96,6 +100,9 @@ namespace sj {
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_RenderingSurface;
 
+        /** It's a render pass I guess. */
+        VkRenderPass m_DefaultRenderPass;
+
         /** Used to back API operations */
         VulkanRenderDevice m_RenderDevice;
 
@@ -103,7 +110,7 @@ namespace sj {
         VulkanSwapChain m_SwapChain;
 
         /** Pipeline used to describe rendering process */
-        UniquePtr<VulkanPipeline> m_DefaultPipeline;
+        VulkanPipeline m_DefaultPipeline;
     };
 
 } // namespace sj

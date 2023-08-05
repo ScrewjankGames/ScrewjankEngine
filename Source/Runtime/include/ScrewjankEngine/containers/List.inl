@@ -192,9 +192,9 @@ namespace sj
                 auto currIt = BackIter();
                 InsertAfter(currIt, *otherIt);
             }
-
-            return *this;
         }
+
+        return *this;
     }
 
     template <class T, bool tIsBidirectional>

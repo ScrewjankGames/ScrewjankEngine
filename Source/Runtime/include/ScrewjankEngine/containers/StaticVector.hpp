@@ -15,6 +15,10 @@ namespace sj
         constexpr StaticVector() = default;
         constexpr ~StaticVector() = default;
 
+        StaticVector(std::initializer_list<T> vals);
+
+        StaticVector& operator=(std::initializer_list<T> vals);
+
         /** Array Index Operator */
         T& operator[](const size_t index);
 
@@ -30,6 +34,10 @@ namespace sj
         size_t Count() const;
 
         size_t Capacity() const;
+
+        T* Data();
+
+        void Clear();
 
         T* begin();
         T* end();
