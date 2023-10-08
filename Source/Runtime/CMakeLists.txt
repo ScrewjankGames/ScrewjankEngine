@@ -15,7 +15,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_SOURCE})
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 
         FOLDER Engine/
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
         ARCHIVE_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"
         LIBRARY_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"

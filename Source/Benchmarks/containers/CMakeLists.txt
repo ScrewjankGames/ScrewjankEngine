@@ -3,7 +3,7 @@ add_executable(UnorderedSetBenchmarks "UnorderedSet_benchmarks.cpp")
 set_target_properties(UnorderedSetBenchmarks 
 	PROPERTIES 
 		FOLDER Engine/Benchmarks
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
 )
 

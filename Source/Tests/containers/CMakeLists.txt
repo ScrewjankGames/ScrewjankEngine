@@ -6,7 +6,7 @@ add_executable(ContainerTestSuite ${CONTAINER_TEST_HEADERS} ${CONTAINER_TEST_SOU
 set_target_properties(ContainerTestSuite 
 	PROPERTIES 
 		FOLDER Engine/Testing
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
 )
 
