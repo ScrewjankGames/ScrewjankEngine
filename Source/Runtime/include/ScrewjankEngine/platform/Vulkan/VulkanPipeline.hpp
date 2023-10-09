@@ -22,6 +22,8 @@ namespace sj
 
         void DeInit();
 
+        VkPipeline GetPipeline();
+
     private:
         VkShaderModule LoadShaderModule(const char* path);
         VkDevice m_Device;

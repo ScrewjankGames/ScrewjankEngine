@@ -1,6 +1,7 @@
 #pragma once
 
 // STD Headers
+#include <span>
 
 // Library Headers
 #include <vulkan/vulkan.h>
@@ -40,11 +41,15 @@ namespace sj {
         
         VkFormat GetImageFormat() const;
 
+        VkSwapchainKHR GetSwapChain() const;
+
         /**
          * Query swap chain support parameters
          */
         static SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, 
                                                     VkSurfaceKHR surface);
+
+        std::span<VkImageView> GetImageViews() const;
 
       private:
         /**

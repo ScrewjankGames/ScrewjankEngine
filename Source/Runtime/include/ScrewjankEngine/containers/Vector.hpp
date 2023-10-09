@@ -46,6 +46,11 @@ namespace sj {
         {
         }
 
+        reference operator[](int idx) const
+        {
+            return *this + idx;
+        }
+
         /** Dereference operator overload */
         [[nodiscard]] reference operator*() const
         {
@@ -69,8 +74,6 @@ namespace sj {
         {
             return !(*this == other);
         }
-
-        auto operator<=>(const VectorIteratorBase& other) const = default;
 
         /** Addition operator overload */
         VectorIteratorBase operator+(size_t num) const
@@ -128,8 +131,11 @@ namespace sj {
             return *this;
         }
 
+        friend auto operator<=>(VectorIteratorBase, VectorIteratorBase) = default;
+
       private:
         pointer m_CurrElement;
+
     };
 
     template <class T>
@@ -336,7 +342,7 @@ namespace sj {
         /**
          * Allows access to the raw C-Style array
          */
-        T* Data();
+        auto&& Data(this auto&& self) { return self.m_Data; }
 
       private:
         /** Current size of the dynamic array */

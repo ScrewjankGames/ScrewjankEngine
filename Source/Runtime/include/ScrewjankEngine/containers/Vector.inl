@@ -603,12 +603,6 @@ namespace sj
     }
 
     template <class T>
-    inline T* Vector<T>::Data()
-    {
-        return m_Data;
-    }
-
-    template <class T>
     inline typename Vector<T>::iterator Vector<T>::begin()
     {
         return iterator(m_Data);

@@ -87,8 +87,8 @@ namespace sj
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(physicalDevice, renderingSurface);
 
-        uint32_t queue_family_indices_array[] = {indices.GraphicsFamilyIndex.Value(),
-                                                 indices.PresentationFamilyIndex.Value()};
+        uint32_t queue_family_indices_array[] = {indices.GraphicsFamilyIndex.value(),
+                                                 indices.PresentationFamilyIndex.value()};
 
         if(indices.GraphicsFamilyIndex != indices.PresentationFamilyIndex)
         {
@@ -181,6 +181,11 @@ namespace sj
         return m_ChainImageFormat;
     }
 
+    VkSwapchainKHR VulkanSwapChain::GetSwapChain() const
+    {
+        return m_SwapChain;
+    }
+
     VkExtent2D VulkanSwapChain::QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -237,5 +242,10 @@ namespace sj
                                                   params.PresentModes.Data());
 
         return params;
+    }
+
+    std::span<VkImageView> VulkanSwapChain::GetImageViews() const
+    {
+        return std::span<VkImageView>(m_ImageViews.Data(), m_ImageViews.Size());
     }
 } // namespace sj

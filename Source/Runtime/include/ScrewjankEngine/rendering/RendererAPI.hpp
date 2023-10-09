@@ -37,6 +37,8 @@ namespace sj {
          */
         virtual ~RendererAPI() = default;
 
+        virtual void DrawFrame() = 0;
+
       private:
         virtual void Init() = 0;
         virtual void DeInit() = 0;

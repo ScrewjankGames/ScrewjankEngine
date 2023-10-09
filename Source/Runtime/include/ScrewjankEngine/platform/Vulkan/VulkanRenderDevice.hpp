@@ -1,13 +1,13 @@
 #pragma once
 
 // STD Headers
+#include <optional>
 
 // Library Headers
 #include <vulkan/vulkan.h>
 
 // Screwjank Headers
 #include <ScrewjankEngine/rendering/RenderDevice.hpp>
-#include <ScrewjankEngine/containers/Optional.hpp>
 
 namespace sj {
 
@@ -16,8 +16,8 @@ namespace sj {
 
     struct DeviceQueueFamilyIndices
     {
-        Optional<uint32_t> GraphicsFamilyIndex;
-        Optional<uint32_t> PresentationFamilyIndex;
+        std::optional<uint32_t> GraphicsFamilyIndex;
+        std::optional<uint32_t> PresentationFamilyIndex;
     };
 
     class VulkanRenderDevice : public RenderDevice
@@ -26,8 +26,8 @@ namespace sj {
         /**
          * Returns the queue families available for the supplied VkPhysicalDevice
          */
-          static DeviceQueueFamilyIndices GetDeviceQueueFamilyIndices(VkPhysicalDevice device,
-                                                                      VkSurfaceKHR renderSurface = VK_NULL_HANDLE);
+        static DeviceQueueFamilyIndices GetDeviceQueueFamilyIndices(VkPhysicalDevice device,
+                                                                    VkSurfaceKHR renderSurface = VK_NULL_HANDLE);
 
         VulkanRenderDevice() = default;
         ~VulkanRenderDevice() = default;
@@ -44,6 +44,10 @@ namespace sj {
          * @return The vulkan handle for the logical device  
          */
         VkDevice GetLogicalDevice() const;
+
+        VkQueue GetGraphicsQueue() const;
+
+        VkQueue GetPresentationQueue() const;
 
       private:
         /**

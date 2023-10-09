@@ -48,14 +48,23 @@ namespace sj {
         return m_Device;
     }
 
-    
+    VkQueue VulkanRenderDevice::GetGraphicsQueue() const
+    {
+        return m_GraphicsQueue;
+    }
+
+    VkQueue VulkanRenderDevice::GetPresentationQueue() const
+    {
+        return m_PresentationQueue;
+    }
+
     bool VulkanRenderDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
         DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
 
         // Query queue support
         bool indicies_complete =
-            indices.GraphicsFamilyIndex.HasValue() && indices.PresentationFamilyIndex.HasValue();
+            indices.GraphicsFamilyIndex.has_value() && indices.PresentationFamilyIndex.has_value();
 
         // Check extension support
         uint32_t extension_count;
@@ -150,8 +159,8 @@ namespace sj {
         UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
         unique_queue_families = 
         {
-            indices.GraphicsFamilyIndex.Value(),
-            indices.PresentationFamilyIndex.Value()
+            indices.GraphicsFamilyIndex.value(),
+            indices.PresentationFamilyIndex.value()
         };
 
         Vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());

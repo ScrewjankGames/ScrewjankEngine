@@ -181,6 +181,11 @@ namespace sj
         vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
     }
 
+    VkPipeline VulkanPipeline::GetPipeline()
+    {
+        return m_Pipeline;
+    }
+
     VkShaderModule VulkanPipeline::LoadShaderModule(const char* path)
     {
         HeapZoneScope rendererWorkBuffer(Renderer::WorkBuffer());

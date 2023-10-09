@@ -24,7 +24,7 @@ namespace sj
 
     void Renderer::Render()
     {
-
+        m_RendererAPI->DrawFrame();
     }
 
     Renderer::~Renderer()

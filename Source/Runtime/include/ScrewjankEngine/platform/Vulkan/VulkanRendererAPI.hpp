@@ -27,12 +27,24 @@ namespace sj {
     class VulkanRendererAPI : public RendererAPI
     {
       public:
+        /**
+         * Constructor
+         */
+        VulkanRendererAPI();
+        
+        /**
+         * Destructor
+         */
+        ~VulkanRendererAPI();
+
         static VulkanRendererAPI* GetInstance();
 
         /**
          * @return The active VkInstance
          */
         VkInstance GetVkInstanceHandle() const;
+
+        void DrawFrame() override;
 
       private:
 
@@ -46,15 +58,8 @@ namespace sj {
                                const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                                void* user_data);
 
-        /**
-         * Constructor
-         */
-        VulkanRendererAPI() = default;
 
-        /**
-         * Destructor
-         */
-        ~VulkanRendererAPI();
+
 
         void Init() override;
         void DeInit() override;
@@ -89,6 +94,16 @@ namespace sj {
          */
         void EnableDebugMessaging();
 
+        void CreateFrameBuffers();
+
+        void CreateCommandPool();
+
+        void CreateCommandBuffer();
+
+        void CreateSyncPrimitives();
+
+        void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx);
+
         bool m_IsInitialized = false;
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
@@ -111,6 +126,20 @@ namespace sj {
 
         /** Pipeline used to describe rendering process */
         VulkanPipeline m_DefaultPipeline;
+
+        /** Buffers for the swap chain */
+        Vector<VkFramebuffer> m_SwapChainBuffers;
+
+        VkCommandPool m_CommandPool;
+
+        VkCommandBuffer m_CommandBuffer;
+
+        /**
+         * Synchronization primitives 
+         */
+        VkSemaphore m_ImageAvailableSemaphore;
+        VkSemaphore m_RenderFinishedSemaphore;
+        VkFence m_InFlightFence;
     };
 
 } // namespace sj
