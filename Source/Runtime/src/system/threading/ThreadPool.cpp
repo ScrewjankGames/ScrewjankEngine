@@ -41,7 +41,7 @@ namespace sj
                 }
             };
 
-            m_Threads.Add(Thread(i+1, worker_function));
+            m_Threads.add(Thread(i+1, worker_function));
         }
     }
     

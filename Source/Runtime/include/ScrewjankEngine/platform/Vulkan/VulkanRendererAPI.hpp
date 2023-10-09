@@ -48,6 +48,8 @@ namespace sj {
 
       private:
 
+        static constexpr int kMaxFramesInFlight = 2;
+
         /**
          * Callback function that allows the Vulkan API to use the engine's logging system
          * @note See Vulkan API for description of arguments

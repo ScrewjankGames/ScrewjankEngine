@@ -9,15 +9,15 @@ namespace sj
      * Statically sized vector class
      */
     template <class T, size_t N>
-    class StaticVector
+    class static_vector
     {
     public:
-        constexpr StaticVector() = default;
-        constexpr ~StaticVector() = default;
+        constexpr static_vector() = default;
+        constexpr ~static_vector() = default;
 
-        StaticVector(std::initializer_list<T> vals);
+        static_vector(std::initializer_list<T> vals);
 
-        StaticVector& operator=(std::initializer_list<T> vals);
+        static_vector& operator=(std::initializer_list<T> vals);
 
         /** Array Index Operator */
         T& operator[](const size_t index);
@@ -25,19 +25,19 @@ namespace sj
         /** Array Index Operator */
         const T& operator[](const size_t index) const;
 
-        void Add(const T& value);
-        void Add(T&& value);
+        void add(const T& value);
+        void add(T&& value);
 
-        void EraseElement(const T& value);
-        void Erase(size_t idx);
+        void erase_element(const T& value);
+        void erase(size_t idx);
 
-        size_t Count() const;
+        size_t count() const;
 
-        size_t Capacity() const;
+        size_t capacity() const;
 
-        T* Data();
+        T* data();
 
-        void Clear();
+        void clear();
 
         T* begin();
         T* end();

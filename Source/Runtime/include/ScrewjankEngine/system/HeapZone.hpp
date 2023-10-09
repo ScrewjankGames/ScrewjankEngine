@@ -49,7 +49,7 @@ namespace sj
         virtual bool ContainsPointer(void* ptr) const = 0;
   
       protected:
-        static StaticVector<HeapZone*, 64> s_HeapZoneList;
+        static static_vector<HeapZone*, 64> s_HeapZoneList;
 
         #ifndef GOLD_VERSION
         char m_DebugName[256]; 

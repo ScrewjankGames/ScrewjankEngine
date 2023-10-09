@@ -577,7 +577,7 @@ namespace sj
     }
     
     template <class T>
-    inline auto&& dynamic_vector<T>::Data(this auto&& self)
+    inline auto&& dynamic_vector<T>::data(this auto&& self)
     {
         return self.m_Data;
     }

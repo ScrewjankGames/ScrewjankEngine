@@ -203,7 +203,7 @@ namespace sj {
         /**
          * Allows access to the raw C-Style array
          */
-        auto&& Data(this auto&& self);
+        auto&& data(this auto&& self);
 
         /**
          * Function to allow use in ranged based for loops

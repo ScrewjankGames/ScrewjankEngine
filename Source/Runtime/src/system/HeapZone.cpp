@@ -8,7 +8,7 @@
 namespace sj
 {
     // v This is gonna be a fucking thread safety dumpster fire
-    constinit StaticVector<HeapZone*, 64> HeapZone::s_HeapZoneList;
+    constinit static_vector<HeapZone*, 64> HeapZone::s_HeapZoneList;
 
     HeapZone* HeapZone::FindHeapZoneForPointer(void* ptr)
     {

@@ -75,7 +75,7 @@ namespace sj {
         vkEnumerateDeviceExtensionProperties(device,
                                              nullptr,
                                              &extension_count,
-                                             extension_props.Data());
+                                             extension_props.data());
 
         UnorderedSet<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
                                                      kRequiredDeviceExtensions.begin(),
@@ -105,7 +105,7 @@ namespace sj {
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
         dynamic_vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.Data());
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
         
         int best_score = -1; 
 
@@ -181,7 +181,7 @@ namespace sj {
         VkDeviceCreateInfo device_create_info = {};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-        device_create_info.pQueueCreateInfos = queue_create_infos.Data();
+        device_create_info.pQueueCreateInfos = queue_create_infos.data();
         device_create_info.enabledLayerCount = 0;
         device_create_info.pEnabledFeatures = &device_features;
         
@@ -204,7 +204,7 @@ namespace sj {
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
         dynamic_vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(), queue_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
 
         DeviceQueueFamilyIndices indices;
 

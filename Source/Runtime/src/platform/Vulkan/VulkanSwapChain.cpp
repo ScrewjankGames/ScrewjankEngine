@@ -124,7 +124,7 @@ namespace sj
         vkGetSwapchainImagesKHR(m_LogicalDevice,
                                 m_SwapChain,
                                 &real_image_count,
-                                m_Images.Data());
+                                m_Images.data());
 
         m_ChainImageFormat = selected_format.format;
         m_ImageExtent = extent;
@@ -226,7 +226,7 @@ namespace sj
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
                                              surface,
                                              &format_count,
-                                             params.Formats.Data());
+                                             params.Formats.data());
 
         uint32_t present_mode_count;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
@@ -239,13 +239,13 @@ namespace sj
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
                                                   surface,
                                                   &present_mode_count,
-                                                  params.PresentModes.Data());
+                                                  params.PresentModes.data());
 
         return params;
     }
 
     std::span<VkImageView> VulkanSwapChain::GetImageViews() const
     {
-        return std::span<VkImageView>(m_ImageViews.Data(), m_ImageViews.size());
+        return std::span<VkImageView>(m_ImageViews.data(), m_ImageViews.size());
     }
 } // namespace sj

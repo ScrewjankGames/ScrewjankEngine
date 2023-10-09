@@ -34,7 +34,7 @@ namespace sj
         fragShaderStageInfo.module = fragmentShaderModule;
         fragShaderStageInfo.pName = "main";
         
-        StaticVector<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+        static_vector<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -136,7 +136,7 @@ namespace sj
         
         // Shader stages
         pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages.Data();
+        pipelineInfo.pStages = shaderStages.data();
         
         // Fixed function stuff
         pipelineInfo.pVertexInputState = &vertexInputInfo;

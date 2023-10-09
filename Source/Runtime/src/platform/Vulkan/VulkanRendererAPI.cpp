@@ -132,7 +132,7 @@ namespace sj
         // Get extension count and names
         dynamic_vector<const char*> extenstions = GetRequiredExtenstions();
         create_info.enabledExtensionCount = (uint32_t)extenstions.size();
-        create_info.ppEnabledExtensionNames = extenstions.Data();
+        create_info.ppEnabledExtensionNames = extenstions.data();
 
         // Compile-time check for adding validation layers
         if constexpr (g_IsDebugBuild) 
@@ -145,7 +145,7 @@ namespace sj
             EnableValidationLayers(layers);
 
             create_info.enabledLayerCount = (uint32_t)layers.size();
-            create_info.ppEnabledLayerNames = layers.Data();
+            create_info.ppEnabledLayerNames = layers.data();
         }
 
 

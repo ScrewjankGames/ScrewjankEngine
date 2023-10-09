@@ -72,21 +72,21 @@ namespace container_tests {
 
     TEST(StaticVectorTests, AddRemoveTest)
     {
-        StaticVector<int, 3> vec;
+        static_vector<int, 3> vec;
 
-        vec.Add(1);
-        vec.Add(2);
-        vec.Add(3);
+        vec.add(1);
+        vec.add(2);
+        vec.add(3);
 
         ASSERT_EQ(1, vec[0]);
         ASSERT_EQ(2, vec[1]);
         ASSERT_EQ(3, vec[2]);
 
-        vec.Erase(1);
+        vec.erase(1);
         ASSERT_EQ(1, vec[0]);
         ASSERT_NE(2, vec[1]);
 
-        vec.Erase(0);
+        vec.erase(0);
         ASSERT_NE(1, vec[0]);
     }
 

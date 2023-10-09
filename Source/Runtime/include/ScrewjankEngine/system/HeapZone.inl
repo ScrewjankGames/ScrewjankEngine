@@ -37,7 +37,7 @@ namespace sj
                                                const char* debug_name)
         : m_ParentZone(parent)
     {
-        s_HeapZoneList.Add(this);
+        s_HeapZoneList.add(this);
 
         if(m_ParentZone)
         {
@@ -61,7 +61,7 @@ namespace sj
     template <is_allocator AllocatorType>
     inline THeapZone<AllocatorType>::~THeapZone()
     {
-        s_HeapZoneList.EraseElement(this);
+        s_HeapZoneList.erase_element(this);
 
         if(m_ParentZone)
         {
