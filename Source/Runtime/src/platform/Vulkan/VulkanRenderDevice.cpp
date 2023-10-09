@@ -17,8 +17,9 @@
 namespace sj {
     
     /** List of extensions devices must support */
-    static constexpr Array<ConstString, 1> kRequiredDeviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    static constexpr Array<std::string_view, 1> kRequiredDeviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
 
     void VulkanRenderDevice::Init(VkSurfaceKHR renderSurface)
     {
@@ -76,7 +77,7 @@ namespace sj {
                                              &extension_count,
                                              extension_props.Data());
 
-        UnorderedSet<ConstString> missing_extensions(MemorySystem::GetRootHeapZone(),
+        UnorderedSet<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
                                                      kRequiredDeviceExtensions.begin(),
                                                      kRequiredDeviceExtensions.end());
 

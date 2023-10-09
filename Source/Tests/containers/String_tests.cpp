@@ -21,16 +21,5 @@ namespace container_tests
         sj_strncpy(foo, "fuck", sizeof(foo));
         ASSERT_NE(0, strcmp(foo, "fuck"));
     }
-
-    TEST(ConstStringTests, ConstStringTest)
-    {
-        ConstString s1("Foo");
-        const char* s2 = "Foo";
-        ConstString s3 = "Biz";
-
-        ASSERT_EQ(0, strcmp(s1.c_str(), s2));
-        ASSERT_NE(s1, s3);
-        ASSERT_NE(s2, s3);
-    }
 }
 

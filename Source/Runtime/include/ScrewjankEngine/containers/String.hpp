@@ -42,56 +42,7 @@ namespace sj {
         return destination;
     }
 
-    /**
-     * C String wrapper for immutable strings, with conversion and comparison operators  
-     */
-    class ConstString
-    {
-      public:
-        /**
-         * Constructor
-         */
-        constexpr ConstString(const char* str);
-
-        /**
-         * Destructor  
-         */
-        ~ConstString() = default;
-
-        /**
-         * Disallow assignment  
-         */
-        bool operator=(const char* other) = delete;
-
-        /**
-         * @return C-style string  
-         */
-        const char* c_str() const;
-
-        /**
-         * Implicit C-String Conversion operator  
-         */
-        explicit operator const char*() const;
-
-      private:
-        /** Underlying C string */
-        const char* m_CStr;
-    };
-
 } // namespace sj
-
-namespace std
-{
-    template <>
-    struct hash<sj::ConstString>
-    {
-        std::size_t operator()(const sj::ConstString& value) const
-        {
-            return sj::FNV1aHash(value.c_str());
-        }
-    };
-
-} // namespace std
 
 // Include inlines
 #include <ScrewjankEngine/containers/String.inl>
