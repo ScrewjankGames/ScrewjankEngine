@@ -20,7 +20,7 @@ namespace sj
         }
     }
 
-    VkSurfaceFormatKHR ChoseSurfaceFormat(const Vector<VkSurfaceFormatKHR>& formats)
+    VkSurfaceFormatKHR ChoseSurfaceFormat(const dynamic_vector<VkSurfaceFormatKHR>& formats)
     {
         for(const VkSurfaceFormatKHR& format : formats)
         {
@@ -34,7 +34,7 @@ namespace sj
         return formats[0];
     }
 
-    VkPresentModeKHR ChosePresentMode(const Vector<VkPresentModeKHR>& present_modes)
+    VkPresentModeKHR ChosePresentMode(const dynamic_vector<VkPresentModeKHR>& present_modes)
     {
         for(const VkPresentModeKHR& mode : present_modes)
         {
@@ -119,7 +119,7 @@ namespace sj
         uint32_t real_image_count;
         vkGetSwapchainImagesKHR(m_LogicalDevice, m_SwapChain, &real_image_count, nullptr);
 
-        m_Images.Resize(real_image_count);
+        m_Images.resize(real_image_count);
 
         vkGetSwapchainImagesKHR(m_LogicalDevice,
                                 m_SwapChain,
@@ -130,9 +130,9 @@ namespace sj
         m_ImageExtent = extent;
 
         // Create Image Views
-        m_ImageViews.Resize(m_Images.Size());
+        m_ImageViews.resize(m_Images.size());
 
-        for(size_t i = 0; i < m_Images.Size(); i++)
+        for(size_t i = 0; i < m_Images.size(); i++)
         {
             VkImageViewCreateInfo image_view_create_info {};
             image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -222,7 +222,7 @@ namespace sj
 
         SJ_ASSERT(format_count != 0, "No surface formats found");
 
-        params.Formats.Reserve(format_count);
+        params.Formats.reserve(format_count);
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
                                              surface,
                                              &format_count,
@@ -235,7 +235,7 @@ namespace sj
                                                   nullptr);
 
         SJ_ASSERT(present_mode_count != 0, "No present modes found");
-        params.PresentModes.Reserve(present_mode_count);
+        params.PresentModes.reserve(present_mode_count);
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
                                                   surface,
                                                   &present_mode_count,
@@ -246,6 +246,6 @@ namespace sj
 
     std::span<VkImageView> VulkanSwapChain::GetImageViews() const
     {
-        return std::span<VkImageView>(m_ImageViews.Data(), m_ImageViews.Size());
+        return std::span<VkImageView>(m_ImageViews.Data(), m_ImageViews.size());
     }
 } // namespace sj

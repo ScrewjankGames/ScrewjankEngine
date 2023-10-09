@@ -72,7 +72,7 @@ namespace sj {
         /**
          * Returns list of Vulkan extenstions the renderer should support
          */
-        Vector<const char*> GetRequiredExtenstions() const;
+        dynamic_vector<const char*> GetRequiredExtenstions() const;
 
         /** 
          * Communicates with the Window to creates the rendering surface 
@@ -87,7 +87,7 @@ namespace sj {
         /**
          * Turns on Vulkan validation layers
          */
-        void EnableValidationLayers(const Vector<const char*>& required_validation_layers);
+        void EnableValidationLayers(const dynamic_vector<const char*>& required_validation_layers);
 
         /**
          * Enables Vulkan Debug messaging
@@ -128,7 +128,7 @@ namespace sj {
         VulkanPipeline m_DefaultPipeline;
 
         /** Buffers for the swap chain */
-        Vector<VkFramebuffer> m_SwapChainBuffers;
+        dynamic_vector<VkFramebuffer> m_SwapChainBuffers;
 
         VkCommandPool m_CommandPool;
 

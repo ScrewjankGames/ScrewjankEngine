@@ -60,18 +60,18 @@ namespace sj {
     }
 
 #ifdef SJ_VULKAN_SUPPORT
-    Vector<const char*> Window::GetRequiredVulkanExtenstions() const
+    dynamic_vector<const char*> Window::GetRequiredVulkanExtenstions() const
     {
         uint32_t extension_count = 0;
         const char** extensions;
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-        Vector<const char*> extensions_vector;
-        extensions_vector.Reserve(extension_count);
+        dynamic_vector<const char*> extensions_vector;
+        extensions_vector.reserve(extension_count);
 
         for (size_t i = 0; i < extension_count; i++)
         {
-            extensions_vector.PushBack(extensions[i]);
+            extensions_vector.push_back(extensions[i]);
         }
 
         return extensions_vector;

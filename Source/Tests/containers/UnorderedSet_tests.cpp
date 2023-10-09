@@ -54,14 +54,14 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, RangeConstructionTest)
     {
-        Vector<std::string> vec(MemorySystem::GetRootHeapZone());
+        dynamic_vector<std::string> vec(MemorySystem::GetRootHeapZone());
         vec = {"FOO", "BAR", "BIZ", "BAZ", "BUZZ"};
 
         UnorderedSet<std::string> set(MemorySystem::GetRootHeapZone(),
                                       vec.begin(),
                                       vec.end());
 
-        ASSERT_EQ(vec.Size(), set.Count());
+        ASSERT_EQ(vec.size(), set.Count());
 
         for (auto& element : vec)
         {
@@ -69,7 +69,7 @@ namespace container_tests {
         }
 
         auto var = *vec.begin();
-        vec.Erase(vec.begin());
+        vec.erase(vec.begin());
 
         ASSERT_TRUE(set.Contains(var));
     }

@@ -23,8 +23,8 @@ namespace sj {
         struct SwapChainParams
         {
             VkSurfaceCapabilitiesKHR Capabilities;
-            Vector<VkSurfaceFormatKHR> Formats;
-            Vector<VkPresentModeKHR> PresentModes;
+            dynamic_vector<VkSurfaceFormatKHR> Formats;
+            dynamic_vector<VkPresentModeKHR> PresentModes;
         };
 
         VulkanSwapChain() = default;
@@ -75,10 +75,10 @@ namespace sj {
         VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
         /** List of handles to images in the swap chain */
-        Vector<VkImage> m_Images;
+        dynamic_vector<VkImage> m_Images;
 
         /** List of Image Views onto the images in the swap chain */
-        Vector<VkImageView> m_ImageViews;
+        dynamic_vector<VkImageView> m_ImageViews;
 
         /** Format for images in the swap chain */
         VkFormat m_ChainImageFormat = VK_FORMAT_UNDEFINED;

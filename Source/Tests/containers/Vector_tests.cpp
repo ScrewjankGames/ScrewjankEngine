@@ -1,5 +1,6 @@
 // STD Headers
 #include <vector>
+#include <span>
 
 // Library Headers
 #include "gtest/gtest.h"
@@ -91,18 +92,18 @@ namespace container_tests {
 
     TEST(VectorTests, ListInitializationTest)
     {
-        Vector<int> vec1({1, 2, 3, 4, 5});
-        ASSERT_EQ(5, vec1.Size());
-        ASSERT_EQ(5, vec1.Capacity());
+        dynamic_vector<int> vec1({1, 2, 3, 4, 5});
+        ASSERT_EQ(5, vec1.size());
+        ASSERT_EQ(5, vec1.capacity());
 
-        for (size_t i = 0; i < vec1.Size(); i++) {
+        for (size_t i = 0; i < vec1.size(); i++) {
             ASSERT_EQ(i + 1, vec1[i]);
         }
 
-        Vector<std::string> vec2;
+        dynamic_vector<std::string> vec2;
         vec2 = {"Foo", "Bar", "Biz", "Baz"};
-        ASSERT_EQ(4, vec2.Size());
-        ASSERT_EQ(4, vec2.Capacity());
+        ASSERT_EQ(4, vec2.size());
+        ASSERT_EQ(4, vec2.capacity());
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
         ASSERT_EQ("Biz", vec2[2]);
@@ -111,14 +112,14 @@ namespace container_tests {
 
     TEST(VectorTests, ElementInsertionTest)
     {
-        Vector<VectorTestDummy> vec;
+        dynamic_vector<VectorTestDummy> vec;
         VectorTestDummy dummy;
 
         // Copy construct dummy into vec
-        vec.PushBack(dummy);
+        vec.push_back(dummy);
         ASSERT_EQ(-1, vec[0].Value());
 
-        auto dummy2 = vec.EmplaceBack(100);
+        auto dummy2 = vec.emplace_back(100);
 
         ASSERT_EQ(dummy2, vec[1]);
         ASSERT_EQ(100, vec[1].Value());
@@ -126,22 +127,22 @@ namespace container_tests {
 
     TEST(VectorTests, ElementAccessTest)
     {
-        Vector<int> vec1(MemorySystem::GetRootHeapZone(), {1, 2, 3});
+        dynamic_vector<int> vec1(MemorySystem::GetRootHeapZone(), {1, 2, 3});
 
         ASSERT_EQ(1, vec1[0]);
 
-        ASSERT_EQ(vec1[0], vec1.At(0));
-        ASSERT_EQ(vec1[0], vec1.Front());
-        ASSERT_EQ(vec1[2], vec1.Back());
+        ASSERT_EQ(vec1[0], vec1.at(0));
+        ASSERT_EQ(vec1[0], vec1.front());
+        ASSERT_EQ(vec1[2], vec1.back());
 
 #ifdef SJ_DEBUG
-        ASSERT_DEATH(vec1.At(-1), ".*");
+        ASSERT_DEATH(vec1.at(-1), ".*");
 #endif // SJ_DEBUG
     }
 
     TEST(VectorTests, IterationTest)
     {
-        Vector<int> vec;
+        dynamic_vector<int> vec;
         int i = 0;
 
         for (auto& element : vec) {
@@ -149,12 +150,12 @@ namespace container_tests {
         }
         ASSERT_EQ(0, i);
 
-        vec.PushBack(1);
-        vec.EmplaceBack(2);
-        vec.PushBack(3);
-        vec.EmplaceBack(4);
-        vec.PushBack(5);
-        vec.EmplaceBack(6);
+        vec.push_back(1);
+        vec.emplace_back(2);
+        vec.push_back(3);
+        vec.emplace_back(4);
+        vec.push_back(5);
+        vec.emplace_back(6);
 
         // Iterate through all the odd elements
         for (auto it = vec.begin(); it < vec.end(); it = it + 2) {
@@ -179,61 +180,61 @@ namespace container_tests {
 
     TEST(VectorTests, SingleInsertionTest)
     {
-        Vector<VectorTestDummy> vec;
+        dynamic_vector<VectorTestDummy> vec;
 
-        vec.Insert(0, VectorTestDummy(3));
+        vec.insert(0, VectorTestDummy(3));
         ASSERT_EQ(3, vec[0].Value());
-        ASSERT_EQ(1, vec.Size());
-        ASSERT_EQ(1, vec.Capacity());
+        ASSERT_EQ(1, vec.size());
+        ASSERT_EQ(1, vec.capacity());
 
-        vec.Insert(0, VectorTestDummy(0));
+        vec.insert(0, VectorTestDummy(0));
         ASSERT_EQ(0, vec[0].Value());
         ASSERT_EQ(3, vec[1].Value());
-        ASSERT_EQ(2, vec.Size());
-        ASSERT_EQ(2, vec.Capacity());
+        ASSERT_EQ(2, vec.size());
+        ASSERT_EQ(2, vec.capacity());
 
-        vec.Insert(1, VectorTestDummy(2));
+        vec.insert(1, VectorTestDummy(2));
         ASSERT_EQ(0, vec[0].Value());
         ASSERT_EQ(2, vec[1].Value());
         ASSERT_EQ(3, vec[2].Value());
-        ASSERT_EQ(3, vec.Size());
-        ASSERT_EQ(4, vec.Capacity());
+        ASSERT_EQ(3, vec.size());
+        ASSERT_EQ(4, vec.capacity());
 
-        vec.Insert(1, VectorTestDummy(1));
+        vec.insert(1, VectorTestDummy(1));
         ASSERT_EQ(0, vec[0].Value());
         ASSERT_EQ(1, vec[1].Value());
         ASSERT_EQ(2, vec[2].Value());
         ASSERT_EQ(3, vec[3].Value());
-        ASSERT_EQ(4, vec.Size());
-        ASSERT_EQ(4, vec.Capacity());
+        ASSERT_EQ(4, vec.size());
+        ASSERT_EQ(4, vec.capacity());
     }
 
     TEST(VectorTests, VectorInsertionTest)
     {
-        Vector<VectorTestDummy> vec1;
+        dynamic_vector<VectorTestDummy> vec1;
 
-        Vector<VectorTestDummy> vec2 = {1, 6};
-        Vector<VectorTestDummy> vec3 = {2, 5};
-        Vector<VectorTestDummy> vec4({7, 8});
+        dynamic_vector<VectorTestDummy> vec2 = {1, 6};
+        dynamic_vector<VectorTestDummy> vec3 = {2, 5};
+        dynamic_vector<VectorTestDummy> vec4({7, 8});
 
         // Vector insertion requires grow
-        vec1.Insert(0, vec2);
+        vec1.insert(0, vec2);
         ASSERT_EQ(1, vec1[0]);
         ASSERT_EQ(6, vec1[1]);
-        ASSERT_EQ(vec1.Size(), 2);
-        ASSERT_EQ(vec1.Capacity(), 4);
+        ASSERT_EQ(vec1.size(), 2);
+        ASSERT_EQ(vec1.capacity(), 4);
 
         // Vector insertion does not require grow
-        vec1.Insert(1, vec3);
+        vec1.insert(1, vec3);
         ASSERT_EQ(1, vec1[0]);
         ASSERT_EQ(2, vec1[1]);
         ASSERT_EQ(5, vec1[2]);
         ASSERT_EQ(6, vec1[3]);
-        ASSERT_EQ(vec1.Size(), 4);
-        ASSERT_EQ(vec1.Capacity(), 4);
+        ASSERT_EQ(vec1.size(), 4);
+        ASSERT_EQ(vec1.capacity(), 4);
 
-        // PushBack forwards to Insert(vec1.Size(), vec4)
-        vec1.PushBack(vec4);
+        // push_back forwards to insert(vec1.size(), vec4)
+        vec1.push_back(vec4);
         ASSERT_EQ(1, vec1[0]);
         ASSERT_EQ(2, vec1[1]);
         ASSERT_EQ(5, vec1[2]);
@@ -241,31 +242,31 @@ namespace container_tests {
         ASSERT_EQ(7, vec1[4]);
         ASSERT_EQ(8, vec1[5]);
 
-        ASSERT_EQ(vec1.Size(), 6);
-        ASSERT_EQ(vec1.Capacity(), 12);
+        ASSERT_EQ(vec1.size(), 6);
+        ASSERT_EQ(vec1.capacity(), 12);
     }
 
     TEST(VectorTests, VectorEraseElementTest)
     {
-        Vector<int> vec;
+        dynamic_vector<int> vec;
         vec = {1, 2, 3, 4, 5, 6};
 
         // Erase 1
-        auto it = vec.Erase(vec.begin());
-        ASSERT_EQ(5, vec.Size());
+        auto it = vec.erase(vec.begin());
+        ASSERT_EQ(5, vec.size());
         ASSERT_EQ(2, vec[0]);
         ASSERT_EQ(vec[0], *it);
 
         // Erase 6
         auto end_it = vec.end() - 1;
-        end_it = vec.Erase(end_it);
+        end_it = vec.erase(end_it);
         ASSERT_EQ(vec.end(), end_it);
         ASSERT_EQ(5, vec[3]);
 
         // Erase 3
-        Vector<int>::iterator middle(&vec[1]);
-        middle = vec.Erase(middle);
-        ASSERT_EQ(3, vec.Size());
+        dynamic_vector<int>::iterator middle(&vec[1]);
+        middle = vec.erase(middle);
+        ASSERT_EQ(3, vec.size());
         ASSERT_EQ(4, *middle);
 
         // Iterate
@@ -278,17 +279,17 @@ namespace container_tests {
 
     TEST(VectorTests, EmplaceTest)
     {
-        Vector<VectorTestDummy> vec;
+        dynamic_vector<VectorTestDummy> vec;
 
-        vec.Emplace(0, 3);
-        vec.Emplace(0, VectorTestDummy(0));
-        vec.Emplace(1, 2);
-        vec.Emplace(1, VectorTestDummy(1));
+        vec.emplace(0, 3);
+        vec.emplace(0, VectorTestDummy(0));
+        vec.emplace(1, 2);
+        vec.emplace(1, VectorTestDummy(1));
 
-        ASSERT_EQ(4, vec.Size());
-        ASSERT_EQ(4, vec.Capacity());
+        ASSERT_EQ(4, vec.size());
+        ASSERT_EQ(4, vec.capacity());
 
-        for (size_t i = 0; i < vec.Size(); i++) {
+        for (size_t i = 0; i < vec.size(); i++) {
             ASSERT_EQ(i, vec[i].Value());
         }
     }
@@ -311,10 +312,10 @@ namespace container_tests {
             int* m_Counter;
         };
 
-        Vector<DtorDummy>* vec = new Vector<DtorDummy>;
+        dynamic_vector<DtorDummy>* vec = new dynamic_vector<DtorDummy>;
 
         for (int i = 0; i < 10; i++) {
-            vec->EmplaceBack(&destroyed);
+            vec->emplace_back(&destroyed);
         }
 
         delete vec;
@@ -324,32 +325,32 @@ namespace container_tests {
 
     TEST(VectorTests, CopyAssignmentOperatorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        Vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
 
         // Copy Assignment
         vec1 = vec2;
 
-        for (auto i = 0; i < vec1.Size(); i++) {
+        for (auto i = 0; i < vec1.size(); i++) {
             ASSERT_EQ(vec1[i], vec2[i]);
         }
     }
 
     TEST(VectorTests, MoveAssignmentOperatorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        Vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
 
         // Move Assign a vector temporary into vec2
-        vec2 = Vector<std::string>(MemorySystem::GetRootHeapZone(), {"One", "Two"});
+        vec2 = dynamic_vector<std::string>(MemorySystem::GetRootHeapZone(), {"One", "Two"});
         ASSERT_EQ("One", vec2[0]);
         ASSERT_EQ("Two", vec2[1]);
     }
 
     TEST(VectorTests, CopyContructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        Vector<std::string> vec2(vec1);
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(vec1);
 
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
@@ -357,33 +358,33 @@ namespace container_tests {
 
     TEST(VectorTests, MoveContructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        Vector<std::string> vec2(std::move(vec1));
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(std::move(vec1));
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
 
-        vec1.PushBack("Buzz");
-        ASSERT_EQ(1, vec1.Size());
+        vec1.push_back("Buzz");
+        ASSERT_EQ(1, vec1.size());
 
-        Vector<std::string> vec3(
-            Vector<std::string>(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"}));
+        dynamic_vector<std::string> vec3(
+            dynamic_vector<std::string>(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
         ASSERT_EQ("Baz", vec3[1]);
     }
 
     TEST(VectorTests, ResizeTest)
     {
-        Vector<int> vec(MemorySystem::GetRootHeapZone(), 10);
-        ASSERT_EQ(10, vec.Capacity());
-        ASSERT_EQ(10, vec.Size());
+        dynamic_vector<int> vec(MemorySystem::GetRootHeapZone(), 10);
+        ASSERT_EQ(10, vec.capacity());
+        ASSERT_EQ(10, vec.size());
 
         for (auto element : vec) {
             ASSERT_EQ(0, element);
         }
 
-        vec.Resize(20, 1);
-        ASSERT_EQ(20, vec.Capacity());
-        ASSERT_EQ(20, vec.Size());
+        vec.resize(20, 1);
+        ASSERT_EQ(20, vec.capacity());
+        ASSERT_EQ(20, vec.size());
 
         auto sum = 0;
         for (auto element : vec) {
@@ -392,7 +393,7 @@ namespace container_tests {
         ASSERT_EQ(sum, 10);
 
         // Attempt to reduce size
-        vec.Resize(10);
+        vec.resize(10);
 
         sum = 0;
         for (auto element : vec) {
@@ -400,40 +401,53 @@ namespace container_tests {
         }
         ASSERT_EQ(sum, 0);
 
-        vec.Resize(0);
-        ASSERT_EQ(0, vec.Size());
-        ASSERT_EQ(0, vec.Capacity());
+        vec.resize(0);
+        ASSERT_EQ(0, vec.size());
+        ASSERT_EQ(0, vec.capacity());
     }
 
     TEST(VectorTests, ReserveTests)
     {
-        Vector<int> vec;
-        vec.Reserve(10);
-        ASSERT_EQ(10, vec.Capacity());
-        ASSERT_EQ(0, vec.Size());
+        dynamic_vector<int> vec;
+        vec.reserve(10);
+        ASSERT_EQ(10, vec.capacity());
+        ASSERT_EQ(0, vec.size());
 
-        vec.PushBack(2);
-        vec.PushBack(1);
+        vec.push_back(2);
+        vec.push_back(1);
 
         // Attempt to reduce capacity
-        vec.Reserve(1);
-        ASSERT_EQ(1, vec.Capacity());
-        ASSERT_EQ(1, vec.Size());
-        ASSERT_EQ(2, vec.Front());
+        vec.reserve(1);
+        ASSERT_EQ(1, vec.capacity());
+        ASSERT_EQ(1, vec.size());
+        ASSERT_EQ(2, vec.front());
 
         // Attempt to eliminate capacity
-        vec.Reserve(0);
-        ASSERT_EQ(0, vec.Capacity());
-        ASSERT_EQ(0, vec.Size());
+        vec.reserve(0);
+        ASSERT_EQ(0, vec.capacity());
+        ASSERT_EQ(0, vec.size());
     }
 
     TEST(VectorTests, ValueInitializingConstructorTest)
     {
-        Vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
 
-        for (size_t i = 0; i < vec1.Size(); i++) {
+        for (size_t i = 0; i < vec1.size(); i++) {
             ASSERT_EQ("Foo", vec1[i]);
         }
     }
+
+    TEST(VectorTests, StdSpanConstruction)
+    {
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
+
+        std::span testSpan(vec1);
+
+        for(size_t i = 0; i < vec1.size(); i++)
+        {
+            ASSERT_EQ(testSpan[i], vec1[i]);
+        }
+    }
+
 
 } // namespace container_tests

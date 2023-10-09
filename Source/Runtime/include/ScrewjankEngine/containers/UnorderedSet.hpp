@@ -315,7 +315,7 @@ namespace sj {
         Hasher m_HashFunctor;
 
         /** Entries of the hash set */
-        Vector<Element> m_Elements;
+        dynamic_vector<Element> m_Elements;
 
         /** Mask used to assign hashed keys to buckets */
         size_t m_IndexMask;

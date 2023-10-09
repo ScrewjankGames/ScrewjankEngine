@@ -52,7 +52,7 @@ namespace sj
     inline UnorderedSet<T, Hasher>::UnorderedSet(UnorderedSet<T, Hasher>&& other) noexcept
         : m_Elements(std::move(other.m_Elements))
     {
-        other.m_Elements.Resize(2, Element {s_SentinelElement});
+        other.m_Elements.resize(2, Element {s_SentinelElement});
         m_HashFunctor = other.m_HashFunctor;
 
         m_IndexMask = other.m_IndexMask;
@@ -255,7 +255,7 @@ namespace sj
     template <class T, class Hasher>
     inline void UnorderedSet<T, Hasher>::Clear()
     {
-        m_Elements.Clear();
+        m_Elements.clear();
         m_Count = 0;
     }
 
@@ -271,10 +271,10 @@ namespace sj
         }
 
         // Move the old element set into a temporary
-        Vector<Element> old_set(std::move(m_Elements));
+        dynamic_vector<Element> old_set(std::move(m_Elements));
 
         // Reserve enough space for the new capacity, plus one slot for the sentinel element
-        m_Elements.Resize(new_capacity + 1);
+        m_Elements.resize(new_capacity + 1);
         m_Elements[new_capacity] = s_SentinelElement;
 
         // Reset tracking data
@@ -300,7 +300,7 @@ namespace sj
     template <class T, class Hasher>
     inline size_t UnorderedSet<T, Hasher>::Capacity() const
     {
-        return m_Elements.Capacity() - 1;
+        return m_Elements.capacity() - 1;
     }
 
     template <class T, class Hasher>

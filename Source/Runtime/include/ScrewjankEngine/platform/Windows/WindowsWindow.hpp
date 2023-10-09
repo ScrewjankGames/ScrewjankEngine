@@ -46,7 +46,7 @@ namespace sj {
         /**
          * @return Extensions Vulkan API must support to support this window.   
          */
-        Vector<const char*> GetRequiredVulkanExtenstions() const;
+        dynamic_vector<const char*> GetRequiredVulkanExtenstions() const;
 
         /**
          * @return The Vulkan presentation surface for this window

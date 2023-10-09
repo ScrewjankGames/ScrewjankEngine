@@ -130,21 +130,21 @@ namespace sj
         create_info.ppEnabledLayerNames = nullptr;
 
         // Get extension count and names
-        Vector<const char*> extenstions = GetRequiredExtenstions();
-        create_info.enabledExtensionCount = (uint32_t)extenstions.Size();
+        dynamic_vector<const char*> extenstions = GetRequiredExtenstions();
+        create_info.enabledExtensionCount = (uint32_t)extenstions.size();
         create_info.ppEnabledExtensionNames = extenstions.Data();
 
         // Compile-time check for adding validation layers
         if constexpr (g_IsDebugBuild) 
         {
-            static Vector<const char*> layers( 
+            static dynamic_vector<const char*> layers( 
                 MemorySystem::GetRootHeapZone(),
                 {"VK_LAYER_KHRONOS_validation"}
             );
 
             EnableValidationLayers(layers);
 
-            create_info.enabledLayerCount = (uint32_t)layers.Size();
+            create_info.enabledLayerCount = (uint32_t)layers.size();
             create_info.ppEnabledLayerNames = layers.Data();
         }
 
@@ -238,15 +238,15 @@ namespace sj
 
     }
 
-    Vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
+    dynamic_vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
     {
-        Vector<const char*> extensions_vector;
+        dynamic_vector<const char*> extensions_vector;
 
         extensions_vector = Window::GetInstance()->GetRequiredVulkanExtenstions();
 
         if constexpr (g_IsDebugBuild)
         {
-            extensions_vector.PushBack(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            extensions_vector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
         return extensions_vector;
@@ -304,7 +304,7 @@ namespace sj
     }
 
     void
-    VulkanRendererAPI::EnableValidationLayers(const Vector<const char*>& required_validation_layers)
+    VulkanRendererAPI::EnableValidationLayers(const dynamic_vector<const char*>& required_validation_layers)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -361,7 +361,7 @@ namespace sj
     void VulkanRendererAPI::CreateFrameBuffers()
     {
         std::span<VkImageView> imageViews = m_SwapChain.GetImageViews();
-        m_SwapChainBuffers.Resize(imageViews.size());
+        m_SwapChainBuffers.resize(imageViews.size());
 
         int i = 0;
         for(VkImageView& view : imageViews)

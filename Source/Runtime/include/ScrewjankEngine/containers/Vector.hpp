@@ -14,132 +14,8 @@
 
 namespace sj {
 
-    /**
-     * Class to define both const and non-const iterators over vectors
-     *  @tparam Vector_t The cv-qualified type of vector being iterated over
-     */
-    template <class Vector_t>
-    class VectorIteratorBase
-    {
-      public:
-        // Using declarations for STL compatibility
-        using iterator_category = std::contiguous_iterator_tag;
-        using value_type = std::conditional_t<std::is_const<Vector_t>::value,
-                                              typename const Vector_t::value_type,
-                                              typename Vector_t::value_type>;
-        using pointer = std::conditional_t<std::is_const<Vector_t>::value,
-                                           typename Vector_t::const_pointer,
-                                           typename Vector_t::pointer>;
-        using const_pointer = typename Vector_t::const_pointer;
-
-        using reference = std::conditional_t<std::is_const<Vector_t>::value,
-                                             typename Vector_t::const_reference,
-                                             typename Vector_t::reference>;
-
-        using const_reference = typename Vector_t::const_reference;
-
-        using difference_type = typename Vector_t::difference_type;
-
-      public:
-        /** Constructor */
-        VectorIteratorBase(pointer element) noexcept : m_CurrElement(element)
-        {
-        }
-
-        reference operator[](int idx) const
-        {
-            return *this + idx;
-        }
-
-        /** Dereference operator overload */
-        [[nodiscard]] reference operator*() const
-        {
-            return *m_CurrElement;
-        }
-
-        /** Arrow operator overload */
-        [[nodiscard]] pointer operator->() const
-        {
-            return m_CurrElement;
-        }
-
-        /** Equality comparison operator */
-        bool operator==(const VectorIteratorBase& other) const
-        {
-            return m_CurrElement == other.m_CurrElement;
-        }
-
-        /** Inequality comparison operator */
-        bool operator!=(const VectorIteratorBase& other) const
-        {
-            return !(*this == other);
-        }
-
-        /** Addition operator overload */
-        VectorIteratorBase operator+(size_t num) const
-        {
-            return VectorIteratorBase(m_CurrElement + num);
-        }
-
-        /** Addition operator overload */
-        VectorIteratorBase operator-(size_t num) const
-        {
-            return VectorIteratorBase(m_CurrElement - num);
-        }
-
-        /** Pre-increment operator overload */
-        VectorIteratorBase& operator++()
-        {
-            ++m_CurrElement;
-            return *this;
-        }
-
-        /** Post-increment operator overload */
-        VectorIteratorBase operator++(int)
-        {
-            VectorIteratorBase tmp(*this);
-            this->operator++();
-            return tmp;
-        }
-
-        /** Pre-decrement operator overload */
-        VectorIteratorBase& operator--()
-        {
-            --m_CurrElement;
-            return *this;
-        }
-
-        /** Post-decrement operator overload */
-        VectorIteratorBase& operator--(int)
-        {
-            VectorIteratorBase tmp(*this);
-            --*this;
-            return tmp;
-        }
-
-        /** Compound assignment operator overload */
-        VectorIteratorBase& operator+=(size_t val)
-        {
-            m_CurrElement += val;
-            return *this;
-        }
-
-        /** Compound assignment operator overload */
-        VectorIteratorBase& operator-=(size_t val)
-        {
-            m_CurrElement -= val;
-            return *this;
-        }
-
-        friend auto operator<=>(VectorIteratorBase, VectorIteratorBase) = default;
-
-      private:
-        pointer m_CurrElement;
-
-    };
-
     template <class T>
-    class Vector
+    class dynamic_vector
     {
       public:
         // STL type aliases
@@ -153,72 +29,71 @@ namespace sj {
 
         // Iterator info
         using iterator_concept = std::contiguous_iterator_tag;
-        using iterator = typename VectorIteratorBase<Vector<T>>;
-        using const_iterator = typename VectorIteratorBase<const Vector<T>>;
+        using iterator = T*;
+        using const_iterator = const T*;
 
-        
         /**
          * Implicit HeapZone Constructors
          * Uses MemorySystem::CurrentHeapZone to allocate memory
          */
-        Vector();
-        Vector(size_t count);
-        Vector(size_t count, const T& value);
-        Vector(std::initializer_list<T> list);
+        dynamic_vector();
+        dynamic_vector(size_t count);
+        dynamic_vector(size_t count, const T& value);
+        dynamic_vector(std::initializer_list<T> list);
 
         /**
          * Default Constructor
          * @param count The number of elements to default construct in this vector
          */
-        explicit Vector(HeapZone* heap_zone);
+        explicit dynamic_vector(HeapZone* heap_zone);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to default construct in this vector
          */
-        Vector(HeapZone* heap_zone, size_t count);
+        dynamic_vector(HeapZone* heap_zone, size_t count);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to construct in this vector
          * @param value The value to use when initializing constructed elements
          */
-        Vector(HeapZone* heap_zone, size_t count, const T& value);
+        dynamic_vector(HeapZone* heap_zone, size_t count, const T& value);
 
         /**
          * List initialization Constructor
          */
-        Vector(HeapZone* heap_zone, std::initializer_list<T> list);
+        dynamic_vector(HeapZone* heap_zone, std::initializer_list<T> list);
 
         /**
          * Copy Constructor
          */
-        Vector(const Vector<T>& other);
+        dynamic_vector(const dynamic_vector<T>& other);
 
         /**
          * Move Constructor
          */
-        Vector(Vector<T>&& other) noexcept;
+        dynamic_vector(dynamic_vector<T>&& other) noexcept;
 
         /**
          * Destructor
          */
-        ~Vector();
+        ~dynamic_vector();
 
         /**
          * Copy assignment from other vector
          */
-        Vector<T>& operator=(const Vector<T>& other);
+        dynamic_vector<T>& operator=(const dynamic_vector<T>& other);
 
         /**
          * Move assignment from other vector
          */
-        Vector<T>& operator=(Vector<T>&& other) noexcept;
+        dynamic_vector<T>& operator=(dynamic_vector<T>&& other) noexcept;
 
         /**
          * Assignment from initializer list
          */
-        Vector<T>& operator=(std::initializer_list<T> list);
+        dynamic_vector<T>& operator=(std::initializer_list<T> list);
 
         /** Array Index Operator */
         T& operator[](const size_t index);
@@ -226,89 +101,75 @@ namespace sj {
         /** Array Index Operator */
         const T& operator[](const size_t index) const;
 
-        /** Bounds-checked element access */
-        T& At(const size_t index);
-
-        /** Bounds-checked element access */
-        const T& At(const size_t index) const;
+        auto&& at(this auto&& self, size_t index);
 
         /**
          * @return The first element in the vector
          */
-        T& Front();
+        auto&& front(this auto&& self);
 
         /**
-         * @return The first element in the vector
+         * @return The last element in the vector
          */
-        const T& Front() const;
-
-        /**
-         * @return The first element in the vector
-         */
-        T& Back();
-
-        /**
-         * @return The first element in the vector
-         */
-        const T& Back() const;
+        auto&& back(this auto&& self);
 
         /**
          * Inserts a new element onto the end of the array
          * @note Iterators are invalidated if the array is resized
          */
-        void PushBack(const T& value);
+        void push_back(const T& value);
 
         /**
          * Pushes another vector onto the back of this vector
          */
-        void PushBack(const Vector<T>& other);
+        void push_back(const dynamic_vector<T>& other);
 
         /**
          * Constructs an element into the array
          * @return A reference to the element inserted
          */
         template <class... Args>
-        T& EmplaceBack(Args&&... args);
+        T& emplace_back(Args&&... args);
 
         /**
          * Removes and destructs element at the back of the array
          */
-        void PopBack();
+        void pop_back();
 
         /**
          * Removes and destructs element at the back of the array
          */
-        iterator Insert(const size_t index, const T& value);
+        iterator insert(const size_t index, const T& value);
 
         /**
          * Copies an entire other vector into this vector, starting at provided index
          */
-        void Insert(const size_t index, const Vector& other);
+        void insert(const size_t index, const dynamic_vector& other);
 
         /**
          * Removes and destructs element at the back of the array
          */
         template <class... Args>
-        void Emplace(const size_t index, Args&&... args);
+        void emplace(const size_t index, Args&&... args);
 
         /**
          * Removes an element from the vector
          * @param pos An iterator to the elment to be erased
          * @return An iterator to the next element after pos
          */
-        iterator Erase(iterator pos);
+        iterator erase(iterator pos);
 
         /**
          * @return The number of elements actively stored in the array
          */
-        size_t Size() const;
+        size_t size() const;
 
         /**
          * Grows vector to requrested new_capacity, copies current data over, and default
          * initializes empty indices
          * @param new_size The new size of the vector
          */
-        void Resize(size_t new_size);
+        void resize(size_t new_size);
 
         /**
          * Grows vector to requrested new_capacity, copies current data over, and default
@@ -316,48 +177,34 @@ namespace sj {
          * @param new_size The new size of the vector
          * @param value The value to initialize newly added elements with
          */
-        void Resize(size_t new_size, const T& value);
+        void resize(size_t new_size, const T& value);
 
         /**
-         * Changes the capacity of the vector without affecting Vector.Size()
+         * Changes the capacity of the vector without affecting Vector.size()
          * @param new_capacity The new number of elements you would like the vector to have
          */
-        void Reserve(size_t new_capacity);
+        void reserve(size_t new_capacity);
 
         /**
          * @return The number of elements the vector can currently contain
          */
-        size_t Capacity() const;
+        size_t capacity() const;
 
         /**
          * Clear the contents of this vector
          */
-        void Clear();
+        void clear();
 
         /**
          * @return Whether or not the vector currently contains elements  
          */
-        bool Empty();
+        bool empty();
 
         /**
          * Allows access to the raw C-Style array
          */
-        auto&& Data(this auto&& self) { return self.m_Data; }
+        auto&& Data(this auto&& self);
 
-      private:
-        /** Current size of the dynamic array */
-        size_t m_Size;
-
-        /** Current capacity of the dynamic array, not including the sentinel element */
-        size_t m_Capacity;
-
-        /** Allocator used to service this vector */
-        HeapZone* m_BackingZone;
-
-        /** Pointer to the data buffer */
-        T* m_Data;
-
-      public:
         /**
          * Function to allow use in ranged based for loops
          */
@@ -377,6 +224,20 @@ namespace sj {
          * Function to allow use in ranged based for loops
          */
         const_iterator end() const;
+
+      private:
+        /** Current size of the dynamic array */
+        size_t m_Size;
+
+        /** Current capacity of the dynamic array, not including the sentinel element */
+        size_t m_Capacity;
+
+        /** Allocator used to service this vector */
+        HeapZone* m_BackingZone;
+
+        /** Pointer to the data buffer */
+        T* m_Data;
+
     };
 
 } // namespace sj

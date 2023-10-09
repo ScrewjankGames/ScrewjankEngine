@@ -2,53 +2,51 @@
 
 namespace sj
 {
-
-
     template <class T>
-    inline Vector<T>::Vector() : Vector(MemorySystem::GetCurrentHeapZone())
+    inline dynamic_vector<T>::dynamic_vector() : dynamic_vector(MemorySystem::GetCurrentHeapZone())
     {
     }
 
     template <class T>
-    inline Vector<T>::Vector(size_t count) : Vector(MemorySystem::GetCurrentHeapZone(), count)
+    inline dynamic_vector<T>::dynamic_vector(size_t count) : dynamic_vector(MemorySystem::GetCurrentHeapZone(), count)
     {
     }
 
     template <class T>
-    inline Vector<T>::Vector(size_t count, const T& value)
-        : Vector(MemorySystem::GetCurrentHeapZone(), count, value)
+    inline dynamic_vector<T>::dynamic_vector(size_t count, const T& value)
+        : dynamic_vector(MemorySystem::GetCurrentHeapZone(), count, value)
     {
     }
 
     template <class T>
-    inline Vector<T>::Vector(std::initializer_list<T> list)
-        : Vector(MemorySystem::GetCurrentHeapZone(), list)
+    inline dynamic_vector<T>::dynamic_vector(std::initializer_list<T> list)
+        : dynamic_vector(MemorySystem::GetCurrentHeapZone(), list)
     {
     }
 
     template <class T>
-    inline Vector<T>::Vector(HeapZone* heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone)
         : m_Data(nullptr), m_BackingZone(heap_zone), m_Size(0), m_Capacity(0)
     {
     }
 
     template <class T>
-    inline Vector<T>::Vector(HeapZone* heap_zone, size_t count) : Vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, size_t count) : dynamic_vector(heap_zone)
     {
-        Resize(count);
+        resize(count);
     }
 
     template <class T>
-    inline Vector<T>::Vector(HeapZone* heap_zone, size_t count, const T& value) : Vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, size_t count, const T& value) : dynamic_vector(heap_zone)
     {
-        Resize(count, value);
+        resize(count, value);
     }
 
     template <class T>
-    inline Vector<T>::Vector(HeapZone* heap_zone, std::initializer_list<T> list) : Vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, std::initializer_list<T> list) : dynamic_vector(heap_zone)
     {
         // Make sure vector has space for size() elements
-        Reserve(list.size());
+        reserve(list.size());
 
         // Copy elements into m_Data
         size_t i = 0;
@@ -62,10 +60,10 @@ namespace sj
     }
 
     template <class T>
-    inline Vector<T>::Vector(const Vector<T>& other)
+    inline dynamic_vector<T>::dynamic_vector(const dynamic_vector<T>& other)
         : m_Data(nullptr), m_BackingZone(other.m_BackingZone), m_Size(0), m_Capacity(0)
     {
-        Reserve(other.m_Capacity);
+        reserve(other.m_Capacity);
 
         size_t i = 0;
         for (auto& elem : other)
@@ -74,11 +72,11 @@ namespace sj
             i++;
         }
 
-        m_Size = other.Size();
+        m_Size = other.size();
     }
 
     template <class T>
-    inline Vector<T>::Vector(Vector<T>&& other) noexcept
+    inline dynamic_vector<T>::dynamic_vector(dynamic_vector<T>&& other) noexcept
     {
         m_BackingZone = other.m_BackingZone;
         m_Data = other.m_Data;
@@ -92,10 +90,10 @@ namespace sj
     }
 
     template <class T>
-    inline Vector<T>::~Vector()
+    inline dynamic_vector<T>::~dynamic_vector()
     {
         // Call the destructor of each contained object
-        Clear();
+        clear();
 
         // Please don't leak memory
         if (m_Data != nullptr)
@@ -105,13 +103,13 @@ namespace sj
     }
 
     template <class T>
-    inline Vector<T>& Vector<T>::operator=(const Vector<T>& other)
+    inline dynamic_vector<T>& dynamic_vector<T>::operator=(const dynamic_vector<T>& other)
     {
-        Clear();
+        clear();
 
-        if (other.Size() > m_Capacity)
+        if (other.size() > m_Capacity)
         {
-            Resize(other.Size());
+            resize(other.size());
         }
 
         size_t i = 0;
@@ -121,15 +119,15 @@ namespace sj
             i++;
         }
 
-        m_Size = other.Size();
+        m_Size = other.size();
 
         return *this;
     }
 
     template <class T>
-    inline Vector<T>& Vector<T>::operator=(Vector<T>&& other) noexcept
+    inline dynamic_vector<T>& dynamic_vector<T>::operator=(dynamic_vector<T>&& other) noexcept
     {
-        Clear();
+        clear();
 
         // Steal the other object's member variables
         m_Size = other.m_Size;
@@ -152,15 +150,15 @@ namespace sj
     }
 
     template <class T>
-    inline Vector<T>& Vector<T>::operator=(std::initializer_list<T> list)
+    inline dynamic_vector<T>& dynamic_vector<T>::operator=(std::initializer_list<T> list)
     {
         // Destroy all the elements currently in the list
-        Clear();
+        clear();
 
         // Ensure the vector is large enough to fit the new list
         if (list.size() > m_Capacity)
         {
-            Reserve(list.size());
+            reserve(list.size());
         }
 
         size_t i = 0;
@@ -176,71 +174,47 @@ namespace sj
     }
 
     template <class T>
-    inline T& Vector<T>::operator[](const size_t index)
+    inline T& dynamic_vector<T>::operator[](const size_t index)
     {
         return m_Data[index];
     }
 
     template <class T>
-    inline const T& Vector<T>::operator[](const size_t index) const
+    inline const T& dynamic_vector<T>::operator[](const size_t index) const
     {
         return m_Data[index];
     }
 
     template <class T>
-    inline T& Vector<T>::At(const size_t index)
+    inline auto&& dynamic_vector<T>::at(this auto&& self, size_t index)
     {
-        SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
-
-        return m_Data[index];
+        SJ_ASSERT(self.m_Size > 0, "Cannot access front of an empty vector");
+        return self.m_Data[index];
     }
 
     template <class T>
-    inline const T& Vector<T>::At(const size_t index) const
+    inline auto&& dynamic_vector<T>::front(this auto&& self)
     {
-        SJ_ASSERT(index >= 0 && index < m_Size, "Index out of bounds");
+        SJ_ASSERT(self.m_Size > 0, "Cannot access front of an empty vector");
+        return self.m_Data[0];
+    }
+    
+    template <class T>
+    inline auto&& dynamic_vector<T>::back(this auto&& self)
+    {
+        SJ_ASSERT(self.m_Size > 0, "Cannot access back of empty vector");
 
-        return m_Data[index];
+        return self.m_Data[self.m_Size - 1];
     }
 
     template <class T>
-    inline T& Vector<T>::Front()
-    {
-        SJ_ASSERT(m_Size > 0, "Cannot access front of an empty vector");
-        return m_Data[0];
-    }
-
-    template <class T>
-    inline const T& Vector<T>::Front() const
-    {
-        SJ_ASSERT(m_Size > 0, "Cannot access front of an empty vector");
-        return m_Data[0];
-    }
-
-    template <class T>
-    inline T& Vector<T>::Back()
-    {
-        SJ_ASSERT(m_Size > 0, "Cannot access back of empty vector");
-
-        return m_Data[m_Size - 1];
-    }
-
-    template <class T>
-    inline const T& Vector<T>::Back() const
-    {
-        SJ_ASSERT(m_Size > 0, "Cannot access back of empty vector");
-
-        return m_Data[m_Size - 1];
-    }
-
-    template <class T>
-    inline void Vector<T>::PushBack(const T& value)
+    inline void dynamic_vector<T>::push_back(const T& value)
     {
         if (m_Size >= m_Capacity)
         {
             // Array needs to grow
             size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
-            Reserve(new_capacity);
+            reserve(new_capacity);
         }
 
         // Copy element into array
@@ -252,14 +226,14 @@ namespace sj
     }
 
     template <class T>
-    inline void Vector<T>::PushBack(const Vector<T>& other)
+    inline void dynamic_vector<T>::push_back(const dynamic_vector<T>& other)
     {
-        // Insert vector at end of this vector
-        Insert(m_Size, other);
+        // insert vector at end of this vector
+        insert(m_Size, other);
     }
 
     template <class T>
-    inline void Vector<T>::PopBack()
+    inline void dynamic_vector<T>::pop_back()
     {
         SJ_ASSERT(m_Size > 0, "Cannot pop empty vector");
 
@@ -269,18 +243,18 @@ namespace sj
     }
 
     template <class T>
-    inline typename Vector<T>::iterator Vector<T>::Insert(const size_t index, const T& value)
+    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::insert(const size_t index, const T& value)
     {
         SJ_ASSERT(index >= 0 && index <= m_Size, "Insertion index is invalid.");
 
-        // If you're pushing into the final spot, just resort to PushBack
+        // If you're pushing into the final spot, just resort to push_back
         if (index == m_Size)
         {
-            PushBack(value);
+            push_back(value);
             return end() - 1;
         }
 
-        Vector<T>::iterator it(nullptr);
+        dynamic_vector<T>::iterator it(nullptr);
 
         if (m_Size < m_Capacity)
         {
@@ -293,7 +267,7 @@ namespace sj
                 new (&m_Data[i]) T(m_Data[i - 1]);
             }
 
-            // Insert value into buffer
+            // insert value into buffer
             m_Data[index] = value;
             it = &m_Data[index];
         }
@@ -301,7 +275,7 @@ namespace sj
         {
             // Array needs to grow, place new element in during buffer copy process
 
-            // if size was zero, we'd have allready fallen back to PushBack
+            // if size was zero, we'd have allready fallen back to push_back
             size_t new_capacity = m_Capacity * 2;
 
             // Allocate a new buffer
@@ -341,12 +315,12 @@ namespace sj
     }
 
     template <class T>
-    inline void Vector<T>::Insert(const size_t index, const Vector& other)
+    inline void dynamic_vector<T>::insert(const size_t index, const dynamic_vector& other)
     {
         SJ_ASSERT(index >= 0 && index <= m_Size, "Insertion index is invalid.");
 
-        size_t shift = other.Size();
-        if (m_Capacity >= m_Size + other.Size())
+        size_t shift = other.size();
+        if (m_Capacity >= m_Size + other.size())
         {
             // There is enough space in the vector to insert other without reallocating
 
@@ -357,17 +331,17 @@ namespace sj
             }
 
             // Move new data i
-            for (size_t i = 0; i < other.Size(); i++)
+            for (size_t i = 0; i < other.size(); i++)
             {
                 new (&m_Data[i + index]) T(other[i]);
             }
 
-            m_Size += other.Size();
+            m_Size += other.size();
         }
         else
         {
             // Allocate a new buffer with extra space
-            size_t new_capacity = (m_Capacity + other.Capacity()) * 2;
+            size_t new_capacity = (m_Capacity + other.capacity()) * 2;
 
             T* new_buffer = (T*)m_BackingZone->Allocate(sizeof(T) * new_capacity, alignof(T));
 
@@ -379,7 +353,7 @@ namespace sj
             }
 
             // Copy new values into new buffer
-            for (size_t j = 0; j < other.Size(); i++, j++)
+            for (size_t j = 0; j < other.size(); i++, j++)
             {
                 new (&new_buffer[i]) T(other[j]);
             }
@@ -397,21 +371,21 @@ namespace sj
             }
 
             m_Data = new_buffer;
-            m_Size += other.Size();
+            m_Size += other.size();
             m_Capacity = new_capacity;
         }
     }
 
     template <class T>
     template <class... Args>
-    inline void Vector<T>::Emplace(const size_t index, Args&&... args)
+    inline void dynamic_vector<T>::emplace(const size_t index, Args&&... args)
     {
         SJ_ASSERT(index >= 0 && index <= m_Size, "Emplacement index is invalid.");
 
-        // If you're pushing into the final spot, just resort to PushBack
+        // If you're pushing into the final spot, just resort to push_back
         if (index == m_Size)
         {
-            EmplaceBack(std::forward<Args>(args)...);
+            emplace_back(std::forward<Args>(args)...);
             return;
         }
 
@@ -423,14 +397,14 @@ namespace sj
                 new (&m_Data[i]) T(std::move(m_Data[i - 1]));
             }
 
-            // Insert value into buffer
+            // insert value into buffer
             new (&m_Data[index]) T(std::forward<Args>(args)...);
         }
         else
         {
             // Array needs to grow, place new element in during buffer copy process
 
-            // if size was zero, we'd have allready fallen back to PushBack
+            // if size was zero, we'd have allready fallen back to push_back
             size_t new_capacity = m_Capacity * 2;
 
             // Allocate a new buffer
@@ -469,12 +443,12 @@ namespace sj
 
     template <class T>
     template <class... Args>
-    inline T& Vector<T>::EmplaceBack(Args&&... args)
+    inline T& dynamic_vector<T>::emplace_back(Args&&... args)
     {
         if (m_Size >= m_Capacity)
         {
             size_t new_capacity = (m_Capacity != 0) ? m_Capacity * 2 : 1;
-            Reserve(new_capacity);
+            reserve(new_capacity);
         }
 
         // Construct element in allocated space
@@ -488,7 +462,7 @@ namespace sj
     }
 
     template <class T>
-    inline typename Vector<T>::iterator Vector<T>::Erase(iterator pos)
+    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::erase(iterator pos)
     {
         // Destroy contained element
         auto& element = *pos;
@@ -508,21 +482,21 @@ namespace sj
     }
 
     template <class T>
-    inline size_t Vector<T>::Size() const
+    inline size_t dynamic_vector<T>::size() const
     {
         return m_Size;
     }
 
     template <class T>
-    inline void Vector<T>::Resize(size_t new_size)
+    inline void dynamic_vector<T>::resize(size_t new_size)
     {
-        Resize(new_size, T {});
+        resize(new_size, T {});
     }
 
     template <class T>
-    inline void Vector<T>::Resize(size_t new_size, const T& value)
+    inline void dynamic_vector<T>::resize(size_t new_size, const T& value)
     {
-        Reserve(new_size);
+        reserve(new_size);
 
         if (new_size > m_Size)
         {
@@ -536,7 +510,7 @@ namespace sj
     }
 
     template <class T>
-    inline void Vector<T>::Reserve(size_t new_capacity)
+    inline void dynamic_vector<T>::reserve(size_t new_capacity)
     {
         if (new_capacity == m_Capacity)
         {
@@ -580,13 +554,13 @@ namespace sj
     }
 
     template <class T>
-    inline size_t Vector<T>::Capacity() const
+    inline size_t dynamic_vector<T>::capacity() const
     {
         return m_Capacity;
     }
 
     template <class T>
-    inline void Vector<T>::Clear()
+    inline void dynamic_vector<T>::clear()
     {
         for (auto& element : *this)
         {
@@ -597,32 +571,38 @@ namespace sj
     }
 
     template <class T>
-    inline bool Vector<T>::Empty()
+    inline bool dynamic_vector<T>::empty()
     {
-        return Size() != 0;
+        return size() != 0;
+    }
+    
+    template <class T>
+    inline auto&& dynamic_vector<T>::Data(this auto&& self)
+    {
+        return self.m_Data;
     }
 
     template <class T>
-    inline typename Vector<T>::iterator Vector<T>::begin()
+    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::begin()
     {
         return iterator(m_Data);
     }
 
     template <class T>
-    inline typename Vector<T>::const_iterator Vector<T>::begin() const
+    inline typename dynamic_vector<T>::const_iterator dynamic_vector<T>::begin() const
     {
         return const_iterator(m_Data);
     }
 
     template <class T>
-    inline typename Vector<T>::iterator Vector<T>::end()
+    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::end()
     {
         // return one past the last element
         return iterator(m_Data + m_Size);
     }
 
     template <class T>
-    inline typename Vector<T>::const_iterator Vector<T>::end() const
+    inline typename dynamic_vector<T>::const_iterator dynamic_vector<T>::end() const
     {
         return const_iterator(m_Data + m_Size);
     }

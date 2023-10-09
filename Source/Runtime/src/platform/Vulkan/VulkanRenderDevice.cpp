@@ -70,7 +70,7 @@ namespace sj {
         // Check extension support
         uint32_t extension_count;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-        Vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
+        dynamic_vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
                                                       extension_count);
         vkEnumerateDeviceExtensionProperties(device,
                                              nullptr,
@@ -89,7 +89,7 @@ namespace sj {
         // Check swap chain support
         VulkanSwapChain::SwapChainParams params =
             VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
-        bool swap_chain_supported = !params.Formats.Empty() && !params.PresentModes.Empty();
+        bool swap_chain_supported = !params.Formats.empty() && !params.PresentModes.empty();
 
         return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
     }
@@ -104,7 +104,7 @@ namespace sj {
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
-        Vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), deviceCount);
+        dynamic_vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.Data());
         
         int best_score = -1; 
@@ -164,7 +164,7 @@ namespace sj {
             indices.PresentationFamilyIndex.value()
         };
 
-        Vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());
+        dynamic_vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());
         float queue_priorities = 1.0f;
         for (auto family : unique_queue_families)
         {
@@ -173,14 +173,14 @@ namespace sj {
             queue_create_info.queueFamilyIndex = family;
             queue_create_info.queueCount = 1;
             queue_create_info.pQueuePriorities = &queue_priorities;
-            queue_create_infos.EmplaceBack(queue_create_info);
+            queue_create_infos.emplace_back(queue_create_info);
         }
 
         VkPhysicalDeviceFeatures device_features = {};
 
         VkDeviceCreateInfo device_create_info = {};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.Size());
+        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
         device_create_info.pQueueCreateInfos = queue_create_infos.Data();
         device_create_info.enabledLayerCount = 0;
         device_create_info.pEnabledFeatures = &device_features;
@@ -203,7 +203,7 @@ namespace sj {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
-        Vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(), queue_count);
+        dynamic_vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(), queue_count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.Data());
 
         DeviceQueueFamilyIndices indices;
