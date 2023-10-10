@@ -134,7 +134,7 @@ namespace container_tests {
         ASSERT_EQ(vec1[0], vec1.at(0));
         ASSERT_EQ(vec1[0], vec1.front());
         ASSERT_EQ(vec1[2], vec1.back());
-
+        
 #ifdef SJ_DEBUG
         ASSERT_DEATH(vec1.at(-1), ".*");
 #endif // SJ_DEBUG

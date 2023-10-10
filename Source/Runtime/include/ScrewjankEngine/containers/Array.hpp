@@ -11,7 +11,7 @@
 namespace sj {
 
     template <class T, size_t N>
-    class Array
+    class array
     {
       public:
         // STL type aliases
@@ -27,14 +27,14 @@ namespace sj {
         /**
          * Constructor
          */
-        constexpr Array() = default;
+        constexpr array() = default;
 
         /**
          * Constructor
          * Allows Arrays to be braced-list initialized
          */
         template <class... Args>
-        constexpr Array(Args... list);
+        constexpr array(Args... list);
 
         /**
          * Array index operator
@@ -53,7 +53,7 @@ namespace sj {
         /**
          * Inequality comparison operator
          */
-        friend inline bool operator!=(const Array<T, N>& lhs, const Array<T, N>& rhs)
+        friend inline bool operator!=(const array<T, N>& lhs, const array<T, N>& rhs)
         {
             return !(lhs == rhs);
         }
@@ -61,72 +61,37 @@ namespace sj {
         /**
          * Bounds-checked element index operator
          */
-        constexpr reference At(size_type index);
-
-        /**
-         * Bounds-checked element index operator
-         */
-        constexpr const_reference At(size_type index) const;
+        constexpr auto&& at(this auto&& self, size_type index); // -> (const?) T&
 
         /**
          * Returns reference to element at index 0
          */
-        constexpr reference Front();
-
-        /**
-         * Returns const reference to the element at index 0
-         */
-        constexpr const_reference Front() const;
+        constexpr auto&& front(this auto&& self); // -> (const?) T&
 
         /**
          * Returns reference to last index of array
          */
-        constexpr reference Back();
-
-        /**
-         * Returns const reference to last index of array
-         */
-        constexpr const_reference Back() const;
+        constexpr auto&& back(this auto&& self); // -> (const?) T&
 
         /**
          * @return Size of the array
          */
-        constexpr size_type Capacity() const;
+        constexpr size_type capacity() const;
 
         /**
          * Returns pointer to backing raw C array, allows modification of elements
          */
-        constexpr T* Data();
+        constexpr auto&& data(this auto&& self); // -> (const?) T*
 
         /**
-         * Returns pointer to backing raw C array, disallows modification of elements
+         * Function to allow use in ranged based for loops
          */
-        constexpr const T* Data() const;
+        constexpr auto&& begin(this auto&& self); // -> (const?) T*
+        constexpr auto&& end(this auto&& self); // -> (const?) T*
 
       private:
         /** C style array this datastructure encapsulates */
-        T m_Array[N];
-
-      public:
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto begin() -> decltype(std::begin(m_Array));
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto begin() const -> decltype(std::begin(m_Array));
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto end() -> decltype(std::end(m_Array));
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        auto end() const -> decltype(std::end(m_Array));
+        T m_array[N];
     };
 } // namespace sj
 

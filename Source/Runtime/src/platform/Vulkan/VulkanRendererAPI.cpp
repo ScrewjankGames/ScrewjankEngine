@@ -21,7 +21,7 @@
 
 namespace sj
 {
-    VulkanRendererAPI::VulkanRendererAPI() : m_SwapChainBuffers(Renderer::WorkBuffer())
+    VulkanRendererAPI::VulkanRendererAPI() : m_swapChainBuffers(Renderer::WorkBuffer())
     {
 
     }
@@ -41,20 +41,20 @@ namespace sj
         CreateRenderSurface();
 
         // Select physical device and create and logical render device
-        m_RenderDevice.Init(m_RenderingSurface);
+        m_renderDevice.Init(m_renderingSurface);
 
         // Create the vulkan swap chain connected to the current window and device
-        m_SwapChain.Init(Window::GetInstance(),
-                         m_RenderDevice.GetPhysicalDevice(),
-                         m_RenderDevice.GetLogicalDevice(),
-                         m_RenderingSurface);
+        m_swapChain.Init(Window::GetInstance(),
+                         m_renderDevice.GetPhysicalDevice(),
+                         m_renderDevice.GetLogicalDevice(),
+                         m_renderingSurface);
 
         CreateRenderPass();
 
-        m_DefaultPipeline.Init(
-            m_RenderDevice.GetLogicalDevice(),
-            m_SwapChain.GetExtent(),
-            m_DefaultRenderPass,
+        m_defaultPipeline.Init(
+            m_renderDevice.GetLogicalDevice(),
+            m_swapChain.GetExtent(),
+            m_defaultRenderPass,
             "Data/Engine/Shaders/Default.vert.spv",
             "Data/Engine/Shaders/Default.frag.spv"
         );
@@ -63,9 +63,7 @@ namespace sj
 
         CreateCommandPool();
 
-        CreateCommandBuffer();
-
-        CreateSyncPrimitives();
+        m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_commandPool);
     }
 
     void VulkanRendererAPI::DeInit()
@@ -78,36 +76,33 @@ namespace sj
         if constexpr(g_IsDebugBuild)
         {
             auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
+                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
 
             SJ_ASSERT(messenger_destroy_func != nullptr,
                       "Failed to load Vulkan Debug messenger destroy function");
 
-            messenger_destroy_func(m_VkInstance, m_VkDebugMessenger, nullptr);
+            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, nullptr);
         }
 
-        vkDeviceWaitIdle(m_RenderDevice.GetLogicalDevice());
+        vkDeviceWaitIdle(m_renderDevice.GetLogicalDevice());
 
-        vkDestroySemaphore(m_RenderDevice.GetLogicalDevice(), m_ImageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(m_RenderDevice.GetLogicalDevice(), m_RenderFinishedSemaphore, nullptr);
-        vkDestroyFence(m_RenderDevice.GetLogicalDevice(), m_InFlightFence, nullptr);
+        m_frameData.DeInit(m_renderDevice.GetLogicalDevice());
 
+        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_commandPool, nullptr);
 
-        vkDestroyCommandPool(m_RenderDevice.GetLogicalDevice(), m_CommandPool, nullptr);
-
-        for(VkFramebuffer framebuffer : m_SwapChainBuffers)
+        for(VkFramebuffer framebuffer : m_swapChainBuffers)
         {
-            vkDestroyFramebuffer(m_RenderDevice.GetLogicalDevice(), framebuffer, nullptr);
+            vkDestroyFramebuffer(m_renderDevice.GetLogicalDevice(), framebuffer, nullptr);
         }
 
         // Important: All things attached to the device need to be torn down first
-        m_SwapChain.DeInit();
-        m_DefaultPipeline.DeInit();
-        vkDestroyRenderPass(m_RenderDevice.GetLogicalDevice(), m_DefaultRenderPass, nullptr);
-        m_RenderDevice.DeInit();
+        m_swapChain.DeInit();
+        m_defaultPipeline.DeInit();
+        vkDestroyRenderPass(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass, nullptr);
+        m_renderDevice.DeInit();
 
-        vkDestroySurfaceKHR(m_VkInstance, m_RenderingSurface, nullptr);
-        vkDestroyInstance(m_VkInstance, nullptr);
+        vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, nullptr);
+        vkDestroyInstance(m_vkInstance, nullptr);
     }
 
     void VulkanRendererAPI::InitializeVulkan()
@@ -150,7 +145,7 @@ namespace sj
 
 
         // Create the vulkan instance
-        VkResult result = vkCreateInstance(&create_info, nullptr, &m_VkInstance);
+        VkResult result = vkCreateInstance(&create_info, nullptr, &m_vkInstance);
         SJ_ASSERT(result == VK_SUCCESS,
                   "Vulkan instance creation failed with error code {}",
                   result);
@@ -176,51 +171,57 @@ namespace sj
     VkInstance VulkanRendererAPI::GetVkInstanceHandle() const
     {
         SJ_ASSERT(m_IsInitialized, "Attempting to access uninitialized VkInstance");
-        return m_VkInstance;
+        return m_vkInstance;
     }
 
     void VulkanRendererAPI::DrawFrame()
     {
-        vkWaitForFences(m_RenderDevice.GetLogicalDevice(),
+        const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
+        
+        VkCommandBuffer currCommandBuffer = m_frameData.commandBuffers[frameIdx];
+        VkFence currFence = m_frameData.inFlightFences[frameIdx];
+        VkSemaphore currImageAvailableSemaphore = m_frameData.imageAvailableSemaphores[frameIdx];
+        VkSemaphore currRenderFinishedSemaphore = m_frameData.renderFinishedSemaphores[frameIdx];
+
+        vkWaitForFences(m_renderDevice.GetLogicalDevice(),
                         1,
-                        &m_InFlightFence,
+                        &currFence,
                         VK_TRUE,
                         std::numeric_limits<uint64_t>::max());
 
         SJ_ENGINE_LOG_INFO("Kicking render frame");
 
-        vkResetFences(m_RenderDevice.GetLogicalDevice(), 1, &m_InFlightFence);
+        vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(m_RenderDevice.GetLogicalDevice(),
-                              m_SwapChain.GetSwapChain(),
+        vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
+                              m_swapChain.GetSwapChain(),
                               std::numeric_limits<uint64_t>::max(),
-                              m_ImageAvailableSemaphore,
+                              currImageAvailableSemaphore,
                               VK_NULL_HANDLE,
                               &imageIndex);
         
-        vkResetCommandBuffer(m_CommandBuffer, 0);
+        vkResetCommandBuffer(currCommandBuffer, 0);
 
-        RecordCommandBuffer(m_CommandBuffer, imageIndex);
+        RecordCommandBuffer(currCommandBuffer, imageIndex);
 
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphore};
+        VkSemaphore waitSemaphores[] = {currImageAvailableSemaphore};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_CommandBuffer;
+        submitInfo.pCommandBuffers = &currCommandBuffer;
 
-        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphore};
+        VkSemaphore signalSemaphores[] = {currRenderFinishedSemaphore};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        VkResult res =
-            vkQueueSubmit(m_RenderDevice.GetGraphicsQueue(), 1, &submitInfo, m_InFlightFence);
+        VkResult res = vkQueueSubmit(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFence);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
 
@@ -229,13 +230,14 @@ namespace sj
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = {m_SwapChain.GetSwapChain()};
+        VkSwapchainKHR swapChains[] = {m_swapChain.GetSwapChain()};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(m_RenderDevice.GetPresentationQueue(), &presentInfo);
+        vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
 
+        m_frameCount++;
     }
 
     dynamic_vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
@@ -254,13 +256,13 @@ namespace sj
 
     void VulkanRendererAPI::CreateRenderSurface()
     {
-        m_RenderingSurface = Window::GetInstance()->CreateWindowSurface(m_VkInstance);
+        m_renderingSurface = Window::GetInstance()->CreateWindowSurface(m_vkInstance);
     }
 
     void VulkanRendererAPI::CreateRenderPass()
     {
         VkAttachmentDescription colorAttachment {};
-        colorAttachment.format = m_SwapChain.GetImageFormat();
+        colorAttachment.format = m_swapChain.GetImageFormat();
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -295,10 +297,10 @@ namespace sj
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        VkResult res = vkCreateRenderPass(m_RenderDevice.GetLogicalDevice(),
+        VkResult res = vkCreateRenderPass(m_renderDevice.GetLogicalDevice(),
                                           &renderPassInfo,
                                           nullptr,
-                                          &m_DefaultRenderPass);
+                                          &m_defaultRenderPass);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create render pass.");
     }
@@ -310,8 +312,8 @@ namespace sj
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
         SJ_ASSERT(layer_count <= 64, "Overflow");
-        Array<VkLayerProperties, 64> available_layers;
-        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.Data());
+        array<VkLayerProperties, 64> available_layers;
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
         // Verify required validation layers are supported
         for (auto layer_name : required_validation_layers) {
@@ -349,19 +351,19 @@ namespace sj
 
         // Get extension function pointer
         auto create_function = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-            m_VkInstance,
+            m_vkInstance,
             "vkCreateDebugUtilsMessengerEXT");
 
         SJ_ASSERT(create_function != nullptr,
                   "Failed to load vulkan extension function vkCreateDebugUtilsMessengerEXT");
 
-        create_function(m_VkInstance, &messenger_create_info, nullptr, &m_VkDebugMessenger);
+        create_function(m_vkInstance, &messenger_create_info, nullptr, &m_vkDebugMessenger);
     }
 
     void VulkanRendererAPI::CreateFrameBuffers()
     {
-        std::span<VkImageView> imageViews = m_SwapChain.GetImageViews();
-        m_SwapChainBuffers.resize(imageViews.size());
+        std::span<VkImageView> imageViews = m_swapChain.GetImageViews();
+        m_swapChainBuffers.resize(imageViews.size());
 
         int i = 0;
         for(VkImageView& view : imageViews)
@@ -369,17 +371,17 @@ namespace sj
 
             VkFramebufferCreateInfo framebufferInfo {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = m_DefaultRenderPass;
+            framebufferInfo.renderPass = m_defaultRenderPass;
             framebufferInfo.attachmentCount = 1;
             framebufferInfo.pAttachments = &view;
-            framebufferInfo.width = m_SwapChain.GetExtent().width;
-            framebufferInfo.height = m_SwapChain.GetExtent().height;
+            framebufferInfo.width = m_swapChain.GetExtent().width;
+            framebufferInfo.height = m_swapChain.GetExtent().height;
             framebufferInfo.layers = 1;
 
-            VkResult res = vkCreateFramebuffer(m_RenderDevice.GetLogicalDevice(),
+            VkResult res = vkCreateFramebuffer(m_renderDevice.GetLogicalDevice(),
                                                &framebufferInfo,
                                                nullptr,
-                                               &m_SwapChainBuffers[i]);
+                                               &m_swapChainBuffers[i]);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
 
@@ -390,64 +392,19 @@ namespace sj
     void VulkanRendererAPI::CreateCommandPool()
     {
         auto indices =
-            m_RenderDevice.GetDeviceQueueFamilyIndices(m_RenderDevice.GetPhysicalDevice());
+            m_renderDevice.GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
         
         VkCommandPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = *(indices.GraphicsFamilyIndex);
 
-        VkResult res = vkCreateCommandPool(m_RenderDevice.GetLogicalDevice(),
+        VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
                                            &poolInfo,
                                            nullptr,
-                                           &m_CommandPool);
+                                           &m_commandPool);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
-
-    }
-
-    void VulkanRendererAPI::CreateCommandBuffer()
-    {
-        VkCommandBufferAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_CommandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
-
-        VkResult res = vkAllocateCommandBuffers(m_RenderDevice.GetLogicalDevice(),
-                                                &allocInfo,
-                                                &m_CommandBuffer);
-
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command buffer");
-    }
-
-    void VulkanRendererAPI::CreateSyncPrimitives()
-    {
-        VkSemaphoreCreateInfo semaphoreInfo {};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        
-        VkFenceCreateInfo fenceInfo {};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        VkResult res = vkCreateSemaphore(m_RenderDevice.GetLogicalDevice(),
-                                         &semaphoreInfo,
-                                         nullptr,
-                                         &m_ImageAvailableSemaphore);
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-
-        res = vkCreateSemaphore(m_RenderDevice.GetLogicalDevice(),
-                                &semaphoreInfo,
-                                nullptr,
-                                &m_RenderFinishedSemaphore);
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-
-        res = vkCreateFence(m_RenderDevice.GetLogicalDevice(),
-                            &fenceInfo,
-                            nullptr,
-                            &m_InFlightFence);
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-
 
     }
 
@@ -459,46 +416,46 @@ namespace sj
         beginInfo.pInheritanceInfo = nullptr;
 
         {
-            VkResult res = vkBeginCommandBuffer(m_CommandBuffer, &beginInfo);
+            VkResult res = vkBeginCommandBuffer(buffer, &beginInfo);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create command buffer");
         }
 
         VkRenderPassBeginInfo renderPassInfo {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_DefaultRenderPass;
-        renderPassInfo.framebuffer = m_SwapChainBuffers[imageIdx];
+        renderPassInfo.renderPass = m_defaultRenderPass;
+        renderPassInfo.framebuffer = m_swapChainBuffers[imageIdx];
         renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = m_SwapChain.GetExtent();
+        renderPassInfo.renderArea.extent = m_swapChain.GetExtent();
 
         VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
-        vkCmdBeginRenderPass(m_CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         {
-            vkCmdBindPipeline(m_CommandBuffer,
+            vkCmdBindPipeline(buffer,
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              m_DefaultPipeline.GetPipeline());
+                              m_defaultPipeline.GetPipeline());
    
             VkViewport viewport {};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
-            viewport.width = static_cast<float>(m_SwapChain.GetExtent().width);
-            viewport.height = static_cast<float>(m_SwapChain.GetExtent().height);
+            viewport.width = static_cast<float>(m_swapChain.GetExtent().width);
+            viewport.height = static_cast<float>(m_swapChain.GetExtent().height);
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
-            vkCmdSetViewport(m_CommandBuffer, 0, 1, &viewport);
+            vkCmdSetViewport(buffer, 0, 1, &viewport);
 
             VkRect2D scissor {};
             scissor.offset = {0, 0};
-            scissor.extent = m_SwapChain.GetExtent();
-            vkCmdSetScissor(m_CommandBuffer, 0, 1, &scissor);
+            scissor.extent = m_swapChain.GetExtent();
+            vkCmdSetScissor(buffer, 0, 1, &scissor);
 
-            vkCmdDraw(m_CommandBuffer, 3, 1, 0, 0);
+            vkCmdDraw(buffer, 3, 1, 0, 0);
         }
-        vkCmdEndRenderPass(m_CommandBuffer);
+        vkCmdEndRenderPass(buffer);
 
         {
-            VkResult res = vkEndCommandBuffer(m_CommandBuffer);
+            VkResult res = vkEndCommandBuffer(buffer);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to record command buffer!");
         }
     }
@@ -521,4 +478,65 @@ namespace sj
 
         return VK_FALSE;
     }
+
+    void VulkanRendererAPI::RenderFrameData::Init(VkDevice device, VkCommandPool commandPool)
+    {
+        // Create Command Buffer
+        {
+            VkCommandBufferAllocateInfo allocInfo {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.commandPool = commandPool;
+            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandBufferCount = commandBuffers.capacity();
+
+            VkResult res = vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
+
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command buffer");
+        }
+
+        // Create Sync Primitives
+        {
+            VkSemaphoreCreateInfo semaphoreInfo {};
+            semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+            VkFenceCreateInfo fenceInfo {};
+            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+            for(int i = 0; i < kMaxFramesInFlight; i++)
+            {
+                VkResult res = vkCreateSemaphore(device,
+                                                 &semaphoreInfo, 
+                                                 nullptr, 
+                                                 &imageAvailableSemaphores[i]);
+                SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
+
+                res = vkCreateSemaphore(device,
+                                        &semaphoreInfo,
+                                        nullptr,
+                                        &renderFinishedSemaphores[i]);
+                SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
+
+                res = vkCreateFence(device,
+                                    &fenceInfo,
+                                    nullptr, 
+                                    &inFlightFences[i]);
+                SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
+            }
+        }
+    }
+
+    void VulkanRendererAPI::RenderFrameData::DeInit(VkDevice device)
+    {
+        // NOTE: Command buffers are freed for us when we free the command pool.
+        //       We only need to clean up sync primitives
+
+        for(int i = 0; i < kMaxFramesInFlight; i++)
+        {
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            vkDestroyFence(device, inFlightFences[i], nullptr);
+        }
+    }
+
 } // namespace sj

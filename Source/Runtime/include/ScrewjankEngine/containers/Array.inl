@@ -6,7 +6,7 @@ namespace sj
      * Equality comparison operator
      */
     template <class T, size_t N>
-    inline bool operator==(const Array<T, N>& lhs, const Array<T, N>& rhs)
+    inline bool operator==(const array<T, N>& lhs, const array<T, N>& rhs)
     {
         for (size_t i = 0; i < N; i++) {
             if (lhs[i] != rhs[i]) {
@@ -19,101 +19,64 @@ namespace sj
 
     template <class T, size_t N>
     template <class... Args>
-    inline constexpr Array<T, N>::Array(Args... list) : m_Array {list...}
+    inline constexpr array<T, N>::array(Args... list) : m_array {list...}
     {
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::reference Array<T, N>::operator[](Array<T, N>::size_type index)
+    constexpr typename array<T, N>::reference array<T, N>::operator[](array<T, N>::size_type index)
     {
-        return m_Array[index];
+        return m_array[index];
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::const_reference
-    Array<T, N>::operator[](Array<T, N>::size_type index) const
+    constexpr typename array<T, N>::const_reference
+    array<T, N>::operator[](array<T, N>::size_type index) const
     {
-        return m_Array[index];
+        return m_array[index];
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::reference Array<T, N>::At(Array<T, N>::size_type index)
-    {
-        SJ_ASSERT(index >= 0 && index < N, "Array out of bounds!");
-        return m_Array[index];
-    }
-
-    template <class T, size_t N>
-    constexpr typename Array<T, N>::const_reference
-    Array<T, N>::At(Array<T, N>::size_type index) const
+    inline constexpr auto&& array<T, N>::at(this auto&& self, size_type index)
     {
         SJ_ASSERT(index >= 0 && index < N, "Array out of bounds!");
-        return m_Array[index];
+        return self.m_array[index];
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::reference Array<T, N>::Front()
+    inline constexpr auto&& array<T, N>::front(this auto&& self)
     {
-        return m_Array[0];
+        return self.m_array[0];
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::const_reference Array<T, N>::Front() const
+    inline constexpr auto&& array<T, N>::back(this auto&& self)
     {
-        return m_Array[0];
+        return self.m_array[N - 1];
+
     }
 
     template <class T, size_t N>
-    constexpr typename Array<T, N>::reference Array<T, N>::Back()
-    {
-        return m_Array[N - 1];
-    }
-
-    template <class T, size_t N>
-    constexpr typename Array<T, N>::const_reference Array<T, N>::Back() const
-    {
-        return m_Array[N - 1];
-    }
-
-    template <class T, size_t N>
-    inline constexpr typename Array<T, N>::size_type Array<T, N>::Capacity() const
+    inline constexpr typename array<T, N>::size_type array<T, N>::capacity() const
     {
         return N;
     }
 
     template <class T, size_t N>
-    constexpr T* Array<T, N>::Data()
+    inline constexpr auto&& array<T, N>::data(this auto&& self)
     {
-        return m_Array;
+        return self.m_array;
     }
 
     template <class T, size_t N>
-    constexpr const T* Array<T, N>::Data() const
+    inline constexpr auto&& array<T, N>::begin(this auto&& self)
     {
-        return m_Array;
+        return std::begin(self.m_array);
     }
 
     template <class T, size_t N>
-    inline auto Array<T, N>::begin() -> decltype(std::begin(m_Array))
+    inline constexpr auto&& array<T, N>::end(this auto&& self)
     {
-        return std::begin(m_Array);
-    }
-
-    template <class T, size_t N>
-    inline auto Array<T, N>::begin() const -> decltype(std::begin(m_Array))
-    {
-        return std::begin(m_Array);
-    }
-
-    template <class T, size_t N>
-    inline auto Array<T, N>::end() -> decltype(std::end(m_Array))
-    {
-        return std::end(m_Array);
-    }
-
-    template <class T, size_t N>
-    inline auto Array<T, N>::end() const -> decltype(std::end(m_Array))
-    {
-        return std::end(m_Array);
+        return std::end(self.m_array);
     }
 }

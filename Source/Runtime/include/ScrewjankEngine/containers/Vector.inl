@@ -188,7 +188,7 @@ namespace sj
     template <class T>
     inline auto&& dynamic_vector<T>::at(this auto&& self, size_t index)
     {
-        SJ_ASSERT(self.m_Size > 0, "Cannot access front of an empty vector");
+        SJ_ASSERT(index < self.capacity(), "Cannot access front of an empty vector");
         return self.m_Data[index];
     }
 

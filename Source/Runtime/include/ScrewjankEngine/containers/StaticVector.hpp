@@ -8,7 +8,7 @@ namespace sj
     /**
      * Statically sized vector class
      */
-    template <class T, size_t N>
+    template <class T, size_t N, class SizeType = uint32_t>
     class static_vector
     {
     public:
@@ -20,20 +20,20 @@ namespace sj
         static_vector& operator=(std::initializer_list<T> vals);
 
         /** Array Index Operator */
-        T& operator[](const size_t index);
+        T& operator[](const SizeType index);
 
         /** Array Index Operator */
-        const T& operator[](const size_t index) const;
+        const T& operator[](const SizeType index) const;
 
         void add(const T& value);
         void add(T&& value);
 
         void erase_element(const T& value);
-        void erase(size_t idx);
+        void erase(SizeType idx);
 
-        size_t count() const;
+        SizeType size() const;
 
-        size_t capacity() const;
+        SizeType capacity() const;
 
         T* data();
 
@@ -44,7 +44,7 @@ namespace sj
 
     private:
         T m_cArray[N] = {};
-        size_t m_Count = 0;
+        SizeType m_Count = 0;
     };
 }
 

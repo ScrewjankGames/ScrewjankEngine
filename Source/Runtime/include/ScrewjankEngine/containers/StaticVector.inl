@@ -6,8 +6,8 @@
 
 namespace sj
 {
-    template <class T, size_t N>
-    inline static_vector<T, N>::static_vector(std::initializer_list<T> vals)
+    template <class T, size_t N, class SizeType>
+    inline static_vector<T, N, SizeType>::static_vector(std::initializer_list<T> vals)
     {
         for(const T& val : vals)
         {
@@ -15,8 +15,8 @@ namespace sj
         }
     }
 
-    template <class T, size_t N>
-    inline static_vector<T, N>& static_vector<T, N>::operator=(std::initializer_list<T> vals)
+    template <class T, size_t N, class SizeType>
+    inline static_vector<T, N, SizeType>& static_vector<T, N, SizeType>::operator=(std::initializer_list<T> vals)
     {
         clear();
 
@@ -28,40 +28,40 @@ namespace sj
         return *this;
     }
 
-    template <class T, size_t N>
-    inline T& static_vector<T, N>::operator[](const size_t index)
+    template <class T, size_t N, class SizeType>
+    inline T& static_vector<T, N, SizeType>::operator[](const SizeType index)
     {
         SJ_ASSERT(index >= 0 && index < N, "Error: Array Index Out of Bounds");
         return m_cArray[index];
     }
 
-    template <class T, size_t N>
-    inline const T& static_vector<T, N>::operator[](const size_t index) const
+    template <class T, size_t N, class SizeType>
+    inline const T& static_vector<T, N, SizeType>::operator[](const SizeType index) const
     {
         SM_ASSERT(index >= 0 && index < N, "Error: Array Index Out of Bounds");
         return m_cArray[index];
     }
 
-    template <class T, size_t N>
-    void static_vector<T, N>::add(const T& value)
+    template <class T, size_t N, class SizeType>
+    void static_vector<T, N, SizeType>::add(const T& value)
     {
         SJ_ASSERT(m_Count < N, "Error! Trying to add to fixed size array that is full!");
         m_cArray[m_Count] = value;
         m_Count++;
     }
 
-    template <class T, size_t N>
-    void static_vector<T, N>::add(T&& value)
+    template <class T, size_t N, class SizeType>
+    void static_vector<T, N, SizeType>::add(T&& value)
     {
         SJ_ASSERT(m_Count < N, "Error! Trying to add to fixed size array that is full!");
         new(&m_cArray[m_Count]) T(std::forward<T>(value));
         m_Count++;
     }
 
-    template <class T, size_t N>
-    inline void static_vector<T, N>::erase_element(const T& value)
+    template <class T, size_t N, class SizeType>
+    inline void static_vector<T, N, SizeType>::erase_element(const T& value)
     {
-        for(size_t i = 0; i < N; i++)
+        for(SizeType i = 0; i < N; i++)
         {
             if(m_cArray[i] == value)
             {
@@ -70,9 +70,11 @@ namespace sj
         }
     }
 
-    template <class T, size_t N>
-    inline void static_vector<T, N>::erase(size_t idx)
+    template <class T, size_t N, class SizeType>
+    inline void static_vector<T, N, SizeType>::erase(SizeType idx)
     {
+        SJ_ASSERT(idx < m_Count, "Erase index out of bounds");
+
         m_cArray[idx].~T();
 
         if(idx != m_Count - 1)
@@ -83,26 +85,26 @@ namespace sj
         m_Count--;
     }
 
-    template <class T, size_t N>
-    inline size_t static_vector<T, N>::count() const
+    template <class T, size_t N, class SizeType>
+    inline SizeType static_vector<T, N, SizeType>::size() const
     {
         return m_Count;
     }
 
-    template <class T, size_t N>
-    inline size_t static_vector<T, N>::capacity() const
+    template <class T, size_t N, class SizeType>
+    inline SizeType static_vector<T, N, SizeType>::capacity() const
     {
-        return N;
+        return (SizeType)N;
     }
 
-    template <class T, size_t N>
-    inline T* static_vector<T, N>::data()
+    template <class T, size_t N, class SizeType>
+    inline T* static_vector<T, N, SizeType>::data()
     {
         return m_cArray;
     }
 
-    template <class T, size_t N>
-    inline void static_vector<T, N>::clear()
+    template <class T, size_t N, class SizeType>
+    inline void static_vector<T, N, SizeType>::clear()
     {
         if constexpr(!std::is_trivially_destructible<T>::value)
         {
@@ -115,14 +117,14 @@ namespace sj
         m_Count = 0;
     }
 
-    template <class T, size_t N>
-    inline T* static_vector<T, N>::begin()
+    template <class T, size_t N, class SizeType>
+    inline T* static_vector<T, N, SizeType>::begin()
     {
         return std::begin(m_cArray);
     }
 
-    template <class T, size_t N>
-    inline T* static_vector<T, N>::end()
+    template <class T, size_t N, class SizeType>
+    inline T* static_vector<T, N, SizeType>::end()
     {
         return std::begin(m_cArray) + m_Count;
     }

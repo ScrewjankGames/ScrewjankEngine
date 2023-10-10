@@ -229,7 +229,7 @@ namespace container_tests {
         ASSERT_EQ(true, insert_res.second);
 
         // Degenerate Case: After Range Insertion?
-        Array<const char*, 1> arr = {"VK_KHR_swapchain"};
+        array<const char*, 1> arr = {"VK_KHR_swapchain"};
         UnorderedSet<const char*> set2( MemorySystem::GetRootHeapZone(), arr.begin(), arr.end() );
 
         ASSERT_TRUE(set2.Contains(arr[0]));

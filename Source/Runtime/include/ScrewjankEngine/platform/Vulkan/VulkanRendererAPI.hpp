@@ -48,7 +48,7 @@ namespace sj {
 
       private:
 
-        static constexpr int kMaxFramesInFlight = 2;
+        static constexpr uint32_t kMaxFramesInFlight = 2;
 
         /**
          * Callback function that allows the Vulkan API to use the engine's logging system
@@ -100,48 +100,53 @@ namespace sj {
 
         void CreateCommandPool();
 
-        void CreateCommandBuffer();
-
-        void CreateSyncPrimitives();
-
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx);
 
         bool m_IsInitialized = false;
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
-        VkInstance m_VkInstance;
+        VkInstance m_vkInstance;
 
         /** Handle to manage Vulkan's debug callbacks */
-        VkDebugUtilsMessengerEXT m_VkDebugMessenger;
+        VkDebugUtilsMessengerEXT m_vkDebugMessenger;
 
         /** Handle to the surface vulkan renders to */
-        VkSurfaceKHR m_RenderingSurface;
+        VkSurfaceKHR m_renderingSurface;
 
         /** It's a render pass I guess. */
-        VkRenderPass m_DefaultRenderPass;
+        VkRenderPass m_defaultRenderPass;
 
         /** Used to back API operations */
-        VulkanRenderDevice m_RenderDevice;
+        VulkanRenderDevice m_renderDevice;
 
         /** Used for image presentation */
-        VulkanSwapChain m_SwapChain;
+        VulkanSwapChain m_swapChain;
 
         /** Pipeline used to describe rendering process */
-        VulkanPipeline m_DefaultPipeline;
+        VulkanPipeline m_defaultPipeline;
 
         /** Buffers for the swap chain */
-        dynamic_vector<VkFramebuffer> m_SwapChainBuffers;
+        dynamic_vector<VkFramebuffer> m_swapChainBuffers;
 
-        VkCommandPool m_CommandPool;
-
-        VkCommandBuffer m_CommandBuffer;
+        VkCommandPool m_commandPool;
 
         /**
-         * Synchronization primitives 
+         * Data representing a render frames in flight 
          */
-        VkSemaphore m_ImageAvailableSemaphore;
-        VkSemaphore m_RenderFinishedSemaphore;
-        VkFence m_InFlightFence;
+        struct RenderFrameData
+        {
+            array<VkCommandBuffer, kMaxFramesInFlight> commandBuffers;
+            
+            array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
+            array<VkSemaphore, kMaxFramesInFlight> renderFinishedSemaphores;
+            array<VkFence, kMaxFramesInFlight> inFlightFences;
+
+            void Init(VkDevice device, VkCommandPool commandPool);
+            void DeInit(VkDevice device);
+        };
+
+        RenderFrameData m_frameData;
+        uint32_t m_frameCount = 0;
     };
 
 } // namespace sj
