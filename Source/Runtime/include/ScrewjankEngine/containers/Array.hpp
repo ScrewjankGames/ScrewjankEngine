@@ -10,13 +10,13 @@
 
 namespace sj {
 
-    template <class T, size_t N>
+    template <class T, size_t N, class SizeType = uint32_t>
     class array
     {
       public:
         // STL type aliases
         using value_type = T;
-        using size_type = size_t;
+        using size_type = SizeType;
         using difference_type = std::ptrdiff_t;
         using reference = T&;
         using const_reference = const T&;
@@ -51,6 +51,22 @@ namespace sj {
         constexpr const_reference operator[](size_type index) const;
 
         /**
+         * Equality comparison operator
+         */
+        friend inline bool operator==(const array<T, N>& lhs, const array<T, N>& rhs)
+        {
+            for(size_type i = 0; i < N; i++)
+            {
+                if(lhs[i] != rhs[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /**
          * Inequality comparison operator
          */
         friend inline bool operator!=(const array<T, N>& lhs, const array<T, N>& rhs)
@@ -81,13 +97,13 @@ namespace sj {
         /**
          * Returns pointer to backing raw C array, allows modification of elements
          */
-        constexpr auto&& data(this auto&& self); // -> (const?) T*
+        constexpr auto data(this auto&& self); // -> (const?) T*
 
         /**
          * Function to allow use in ranged based for loops
          */
-        constexpr auto&& begin(this auto&& self); // -> (const?) T*
-        constexpr auto&& end(this auto&& self); // -> (const?) T*
+        constexpr auto begin(this auto&& self); // -> (const?) T*
+        constexpr auto end(this auto&& self); // -> (const?) T*
 
       private:
         /** C style array this datastructure encapsulates */

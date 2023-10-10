@@ -27,15 +27,20 @@ namespace sj {
             dynamic_vector<VkPresentModeKHR> PresentModes;
         };
 
-        VulkanSwapChain() = default;
-        ~VulkanSwapChain();
+        VulkanSwapChain();
+        ~VulkanSwapChain() = default;
 
         void Init(Window* targetWindow,
                   VkPhysicalDevice physicalDevice,
                   VkDevice logicalDevice,
                   VkSurfaceKHR renderingSurface);
 
-        void DeInit();
+        /**
+         * Called after init because info from the swap chain is need to create the render pass 
+         */
+        void InitFrameBuffers(VkDevice device, VkRenderPass pass);
+
+        void DeInit(VkDevice logicalDevice);
 
         VkExtent2D GetExtent() const;
         
@@ -51,40 +56,36 @@ namespace sj {
 
         std::span<VkImageView> GetImageViews() const;
 
-      private:
-        /**
-         * Handles initial swap chain setup
-         */
-        void InitializeSwapChain(VkSurfaceKHR renderingSurface,
-                                 VkPhysicalDevice physicalDevice, 
-                                 const SwapChainParams& params);
+        std::span<VkFramebuffer> GetFrameBuffers() const;
 
+      private:
         /**
          * Communicates with the window to query swap chain extents
          */
         VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
         
-        bool m_IsInitialized = false;
+        bool m_isInitialized = false;
 
         /** Non-owning handle to the window the swap chain presents to */
-        Window* m_TargetWindow = nullptr;
-
-        VkDevice m_LogicalDevice = VK_NULL_HANDLE;
+        Window* m_targetWindow = nullptr;
 
         /** Pointer to the swap chain that controls image presenation */
-        VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
+        VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
 
         /** List of handles to images in the swap chain */
-        dynamic_vector<VkImage> m_Images;
+        dynamic_vector<VkImage> m_images;
 
         /** List of Image Views onto the images in the swap chain */
-        dynamic_vector<VkImageView> m_ImageViews;
+        dynamic_vector<VkImageView> m_imageViews;
+
+        /** Frame buffers for images in the swap chain */
+        dynamic_vector<VkFramebuffer> m_swapChainBuffers;
 
         /** Format for images in the swap chain */
-        VkFormat m_ChainImageFormat = VK_FORMAT_UNDEFINED;
+        VkFormat m_chainImageFormat = VK_FORMAT_UNDEFINED;
 
         /** Size of the images in the swap chain (in pixels) */
-        VkExtent2D m_ImageExtent;
+        VkExtent2D m_imageExtent = {};
 
     };
 

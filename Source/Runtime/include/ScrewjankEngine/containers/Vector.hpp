@@ -203,27 +203,13 @@ namespace sj {
         /**
          * Allows access to the raw C-Style array
          */
-        auto&& data(this auto&& self);
+        auto data(this auto&& self); // -> (const?) T*
 
         /**
          * Function to allow use in ranged based for loops
          */
-        iterator begin();
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        const_iterator begin() const;
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        iterator end();
-
-        /**
-         * Function to allow use in ranged based for loops
-         */
-        const_iterator end() const;
+        auto begin(this auto&& self); // -> (const?) T*
+        auto end(this auto&& self); // -> (const?) T*
 
       private:
         /** Current size of the dynamic array */

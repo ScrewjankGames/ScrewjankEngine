@@ -577,33 +577,20 @@ namespace sj
     }
     
     template <class T>
-    inline auto&& dynamic_vector<T>::data(this auto&& self)
+    inline auto dynamic_vector<T>::data(this auto&& self)
     {
         return self.m_Data;
     }
 
     template <class T>
-    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::begin()
+    inline auto dynamic_vector<T>::begin(this auto&& self)
     {
-        return iterator(m_Data);
+        return self.m_Data;
     }
 
     template <class T>
-    inline typename dynamic_vector<T>::const_iterator dynamic_vector<T>::begin() const
+    inline auto dynamic_vector<T>::end(this auto&& self)
     {
-        return const_iterator(m_Data);
-    }
-
-    template <class T>
-    inline typename dynamic_vector<T>::iterator dynamic_vector<T>::end()
-    {
-        // return one past the last element
-        return iterator(m_Data + m_Size);
-    }
-
-    template <class T>
-    inline typename dynamic_vector<T>::const_iterator dynamic_vector<T>::end() const
-    {
-        return const_iterator(m_Data + m_Size);
+        return self.m_Data + self.m_Size;
     }
 }

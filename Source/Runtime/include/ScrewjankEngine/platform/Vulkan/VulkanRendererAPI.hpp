@@ -30,7 +30,7 @@ namespace sj {
         /**
          * Constructor
          */
-        VulkanRendererAPI();
+        VulkanRendererAPI() = default;
         
         /**
          * Destructor
@@ -96,8 +96,6 @@ namespace sj {
          */
         void EnableDebugMessaging();
 
-        void CreateFrameBuffers();
-
         void CreateCommandPool();
 
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx);
@@ -124,9 +122,6 @@ namespace sj {
 
         /** Pipeline used to describe rendering process */
         VulkanPipeline m_defaultPipeline;
-
-        /** Buffers for the swap chain */
-        dynamic_vector<VkFramebuffer> m_swapChainBuffers;
 
         VkCommandPool m_commandPool;
 

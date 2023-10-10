@@ -1,11 +1,12 @@
+// Parent Include
+#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
+
 // STD Headers
 #include <unordered_set>
 
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
-
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
@@ -21,11 +22,6 @@
 
 namespace sj
 {
-    VulkanRendererAPI::VulkanRendererAPI() : m_swapChainBuffers(Renderer::WorkBuffer())
-    {
-
-    }
-
     VulkanRendererAPI::~VulkanRendererAPI()
     {
         DeInit();
@@ -59,7 +55,7 @@ namespace sj
             "Data/Engine/Shaders/Default.frag.spv"
         );
 
-        CreateFrameBuffers();
+        m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
         CreateCommandPool();
 
@@ -90,13 +86,13 @@ namespace sj
 
         vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_commandPool, nullptr);
 
-        for(VkFramebuffer framebuffer : m_swapChainBuffers)
+        for(VkFramebuffer framebuffer : m_swapChain.GetFrameBuffers())
         {
             vkDestroyFramebuffer(m_renderDevice.GetLogicalDevice(), framebuffer, nullptr);
         }
 
         // Important: All things attached to the device need to be torn down first
-        m_swapChain.DeInit();
+        m_swapChain.DeInit(m_renderDevice.GetLogicalDevice());
         m_defaultPipeline.DeInit();
         vkDestroyRenderPass(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass, nullptr);
         m_renderDevice.DeInit();
@@ -360,35 +356,6 @@ namespace sj
         create_function(m_vkInstance, &messenger_create_info, nullptr, &m_vkDebugMessenger);
     }
 
-    void VulkanRendererAPI::CreateFrameBuffers()
-    {
-        std::span<VkImageView> imageViews = m_swapChain.GetImageViews();
-        m_swapChainBuffers.resize(imageViews.size());
-
-        int i = 0;
-        for(VkImageView& view : imageViews)
-        {
-
-            VkFramebufferCreateInfo framebufferInfo {};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = m_defaultRenderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &view;
-            framebufferInfo.width = m_swapChain.GetExtent().width;
-            framebufferInfo.height = m_swapChain.GetExtent().height;
-            framebufferInfo.layers = 1;
-
-            VkResult res = vkCreateFramebuffer(m_renderDevice.GetLogicalDevice(),
-                                               &framebufferInfo,
-                                               nullptr,
-                                               &m_swapChainBuffers[i]);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
-
-            i++;
-        }
-    }
-
     void VulkanRendererAPI::CreateCommandPool()
     {
         auto indices =
@@ -423,7 +390,7 @@ namespace sj
         VkRenderPassBeginInfo renderPassInfo {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_defaultRenderPass;
-        renderPassInfo.framebuffer = m_swapChainBuffers[imageIdx];
+        renderPassInfo.framebuffer = m_swapChain.GetFrameBuffers()[imageIdx];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_swapChain.GetExtent();
 

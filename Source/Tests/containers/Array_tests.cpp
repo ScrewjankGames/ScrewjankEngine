@@ -41,7 +41,7 @@ namespace container_tests {
         array<int, 5> arr = {1, 1, 1, 1, 1};
         int i = 0;
 
-        for (auto element : arr) {
+        for (int element : arr) {
             ASSERT_EQ(1, element);
             i++;
         }
@@ -54,7 +54,7 @@ namespace container_tests {
         array<int, 3> arr({1, 2, 3});
         array<int, 3> arr2(arr);
 
-        for (size_t i = 0; i < arr.capacity(); i++) {
+        for (uint32_t i = 0; i < arr.capacity(); i++) {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
         }
@@ -65,7 +65,8 @@ namespace container_tests {
         array<int, 3> arr({1, 2, 3});
         array<int, 3> arr2 = arr;
 
-        for (size_t i = 0; i < arr.capacity(); i++) {
+        for(uint32_t i = 0; i < arr.capacity(); i++)
+        {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
         }
@@ -75,7 +76,7 @@ namespace container_tests {
     {
         array<int, 3> arr(array<int, 3>({1, 2, 3}));
 
-        for(size_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.capacity(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
         }
@@ -85,7 +86,7 @@ namespace container_tests {
     {
         array<int, 3> arr = array<int, 3>({1, 2, 3});
 
-        for(size_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.capacity(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
         }

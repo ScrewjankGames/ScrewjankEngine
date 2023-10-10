@@ -9,15 +9,16 @@
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 
 namespace sj
 {
-    VulkanSwapChain::~VulkanSwapChain()
+    VulkanSwapChain::VulkanSwapChain() : 
+        m_images(Renderer::WorkBuffer()),
+        m_imageViews(Renderer::WorkBuffer()),
+        m_swapChainBuffers(Renderer::WorkBuffer())
     {
-        if(m_IsInitialized)
-        {
-            DeInit();
-        }
+
     }
 
     VkSurfaceFormatKHR ChoseSurfaceFormat(const dynamic_vector<VkSurfaceFormatKHR>& formats)
@@ -52,11 +53,9 @@ namespace sj
                                VkDevice logicalDevice,
                                VkSurfaceKHR renderingSurface)
     {
-        m_LogicalDevice = logicalDevice;
+        SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
-        SJ_ASSERT(!m_IsInitialized, "Double initialization detected!");
-
-        m_TargetWindow = targetWindow;
+        m_targetWindow = targetWindow;
         SwapChainParams params = QuerySwapChainParams(physicalDevice, renderingSurface);
 
         
@@ -111,34 +110,34 @@ namespace sj
 
         // Create Swap Chain
         VkResult swap_chain_create_success =
-            vkCreateSwapchainKHR(m_LogicalDevice, &create_info, nullptr, &m_SwapChain);
+            vkCreateSwapchainKHR(logicalDevice, &create_info, nullptr, &m_swapChain);
 
         SJ_ASSERT(VkResult::VK_SUCCESS == swap_chain_create_success, "Failed to create swapchain");
 
         // Extract swap chain image handles
         uint32_t real_image_count;
-        vkGetSwapchainImagesKHR(m_LogicalDevice, m_SwapChain, &real_image_count, nullptr);
+        vkGetSwapchainImagesKHR(logicalDevice, m_swapChain, &real_image_count, nullptr);
 
-        m_Images.resize(real_image_count);
+        m_images.resize(real_image_count);
 
-        vkGetSwapchainImagesKHR(m_LogicalDevice,
-                                m_SwapChain,
+        vkGetSwapchainImagesKHR(logicalDevice,
+                                m_swapChain,
                                 &real_image_count,
-                                m_Images.data());
+                                m_images.data());
 
-        m_ChainImageFormat = selected_format.format;
-        m_ImageExtent = extent;
+        m_chainImageFormat = selected_format.format;
+        m_imageExtent = extent;
 
         // Create Image Views
-        m_ImageViews.resize(m_Images.size());
+        m_imageViews.resize(m_images.size());
 
-        for(size_t i = 0; i < m_Images.size(); i++)
+        for(size_t i = 0; i < m_images.size(); i++)
         {
             VkImageViewCreateInfo image_view_create_info {};
             image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            image_view_create_info.image = m_Images[i];
+            image_view_create_info.image = m_images[i];
             image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            image_view_create_info.format = m_ChainImageFormat;
+            image_view_create_info.format = m_chainImageFormat;
 
             image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -151,39 +150,70 @@ namespace sj
             image_view_create_info.subresourceRange.baseArrayLayer = 0;
             image_view_create_info.subresourceRange.layerCount = 1;
 
-            VkResult view_create_success = vkCreateImageView(m_LogicalDevice,
+            VkResult view_create_success = vkCreateImageView(logicalDevice,
                                                              &image_view_create_info,
                                                              nullptr,
-                                                             &m_ImageViews[i]);
+                                                             &m_imageViews[i]);
 
             SJ_ASSERT(view_create_success == VkResult::VK_SUCCESS,
                       "Failed to create swap chain image view");
         }
+
     }
 
-    void VulkanSwapChain::DeInit()
+    void VulkanSwapChain::InitFrameBuffers(VkDevice device, VkRenderPass pass)
     {
-        for(auto view : m_ImageViews)
+
+        // Create Frame Buffers
+        m_swapChainBuffers.resize(m_imageViews.size());
+
+        int i = 0;
+        for(VkImageView& view : m_imageViews)
         {
-            vkDestroyImageView(m_LogicalDevice, view, nullptr);
+
+            VkFramebufferCreateInfo framebufferInfo {};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = pass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = &view;
+            framebufferInfo.width = GetExtent().width;
+            framebufferInfo.height = GetExtent().height;
+            framebufferInfo.layers = 1;
+
+            VkResult res = vkCreateFramebuffer(device,
+                                               &framebufferInfo,
+                                               nullptr,
+                                               &m_swapChainBuffers[i]);
+
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
+
+            i++;
+        }
+    }
+
+    void VulkanSwapChain::DeInit(VkDevice logicalDevice)
+    {
+        for(auto view : m_imageViews)
+        {
+            vkDestroyImageView(logicalDevice, view, nullptr);
         }
 
-        vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
+        vkDestroySwapchainKHR(logicalDevice, m_swapChain, nullptr);
     }
 
     VkExtent2D VulkanSwapChain::GetExtent() const
     {
-        return m_ImageExtent;
+        return m_imageExtent;
     }
 
     VkFormat VulkanSwapChain::GetImageFormat() const
     {
-        return m_ChainImageFormat;
+        return m_chainImageFormat;
     }
 
     VkSwapchainKHR VulkanSwapChain::GetSwapChain() const
     {
-        return m_SwapChain;
+        return m_swapChain;
     }
 
     VkExtent2D VulkanSwapChain::QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
@@ -193,7 +223,7 @@ namespace sj
             return capabilities.currentExtent;
         }
 
-        Viewport frame_buffer_size = m_TargetWindow->GetViewportSize();
+        Viewport frame_buffer_size = m_targetWindow->GetViewportSize();
         VkExtent2D extent {frame_buffer_size.Width, frame_buffer_size.Height};
 
         // Clamp values to max supported by implementation
@@ -246,6 +276,11 @@ namespace sj
 
     std::span<VkImageView> VulkanSwapChain::GetImageViews() const
     {
-        return std::span<VkImageView>(m_ImageViews.data(), m_ImageViews.size());
+        return std::span<VkImageView>(m_imageViews.data(), m_imageViews.size());
+    }
+
+    std::span<VkFramebuffer> VulkanSwapChain::GetFrameBuffers() const
+    {
+        return std::span<VkFramebuffer>(m_swapChainBuffers.data(), m_imageViews.size());
     }
 } // namespace sj
