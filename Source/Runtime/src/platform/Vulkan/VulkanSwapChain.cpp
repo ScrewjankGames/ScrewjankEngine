@@ -48,14 +48,14 @@ namespace sj
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    void VulkanSwapChain::Init(Window* targetWindow,
-                               VkPhysicalDevice physicalDevice,
+    void VulkanSwapChain::Init(VkPhysicalDevice physicalDevice,
                                VkDevice logicalDevice,
                                VkSurfaceKHR renderingSurface)
     {
         SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
-        m_targetWindow = targetWindow;
+        m_targetWindow = Window::GetInstance();
+
         SwapChainParams params = QuerySwapChainParams(physicalDevice, renderingSurface);
 
         
@@ -193,12 +193,37 @@ namespace sj
 
     void VulkanSwapChain::DeInit(VkDevice logicalDevice)
     {
-        for(auto view : m_imageViews)
+        for(VkFramebuffer buffer : m_swapChainBuffers)
+        {
+            vkDestroyFramebuffer(logicalDevice, buffer, nullptr);
+        }
+
+        for(VkImageView view : m_imageViews)
         {
             vkDestroyImageView(logicalDevice, view, nullptr);
         }
 
         vkDestroySwapchainKHR(logicalDevice, m_swapChain, nullptr);
+    }
+
+    void VulkanSwapChain::Recreate(VkPhysicalDevice physicalDevice,
+                                   VkDevice device,
+                                   VkSurfaceKHR renderingSurface,
+                                   VkRenderPass pass)
+    {
+        // Window is minimized. Can't recreate swap chain.
+        if(Window::GetInstance()->GetViewportSize().Width == 0 ||
+           Window::GetInstance()->GetViewportSize().Height == 0)
+        {
+            return;
+        }
+
+        vkDeviceWaitIdle(device);
+
+        DeInit(device);
+
+        Init(physicalDevice, device, renderingSurface);
+        InitFrameBuffers(device, pass);
     }
 
     VkExtent2D VulkanSwapChain::GetExtent() const

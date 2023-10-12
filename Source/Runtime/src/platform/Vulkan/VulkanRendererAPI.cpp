@@ -40,8 +40,7 @@ namespace sj
         m_renderDevice.Init(m_renderingSurface);
 
         // Create the vulkan swap chain connected to the current window and device
-        m_swapChain.Init(Window::GetInstance(),
-                         m_renderDevice.GetPhysicalDevice(),
+        m_swapChain.Init(m_renderDevice.GetPhysicalDevice(),
                          m_renderDevice.GetLogicalDevice(),
                          m_renderingSurface);
 
@@ -86,15 +85,13 @@ namespace sj
 
         vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_commandPool, nullptr);
 
-        for(VkFramebuffer framebuffer : m_swapChain.GetFrameBuffers())
-        {
-            vkDestroyFramebuffer(m_renderDevice.GetLogicalDevice(), framebuffer, nullptr);
-        }
-
-        // Important: All things attached to the device need to be torn down first
         m_swapChain.DeInit(m_renderDevice.GetLogicalDevice());
+        
         m_defaultPipeline.DeInit();
+        
         vkDestroyRenderPass(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass, nullptr);
+        
+        // Important: All things attached to the device need to be torn down first
         m_renderDevice.DeInit();
 
         vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, nullptr);
@@ -187,15 +184,30 @@ namespace sj
 
         SJ_ENGINE_LOG_INFO("Kicking render frame");
 
-        vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
-
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
-                              m_swapChain.GetSwapChain(),
-                              std::numeric_limits<uint64_t>::max(),
-                              currImageAvailableSemaphore,
-                              VK_NULL_HANDLE,
-                              &imageIndex);
+        VkResult res = vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
+                                             m_swapChain.GetSwapChain(),
+                                             std::numeric_limits<uint64_t>::max(),
+                                             currImageAvailableSemaphore,
+                                             VK_NULL_HANDLE,
+                                             &imageIndex);
+
+        if(res == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
+                                 m_renderDevice.GetLogicalDevice(),
+                                 m_renderingSurface,
+                                 m_defaultRenderPass);
+
+            return;
+        }
+        else if(res != VK_SUCCESS)
+        {
+            SJ_ASSERT(false, "Failed to acquire swap chain image.");
+        }
+
+        // Reset fence when we know we're going to be able to draw this frame
+        vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
         
         vkResetCommandBuffer(currCommandBuffer, 0);
 
@@ -217,8 +229,7 @@ namespace sj
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        VkResult res = vkQueueSubmit(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFence);
-
+        res = vkQueueSubmit(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFence);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
 
         VkPresentInfoKHR presentInfo {};
@@ -231,7 +242,20 @@ namespace sj
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
+        res = vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
+        if(res == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
+                                 m_renderDevice.GetLogicalDevice(),
+                                 m_renderingSurface,
+                                 m_defaultRenderPass);
+
+            return;
+        }
+        else if(res != VK_SUCCESS)
+        {
+            SJ_ASSERT(false, "Failed to acquire swap chain image.");
+        }
 
         m_frameCount++;
     }

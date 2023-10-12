@@ -30,8 +30,7 @@ namespace sj {
         VulkanSwapChain();
         ~VulkanSwapChain() = default;
 
-        void Init(Window* targetWindow,
-                  VkPhysicalDevice physicalDevice,
+        void Init(VkPhysicalDevice physicalDevice,
                   VkDevice logicalDevice,
                   VkSurfaceKHR renderingSurface);
 
@@ -41,6 +40,11 @@ namespace sj {
         void InitFrameBuffers(VkDevice device, VkRenderPass pass);
 
         void DeInit(VkDevice logicalDevice);
+
+        void Recreate(VkPhysicalDevice physicalDevice, 
+                      VkDevice device, 
+                      VkSurfaceKHR renderingSurface,
+                      VkRenderPass pass);
 
         VkExtent2D GetExtent() const;
         
