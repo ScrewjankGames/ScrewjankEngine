@@ -182,8 +182,6 @@ namespace sj
                         VK_TRUE,
                         std::numeric_limits<uint64_t>::max());
 
-        SJ_ENGINE_LOG_INFO("Kicking render frame");
-
         uint32_t imageIndex;
         VkResult res = vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
                                              m_swapChain.GetSwapChain(),

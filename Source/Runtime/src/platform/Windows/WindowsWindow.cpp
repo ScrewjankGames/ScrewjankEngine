@@ -20,12 +20,23 @@ namespace sj {
         return &window;
     }
 
+    static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        const char* actionStr = (action == GLFW_PRESS) ? "Pressed"
+                                : (action == GLFW_RELEASE) ? "Released"
+                                                           : "Held";
+
+        SJ_ENGINE_LOG_INFO("Key {}", actionStr);
+    }
+
     Window::Window()
     {
         SJ_ENGINE_LOG_INFO("Creating Windows window");
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_NativeWindow = glfwCreateWindow(1280, 720, "Vulkan window", nullptr, nullptr);
+
+        glfwSetKeyCallback(m_NativeWindow, KeyCallback);
     }
 
     Window::~Window()
