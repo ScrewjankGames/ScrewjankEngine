@@ -10,8 +10,8 @@ namespace build_tool
     {
         public static System.IO.DirectoryInfo EngineAssetDir = new System.IO.DirectoryInfo("${Engine_Asset_Dir}");
         public static System.IO.DirectoryInfo GameAssetDir =  new System.IO.DirectoryInfo("${Game_Asset_Dir}");
-        public static System.IO.DirectoryInfo EngineDataDir =  new System.IO.DirectoryInfo("${Game_Data_Dir}Engine/");
-        public static System.IO.DirectoryInfo GameDataDir =  new System.IO.DirectoryInfo("${Game_Data_Dir}");
+        public static System.IO.DirectoryInfo EngineDataDir =  new System.IO.DirectoryInfo("${Game_Built_Data_Dir}Engine/");
+        public static System.IO.DirectoryInfo GameDataDir =  new System.IO.DirectoryInfo("${Game_Built_Data_Dir}");
 
         public static void Init()
         {
