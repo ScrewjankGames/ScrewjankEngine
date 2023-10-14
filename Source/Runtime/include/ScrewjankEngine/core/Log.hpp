@@ -50,42 +50,42 @@ namespace sj {
     inline void Logger::LogTrace(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::trace(format, args...);
+        spdlog::trace(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogDebug(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::debug(format, args...);
+        spdlog::debug(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogInfo(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::info(format, args...);
+        spdlog::info(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogWarn(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::warn(format, args...);
+        spdlog::warn(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogError(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::error(format, args...);
+        spdlog::error(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogFatal(const char* format, Args... args)
     {
         HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
-        spdlog::critical(format, args...);
+        spdlog::critical(fmt::runtime(format), args...);
     }
 } // namespace sj
 
