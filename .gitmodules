@@ -4,9 +4,6 @@
 [submodule "Dependencies/googletest"]
 	path = Dependencies/googletest
 	url = https://github.com/google/googletest.git
-[submodule "Dependencies/glm"]
-	path = Dependencies/glm
-	url = https://github.com/g-truc/glm.git
 [submodule "Dependencies/spdlog"]
 	path = Dependencies/spdlog
 	url = https://github.com/gabime/spdlog.git
