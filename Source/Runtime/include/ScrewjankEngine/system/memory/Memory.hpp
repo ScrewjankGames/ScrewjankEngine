@@ -12,7 +12,7 @@
 namespace sj {
 
     // Forward declarations
-    class HeapZone;
+    class HeapZoneBase;
 
     // Common memory sizes
     constexpr uint64_t k1_KiB = 1024;
@@ -33,27 +33,27 @@ namespace sj {
          */
         static MemorySystem* Get();
 
-        static void PushHeapZone(HeapZone* heap_zone);
+        static void PushHeapZone(HeapZoneBase* heap_zone);
         static void PopHeapZone();
 
-        static HeapZone* GetRootHeapZone();
+        static HeapZoneBase* GetRootHeapZone();
 
 #ifndef SJ_GOLD
         /**
          * Used to access debug heap for allocation
          */
-        static HeapZone* GetDebugHeapZone();
+        static HeapZoneBase* GetDebugHeapZone();
 #endif // !SJ_GOLD
 
         /**
          * Users can push and pop heap zones off the stack to control allocations for scopes
          * Allows custom allocators to be used with third party libraries.
          */
-        static HeapZone* GetCurrentHeapZone();
+        static HeapZoneBase* GetCurrentHeapZone();
 
       private:
-        THeapZone<FreeListAllocator> m_RootHeapZone;
-        THeapZone<FreeListAllocator> m_DebugHeapZone;
+        HeapZone<FreeListAllocator> m_RootHeapZone;
+        HeapZone<FreeListAllocator> m_DebugHeapZone;
         
         MemorySystem();
         ~MemorySystem();
@@ -143,7 +143,7 @@ namespace sj {
     };
 
     template <typename T, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(HeapZone* zone, Args&&... args);
+    constexpr UniquePtr<T> MakeUnique(HeapZoneBase* zone, Args&&... args);
 
     // Placeholder SharedPtr alias
     template <typename T>
@@ -167,7 +167,7 @@ namespace sj {
     template <class T, class... Args>
     T* New(Args&&... args)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         return heap_zone->New<T>(std::forward<Args>(args)...);
     }
 
@@ -177,7 +177,7 @@ namespace sj {
      * @note This function should not be used until AFTER the engine initialized the allocator.
      */
     template <class T, class... Args>
-    T* New(HeapZone* heap_zone, Args&&... args)
+    T* New(HeapZoneBase* heap_zone, Args&&... args)
     {
         return heap_zone->New<T>(std::forward<Args>(args)...);
     }
@@ -207,7 +207,7 @@ namespace sj {
      * allocator.
      */
     template <class T, class... Args>
-    void Delete(HeapZone* heap_zone, T*& memory)
+    void Delete(HeapZoneBase* heap_zone, T*& memory)
     {
         heap_zone->Delete(memory);
     }

@@ -21,7 +21,7 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, PushPopTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         void* memory = heap_zone->Allocate(128);
         StackAllocator allocator(128, memory);
 

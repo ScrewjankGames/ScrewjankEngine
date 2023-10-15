@@ -20,7 +20,7 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, AllocationTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         void* memory = heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
         PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
@@ -89,7 +89,7 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, ObjectPoolTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         void* memory =
             heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 

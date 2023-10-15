@@ -22,14 +22,14 @@ namespace sj
     }
 
     template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZone* heap_zone)
+    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone)
         : m_HashFunctor(), m_Elements(heap_zone, 2, Element {s_SentinelElement}), m_IndexMask(0),
           m_Count(0), m_MaxLoadFactor(0.9f)
     {
     }
 
     template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZone* heap_zone, std::initializer_list<T> list)
+    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone, std::initializer_list<T> list)
         : UnorderedSet(heap_zone)
     {
         for (auto key : list)
@@ -40,7 +40,7 @@ namespace sj
 
     template <class T, class Hasher>
     template <class InputIterator>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZone* heap_zone,
+    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone,
                                                  InputIterator first,
                                                  InputIterator last)
         : UnorderedSet(heap_zone)

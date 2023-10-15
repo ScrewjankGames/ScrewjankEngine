@@ -33,7 +33,7 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         void* memory = heap_zone->Allocate(128);
         LinearAllocator allocator(128, memory);
 
@@ -56,7 +56,7 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = heap_zone->Allocate(mem_size);
 
@@ -76,7 +76,7 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = heap_zone->Allocate(mem_size);
 
@@ -89,7 +89,7 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = heap_zone->Allocate(mem_size);
         
@@ -105,7 +105,7 @@ namespace system_tests {
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        HeapZone* heap_zone = MemorySystem::GetCurrentHeapZone();
+        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
         size_t mem_size = 256;
         void* memory = heap_zone->Allocate(mem_size);
 

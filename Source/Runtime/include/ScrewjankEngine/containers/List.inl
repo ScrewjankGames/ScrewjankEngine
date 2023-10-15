@@ -128,13 +128,13 @@ namespace sj
     }
 
     template <class T, bool tIsBidirectional>
-    inline List<T, tIsBidirectional>::List(HeapZone* heap_zone)
+    inline List<T, tIsBidirectional>::List(HeapZoneBase* heap_zone)
         : m_HeapZone(heap_zone)
     {
     }
 
     template <class T, bool tIsBidirectional>
-    inline List<T, tIsBidirectional>::List(HeapZone* heap_zone, std::initializer_list<T> list)
+    inline List<T, tIsBidirectional>::List(HeapZoneBase* heap_zone, std::initializer_list<T> list)
         : List<T, tIsBidirectional>(heap_zone)
     {
         for(auto it = list.end() - 1; it >= list.begin(); it--)

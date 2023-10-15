@@ -22,7 +22,7 @@ namespace system_tests {
     TEST(FreeListAllocatorTests, BasicAllocationTest)
     {
         // Test basic allocations and frees that shouldn't hit many edge cases
-        HeapZone* heap = MemorySystem::GetRootHeapZone();
+        HeapZoneBase* heap = MemorySystem::GetRootHeapZone();
         size_t alloc_size = sizeof(FreeListDummy) * 16;
         void* test_memory = heap->Allocate(alloc_size);
 
@@ -85,7 +85,7 @@ namespace system_tests {
         // This allocator should have enough room for exactly two individual allocations of size
         // sizeof(FreeListDummy)
 
-        HeapZone* heap = MemorySystem::Get()->GetRootHeapZone();
+        HeapZoneBase* heap = MemorySystem::Get()->GetRootHeapZone();
         size_t alloc_size = sizeof(FreeListDummy) * 4;
         void* test_memory = heap->Allocate(alloc_size);
 
@@ -135,7 +135,7 @@ namespace system_tests {
 
     TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
     {
-        HeapZone* heap = MemorySystem::Get()->GetRootHeapZone();
+        HeapZoneBase* heap = MemorySystem::Get()->GetRootHeapZone();
         size_t alloc_size = 128;
         void* test_memory = heap->Allocate(alloc_size);
 

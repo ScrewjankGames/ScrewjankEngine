@@ -158,12 +158,12 @@ namespace sj
         /**
          * Constructor
          */
-        List(HeapZone* heap_zone);
+        List(HeapZoneBase* heap_zone);
 
         /**
          * Initializer List Construction
          */
-        List(HeapZone* heap_zone, std::initializer_list<T> list);
+        List(HeapZoneBase* heap_zone, std::initializer_list<T> list);
 
         /**
          * Copy constructor 
@@ -270,7 +270,7 @@ namespace sj
         UnmanagedList<node_type> m_List;
 
         /** Allocator used to service allocations for container structures */
-        HeapZone* m_HeapZone;
+        HeapZoneBase* m_HeapZone;
 
       public:
         /** Begin function to allow range-based loop iterator */

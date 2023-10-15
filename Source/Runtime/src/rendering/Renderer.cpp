@@ -11,9 +11,9 @@
 
 namespace sj
 {
-    HeapZone* Renderer::WorkBuffer()
+    HeapZone<FreeListAllocator>* Renderer::WorkBuffer()
     {
-        static THeapZone<FreeListAllocator> zone(MemorySystem::GetRootHeapZone(), 8 * k1_KiB, "Renderer Work Buffer");
+        static HeapZone zone(MemorySystem::GetRootHeapZone(), 8 * k1_KiB, "Renderer Work Buffer");
         return &zone;
     }
 

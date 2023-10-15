@@ -25,25 +25,25 @@ namespace sj
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone)
         : m_Data(nullptr), m_BackingZone(heap_zone), m_Size(0), m_Capacity(0)
     {
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, size_t count) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, size_t count) : dynamic_vector(heap_zone)
     {
         resize(count);
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, size_t count, const T& value) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, size_t count, const T& value) : dynamic_vector(heap_zone)
     {
         resize(count, value);
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZone* heap_zone, std::initializer_list<T> list) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, std::initializer_list<T> list) : dynamic_vector(heap_zone)
     {
         // Make sure vector has space for size() elements
         reserve(list.size());

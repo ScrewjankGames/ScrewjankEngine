@@ -8,17 +8,18 @@
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 namespace sj
 {
     /**
      * Represents a named zone of memory on the heap, owns associated memory or defers to parent HeapZone
      */
-    class HeapZone
+    class HeapZoneBase
     {
       public:
-        static HeapZone* FindHeapZoneForPointer(void* ptr);
-        virtual ~HeapZone() = default;
+        static HeapZoneBase* FindHeapZoneForPointer(void* ptr);
+        virtual ~HeapZoneBase() = default;
 
         [[nodiscard]] 
         virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
@@ -49,7 +50,7 @@ namespace sj
         virtual bool ContainsPointer(void* ptr) const = 0;
   
       protected:
-        static static_vector<HeapZone*, 64> s_HeapZoneList;
+        static static_vector<HeapZoneBase*, 64> s_HeapZoneList;
 
         #ifndef GOLD_VERSION
         char m_DebugName[256]; 
@@ -59,12 +60,12 @@ namespace sj
     /**
      * Specialized heap zone that accepts an allocator type 
      */
-    template<allocator_concept AllocatorType>
-    class THeapZone : public HeapZone
+    template<allocator_concept AllocatorType = FreeListAllocator>
+    class HeapZone : public HeapZoneBase
     {
     public:
-        THeapZone(HeapZone* parent, const size_t size, const char* debug_name = "");
-        ~THeapZone() override;
+        HeapZone(HeapZoneBase* parent, const size_t size, const char* debug_name = "");
+        ~HeapZone() override;
 
         [[nodiscard]] 
         void* Allocate(const size_t size,
@@ -75,7 +76,7 @@ namespace sj
         bool ContainsPointer(void* ptr) const override;
 
     private:
-        HeapZone* m_ParentZone = nullptr;
+        HeapZoneBase* m_ParentZone = nullptr;
         AllocatorType m_Allocator;
 
         // TODO: Actually put together a thread friendly memory model and remove me
@@ -89,7 +90,7 @@ namespace sj
     class HeapZoneScope
     {
       public:
-        HeapZoneScope(HeapZone* zone);
+        HeapZoneScope(HeapZoneBase* zone);
         HeapZoneScope(const HeapZoneScope& other) = delete;
         HeapZoneScope(HeapZoneScope&& other);
 
@@ -97,18 +98,19 @@ namespace sj
 
         ~HeapZoneScope();
 
-        HeapZone& operator*() { return *m_Heap; }
-        HeapZone* operator->() { return m_Heap; }
-        const HeapZone& operator*() const { return *m_Heap; }
-        const HeapZone* operator->() const { return m_Heap; }
+        HeapZoneBase& operator*() { return *m_Heap; }
+        HeapZoneBase* operator->() { return m_Heap; }
+        const HeapZoneBase& operator*() const { return *m_Heap; }
+        const HeapZoneBase* operator->() const { return m_Heap; }
 
-        HeapZone* Get() { return m_Heap; }
+        HeapZoneBase* Get() { return m_Heap; }
 
       private:
-        HeapZone* m_Heap;
+        HeapZoneBase* m_Heap;
     };
 
-
+    template <class T>
+    HeapZone() -> HeapZone<FreeListAllocator>; 
 
 } // namespace sj
 

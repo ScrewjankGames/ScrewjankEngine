@@ -45,25 +45,25 @@ namespace sj {
          * Default Constructor
          * @param count The number of elements to default construct in this vector
          */
-        explicit dynamic_vector(HeapZone* heap_zone);
+        explicit dynamic_vector(HeapZoneBase* heap_zone);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to default construct in this vector
          */
-        dynamic_vector(HeapZone* heap_zone, size_t count);
+        dynamic_vector(HeapZoneBase* heap_zone, size_t count);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to construct in this vector
          * @param value The value to use when initializing constructed elements
          */
-        dynamic_vector(HeapZone* heap_zone, size_t count, const T& value);
+        dynamic_vector(HeapZoneBase* heap_zone, size_t count, const T& value);
 
         /**
          * List initialization Constructor
          */
-        dynamic_vector(HeapZone* heap_zone, std::initializer_list<T> list);
+        dynamic_vector(HeapZoneBase* heap_zone, std::initializer_list<T> list);
 
         /**
          * Copy Constructor
@@ -219,7 +219,7 @@ namespace sj {
         size_t m_Capacity;
 
         /** Allocator used to service this vector */
-        HeapZone* m_BackingZone;
+        HeapZoneBase* m_BackingZone;
 
         /** Pointer to the data buffer */
         T* m_Data;

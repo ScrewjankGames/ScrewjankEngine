@@ -109,18 +109,18 @@ namespace sj {
         /**
          * Default constructor
          */
-        UnorderedSet(HeapZone* heap_zone);
+        UnorderedSet(HeapZoneBase* heap_zone);
 
         /**
          * List Initialization Constructor
          */
-        UnorderedSet(HeapZone* heap_zone, std::initializer_list<T> list);
+        UnorderedSet(HeapZoneBase* heap_zone, std::initializer_list<T> list);
 
         /**
          * Range Constructor
          */
         template <class InputIterator>
-        UnorderedSet(HeapZone* heap_zone, InputIterator first, InputIterator last);
+        UnorderedSet(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
 
         /**
          * Copy Constructor

@@ -8,11 +8,11 @@
 namespace sj
 {
     // v This is gonna be a fucking thread safety dumpster fire
-    constinit static_vector<HeapZone*, 64> HeapZone::s_HeapZoneList;
+    constinit static_vector<HeapZoneBase*, 64> HeapZoneBase::s_HeapZoneList;
 
-    HeapZone* HeapZone::FindHeapZoneForPointer(void* ptr)
+    HeapZoneBase* HeapZoneBase::FindHeapZoneForPointer(void* ptr)
     {
-        for(HeapZone* zone : HeapZone::s_HeapZoneList)
+        for(HeapZoneBase* zone : HeapZoneBase::s_HeapZoneList)
         {
             if(zone && zone->ContainsPointer(ptr))
             {
@@ -23,7 +23,7 @@ namespace sj
         return nullptr;
     }
 
-    HeapZoneScope::HeapZoneScope(HeapZone* zone) : m_Heap(zone)
+    HeapZoneScope::HeapZoneScope(HeapZoneBase* zone) : m_Heap(zone)
     {
         MemorySystem::PushHeapZone(zone);
     }

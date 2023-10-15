@@ -28,7 +28,7 @@ void operator delete(void* memory) noexcept
     else
     {
         // Search for correct heapzone for pointer supplied
-        sj::HeapZone* heap_zone = sj::HeapZone::FindHeapZoneForPointer(memory);
+        sj::HeapZoneBase* heap_zone = sj::HeapZoneBase::FindHeapZoneForPointer(memory);
 
         SJ_ASSERT(heap_zone != nullptr,
                   "Failed to find heapzone for pointer! Was heapzone destroyed before the pointer "
@@ -40,7 +40,7 @@ void operator delete(void* memory) noexcept
 
 namespace sj {
     /** Used to track the active heap zone. */
-    thread_local StaticStack<HeapZone*, 64> g_HeapZoneStack;
+    thread_local StaticStack<HeapZoneBase*, 64> g_HeapZoneStack;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager
@@ -65,7 +65,7 @@ namespace sj {
         return &memSys;
     }
 
-    void MemorySystem::PushHeapZone(HeapZone* heap_zone)
+    void MemorySystem::PushHeapZone(HeapZoneBase* heap_zone)
     {
         g_HeapZoneStack.Push(heap_zone);
     }
@@ -75,20 +75,20 @@ namespace sj {
         g_HeapZoneStack.Pop();
     }
 
-    HeapZone* MemorySystem::GetRootHeapZone()
+    HeapZoneBase* MemorySystem::GetRootHeapZone()
     {
         return &(Get()->m_RootHeapZone);
         return nullptr;
     }
 
 #ifndef SJ_GOLD
-    HeapZone* MemorySystem::GetDebugHeapZone()
+    HeapZoneBase* MemorySystem::GetDebugHeapZone()
     {
         return &(Get()->m_DebugHeapZone);
     }
 #endif
 
-    HeapZone* MemorySystem::GetCurrentHeapZone()
+    HeapZoneBase* MemorySystem::GetCurrentHeapZone()
     {
         MemorySystem* system = Get();
 
