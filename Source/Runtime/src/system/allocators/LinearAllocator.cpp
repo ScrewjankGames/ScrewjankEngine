@@ -1,13 +1,15 @@
+// Parent Include
+#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
+
 // STD Headers
 
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
-
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Utils.hpp>
 
 namespace sj {
 
@@ -88,4 +90,15 @@ namespace sj {
     {
         return m_BufferStart != nullptr;
     }
+
+    uintptr_t LinearAllocator::Begin() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferStart);
+    }
+
+    uintptr_t LinearAllocator::End() const 
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferEnd);
+    }
+
 } // namespace sj

@@ -11,7 +11,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
 

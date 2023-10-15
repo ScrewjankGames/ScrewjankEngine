@@ -1,7 +1,7 @@
 #pragma once
 
 // Engine Headers
-#include <ScrewjankEngine/system/HeapZone.hpp>
+#include <ScrewjankEngine/system/memory/HeapZone.hpp>
 
 namespace sj
 {

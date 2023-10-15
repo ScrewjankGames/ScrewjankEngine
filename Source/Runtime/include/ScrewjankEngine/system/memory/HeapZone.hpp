@@ -7,7 +7,7 @@
 #include <ScrewjankEngine/containers/StaticVector.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/system/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 namespace sj
 {
@@ -24,7 +24,7 @@ namespace sj
         virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
 
         template <class T>
-        void* AllocateType();
+        T* AllocateType(const size_t count = 1);
 
         /**
          * Deallocates memory from this heapzone 
@@ -59,7 +59,7 @@ namespace sj
     /**
      * Specialized heap zone that accepts an allocator type 
      */
-    template<is_allocator AllocatorType>
+    template<allocator_concept AllocatorType>
     class THeapZone : public HeapZone
     {
     public:
@@ -76,8 +76,6 @@ namespace sj
 
     private:
         HeapZone* m_ParentZone = nullptr;
-        void* m_ZoneStart = nullptr;
-        void* m_ZoneEnd = nullptr;
         AllocatorType m_Allocator;
 
         // TODO: Actually put together a thread friendly memory model and remove me
@@ -115,4 +113,4 @@ namespace sj
 } // namespace sj
 
 // Include inlines
-#include <ScrewjankEngine/system/HeapZone.inl>
+#include <ScrewjankEngine/system/memory/HeapZone.inl>

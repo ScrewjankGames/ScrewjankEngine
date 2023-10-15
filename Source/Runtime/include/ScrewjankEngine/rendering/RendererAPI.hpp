@@ -5,7 +5,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 // Platform Specific Headers
 

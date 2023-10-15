@@ -7,7 +7,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
 
 namespace sj {

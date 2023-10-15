@@ -10,7 +10,7 @@
 #include <ScrewjankEngine/containers/Array.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
 

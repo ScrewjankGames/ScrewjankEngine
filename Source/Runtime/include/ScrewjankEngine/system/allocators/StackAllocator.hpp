@@ -5,12 +5,12 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/system/Allocator.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
 
-    class StackAllocator : public Allocator
+    class StackAllocator final : public Allocator
     {
       public:
         /**
@@ -58,6 +58,10 @@ namespace sj {
          */
         template <typename T>
         [[nodiscard]] void* PushType();
+
+        uintptr_t Begin() const override;
+
+        uintptr_t End() const override;
 
       private:
         /** Data structure used to manage allocations the stack */

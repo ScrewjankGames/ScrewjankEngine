@@ -2,7 +2,8 @@
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Utils.hpp>
+#include <ScrewjankEngine/core/Assert.hpp>
 
 namespace sj {
     FreeListAllocator::FreeListAllocator()
@@ -151,6 +152,16 @@ namespace sj {
     {
         return uintptr_t(memory) >= uintptr_t(m_BufferStart) &&
                uintptr_t(memory) <= uintptr_t(m_BufferEnd);
+    }
+
+    uintptr_t FreeListAllocator::Begin() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferStart);
+    }
+
+    uintptr_t FreeListAllocator::End() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferEnd);
     }
 
     std::pair<FreeListAllocator::FreeBlock*, size_t>

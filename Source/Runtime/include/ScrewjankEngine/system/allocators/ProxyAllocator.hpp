@@ -5,14 +5,14 @@
 // Library Header
 
 // Screwjank Header
-#include <ScrewjankEngine/system/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 namespace sj {
     /**
      * Class that forwards all of it's allocation logic to it's backing allocator, but stores it's
      * own allocator metrics
      */
-    class ProxyAllocator : public Allocator
+    class ProxyAllocator final : public Allocator
     {
       public:
         /**

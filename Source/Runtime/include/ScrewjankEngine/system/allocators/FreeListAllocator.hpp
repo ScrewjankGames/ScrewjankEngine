@@ -5,11 +5,11 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 namespace sj {
 
-    class FreeListAllocator : public Allocator
+    class FreeListAllocator final : public Allocator
     {
       public:
         /**
@@ -66,7 +66,11 @@ namespace sj {
          */
         bool IsMemoryInRange(void* memory) const;
 
+        uintptr_t Begin() const override;
+        uintptr_t End() const override;
+
       private:
+
         /** Linked list node structure inserted in-place into the allocator's buffer */
         struct FreeBlock
         {
@@ -95,6 +99,15 @@ namespace sj {
             {
             }
         };
+
+        /** Constant value to determine the minimum size of a block */
+        static constexpr size_t kMinBlockSize =
+            std::max(sizeof(FreeBlock), sizeof(AllocationHeader) + 1);
+
+        /** Constant value to determine the strictest alignment that must be satisfied to split off
+         * a new free block */
+        static constexpr size_t kMaxMetadataAlignment =
+            std::max(alignof(FreeBlock), alignof(AllocationHeader));
 
         /**
          * Searches the free list for the first block that can satisfy the size and alignment
@@ -133,14 +146,5 @@ namespace sj {
 
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;
-
-        /** Constant value to determine the minimum size of a block */
-        static constexpr size_t kMinBlockSize =
-            std::max(sizeof(FreeBlock), sizeof(AllocationHeader) + 1);
-
-        /** Constant value to determine the strictest alignment that must be satisfied to split off
-         * a new free block */
-        static constexpr size_t kMaxMetadataAlignment =
-            std::max(alignof(FreeBlock), alignof(AllocationHeader));
     };
 } // namespace sj

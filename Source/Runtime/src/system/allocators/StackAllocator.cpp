@@ -1,3 +1,6 @@
+// Parent Include
+#include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
+
 // STD Headers
 
 // Library Headers
@@ -5,8 +8,7 @@
 // Engine Headers
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
-#include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Utils.hpp>
 
 namespace sj {
 
@@ -102,6 +104,16 @@ namespace sj {
     {
         Free(nullptr);
         return;
+    }
+
+    uintptr_t StackAllocator::Begin() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferStart);
+    }
+
+    uintptr_t StackAllocator::End() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferStart) + m_Capacity;
     }
 
 } // namespace sj

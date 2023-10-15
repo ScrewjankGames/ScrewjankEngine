@@ -6,5 +6,5 @@
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Game.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
-#include <ScrewjankEngine/system/HeapZone.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/HeapZone.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>

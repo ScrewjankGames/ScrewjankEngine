@@ -9,11 +9,14 @@ namespace sj {
      * Concept for template deduction required when supplying allocators to containers
      */
     template <class T>
-    concept is_allocator = requires(T obj)
+    concept allocator_concept = requires(T obj)
     {
         // These statements must compile for something to be considered an allocator
         {obj.Allocate(size_t())};
         {obj.Free(nullptr)};
+        {obj.Begin()} -> std::convertible_to<uintptr_t>;
+        {obj.End()} -> std::convertible_to<uintptr_t>;
+
     };
 
     /**
@@ -50,6 +53,11 @@ namespace sj {
         }
     };
 
+    /**
+     * Base class to allow allocator chaining.
+     * Derived classes should be marked `final` to help the compiler de-virtualize function calls.
+     * https://quuxplusone.github.io/blog/2021/02/15/devirtualization/
+     */
     class Allocator
     {
       public:
@@ -103,6 +111,9 @@ namespace sj {
          */
         template <class T>
         void Delete(T*& memory);
+
+        virtual uintptr_t Begin() const = 0;
+        virtual uintptr_t End() const = 0;
     };
 
     template <class T>

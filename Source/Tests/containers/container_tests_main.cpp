@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 sj::THeapZone<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, sj::k1_GiB * 1, "Unit Test Heap");
 

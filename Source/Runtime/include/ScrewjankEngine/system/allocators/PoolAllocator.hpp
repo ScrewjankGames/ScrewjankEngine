@@ -7,9 +7,10 @@
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
-#include <ScrewjankEngine/system/Allocator.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Utils.hpp>
+
 
 namespace sj {
 
@@ -18,7 +19,7 @@ namespace sj {
      * @tparam kBlockSize The size of each chunk in the pool
      */
     template <size_t kBlockSize>
-    class PoolAllocator : public Allocator
+    class PoolAllocator final : public Allocator
     {
       public:
         /**
@@ -52,6 +53,9 @@ namespace sj {
          */
         virtual void Free(void* memory = nullptr) override;
 
+        uintptr_t Begin() const override;
+        uintptr_t End() const override;
+
       private:
         /** Node structure for the for the free block linked list */
         struct FreeBlock
@@ -65,6 +69,9 @@ namespace sj {
         /** The beginning of this allocator's data buffer */
         void* m_BufferStart;
 
+        /** The end of this allocator's data buffer */
+        void* m_BufferEnd;
+
         /** Pointer head of singly linked list of free blocks */
         UnmanagedList<FreeBlock> m_FreeList;
 
@@ -74,6 +81,9 @@ namespace sj {
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;
     };
+
+    template<class T>
+    using ObjectPoolAllocator = PoolAllocator<sizeof(T)>;
 
 } // namespace sj
 

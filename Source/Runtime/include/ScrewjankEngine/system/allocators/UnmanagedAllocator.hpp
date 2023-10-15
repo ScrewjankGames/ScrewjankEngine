@@ -4,14 +4,14 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 namespace sj {
     /**
      * @class UnmanagedAllocator
      * @brief A simple wrapper for standard malloc and free calls
      */
-    class UnmanagedAllocator : public Allocator
+    class UnmanagedAllocator final : public Allocator
     {
       public:
         /** Constructor */

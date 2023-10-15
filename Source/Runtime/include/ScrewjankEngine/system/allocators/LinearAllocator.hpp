@@ -4,19 +4,19 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/system/Memory.hpp>
-#include <ScrewjankEngine/system/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 namespace sj {
 
-    class LinearAllocator : public Allocator
+    class LinearAllocator final : public Allocator
     {
       public:
         
         /**
-         * Defualt constructor 
+         * Default constructor 
          */
-        LinearAllocator();
+        LinearAllocator() = default;
 
         /**
          * Initializing Constructor
@@ -60,6 +60,10 @@ namespace sj {
          * @return whether the allocator is in a valid state
          */
         bool IsInitialized() const;
+
+        uintptr_t Begin() const override;
+        uintptr_t End() const override;
+
 
       private:
 

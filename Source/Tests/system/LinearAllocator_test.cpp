@@ -5,8 +5,8 @@
 
 // Void Engine Headers
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
-#include <ScrewjankEngine/system/Allocator.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
 #include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
 

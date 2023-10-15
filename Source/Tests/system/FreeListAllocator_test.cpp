@@ -5,8 +5,9 @@
 
 // Void Engine Headers
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/Utils.hpp>
 
 using namespace sj;
 

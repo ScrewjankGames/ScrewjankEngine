@@ -6,7 +6,7 @@
 // Engine Headers
 #include <ScrewjankEngine/core/Log.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/system/Memory.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
     // Forward declarations

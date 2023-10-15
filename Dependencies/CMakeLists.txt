@@ -15,10 +15,15 @@ add_subdirectory(GLFW)
 
 set_target_properties(glfw 
     PROPERTIES 
-        FOLDER Engine/Dependencies/GLFW
+        FOLDER Engine/Dependencies/GLFW3
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GLFW"
+)
+
+set_target_properties(update_mappings 
+    PROPERTIES 
+        FOLDER Engine/Dependencies/GLFW3
 )
 #set_target_properties(uninstall PROPERTIES FOLDER Engine/Dependencies/GLFW)
 

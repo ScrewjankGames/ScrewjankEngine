@@ -2,13 +2,6 @@
 
 namespace sj
 {
-    template <class T>
-    class ObjectPoolAllocator : public PoolAllocator<sizeof(T)>
-    {
-        // Inherit constructor
-        using PoolAllocator<sizeof(T)>::PoolAllocator;
-    };
-
     template <size_t kBlockSize>
     inline PoolAllocator<kBlockSize>::PoolAllocator(size_t buffer_size, void* memory)
     {
@@ -25,6 +18,9 @@ namespace sj
     inline void PoolAllocator<kBlockSize>::Init(size_t buffer_size, void* memory)
     {
         m_BufferStart = memory;
+        m_BufferEnd =
+            reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(m_BufferStart) + buffer_size);
+
         m_NumBlocks = buffer_size / kBlockSize;
 
         // Ensure block size is large enough to store an allocation header
@@ -94,5 +90,17 @@ namespace sj
 
         m_AllocatorStats.ActiveAllocationCount--;
         m_AllocatorStats.ActiveBytesAllocated -= kBlockSize;
+    }
+
+    template <size_t kBlockSize>
+    inline uintptr_t PoolAllocator<kBlockSize>::Begin() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferStart);
+    }
+
+    template <size_t kBlockSize>
+    inline uintptr_t PoolAllocator<kBlockSize>::End() const
+    {
+        return reinterpret_cast<uintptr_t>(m_BufferEnd);
     }
 }
