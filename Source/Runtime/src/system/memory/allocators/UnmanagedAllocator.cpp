@@ -5,7 +5,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/system/allocators/UnmanagedAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/UnmanagedAllocator.hpp>
 
 namespace sj {
     UnmanagedAllocator::UnmanagedAllocator() : m_ActiveAllocationCount(0)

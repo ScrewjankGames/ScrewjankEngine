@@ -7,7 +7,7 @@
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/system/threading/Thread.hpp>
 #include <ScrewjankEngine/system/memory/HeapZone.hpp>
-#include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
 
 namespace sj
 {

@@ -4,7 +4,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/system/allocators/ProxyAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/ProxyAllocator.hpp>
 
 namespace sj {
     ProxyAllocator::ProxyAllocator(Allocator* backing_allocator, const char* debug_name)

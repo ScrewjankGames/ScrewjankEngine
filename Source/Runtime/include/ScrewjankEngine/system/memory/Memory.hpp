@@ -7,7 +7,7 @@
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/HeapZone.hpp>
-#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 namespace sj {
 

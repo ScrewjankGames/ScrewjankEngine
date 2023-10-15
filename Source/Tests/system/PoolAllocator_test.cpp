@@ -6,7 +6,7 @@
 // Void Engine Headers
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
 
 using namespace sj;
 

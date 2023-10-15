@@ -1,5 +1,5 @@
 // Parent Include
-#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Utils.hpp>

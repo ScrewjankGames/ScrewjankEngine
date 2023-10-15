@@ -7,8 +7,8 @@
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/Utils.hpp>
-#include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
-#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
 
 using namespace sj;
 

@@ -4,10 +4,10 @@
 #include <benchmark/benchmark.h>
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
-#include <ScrewjankEngine/system/allocators/StackAllocator.hpp>
-#include <ScrewjankEngine/system/allocators/PoolAllocator.hpp>
-#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 sj::THeapZone<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
 

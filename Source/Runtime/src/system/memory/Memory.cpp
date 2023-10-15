@@ -7,8 +7,8 @@
 #include <ScrewjankEngine/core/Assert.hpp>
 #include <ScrewjankEngine/core/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/allocators/UnmanagedAllocator.hpp>
-#include <ScrewjankEngine/system/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/UnmanagedAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Root heap sizes
 constexpr uint64_t kRootHeapSize = sj::k1_KiB * 64;

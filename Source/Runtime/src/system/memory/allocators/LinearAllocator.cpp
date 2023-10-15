@@ -1,5 +1,5 @@
 // Parent Include
-#include <ScrewjankEngine/system/allocators/LinearAllocator.hpp>
+#include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
 
 // STD Headers
 
