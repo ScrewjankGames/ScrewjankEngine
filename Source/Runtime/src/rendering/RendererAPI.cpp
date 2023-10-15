@@ -5,7 +5,6 @@
 // Screwjank Headers
 #include <ScrewjankEngine/rendering/RendererAPI.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/rendering/RenderDevice.hpp>
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
 // Platform specific headers

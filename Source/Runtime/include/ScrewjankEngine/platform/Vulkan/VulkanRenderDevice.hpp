@@ -6,9 +6,6 @@
 // Library Headers
 #include <vulkan/vulkan.h>
 
-// Screwjank Headers
-#include <ScrewjankEngine/rendering/RenderDevice.hpp>
-
 namespace sj {
 
     // Forward Declarations
@@ -20,7 +17,7 @@ namespace sj {
         std::optional<uint32_t> PresentationFamilyIndex;
     };
 
-    class VulkanRenderDevice : public RenderDevice
+    class VulkanRenderDevice
     {
       public:
         /**
