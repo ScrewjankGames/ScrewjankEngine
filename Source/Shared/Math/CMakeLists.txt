@@ -24,10 +24,6 @@ set_target_properties(${PROJECT_NAME}
 ################################################################################
 # Link dependencies
 ################################################################################
-target_link_libraries(${PROJECT_NAME} 
-    PRIVATE 
-        ScrewjankCore
-)
 
 ################################################################################
 # Configure include directories

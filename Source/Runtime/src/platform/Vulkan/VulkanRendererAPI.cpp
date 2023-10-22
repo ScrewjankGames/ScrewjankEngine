@@ -57,6 +57,7 @@ namespace sj
         m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
         CreateCommandPool();
+        CreateDummyVertexBuffer();
 
         m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_commandPool);
     }
@@ -68,18 +69,10 @@ namespace sj
             return;
         }
 
-        if constexpr(g_IsDebugBuild)
-        {
-            auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
-
-            SJ_ASSERT(messenger_destroy_func != nullptr,
-                      "Failed to load Vulkan Debug messenger destroy function");
-
-            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, nullptr);
-        }
-
         vkDeviceWaitIdle(m_renderDevice.GetLogicalDevice());
+
+        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), m_dummyVertexBuffer, nullptr);
+        vkFreeMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem, nullptr);
 
         m_frameData.DeInit(m_renderDevice.GetLogicalDevice());
 
@@ -95,6 +88,18 @@ namespace sj
         m_renderDevice.DeInit();
 
         vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, nullptr);
+        
+        if constexpr(g_IsDebugBuild)
+        {
+            auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
+
+            SJ_ASSERT(messenger_destroy_func != nullptr,
+                      "Failed to load Vulkan Debug messenger destroy function");
+
+            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, nullptr);
+        }
+
         vkDestroyInstance(m_vkInstance, nullptr);
     }
 
@@ -258,6 +263,24 @@ namespace sj
         m_frameCount++;
     }
 
+    uint32_t VulkanRendererAPI::FindMemoryType(uint32_t typeFilter,
+                                               VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(m_renderDevice.GetPhysicalDevice(), &memProperties);
+
+        for(uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if((typeFilter & (1 << i)) &&
+               (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                return i;
+            }
+        }
+
+        SJ_ASSERT(false, "Failed to find suitable memory type.");
+    }
+
     dynamic_vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
     {
         dynamic_vector<const char*> extensions_vector;
@@ -397,6 +420,51 @@ namespace sj
 
     }
 
+    void VulkanRendererAPI::CreateDummyVertexBuffer()
+    {
+        VkBufferCreateInfo bufferInfo {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(m_dummyVertices[0]) * m_dummyVertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VkResult res = vkCreateBuffer(m_renderDevice.GetLogicalDevice(),
+                                      &bufferInfo,
+                                      nullptr,
+                                      &m_dummyVertexBuffer);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create dummy vertex buffer");
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(m_renderDevice.GetLogicalDevice(),
+                                      m_dummyVertexBuffer,
+                                      &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits,
+                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        res = vkAllocateMemory(m_renderDevice.GetLogicalDevice(),
+                         &allocInfo,
+                         nullptr,
+                         &m_dummyVertexBufferMem);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy vertex buffer memory");
+
+        vkBindBufferMemory(m_renderDevice.GetLogicalDevice(),
+                           m_dummyVertexBuffer,
+                           m_dummyVertexBufferMem,
+                           0);
+
+        void* data;
+        vkMapMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem, 0, bufferInfo.size, 0, &data);
+        memcpy(data, m_dummyVertices.data(), static_cast<size_t>(bufferInfo.size));
+        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem);
+    }
+
     void VulkanRendererAPI::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx)
     {
         VkCommandBufferBeginInfo beginInfo {};
@@ -424,7 +492,12 @@ namespace sj
             vkCmdBindPipeline(buffer,
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
                               m_defaultPipeline.GetPipeline());
-   
+            
+            
+            VkBuffer vertexBuffers[] = {m_dummyVertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(buffer, 0, 1, vertexBuffers, offsets);
+
             VkViewport viewport {};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
@@ -439,7 +512,7 @@ namespace sj
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(buffer, 0, 1, &scissor);
 
-            vkCmdDraw(buffer, 3, 1, 0, 0);
+            vkCmdDraw(buffer, static_cast<uint32_t>(m_dummyVertices.size()), 1, 0, 0);
         }
         vkCmdEndRenderPass(buffer);
 
@@ -476,7 +549,7 @@ namespace sj
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.commandPool = commandPool;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            allocInfo.commandBufferCount = commandBuffers.capacity();
+            allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
             VkResult res = vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
 
