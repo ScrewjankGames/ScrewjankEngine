@@ -187,7 +187,7 @@ namespace sj {
         
         const char** deviceExtensionNames = (const char**)(kRequiredDeviceExtensions.data());
         device_create_info.enabledExtensionCount = 
-            static_cast<uint32_t>(kRequiredDeviceExtensions.capacity());
+            static_cast<uint32_t>(kRequiredDeviceExtensions.size());
         device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
 
         VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);

@@ -7,8 +7,10 @@
 // Engine Headers
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/filesystem/File.hpp>
+
 namespace sj
 {
     void VulkanPipeline::Init(VkDevice device,
@@ -35,13 +37,17 @@ namespace sj
         fragShaderStageInfo.pName = "main";
         
         static_vector<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+        
+        auto bindingDescription = VulkanRendererAPI::DummyVertex::GetBindingDescription();
+        auto attributeDescriptions = VulkanRendererAPI::DummyVertex::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
+        vertexInputInfo.vertexAttributeDescriptionCount =
+            static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly {};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -65,7 +71,7 @@ namespace sj
 
         VkPipelineDynamicStateCreateInfo dynamicState {};
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.capacity());
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
         VkPipelineViewportStateCreateInfo viewportState {};

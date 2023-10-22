@@ -33,6 +33,7 @@ add_compile_definitions(SJ_VULKAN_SUPPORT)
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         glfw
+        ScrewjankMath
         ${Vulkan_LIBRARIES}
 )
 
