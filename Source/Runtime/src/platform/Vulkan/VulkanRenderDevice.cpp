@@ -59,13 +59,20 @@ namespace sj {
         return m_PresentationQueue;
     }
 
+    VkQueue VulkanRenderDevice::GetTransferQueue()
+    {
+        return m_TransferQueue;
+    }
+
     bool VulkanRenderDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
         DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
 
         // Query queue support
         bool indicies_complete =
-            indices.GraphicsFamilyIndex.has_value() && indices.PresentationFamilyIndex.has_value();
+            indices.graphicsFamilyIndex.has_value() && 
+            indices.presentationFamilyIndex.has_value() && 
+            indices.transferFamilyIndex.has_value();
 
         // Check extension support
         uint32_t extension_count;
@@ -77,7 +84,7 @@ namespace sj {
                                              &extension_count,
                                              extension_props.data());
 
-        UnorderedSet<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
+        unordered_set<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
                                                      kRequiredDeviceExtensions.begin(),
                                                      kRequiredDeviceExtensions.end());
 
@@ -157,11 +164,11 @@ namespace sj {
         DeviceQueueFamilyIndices indices =
             GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
-        UnorderedSet<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
+        unordered_set_base<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
         unique_queue_families = 
         {
-            indices.GraphicsFamilyIndex.value(),
-            indices.PresentationFamilyIndex.value()
+            indices.graphicsFamilyIndex.value(),
+            indices.presentationFamilyIndex.value()
         };
 
         dynamic_vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());
@@ -193,8 +200,8 @@ namespace sj {
         VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);
         SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");
 
-        vkGetDeviceQueue(m_Device, *indices.GraphicsFamilyIndex, 0, &m_GraphicsQueue);
-        vkGetDeviceQueue(m_Device, *indices.PresentationFamilyIndex, 0, &m_PresentationQueue);
+        vkGetDeviceQueue(m_Device, *indices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
+        vkGetDeviceQueue(m_Device, *indices.presentationFamilyIndex, 0, &m_PresentationQueue);
     }
 
     DeviceQueueFamilyIndices
@@ -213,7 +220,14 @@ namespace sj {
         {
             if(family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
-                indices.GraphicsFamilyIndex = i;
+                indices.graphicsFamilyIndex = i;
+            }
+
+            // Find a transfer only queue
+            if((family.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+               !(family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+            {
+                indices.transferFamilyIndex = i;
             }
 
             if(renderSurface != VK_NULL_HANDLE)
@@ -226,7 +240,7 @@ namespace sj {
 
                 if(presentation_support)
                 {
-                    indices.PresentationFamilyIndex = i;
+                    indices.presentationFamilyIndex = i;
                 }
             }
 

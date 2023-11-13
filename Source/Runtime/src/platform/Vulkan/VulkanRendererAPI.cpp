@@ -409,7 +409,7 @@ namespace sj
         VkCommandPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = *(indices.GraphicsFamilyIndex);
+        poolInfo.queueFamilyIndex = *(indices.graphicsFamilyIndex);
 
         VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
                                            &poolInfo,

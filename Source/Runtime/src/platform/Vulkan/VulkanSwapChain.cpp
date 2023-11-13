@@ -86,10 +86,10 @@ namespace sj
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(physicalDevice, renderingSurface);
 
-        uint32_t queue_family_indices_array[] = {indices.GraphicsFamilyIndex.value(),
-                                                 indices.PresentationFamilyIndex.value()};
+        uint32_t queue_family_indices_array[] = {indices.graphicsFamilyIndex.value(),
+                                                 indices.presentationFamilyIndex.value()};
 
-        if(indices.GraphicsFamilyIndex != indices.PresentationFamilyIndex)
+        if(indices.graphicsFamilyIndex != indices.presentationFamilyIndex)
         {
             create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             create_info.queueFamilyIndexCount = 2;

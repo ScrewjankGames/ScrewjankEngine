@@ -3,6 +3,7 @@
 // STD Headers
 #include <type_traits>
 #include <utility>
+#include <cmath>
 
 // Library Headers
 
@@ -11,6 +12,121 @@
 #include <ScrewjankEngine/containers/Vector.hpp>
 
 namespace sj {
+
+    constexpr float kDefaultMaxLoadFactor = 0.9f;
+    constexpr size_t CalculateOptimalSize(size_t requestedSize,
+                                          float loadFactor = kDefaultMaxLoadFactor)
+    {
+        return requestedSize;
+    }
+
+    template<class T>
+    struct Element
+    {
+        using offset_t = int8_t;
+        
+        /** Offset that indicates an element is empty */
+        static constexpr offset_t kEmptyOffset = -1;
+
+        /** Flag to indicate a cell was erased so later lookups can probe correctly */
+        static constexpr offset_t kTombstoneOffset = -2;
+
+        /** Flag to indicate a cell is reserved and marks the end of the set for iterators */
+        static constexpr offset_t kEndOfSetSentinel = -3;
+
+        /**
+         * Constructor
+         */
+        Element();
+
+        /**
+         * Constructor
+         * @param offset The offset of the element from it's desired index
+         * @param value Object to copy in element memory
+         */
+        Element(offset_t offset) noexcept;
+
+        /**
+         * Constructor
+         * @param offset The offset of the element from it's desired index
+         * @param value Object to copy in element memory
+         */
+        Element(offset_t offset, T& value) noexcept;
+
+        /**
+         * Constructor
+         * @param offset The offset of the element from it's desired index
+         * @param value Object to move in element memory
+         */
+        Element(offset_t offset, T&& value) noexcept;
+
+        /**
+         * Copy Constructor
+         */
+        Element(const Element& other);
+
+        /**
+         * Move Constructor
+         */
+        Element(Element&& other) noexcept;
+
+        /**
+         * Destructor
+         */
+        ~Element();
+
+        /**
+         * Copy assignment operator
+         */
+        Element& operator=(Element& other);
+
+        /**
+         * Move assignment operator
+         */
+        Element& operator=(Element&& other);
+
+        /**
+         * @return true if Element has never contained a value, else false
+         */
+        bool IsUninitialized() const;
+
+        /**
+         * @return True if the element does not currently contain a record
+         */
+        bool IsEmpty() const;
+
+        /**
+         * @return True if the element represents the end of the set
+         */
+        bool IsSentinel() const;
+
+        /**
+         * @return True if the element currently contains a record
+         */
+        bool HasValue() const;
+
+        /** Element's distance from it's desired hash slot */
+        offset_t Offset = kEmptyOffset;
+
+        /** Nameless union to prevent premature initialization of value by Vector */
+        union
+        {
+            T Value;
+        };
+    };
+
+    template <class T, size_t tRequestedSize, size_t tRealSize = CalculateOptimalSize(tRequestedSize)>
+    struct static_storage
+    {
+        static_vector<Element<T>, tRealSize> m_Elements;
+    };
+
+    template <class T>
+    struct dynamic_storage
+    {
+        dynamic_vector<Element<T>> m_Elements;
+    };
+
     /**
      * Iterator class to walk over all elements of UnorderedSet
      * @note SetIterators do not allow non-const access.
@@ -74,11 +190,9 @@ namespace sj {
     /**
      * Open-addressed robinhood hashed set
      */
-    template <class T, class Hasher = std::hash<T>>
-    class UnorderedSet
+    template <class T, class IMPL, class Hasher = std::hash<T>>
+    class unordered_set_base
     {
-        struct Element;
-
       public:
         // Type aliases
         using key_type = T;
@@ -89,65 +203,66 @@ namespace sj {
         using const_reference = const T&;
         using pointer = T*;
         using const_pointer = const T*;
-        using offset_t = int8_t;
 
         // Iterator definitions
-        using const_iterator = typename SetIterator_t<const UnorderedSet<T, Hasher>>;
+        using const_iterator = typename SetIterator_t<const unordered_set_base<T, Hasher>>;
         using iterator = const_iterator;
-        using element_type = Element;
+        using element_type = Element<T>;
+
+        using offset_t = element_type::offset_t;
 
       public:
         /**
          * Implicit HeapZone Constructors
          * Uses MemorySystem::CurrentHeapZone to allocate memory
          */
-        UnorderedSet();
-        UnorderedSet(std::initializer_list<T> list);
+        unordered_set_base();
+        unordered_set_base(std::initializer_list<T> list);
         template <class InputIterator>
-        UnorderedSet(InputIterator first, InputIterator last);
+        unordered_set_base(InputIterator first, InputIterator last);
 
         /**
          * Default constructor
          */
-        UnorderedSet(HeapZoneBase* heap_zone);
+        unordered_set_base(HeapZoneBase* heap_zone);
 
         /**
          * List Initialization Constructor
          */
-        UnorderedSet(HeapZoneBase* heap_zone, std::initializer_list<T> list);
+        unordered_set_base(HeapZoneBase* heap_zone, std::initializer_list<T> list);
 
         /**
          * Range Constructor
          */
         template <class InputIterator>
-        UnorderedSet(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
+        unordered_set_base(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
 
         /**
          * Copy Constructor
          */
-        UnorderedSet(UnorderedSet& other) = default;
+        unordered_set_base(unordered_set_base& other) = default;
 
         /**
          * Move Constructor
          */
-        UnorderedSet(UnorderedSet&& other) noexcept;
+        unordered_set_base(unordered_set_base&& other) noexcept;
 
         /**
          * Move Assignment operator
          */
-        UnorderedSet<T>& operator=(UnorderedSet&& other);
+        unordered_set_base <T, IMPL, Hasher>& operator=(unordered_set_base&& other);
 
         /**
          * Assignment from initializer list
          */
-        UnorderedSet<T>& operator=(std::initializer_list<T> list);
+        unordered_set_base<T, IMPL, Hasher>& operator=(std::initializer_list<T> list);
 
         /**
          * Equality comparison operator.
          * @note: First sizes are compared. If equal, every element in the first set is searched for
          * in the other
          */
-        bool operator==(const UnorderedSet<T>& other) const;
+        bool operator==(const unordered_set_base<T, IMPL, Hasher>& other) const;
 
         /**
          * Looks up supplied key in set
@@ -213,109 +328,22 @@ namespace sj {
         size_t Capacity() const;
 
       private:
+
         /** Global maximum for how far an element can be from it's desired position */
         static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
 
-        /** Offset that indicates an element is empty */
-        static constexpr offset_t kEmptyOffset = -1;
-
-        /** Flag to indicate a cell was erased so later lookups can probe correctly */
-        static constexpr offset_t kTombstoneOffset = -2;
-
-        /** Flag to indicate a cell is reserved and marks the end of the set for iterators */
-        static constexpr offset_t kEndOfSetSentinel = -3;
-
-        struct Element
-        {
-            /**
-             * Constructor
-             */
-            Element();
-
-            /**
-             * Constructor
-             * @param offset The offset of the element from it's desired index
-             * @param value Object to copy in element memory
-             */
-            Element(offset_t offset) noexcept;
-
-            /**
-             * Constructor
-             * @param offset The offset of the element from it's desired index
-             * @param value Object to copy in element memory
-             */
-            Element(offset_t offset, T& value) noexcept;
-
-            /**
-             * Constructor
-             * @param offset The offset of the element from it's desired index
-             * @param value Object to move in element memory
-             */
-            Element(offset_t offset, T&& value) noexcept;
-
-            /**
-             * Copy Constructor
-             */
-            Element(const Element& other);
-
-            /**
-             * Move Constructor
-             */
-            Element(Element&& other) noexcept;
-
-            /**
-             * Destructor
-             */
-            ~Element();
-
-            /**
-             * Copy assignment operator
-             */
-            Element& operator=(Element& other);
-
-            /**
-             * Move assignment operator
-             */
-            Element& operator=(Element&& other);
-
-            /**
-             * @return true if Element has never contained a value, else false
-             */
-            bool IsUninitialized() const;
-
-            /**
-             * @return True if the element does not currently contain a record
-             */
-            bool IsEmpty() const;
-
-            /**
-             * @return True if the element represents the end of the set
-             */
-            bool IsSentinel() const;
-
-            /**
-             * @return True if the element currently contains a record
-             */
-            bool HasValue() const;
-
-            /** Element's distance from it's desired hash slot */
-            offset_t Offset = kEmptyOffset;
-
-            /** Nameless union to prevent premature initialization of value by Vector */
-            union
-            {
-                T Value;
-            };
-        };
-
         /** The Sentinel Element is used to detect the end of the list */
-        static inline Element s_SentinelElement = Element(kEndOfSetSentinel);
+        static inline element_type s_SentinelElement = element_type::kEndOfSetSentinel;
+
+        /**
+         * Insert the value with the current offset at rick_index, and re-insert the rich element
+         * @param poor_record The element that will be replacing the element at rich_index
+         * @param rich_index The index of the set that will be stolen from and re-inserted
+         */
+        void RobinHoodInsert(element_type&& poor_record, size_t rich_index);
 
         /** Functor used to hash keys */
         Hasher m_HashFunctor;
-
-        /** Entries of the hash set */
-        dynamic_vector<Element> m_Elements;
 
         /** Mask used to assign hashed keys to buckets */
         size_t m_IndexMask;
@@ -325,13 +353,6 @@ namespace sj {
 
         /** The maximum load factor of the set */
         float m_MaxLoadFactor;
-
-        /**
-         * Insert the value with the current offset at rick_index, and re-insert the rich element
-         * @param poor_record The element that will be replacing the element at rich_index
-         * @param rich_index The index of the set that will be stolen from and re-inserted
-         */
-        void RobinHoodInsert(Element&& poor_record, size_t rich_index);
 
       public:
         /**
@@ -344,6 +365,20 @@ namespace sj {
          */
         const_iterator end() const;
     };
+
+    template <class T>
+    class static_unordered_set : public unordered_set_base<T, static_unordered_set<T>>
+    {
+    protected:
+
+    };
+
+    template<class T>
+    class dynamic_unordered_set : public unordered_set_base<T, dynamic_unordered_set<T>>
+    {
+
+    };
+
 } // namespace sj
 
 // Include inlines
