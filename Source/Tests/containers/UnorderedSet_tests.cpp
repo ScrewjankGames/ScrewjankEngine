@@ -17,7 +17,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, IterationTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
         set = {"Foo", "Bar", "Biz", "Baz"};
 
         // Assert that iterator to begin actually points to an element
@@ -40,7 +40,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, InitializerListTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
         set = {"Foo", "Bar", "Biz", "Baz"};
 
         ASSERT_EQ(4, set.Count());
@@ -57,7 +57,7 @@ namespace container_tests {
         dynamic_vector<std::string> vec(MemorySystem::GetRootHeapZone());
         vec = {"FOO", "BAR", "BIZ", "BAZ", "BUZZ"};
 
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone(),
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone(),
                                       vec.begin(),
                                       vec.end());
 
@@ -76,10 +76,10 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, CopyConstructorTest)
     {
-        unordered_set<std::string> set1(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set1(MemorySystem::GetRootHeapZone());
         set1 = {"Foo", "Bar", "Biz", "Baz"};
 
-        unordered_set<std::string> set2(set1);
+        dynamic_unordered_set<std::string> set2(set1);
 
         ASSERT_EQ(set1, set2);
 
@@ -97,10 +97,10 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, MoveConstructorTest)
     {
-        unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
+        dynamic_unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
-        unordered_set<std::string> set2(std::move(set1));
+        dynamic_unordered_set<std::string> set2(std::move(set1));
         ASSERT_FALSE(set1.Contains("Foo"));
         ASSERT_EQ(set1.Count(), 0);
 
@@ -113,7 +113,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, CopyAssignmentTest)
     {
-        unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
+        dynamic_unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
         auto set2 = set1;
@@ -127,7 +127,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, MoveAssignmentTest)
     {
-        unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
+        dynamic_unordered_set<std::string> set1(MemorySystem::GetRootHeapZone(),
                                        {"Foo", "Bar", "Biz", "Baz"});
 
         auto set2 = std::move(set1);
@@ -144,7 +144,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, InsertTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         auto res = set.Insert("Foo");
         ASSERT_EQ(true, res.second);
@@ -185,7 +185,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, DeleteTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -230,7 +230,7 @@ namespace container_tests {
 
         // Degenerate Case: After Range Insertion?
         array<const char*, 1> arr = {"VK_KHR_swapchain"};
-        unordered_set<const char*> set2( MemorySystem::GetRootHeapZone(), arr.begin(), arr.end() );
+        dynamic_unordered_set<const char*> set2( MemorySystem::GetRootHeapZone(), arr.begin(), arr.end() );
 
         ASSERT_TRUE(set2.Contains(arr[0]));
         ASSERT_TRUE(set2.Erase(arr[0]));
@@ -239,7 +239,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, FindTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -291,7 +291,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, ContainsTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
@@ -310,7 +310,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, ClearTest)
     {
-        unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");

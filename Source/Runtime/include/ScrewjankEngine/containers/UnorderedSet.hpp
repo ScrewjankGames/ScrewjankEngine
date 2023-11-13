@@ -115,18 +115,6 @@ namespace sj {
         };
     };
 
-    template <class T, size_t tRequestedSize, size_t tRealSize = CalculateOptimalSize(tRequestedSize)>
-    struct static_storage
-    {
-        static_vector<Element<T>, tRealSize> m_Elements;
-    };
-
-    template <class T>
-    struct dynamic_storage
-    {
-        dynamic_vector<Element<T>> m_Elements;
-    };
-
     /**
      * Iterator class to walk over all elements of UnorderedSet
      * @note SetIterators do not allow non-const access.
@@ -212,30 +200,11 @@ namespace sj {
         using offset_t = element_type::offset_t;
 
       public:
-        /**
-         * Implicit HeapZone Constructors
-         * Uses MemorySystem::CurrentHeapZone to allocate memory
-         */
-        unordered_set_base();
-        unordered_set_base(std::initializer_list<T> list);
-        template <class InputIterator>
-        unordered_set_base(InputIterator first, InputIterator last);
 
         /**
-         * Default constructor
+         * Default Constructor
          */
-        unordered_set_base(HeapZoneBase* heap_zone);
-
-        /**
-         * List Initialization Constructor
-         */
-        unordered_set_base(HeapZoneBase* heap_zone, std::initializer_list<T> list);
-
-        /**
-         * Range Constructor
-         */
-        template <class InputIterator>
-        unordered_set_base(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
+        unordered_set_base() = default;
 
         /**
          * Copy Constructor
@@ -245,12 +214,17 @@ namespace sj {
         /**
          * Move Constructor
          */
-        unordered_set_base(unordered_set_base&& other) noexcept;
+        unordered_set_base(unordered_set_base&& other) = default;
 
         /**
          * Move Assignment operator
          */
-        unordered_set_base <T, IMPL, Hasher>& operator=(unordered_set_base&& other);
+        unordered_set_base<T, IMPL, Hasher>& operator=(const unordered_set_base& other) = default;
+
+        /**
+         * Move Assignment operator
+         */
+        unordered_set_base <T, IMPL, Hasher>& operator=(unordered_set_base&& other) = default;
 
         /**
          * Assignment from initializer list
@@ -327,34 +301,6 @@ namespace sj {
          */
         size_t Capacity() const;
 
-      private:
-
-        /** Global maximum for how far an element can be from it's desired position */
-        static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
-
-        /** The Sentinel Element is used to detect the end of the list */
-        static inline element_type s_SentinelElement = element_type::kEndOfSetSentinel;
-
-        /**
-         * Insert the value with the current offset at rick_index, and re-insert the rich element
-         * @param poor_record The element that will be replacing the element at rich_index
-         * @param rich_index The index of the set that will be stolen from and re-inserted
-         */
-        void RobinHoodInsert(element_type&& poor_record, size_t rich_index);
-
-        /** Functor used to hash keys */
-        Hasher m_HashFunctor;
-
-        /** Mask used to assign hashed keys to buckets */
-        size_t m_IndexMask;
-
-        /** Number of elements in the set */
-        size_t m_Count;
-
-        /** The maximum load factor of the set */
-        float m_MaxLoadFactor;
-
-      public:
         /**
          * Ranged-based for loop compatabile iterator to begining of set
          */
@@ -364,19 +310,97 @@ namespace sj {
          * Ranged-based for loop compatabile iterator to end of set
          */
         const_iterator end() const;
+
+      protected:
+
+        /** Global maximum for how far an element can be from it's desired position */
+        static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
+
+        /** The Sentinel Element is used to detect the end of the list */
+        static inline element_type s_SentinelElement = element_type::kEndOfSetSentinel;
+
+      private:
+        /**
+         * Insert the value with the current offset at rick_index, and re-insert the rich element
+         * @param poor_record The element that will be replacing the element at rich_index
+         * @param rich_index The index of the set that will be stolen from and re-inserted
+         */
+        void RobinHoodInsert(element_type&& poor_record, size_t rich_index);
+
+        auto GetElements()
+        {
+            return static_cast<IMPL*>(this)->m_Elements;
+        }
+
+        auto GetElements() const
+        {
+            return static_cast<const IMPL*>(this)->m_Elements;
+        }
+
+        /** Functor used to hash keys */
+        Hasher m_HashFunctor = {};
+
+        /** Mask used to assign hashed keys to buckets */
+        size_t m_IndexMask = 0;
+
+        /** Number of elements in the set */
+        size_t m_Count = 0;
+
+        /** The maximum load factor of the set */
+        float m_MaxLoadFactor = kDefaultMaxLoadFactor;
+
     };
 
-    template <class T>
-    class static_unordered_set : public unordered_set_base<T, static_unordered_set<T>>
+    template <class T,
+              size_t tRequestedSize,
+              size_t tRealSize = CalculateOptimalSize(tRequestedSize)>
+    class static_unordered_set
+        : public unordered_set_base<T, static_unordered_set<T, tRequestedSize, tRealSize>>
     {
-    protected:
-
+    public:
+        
+    private:
+        friend class Base;
+        static_vector<Element<T>, tRealSize> m_Elements;
     };
 
     template<class T>
     class dynamic_unordered_set : public unordered_set_base<T, dynamic_unordered_set<T>>
     {
+        using Base = unordered_set_base<T, dynamic_unordered_set<T>>;
+    public:
+        /**
+         * Implicit HeapZone Constructors
+         * Uses MemorySystem::CurrentHeapZone to allocate memory
+         */
+        dynamic_unordered_set();
+        dynamic_unordered_set(std::initializer_list<T> list);
 
+        template <class InputIterator>
+        dynamic_unordered_set(InputIterator first, InputIterator last);
+     
+        /**
+         * Default constructor
+         */
+        dynamic_unordered_set(HeapZoneBase* heap_zone);
+
+        /**
+         * List Initialization Constructor
+         */
+        dynamic_unordered_set(HeapZoneBase* heap_zone, std::initializer_list<T> list);
+
+        /**
+         * Range Constructor
+         */
+        template <class InputIterator>
+        dynamic_unordered_set(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
+
+        using Base::operator=;
+
+    private:
+        friend class Base;
+
+        dynamic_vector<Element<T>> m_Elements;
     };
 
 } // namespace sj
