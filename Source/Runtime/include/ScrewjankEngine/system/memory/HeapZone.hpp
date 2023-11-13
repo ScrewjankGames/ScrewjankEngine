@@ -61,7 +61,7 @@ namespace sj
      * Specialized heap zone that accepts an allocator type 
      */
     template<allocator_concept AllocatorType = FreeListAllocator>
-    class HeapZone : public HeapZoneBase
+    class HeapZone final : public HeapZoneBase
     {
     public:
         HeapZone(HeapZoneBase* parent, const size_t size, const char* debug_name = "");
