@@ -2,35 +2,35 @@
 
 namespace sj
 {
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet()
-        : UnorderedSet(MemorySystem::GetCurrentHeapZone())
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base()
+        : unordered_set_base(MemorySystem::GetCurrentHeapZone())
     {
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(std::initializer_list<T> list)
-        : UnorderedSet(MemorySystem::GetCurrentHeapZone(), list)
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(std::initializer_list<T> list)
+        : unordered_set_base(MemorySystem::GetCurrentHeapZone(), list)
     {
     }
 
-    template <class T, class Hasher>
+    template <class T, class IMPL, class Hasher>
     template <class InputIterator>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(InputIterator first, InputIterator last)
-        : UnorderedSet(MemorySystem::GetCurrentHeapZone(), first, last)
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(InputIterator first, InputIterator last)
+        : unordered_set_base(MemorySystem::GetCurrentHeapZone(), first, last)
     {
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone)
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(HeapZoneBase* heap_zone)
         : m_HashFunctor(), m_Elements(heap_zone, 2, Element {s_SentinelElement}), m_IndexMask(0),
           m_Count(0), m_MaxLoadFactor(0.9f)
     {
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone, std::initializer_list<T> list)
-        : UnorderedSet(heap_zone)
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(HeapZoneBase* heap_zone, std::initializer_list<T> list)
+        : unordered_set_base(heap_zone)
     {
         for (auto key : list)
         {
@@ -38,18 +38,18 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
+    template <class T, class IMPL, class Hasher>
     template <class InputIterator>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(HeapZoneBase* heap_zone,
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(HeapZoneBase* heap_zone,
                                                  InputIterator first,
                                                  InputIterator last)
-        : UnorderedSet(heap_zone)
+        : unordered_set_base(heap_zone)
     {
         Emplace(first, last);
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::UnorderedSet(UnorderedSet<T, Hasher>&& other) noexcept
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>::unordered_set_base(unordered_set_base<T, IMPL, Hasher>&& other) noexcept
         : m_Elements(std::move(other.m_Elements))
     {
         other.m_Elements.resize(2, Element {s_SentinelElement});
@@ -64,8 +64,9 @@ namespace sj
         m_MaxLoadFactor = other.m_MaxLoadFactor;
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T>& UnorderedSet<T, Hasher>::operator=(UnorderedSet&& other)
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>&
+    unordered_set_base<T, IMPL, Hasher>::operator=(unordered_set_base&& other)
     {
         m_Elements = std::move(other.m_Elements);
         other.m_Elements.Resize(2, Element {s_SentinelElement});
@@ -81,8 +82,9 @@ namespace sj
         m_MaxLoadFactor = other.m_MaxLoadFactor;
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T>& UnorderedSet<T, Hasher>::operator=(std::initializer_list<T> list)
+    template <class T, class IMPL, class Hasher>
+    inline unordered_set_base<T, IMPL, Hasher>&
+    unordered_set_base<T, IMPL, Hasher>::operator=(std::initializer_list<T> list)
     {
         Clear();
         for (auto& key : list)
@@ -93,8 +95,9 @@ namespace sj
         return *this;
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::operator==(const UnorderedSet<T>& other) const
+    template <class T, class IMPL, class Hasher>
+    inline bool unordered_set_base<T, IMPL, Hasher>::operator==(
+        const unordered_set_base<T, IMPL, Hasher>& other) const
     {
         if (m_Count != other.Count())
         {
@@ -113,9 +116,9 @@ namespace sj
         return true;
     }
 
-    template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::const_iterator
-    UnorderedSet<T, Hasher>::Find(const T& key) const
+    template <class T, class IMPL, class Hasher>
+    inline typename unordered_set_base<T, IMPL, Hasher>::const_iterator
+    unordered_set_base<T, IMPL, Hasher>::Find(const T& key) const
     {
         auto hash = m_HashFunctor(key);
         auto desired_index = hash & m_IndexMask;
@@ -134,22 +137,22 @@ namespace sj
         return end();
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Contains(const T& key) const
+    template <class T, class IMPL, class Hasher>
+    inline bool unordered_set_base<T, IMPL, Hasher>::Contains(const T& key) const
     {
         return Find(key) != end();
     }
 
-    template <class T, class Hasher>
-    inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
-    UnorderedSet<T, Hasher>::Insert(const T& value)
+    template <class T, class IMPL, class Hasher>
+    inline std::pair<typename unordered_set_base<T, IMPL, Hasher>::iterator, bool>
+    unordered_set_base<T, IMPL, Hasher>::Insert(const T& value)
     {
         return Emplace(value);
     }
 
-    template <class T, class Hasher>
+    template <class T, class IMPL, class Hasher>
     template <class InputIterator>
-    inline void UnorderedSet<T, Hasher>::Insert(InputIterator first, InputIterator last)
+    inline void unordered_set_base<T, IMPL, Hasher>::Insert(InputIterator first, InputIterator last)
     {
         for (auto it = first; it != last; it++)
         {
@@ -157,9 +160,9 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
+    template <class T, class IMPL, class Hasher>
     template <class InputIterator>
-    inline void UnorderedSet<T, Hasher>::Emplace(InputIterator first, InputIterator last)
+    inline void unordered_set_base<T, IMPL, Hasher>::Emplace(InputIterator first, InputIterator last)
     {
         for (auto it = first; it != last; it++)
         {
@@ -167,10 +170,10 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
+    template <class T, class IMPL, class Hasher>
     template <class... Args>
-    inline std::pair<typename UnorderedSet<T, Hasher>::iterator, bool>
-    UnorderedSet<T, Hasher>::Emplace(Args&&... args)
+    inline std::pair<typename unordered_set_base<T, IMPL, Hasher>::iterator, bool>
+    unordered_set_base<T, IMPL, Hasher>::Emplace(Args&&... args)
     {
         // construct a new record on the stack
         Element new_record(0, std::move(T(std::forward<Args>(args)...)));
@@ -231,8 +234,8 @@ namespace sj
         return {nullptr, false};
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Erase(const T& key)
+    template <class T, class IMPL, class Hasher>
+    inline bool unordered_set_base<T, IMPL, Hasher>::Erase(const T& key)
     {
         auto hash = m_HashFunctor(key);
         auto start_index = hash & m_IndexMask;
@@ -244,7 +247,7 @@ namespace sj
             if (m_Elements[index].Value == key)
             {
                 m_Count--;
-                m_Elements[index].Offset = kTombstoneOffset;
+                m_Elements[index].Offset = element_type::kTombstoneOffset;
                 return true;
             }
         }
@@ -252,15 +255,15 @@ namespace sj
         return false;
     }
 
-    template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::Clear()
+    template <class T, class IMPL, class Hasher>
+    inline void unordered_set_base<T, IMPL, Hasher>::Clear()
     {
         m_Elements.clear();
         m_Count = 0;
     }
 
-    template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::Rehash(size_t new_capacity)
+    template <class T, class IMPL, class Hasher>
+    inline void unordered_set_base<T, IMPL, Hasher>::Rehash(size_t new_capacity)
     {
         SJ_ASSERT((new_capacity & (new_capacity - 1)) == 0,
                   "UnorderedSet capacity must be a power of two!");
@@ -271,7 +274,7 @@ namespace sj
         }
 
         // Move the old element set into a temporary
-        dynamic_vector<Element> old_set(std::move(m_Elements));
+        dynamic_vector<element_type> old_set(std::move(m_Elements));
 
         // Reserve enough space for the new capacity, plus one slot for the sentinel element
         m_Elements.resize(new_capacity + 1);
@@ -291,20 +294,21 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
-    inline size_t UnorderedSet<T, Hasher>::Count() const
+    template <class T, class IMPL, class Hasher>
+    inline size_t unordered_set_base<T, IMPL, Hasher>::Count() const
     {
         return m_Count;
     }
 
-    template <class T, class Hasher>
-    inline size_t UnorderedSet<T, Hasher>::Capacity() const
+    template <class T, class IMPL, class Hasher>
+    inline size_t unordered_set_base<T, IMPL, Hasher>::Capacity() const
     {
         return m_Elements.capacity() - 1;
     }
 
-    template <class T, class Hasher>
-    inline void UnorderedSet<T, Hasher>::RobinHoodInsert(Element&& poor_record, size_t rich_index)
+    template <class T, class IMPL, class Hasher>
+    inline void unordered_set_base<T, IMPL, Hasher>::RobinHoodInsert(unordered_set_base<T, IMPL, Hasher>::element_type&& poor_record,
+                                                         size_t rich_index)
     {
         // Swap the rich and poor entries
         Element rich_record(std::move(m_Elements[rich_index]));
@@ -332,8 +336,8 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::begin() const
+    template <class T, class IMPL, class Hasher>
+    inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::begin() const
     {
         // Return the first non-empty element
         for (auto elementIt = m_Elements.begin(); elementIt != m_Elements.end(); elementIt++)
@@ -347,8 +351,8 @@ namespace sj
         return iterator(&(*m_Elements.begin()));
     }
 
-    template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::iterator UnorderedSet<T, Hasher>::end() const
+    template <class T, class IMPL, class Hasher>
+    inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::end() const
     {
         return iterator(&(*(m_Elements.end() - 1)));
     }
@@ -357,34 +361,34 @@ namespace sj
     /// UnorderedSet::Element Implementation
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element()
+    template <class T>
+    inline Element<T>::Element()
     {
         Offset = kEmptyOffset;
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset) noexcept
+    template <class T>
+    inline Element<T>::Element(offset_t offset) noexcept
     {
         Offset = offset;
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, T& value) noexcept
-    {
-        Offset = offset;
-        new (std::addressof(Value)) T(value);
-    }
-
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(offset_t offset, T&& value) noexcept
+    template <class T>
+    inline Element<T>::Element(offset_t offset, T& value) noexcept
     {
         Offset = offset;
         new (std::addressof(Value)) T(value);
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(const Element& other)
+    template <class T>
+    inline Element<T>::Element(offset_t offset, T&& value) noexcept
+    {
+        Offset = offset;
+        new (std::addressof(Value)) T(value);
+    }
+
+    template <class T>
+    inline Element<T>::Element(const Element& other)
     {
         Offset = other.Offset;
         if (!IsEmpty())
@@ -393,8 +397,8 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::Element(Element&& other) noexcept
+    template <class T>
+    inline Element<T>::Element(Element&& other) noexcept
     {
         Offset = other.Offset;
         if (!IsEmpty())
@@ -403,14 +407,14 @@ namespace sj
         }
     }
 
-    template <class T, class Hasher>
-    inline UnorderedSet<T, Hasher>::Element::~Element()
+    template <class T>
+    inline Element<T>::~Element()
     {
     }
 
-    template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::Element&
-    UnorderedSet<T, Hasher>::Element::operator=(Element& other)
+    template <class T>
+    inline Element<T>&
+    Element<T>::operator=(Element& other)
     {
         if (!IsEmpty())
         {
@@ -426,9 +430,9 @@ namespace sj
         return *this;
     }
 
-    template <class T, class Hasher>
-    inline typename UnorderedSet<T, Hasher>::Element&
-    UnorderedSet<T, Hasher>::Element::operator=(Element&& other)
+    template <class T>
+    inline Element<T>&
+    Element<T>::operator=(Element&& other)
     {
         if (!IsEmpty())
         {
@@ -444,26 +448,26 @@ namespace sj
         return *this;
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Element::IsUninitialized() const
+    template <class T>
+    inline bool Element<T>::IsUninitialized() const
     {
         return Offset == kEmptyOffset;
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Element::IsEmpty() const
+    template <class T>
+    inline bool Element<T>::IsEmpty() const
     {
         return Offset == kEmptyOffset || Offset == kTombstoneOffset;
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Element::IsSentinel() const
+    template <class T>
+    inline bool Element<T>::IsSentinel() const
     {
         return Offset == kEndOfSetSentinel;
     }
 
-    template <class T, class Hasher>
-    inline bool UnorderedSet<T, Hasher>::Element::HasValue() const
+    template <class T>
+    inline bool Element<T>::HasValue() const
     {
         return Offset >= 0;
     }

@@ -28,7 +28,7 @@ static void BM_StdUnorderedSetInsert(benchmark::State& state)
 
 static void BM_SjUnorderedSetInsert(benchmark::State& state)
 {
-    sj::UnorderedSet<int64_t> set(sj::MemorySystem::GetRootHeapZone());
+    sj::unordered_set<int64_t> set(sj::MemorySystem::GetRootHeapZone());
     auto count = state.range();
 
     std::mt19937_64 random_number_engine(0);
@@ -66,7 +66,7 @@ static void BM_StdUnorderedSetFind(benchmark::State& state)
 
 static void BM_SjUnorderedSetFind(benchmark::State& state)
 {
-    sj::UnorderedSet<int64_t> set(sj::MemorySystem::GetRootHeapZone());
+    sj::unordered_set<int64_t> set(sj::MemorySystem::GetRootHeapZone());
     auto count = state.range();
 
     std::mt19937_64 random_number_engine(0);
