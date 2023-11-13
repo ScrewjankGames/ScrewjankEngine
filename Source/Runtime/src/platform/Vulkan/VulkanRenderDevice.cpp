@@ -84,7 +84,7 @@ namespace sj {
                                              &extension_count,
                                              extension_props.data());
 
-        unordered_set<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
+        dynamic_unordered_set<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
                                                      kRequiredDeviceExtensions.begin(),
                                                      kRequiredDeviceExtensions.end());
 
@@ -164,7 +164,7 @@ namespace sj {
         DeviceQueueFamilyIndices indices =
             GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
-        unordered_set_base<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
+        dynamic_unordered_set<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
         unique_queue_families = 
         {
             indices.graphicsFamilyIndex.value(),

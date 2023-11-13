@@ -78,7 +78,6 @@ namespace sj {
     HeapZoneBase* MemorySystem::GetRootHeapZone()
     {
         return &(Get()->m_RootHeapZone);
-        return nullptr;
     }
 
 #ifndef SJ_GOLD
