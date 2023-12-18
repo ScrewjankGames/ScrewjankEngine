@@ -28,12 +28,6 @@ namespace sj {
         /** Offset that indicates an element is empty */
         static constexpr offset_t kEmptyOffset = -1;
 
-        /** Flag to indicate a cell was erased so later lookups can probe correctly */
-        static constexpr offset_t kTombstoneOffset = -2;
-
-        /** Flag to indicate a cell is reserved and marks the end of the set for iterators */
-        static constexpr offset_t kEndOfSetSentinel = -3;
-
         /**
          * Constructor
          */
@@ -73,12 +67,22 @@ namespace sj {
         /**
          * Destructor
          */
-        ~Element();
+
+        ~Element() requires std::is_trivially_destructible_v<T> = default;
+        ~Element()
+            requires !std::is_trivially_destructible_v<T>
+        {
+            //if(!IsEmpty())
+            //{
+            //    Value.~T();
+            //}
+        }
+
 
         /**
          * Copy assignment operator
          */
-        Element& operator=(Element& other);
+        Element& operator=(const Element& other);
 
         /**
          * Move assignment operator
@@ -95,10 +99,6 @@ namespace sj {
          */
         bool IsEmpty() const;
 
-        /**
-         * @return True if the element represents the end of the set
-         */
-        bool IsSentinel() const;
 
         /**
          * @return True if the element currently contains a record
@@ -138,7 +138,7 @@ namespace sj {
         /**
          * Constructor
          */
-        SetIterator_t(element_pointer element);
+        SetIterator_t(const Set_t* set, element_pointer element);
 
         /**
          * Dereference operator overload
@@ -172,7 +172,9 @@ namespace sj {
 
       private:
         /** The element currently pointer at by this iterator */
-        element_pointer m_CurrElement;
+        element_pointer m_currElement;
+        
+        const Set_t* m_set;
     };
 
     /**
@@ -193,7 +195,7 @@ namespace sj {
         using const_pointer = const T*;
 
         // Iterator definitions
-        using const_iterator = typename SetIterator_t<const unordered_set_base<T, Hasher>>;
+        using const_iterator = typename SetIterator_t<const unordered_set_base<T, IMPL, Hasher>>;
         using iterator = const_iterator;
         using element_type = Element<T>;
 
@@ -209,7 +211,7 @@ namespace sj {
         /**
          * Copy Constructor
          */
-        unordered_set_base(unordered_set_base& other) = default;
+        unordered_set_base(const unordered_set_base& other) = default;
 
         /**
          * Move Constructor
@@ -217,7 +219,7 @@ namespace sj {
         unordered_set_base(unordered_set_base&& other) = default;
 
         /**
-         * Move Assignment operator
+         * Copy Assignment operator
          */
         unordered_set_base<T, IMPL, Hasher>& operator=(const unordered_set_base& other) = default;
 
@@ -243,6 +245,11 @@ namespace sj {
          * @return iterator to element if found, else end()
          */
         [[nodiscard]] const_iterator Find(const T& key) const;
+
+        /**
+         * Find element given it's hash
+         */
+        [[nodiscard]] const_iterator FindFromHash(size_t hash, const T& key) const;
 
         /**
          * @return True if key is in set, else false
@@ -316,9 +323,6 @@ namespace sj {
         /** Global maximum for how far an element can be from it's desired position */
         static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
 
-        /** The Sentinel Element is used to detect the end of the list */
-        static inline element_type s_SentinelElement = element_type::kEndOfSetSentinel;
-
       private:
         /**
          * Insert the value with the current offset at rick_index, and re-insert the rich element
@@ -327,14 +331,26 @@ namespace sj {
          */
         void RobinHoodInsert(element_type&& poor_record, size_t rich_index);
 
-        auto GetElements()
+        void Backshift(size_t erasedIndex);
+
+        auto& GetElements()
         {
             return static_cast<IMPL*>(this)->m_Elements;
         }
 
-        auto GetElements() const
+        const auto& GetElements() const
         {
             return static_cast<const IMPL*>(this)->m_Elements;
+        }
+
+        auto& GetCount()
+        {
+            return static_cast<IMPL*>(this)->m_Count;
+        }
+
+        const auto& GetCount() const
+        {
+            return static_cast<const IMPL*>(this)->m_Count;
         }
 
         /** Functor used to hash keys */
@@ -343,11 +359,8 @@ namespace sj {
         /** Mask used to assign hashed keys to buckets */
         size_t m_IndexMask = 0;
 
-        /** Number of elements in the set */
-        size_t m_Count = 0;
-
         /** The maximum load factor of the set */
-        float m_MaxLoadFactor = kDefaultMaxLoadFactor;
+        static constexpr float s_MaxLoadFactor = kDefaultMaxLoadFactor;
 
     };
 
@@ -368,12 +381,17 @@ namespace sj {
     class dynamic_unordered_set : public unordered_set_base<T, dynamic_unordered_set<T>>
     {
         using Base = unordered_set_base<T, dynamic_unordered_set<T>>;
+        friend class Base;
     public:
         /**
          * Implicit HeapZone Constructors
          * Uses MemorySystem::CurrentHeapZone to allocate memory
          */
         dynamic_unordered_set();
+
+        dynamic_unordered_set(const dynamic_unordered_set<T>& other);
+        dynamic_unordered_set(dynamic_unordered_set<T>&& other);
+
         dynamic_unordered_set(std::initializer_list<T> list);
 
         template <class InputIterator>
@@ -400,7 +418,10 @@ namespace sj {
     private:
         friend class Base;
 
-        dynamic_vector<Element<T>> m_Elements;
+        /** Number of elements in the set */
+        size_t m_Count = 0;
+
+        dynamic_array<Element<T>> m_Elements;
     };
 
 } // namespace sj

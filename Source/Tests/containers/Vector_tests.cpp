@@ -360,6 +360,9 @@ namespace container_tests {
     {
         dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
         dynamic_vector<std::string> vec2(std::move(vec1));
+        
+        ASSERT_EQ(0, vec1.size());
+
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
 
