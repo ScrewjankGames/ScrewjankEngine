@@ -289,12 +289,63 @@ namespace container_tests {
         ASSERT_EQ(set.end(), res);
     }
 
+    TEST(UnorderedSetTests, CountTest)
+    {
+        int seed = 324123871324890;
+        std::srand(seed);
+
+        dynamic_unordered_set<std::string> testset(MemorySystem::GetRootHeapZone());
+        std::unordered_set<std::string> stableset;
+        std::vector<std::string> goodvec;
+
+
+        char buff[256];
+        for(int i = 0; i < 25; i++)
+        {
+            if(i == 8)
+            {
+                __nop();
+            }
+
+            bool insert = std::rand() % 2 || testset.Count() == 0;
+            if(insert)
+            {
+                snprintf(buff, sizeof(buff), "%d", rand());
+                stableset.insert(buff);
+                testset.Insert(buff);
+                goodvec.push_back(buff);
+            }
+            else
+            {
+                int toRemove = rand() % goodvec.size();
+                testset.Erase(goodvec[toRemove]);
+                stableset.erase(goodvec[toRemove]);
+                goodvec.erase(goodvec.begin() + toRemove);
+            }
+            
+            std::cout << "i " << i << std::endl;
+            
+            ASSERT_EQ(stableset.size(), testset.Count());
+        }
+
+    }
+
     TEST(UnorderedSetTests, ContainsTest)
     {
         dynamic_unordered_set<std::string> set(MemorySystem::GetRootHeapZone());
 
         set.Insert("Foo");
         set.Insert("Bar");
+
+        int seed = 324123871324890;
+        std::srand(seed);
+
+        char buff[256];
+        for(int i = 0; i < 50; i++)
+        {
+            snprintf(buff, sizeof(buff), "%d", rand());
+            set.Insert(buff);
+        }
 
         ASSERT_TRUE(set.Contains("Foo"));
         ASSERT_TRUE(set.Contains("Bar"));

@@ -9,6 +9,24 @@ namespace sj
     }
 
     template <class T>
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(const dynamic_unordered_set<T>& other)
+        : Base(other),
+          m_Elements(other.m_Elements), 
+          m_Count(other.m_Count)
+    {
+
+    }
+
+    template <class T>
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(dynamic_unordered_set<T>&& other)
+        : Base(other),
+          m_Elements(std::move(other.m_Elements)), 
+          m_Count(other.m_Count)
+    {
+        other.m_Count = 0;
+    }
+
+    template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(std::initializer_list<T> list)
         : dynamic_unordered_set<T>(MemorySystem::GetCurrentHeapZone(), list)
     {
@@ -23,7 +41,7 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(HeapZoneBase* heap_zone)
-        : m_Elements(heap_zone, 2, Element<T> {Base::s_SentinelElement})    
+        : m_Elements(heap_zone, 0)    
     {
     }
 
@@ -64,7 +82,7 @@ namespace sj
     inline bool unordered_set_base<T, IMPL, Hasher>::operator==(
         const unordered_set_base<T, IMPL, Hasher>& other) const
     {
-        if (m_Count != other.Count())
+        if(GetCount() != other.Count())
         {
             return false;
         }
@@ -86,16 +104,28 @@ namespace sj
     unordered_set_base<T, IMPL, Hasher>::Find(const T& key) const
     {
         auto hash = m_HashFunctor(key);
+        return FindFromHash(hash, key);
+    }
+
+    template <class T, class IMPL, class Hasher>
+    inline typename unordered_set_base<T, IMPL, Hasher>::const_iterator
+    unordered_set_base<T, IMPL, Hasher>::FindFromHash(size_t hash, const T& key) const
+    {
+        if(Capacity() == 0)
+        {
+            return end();
+        }
+
         auto desired_index = hash & m_IndexMask;
 
-        for (auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
-             GetElements()[index].Offset >= curr_offset;
-             index = (index + 1) & m_IndexMask, curr_offset++)
+        for(auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
+            GetElements()[index].Offset >= curr_offset;
+            index = (index + 1) & m_IndexMask, curr_offset++)
         {
 
-            if (key == GetElements()[index].Value)
+            if(key == GetElements()[index].Value)
             {
-                return const_iterator(&GetElements()[index]);
+                return const_iterator(this, &GetElements()[index]);
             }
         }
 
@@ -142,30 +172,22 @@ namespace sj
     {
         // construct a new record on the stack
         Element new_record(0, std::move(T(std::forward<Args>(args)...)));
-        auto hash = m_HashFunctor(new_record.Value);
-        auto desired_index = hash & m_IndexMask;
+        size_t hash = m_HashFunctor(new_record.Value);
 
-        // Ensure supplied key is not in the Set (same as the Find() operation)
-        size_t search_start_index = desired_index;
-
-        for (auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
-             GetElements()[index].Offset >= curr_offset;
-             index = (index + 1) & m_IndexMask, curr_offset++)
+        if(const_iterator foundIt = FindFromHash(hash, new_record.Value); foundIt != end())
         {
-
-            if (new_record.Value == GetElements()[index].Value)
-            {
-                return {const_iterator(&GetElements()[index]), false};
-            }
+            return {foundIt, false};
         }
 
         // The new key is unique, try to insert it
-        auto new_count = m_Count + 1;
+        size_t new_count = GetCount() + 1;
         // If there's not enough space, rehash
 
-        if(new_count > Capacity() || (new_count / Capacity()) > m_MaxLoadFactor)
+        size_t desired_index = hash & m_IndexMask;
+
+        if(new_count > Capacity() || (new_count / Capacity()) > s_MaxLoadFactor)
         {
-            Rehash((Capacity() + 1) * 2);
+            Rehash(Capacity() == 0 ? 2 : Capacity() * 2);
 
             // Recompute desired index, rehashing changes index mask
             desired_index = hash & m_IndexMask;
@@ -180,13 +202,14 @@ namespace sj
             if (GetElements()[index].IsEmpty())
             {
                 GetElements()[index] = std::move(new_record);
-                m_Count++;
-                return {const_iterator(&GetElements()[index]), true};
+                GetCount()++;
+                return {const_iterator(this, &GetElements()[index]), true};
             }
             else if (GetElements()[index].Offset < new_record.Offset)
             {
                 RobinHoodInsert(std::move(new_record), index);
-                return {const_iterator(&GetElements()[index]), true};
+                GetCount()++;
+                return {const_iterator(this, &GetElements()[index]), true};
             }
         }
 
@@ -196,23 +219,30 @@ namespace sj
                   "hash function.",
                   kProbeLimit);
 
-        return {nullptr, false};
+        return { const_iterator (this, nullptr), false };
     }
 
     template <class T, class IMPL, class Hasher>
     inline bool unordered_set_base<T, IMPL, Hasher>::Erase(const T& key)
     {
         auto hash = m_HashFunctor(key);
-        auto start_index = hash & m_IndexMask;
+        auto index = hash & m_IndexMask;
+        offset_t offset = 0;
 
-        for (auto [index, offset] = std::tuple {start_index, offset_t(0)};
-             GetElements()[index].Offset >= offset;
-             index = (index + 1) & m_IndexMask, offset++)
+        for ( ; GetElements()[index].Offset >= offset; index = (index + 1) & m_IndexMask, offset++)
         {
-            if (GetElements()[index].Value == key)
+            auto& element = GetElements()[index];
+            if(element.Value == key)
             {
-                m_Count--;
-                GetElements()[index].Offset = element_type::kTombstoneOffset;
+                GetCount()--;
+
+                if constexpr(!std::is_trivially_destructible_v<T>)
+                {
+                    element.~element_type();
+                }
+                
+                Backshift(index);
+
                 return true;
             }
         }
@@ -223,8 +253,17 @@ namespace sj
     template <class T, class IMPL, class Hasher>
     inline void unordered_set_base<T, IMPL, Hasher>::Clear()
     {
-        GetElements().clear();
-        m_Count = 0;
+        for(element_type& element : GetElements())
+        {
+            if constexpr(!std::is_trivially_destructible_v<T>)
+            {
+                element.~element_type();
+            }
+           
+            element.Offset = element_type::kEmptyOffset;
+        }
+
+        GetCount() = 0;
     }
 
     template <class T, class IMPL, class Hasher>
@@ -239,17 +278,16 @@ namespace sj
         }
 
         // Move the old element set into a temporary
-        dynamic_vector<element_type> old_set(std::move(GetElements()));
+        dynamic_array<element_type> old_set(std::move(GetElements()));
 
-        // Reserve enough space for the new capacity, plus one slot for the sentinel element
-        GetElements().resize(new_capacity + 1);
-        GetElements()[new_capacity] = s_SentinelElement;
+        // Reserve enough space for the new capacity
+        GetElements().resize(new_capacity);
 
         // Reset tracking data
         m_IndexMask = new_capacity - 1;
 
         // Reset count and re-insert all the old data back into the set
-        m_Count = 0;
+        GetCount() = 0;
         for (auto& element : old_set)
         {
             if (element.HasValue())
@@ -262,13 +300,13 @@ namespace sj
     template <class T, class IMPL, class Hasher>
     inline size_t unordered_set_base<T, IMPL, Hasher>::Count() const
     {
-        return m_Count;
+        return GetCount();
     }
 
     template <class T, class IMPL, class Hasher>
     inline size_t unordered_set_base<T, IMPL, Hasher>::Capacity() const
     {
-        return GetElements().capacity() - 1;
+        return GetElements().capacity();
     }
 
     template <class T, class IMPL, class Hasher>
@@ -286,7 +324,6 @@ namespace sj
             // If we've found an open entry, take it
             if (GetElements()[index].IsEmpty())
             {
-                m_Count++;
                 GetElements()[index] = std::move(rich_record);
                 return;
             }
@@ -294,11 +331,32 @@ namespace sj
             {
                 // We found a richer record. Recursively call this robin hood function to again
                 // steal from the rich
-                m_Count++;
                 RobinHoodInsert(std::move(rich_record), index);
                 return;
             }
         }
+    }
+
+    template <class T, class IMPL, class Hasher>
+    inline void unordered_set_base<T, IMPL, Hasher>::Backshift(size_t erasedIndex)
+    {
+        size_t currIndex = erasedIndex;
+        GetElements()[currIndex].Offset = element_type::kEmptyOffset;
+
+        do
+        {
+            size_t nextIndex = (currIndex + 1) & m_IndexMask;
+
+            if(GetElements()[nextIndex].IsEmpty() || GetElements()[nextIndex].Offset == 0)
+            {
+                break;
+            }
+
+            std::swap(GetElements()[currIndex], GetElements()[nextIndex]);
+
+            currIndex = nextIndex;
+        } while(currIndex != erasedIndex);
+
     }
 
     template <class T, class IMPL, class Hasher>
@@ -309,17 +367,17 @@ namespace sj
         {
             if (!elementIt->IsEmpty())
             {
-                return iterator(&(*elementIt));
+                return iterator(this, &(*elementIt));
             }
         }
 
-        return iterator(&(*GetElements().begin()));
+        return iterator(this, &(*GetElements().begin()));
     }
 
     template <class T, class IMPL, class Hasher>
     inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::end() const
     {
-        return iterator(&(*(GetElements().end() - 1)));
+        return iterator(this, &(*(GetElements().end())));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,13 +431,8 @@ namespace sj
     }
 
     template <class T>
-    inline Element<T>::~Element()
-    {
-    }
-
-    template <class T>
     inline Element<T>&
-    Element<T>::operator=(Element& other)
+    Element<T>::operator=(const Element& other)
     {
         if (!IsEmpty())
         {
@@ -422,13 +475,7 @@ namespace sj
     template <class T>
     inline bool Element<T>::IsEmpty() const
     {
-        return Offset == kEmptyOffset || Offset == kTombstoneOffset;
-    }
-
-    template <class T>
-    inline bool Element<T>::IsSentinel() const
-    {
-        return Offset == kEndOfSetSentinel;
+        return Offset == kEmptyOffset;
     }
 
     template <class T>
@@ -442,26 +489,27 @@ namespace sj
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     template <class Set_t>
-    inline SetIterator_t<Set_t>::SetIterator_t(element_pointer element) : m_CurrElement(element)
+    inline SetIterator_t<Set_t>::SetIterator_t(const Set_t* set, element_pointer element)
+        : m_set(set), m_currElement(element)
     {
     }
 
     template <class Set_t>
     inline typename SetIterator_t<Set_t>::const_reference SetIterator_t<Set_t>::operator*() const
     {
-        return m_CurrElement->Value;
+        return m_currElement->Value;
     }
 
     template <class Set_t>
     inline typename SetIterator_t<Set_t>::const_pointer SetIterator_t<Set_t>::operator->() const
     {
-        return &m_CurrElement->Value;
+        return &m_currElement->Value;
     }
 
     template <class Set_t>
     inline bool SetIterator_t<Set_t>::operator==(const SetIterator_t& other) const
     {
-        return m_CurrElement == other.m_CurrElement;
+        return m_currElement == other.m_currElement;
     }
 
     template <class Set_t>
@@ -475,8 +523,8 @@ namespace sj
     {
         do
         {
-            m_CurrElement++;
-        } while (m_CurrElement->IsEmpty() && !m_CurrElement->IsSentinel());
+            m_currElement++;
+        } while (m_currElement->IsEmpty() && (*this != m_set->end() ));
 
         return *this;
     }
