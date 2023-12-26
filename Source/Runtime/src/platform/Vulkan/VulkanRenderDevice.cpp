@@ -90,7 +90,7 @@ namespace sj {
 
         for(const VkExtensionProperties& extension : extension_props)
         {
-            missing_extensions.Erase(extension.extensionName);
+            missing_extensions.erase(extension.extensionName);
         }
 
         // Check swap chain support
@@ -98,7 +98,7 @@ namespace sj {
             VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
         bool swap_chain_supported = !params.Formats.empty() && !params.PresentModes.empty();
 
-        return indicies_complete && missing_extensions.Count() == 0 && swap_chain_supported;
+        return indicies_complete && missing_extensions.count() == 0 && swap_chain_supported;
     }
 
 

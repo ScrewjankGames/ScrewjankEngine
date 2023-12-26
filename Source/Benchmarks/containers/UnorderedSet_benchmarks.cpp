@@ -38,7 +38,7 @@ static void BM_SjUnorderedSetInsert(benchmark::State& state)
 
     while (state.KeepRunning()) {
         for (auto i = 0; i < state.range(); i++) {
-            set.Insert(random_number_generator());
+            set.insert(random_number_generator());
         }
     }
 }
@@ -75,12 +75,12 @@ static void BM_SjUnorderedSetFind(benchmark::State& state)
     auto random_number_generator = std::bind(distribution, random_number_engine);
 
     for (auto i = 0; i < state.range(); i++) {
-        set.Insert(random_number_generator());
+        set.insert(random_number_generator());
     }
 
     while (state.KeepRunning()) {
         for (auto i = 0; i < state.range(); i++) {
-            auto found = set.Find(random_number_generator());
+            auto found = set.find(random_number_generator());
         }
     }
 }

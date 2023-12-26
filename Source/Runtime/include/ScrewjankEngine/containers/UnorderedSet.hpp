@@ -72,10 +72,10 @@ namespace sj {
         ~Element()
             requires !std::is_trivially_destructible_v<T>
         {
-            //if(!IsEmpty())
-            //{
-            //    Value.~T();
-            //}
+            if(!IsEmpty())
+            {
+                Value.~T();
+            }
         }
 
 
@@ -244,69 +244,67 @@ namespace sj {
          * Looks up supplied key in set
          * @return iterator to element if found, else end()
          */
-        [[nodiscard]] const_iterator Find(const T& key) const;
+        [[nodiscard]] const_iterator find(const T& key) const;
 
         /**
          * Find element given it's hash
          */
-        [[nodiscard]] const_iterator FindFromHash(size_t hash, const T& key) const;
+        [[nodiscard]] const_iterator find_from_hash(size_t hash, const T& key) const;
 
         /**
          * @return True if key is in set, else false
          */
-        bool Contains(const T& key) const;
+        bool contains(const T& key) const;
 
         /**
          * Insert an element into the set
          * @return An iterator to the element inserted
          */
-        std::pair<iterator, bool> Insert(const T& key);
+        std::pair<iterator, bool> insert(const T& key);
 
         /**
          * Range-based insert  
          */
         template <class InputIterator>
-        void Insert(InputIterator first, InputIterator last);
+        void insert(InputIterator first, InputIterator last);
 
         /**
          * Range-based emplace 
          */
         template <class InputIterator>
-        void Emplace(InputIterator first, InputIterator last);
+        void emplace(InputIterator first, InputIterator last);
 
         /**
          * Emplace an element into the set
          * @return An iterator to the element inserted
          */
         template <class... Args>
-        std::pair<iterator, bool> Emplace(Args&&... args);
+        std::pair<iterator, bool> emplace(Args&&... args);
 
         /**
          * Erase an element from the set
          */
-        bool Erase(const T& key);
+        bool erase(const T& key);
 
         /**
          * Erase all elements in the set
          */
-        void Clear();
+        void clear();
 
         /**
          * Rehash set to contain num_buckets buckets
          */
-        void Rehash(size_t capacity);
+        void rehash(size_t capacity);
 
         /**
          * Returns the number of elements stored in the set
          */
-        size_t Count() const;
+        size_t count() const;
 
         /**
          * Returns the number of elements this Set can hold
-         * @note This figure is one less than the capacity of the underlying vector due to the
-         * sentinel value
          */
-        size_t Capacity() const;
+        size_t capacity() const;
 
         /**
          * Ranged-based for loop compatabile iterator to begining of set
@@ -331,7 +329,7 @@ namespace sj {
          */
         void RobinHoodInsert(element_type&& poor_record, size_t rich_index);
 
-        void Backshift(size_t erasedIndex);
+        void Backshift(size_type erasedIndex);
 
         auto& GetElements()
         {
@@ -421,7 +419,7 @@ namespace sj {
         /** Number of elements in the set */
         size_t m_Count = 0;
 
-        dynamic_array<Element<T>> m_Elements;
+        dynamic_array<Element<T>, size_t> m_Elements;
     };
 
 } // namespace sj

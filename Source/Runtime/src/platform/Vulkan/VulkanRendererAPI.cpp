@@ -279,6 +279,7 @@ namespace sj
         }
 
         SJ_ASSERT(false, "Failed to find suitable memory type.");
+        return -1;
     }
 
     dynamic_vector<const char*> VulkanRendererAPI::GetRequiredExtenstions() const
