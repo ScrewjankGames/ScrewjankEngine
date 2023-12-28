@@ -39,7 +39,7 @@ namespace sj
      * available for doubly linked list nodes
      */
     template <class NodeType> requires(is_list_node<NodeType>)
-    class UnmanagedList
+    class unmanaged_list
     {
     public:
         template<bool tIsConst>
@@ -82,47 +82,44 @@ namespace sj
         using Iterator = IteratorBase<false>;
         using ConstIterator = IteratorBase<true>;
 
-        UnmanagedList() = default;
-        ~UnmanagedList() = default;
+        unmanaged_list() = default;
+        ~unmanaged_list() = default;
 
         /**
          * No copy constructor 
          * Can't perform deep copies and shallow copies probably won't work too good
          */
-        UnmanagedList(const UnmanagedList<NodeType>& other) = delete;
+        unmanaged_list(const unmanaged_list<NodeType>& other) = delete;
 
         /**
          * Move Constructor
          */
-        UnmanagedList(UnmanagedList<NodeType>&& other);
+        unmanaged_list(unmanaged_list<NodeType>&& other);
 
-        NodeType& Front();
-        const NodeType& Front() const;
+        NodeType& front();
+        const NodeType& front() const;
 
-        NodeType& Back();
-        const NodeType& Back() const;
+        NodeType& back();
+        const NodeType& back() const;
 
-        void PushFront(NodeType* node);
-        void InsertAfter(NodeType* oldNode, NodeType* newNode);
-        void EraseAfter(NodeType* node);
-        void PopFront();
+        void push_front(NodeType* node);
+        void insert_after(NodeType* oldNode, NodeType* newNode);
+        void erase_after(NodeType* node);
+        void pop_front();
 
-        void PushBack(NodeType* node);
-        void InsertBefore(NodeType* oldNode,
+        void push_back(NodeType* node);
+        void insert_before(NodeType* oldNode,
                           NodeType* newNode) requires(is_dl_list_node<NodeType>);
 
-        void PopBack() requires(is_dl_list_node<NodeType>);
+        void pop_back() requires(is_dl_list_node<NodeType>);
 
-        void Erase(NodeType* node) requires(is_dl_list_node<NodeType>);
+        void erase(NodeType* node) requires(is_dl_list_node<NodeType>);
 
-        size_t Size() const;
-        bool IsEmpty() const;
+        size_t size() const;
+        [[nodiscard]] bool empty() const;
 
-        Iterator Begin();
-        Iterator End();
-
-        Iterator begin() { return Begin(); }
-        Iterator end() { return End(); }
+        Iterator begin();
+        Iterator end();
 
     private:
         NodeType* m_Head = nullptr;

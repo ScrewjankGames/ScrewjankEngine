@@ -72,7 +72,7 @@ namespace sj {
         void* m_BufferEnd;
 
         /** Pointer head of singly linked list of free blocks */
-        UnmanagedList<FreeBlock> m_FreeList;
+        unmanaged_list<FreeBlock> m_FreeList;
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks;

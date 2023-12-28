@@ -63,10 +63,10 @@ namespace container_tests
             dummiesStorage[i].val = i;
         }
 
-        sj::UnmanagedList<BiDiDummy> dummies;
+        sj::unmanaged_list<BiDiDummy> dummies;
         for(BiDiDummy& dummy : dummiesStorage)
         {
-            dummies.PushBack(&dummy);
+            dummies.push_back(&dummy);
         }
 
         int i = 0;
@@ -82,25 +82,25 @@ namespace container_tests
     {
         // Sequential Push Pop
         {
-            UnmanagedList<FwdListDummy> fwdList;
+            unmanaged_list<FwdListDummy> fwdList;
 
             for(int i = 0; i < 10000; i++)
             {
-                fwdList.PushFront(new FwdListDummy {i});
+                fwdList.push_front(new FwdListDummy {i});
             }
 
             for(int i = 10000; i > 0; i--)
             {
-                ASSERT_EQ(i, fwdList.Size());
-                ASSERT_EQ(i-1, fwdList.Front().val);
-                delete &(fwdList.Front());
-                fwdList.PopFront();
+                ASSERT_EQ(i, fwdList.size());
+                ASSERT_EQ(i-1, fwdList.front().val);
+                delete &(fwdList.front());
+                fwdList.pop_front();
             }
         }
 
         // Random push pop
         {
-            UnmanagedList<FwdListDummy> fwdList;
+            unmanaged_list<FwdListDummy> fwdList;
             int seed = 123456;
             srand(seed);
         
@@ -111,24 +111,24 @@ namespace container_tests
             {
                 int pop = rand() % 2;
 
-                if( pop && fwdList.Size() > 0 )
+                if( pop && fwdList.size() > 0 )
                 {
-                    popped += fwdList.Front().val;
-                    delete &(fwdList.Front());
-                    fwdList.PopFront();
+                    popped += fwdList.front().val;
+                    delete &(fwdList.front());
+                    fwdList.pop_front();
                 }
                 else
                 {
                     pushed += i;
-                    fwdList.PushFront(new FwdListDummy {i});
+                    fwdList.push_front(new FwdListDummy {i});
                 }
             }
 
-            while(fwdList.Size() > 0)
+            while(fwdList.size() > 0)
             {
-                popped += fwdList.Front().val;
-                delete &(fwdList.Front());
-                fwdList.PopFront();
+                popped += fwdList.front().val;
+                delete &(fwdList.front());
+                fwdList.pop_front();
             }
 
             ASSERT_EQ(pushed, popped);

@@ -158,11 +158,11 @@ namespace sj
         PushFront(*it);
         it++;
 
-        node_ptr currNode = &m_List.Front();
+        node_ptr currNode = &m_List.front();
 
         for(; it != other.end(); it++)
         {
-            m_List.InsertAfter(currNode, m_HeapZone->New<node_type>(*it));
+            m_List.insert_after(currNode, m_HeapZone->New<node_type>(*it));
             currNode = currNode->GetNext();
         }
     }
@@ -218,7 +218,7 @@ namespace sj
         node_ptr newNode = m_HeapZone->New<node_type>(value);
 
         // Push to list impl
-        m_List.PushFront(newNode);
+        m_List.push_front(newNode);
     }
 
     template <class T, bool tIsBidirectional>
@@ -226,7 +226,7 @@ namespace sj
     {
         node_ptr newNode = m_HeapZone->New<node_type>(value);
 
-        m_List.PushBack(newNode);
+        m_List.push_back(newNode);
     }
 
     template <class T, bool tIsBidirectional>
@@ -234,8 +234,8 @@ namespace sj
     {
         SJ_ASSERT(!IsEmpty(), "Cannot pop from empty list.");
 
-        node_type& tmp = m_List.Front();
-        m_List.PopFront();
+        node_type& tmp = m_List.front();
+        m_List.pop_front();
         m_HeapZone->Free(&tmp);
     }
 
@@ -245,7 +245,7 @@ namespace sj
     {
         node_ptr nodePtr = static_cast<node_ptr>(m_HeapZone->AllocateType<node_type>());
         new (nodePtr) node_type (T(std::forward<Args>(args)...));
-        m_List.PushFront(nodePtr);
+        m_List.push_front(nodePtr);
     }
 
     template <class T, bool tIsBidirectional>
@@ -254,7 +254,7 @@ namespace sj
     {
         node_ptr nodePtr = m_HeapZone->New<node_type>(value);
 
-        m_List.InsertAfter(pos.GetNode(), nodePtr);
+        m_List.insert_after(pos.GetNode(), nodePtr);
 
         return List<T, tIsBidirectional>::Iterator(nodePtr);
     }
@@ -267,7 +267,7 @@ namespace sj
         node_ptr nodePtr = static_cast<node_ptr>(m_HeapZone->AllocateType<node_type>());
         new(nodePtr) node_type {T(std::forward<Args>(args)...)};
 
-        m_List.InsertAfter(pos.GetNode(), nodePtr);
+        m_List.insert_after(pos.GetNode(), nodePtr);
 
         return List<T, tIsBidirectional>::Iterator(nodePtr);
     }
@@ -278,7 +278,7 @@ namespace sj
         SJ_ASSERT(pos.GetNode()->Next != nullptr, "Cannot erase after last element of list");
 
         node_ptr dead_node = pos.GetNode()->Next;
-        m_List.EraseAfter(pos.GetNode());
+        m_List.erase_after(pos.GetNode());
         m_HeapZone->Delete(dead_node);
 
         return ++pos;
@@ -288,10 +288,10 @@ namespace sj
     inline void List<T, tIsBidirectional>::Clear()
     {
         // Free all the nodes allocated for the list
-        while(!m_List.IsEmpty())
+        while(!m_List.empty())
         {
-            node_ptr curr = &m_List.Front();
-            m_List.PopFront();
+            node_ptr curr = &m_List.front();
+            m_List.pop_front();
             m_HeapZone->Delete(curr);
         }
     }
@@ -301,7 +301,7 @@ namespace sj
     {
         SJ_ASSERT(!IsEmpty(), "Cannot call Front() on empty list");
 
-        return m_List.Front().Data;
+        return m_List.front().Data;
     }
 
     template <class T, bool tIsBidirectional>
@@ -313,13 +313,13 @@ namespace sj
     template <class T, bool tIsBidirectional>
     inline const T& List<T, tIsBidirectional>::Back() const
     {
-        return m_List.Back();
+        return m_List.back();
     }
 
     template <class T, bool tIsBidirectional>
     inline typename List<T, tIsBidirectional>::Iterator List<T, tIsBidirectional>::BackIter()
     {
-        return Iterator(&m_List.Back());
+        return Iterator(&m_List.back());
     }
 
     template <class T, bool tIsBidirectional>
@@ -327,31 +327,31 @@ namespace sj
     {
         SJ_ASSERT(!IsEmpty(), "Cannot call Front() on empty list");
 
-        return m_List.Front().Data;
+        return m_List.front().Data;
     }
 
     template <class T, bool tIsBidirectional>
     inline bool List<T, tIsBidirectional>::IsEmpty() const
     {
-        return m_List.IsEmpty();
+        return m_List.empty();
     }
 
     template <class T, bool tIsBidirectional>
     inline size_t List<T, tIsBidirectional>::Size() const
     {
-        return m_List.Size();
+        return m_List.size();
     }
 
     template <class T, bool tIsBidirectional>
     inline typename List<T, tIsBidirectional>::Iterator List<T, tIsBidirectional>::begin()
     {
-        return Iterator(&m_List.Front());
+        return Iterator(&m_List.front());
     }
 
     template <class T, bool tIsBidirectional>
     inline typename List<T, tIsBidirectional>::ConstIterator List<T, tIsBidirectional>::begin() const
     {
-        return ConstIterator(&(m_List.Front()));
+        return ConstIterator(&(m_List.front()));
     }
 
     template <class T, bool tIsBidirectional>

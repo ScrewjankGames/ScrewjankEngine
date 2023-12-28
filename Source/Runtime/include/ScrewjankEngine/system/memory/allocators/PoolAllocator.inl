@@ -30,8 +30,8 @@ namespace sj
         SJ_ASSERT(m_NumBlocks > 0, "Cannot create a pool allocator with zero blocks");
 
         // Create first free block at start of buffer
-        m_FreeList.PushFront(new(m_BufferStart) FreeBlock());
-        FreeBlock* curr_block = &m_FreeList.Front();
+        m_FreeList.push_front(new(m_BufferStart) FreeBlock());
+        FreeBlock* curr_block = &m_FreeList.front();
         uintptr_t curr_block_address = (uintptr_t)m_BufferStart;
 
         // Build free list in the buffer
@@ -41,7 +41,7 @@ namespace sj
             curr_block_address += kBlockSize;
 
             // Create new free-list block
-            m_FreeList.InsertAfter(curr_block, new((void*)curr_block_address) FreeBlock());
+            m_FreeList.insert_after(curr_block, new((void*)curr_block_address) FreeBlock());
 
             // Move the curr block forward
             curr_block = curr_block->Next;
@@ -54,19 +54,19 @@ namespace sj
         SJ_ASSERT(size <= kBlockSize,
                   "Pool allocator cannot satisfy allocation of size > block size");
 
-        if(m_FreeList.Size() == 0)
+        if(m_FreeList.size() == 0)
         {
             SJ_ENGINE_LOG_ERROR("Pool allocator has run out of blocks");
             return nullptr;
         }
 
         // Take the first available free block
-        FreeBlock* free_block = &(m_FreeList.Front());
+        FreeBlock* free_block = &(m_FreeList.front());
         SJ_ASSERT(IsMemoryAligned(free_block, alignment),
                   "PoolAllocator does not support over-aligned types");
         
         // Remove the free block from the free list
-        m_FreeList.PopFront();
+        m_FreeList.pop_front();
 
         m_AllocatorStats.TotalAllocationCount++;
         m_AllocatorStats.TotalBytesAllocated += kBlockSize;
@@ -86,7 +86,7 @@ namespace sj
                   "Memory is not managed by this allocator");
 
         // Place a free-list node into the block and push to head of list
-        m_FreeList.PushFront(new(memory) FreeBlock ());
+        m_FreeList.push_front(new(memory) FreeBlock ());
 
         m_AllocatorStats.ActiveAllocationCount--;
         m_AllocatorStats.ActiveBytesAllocated -= kBlockSize;

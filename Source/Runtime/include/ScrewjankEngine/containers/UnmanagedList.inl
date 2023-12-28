@@ -4,7 +4,7 @@ namespace sj
 {
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>::IteratorBase(NodeType* node)
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>::IteratorBase(NodeType* node)
         : m_CurrNode(node)
     {
         
@@ -12,7 +12,7 @@ namespace sj
 
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>::IteratorBase(
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>::IteratorBase(
         const IteratorBase<false>& other)
         : IteratorBase(reinterpret_cast<IteratorBase<true>&>(other))
     {
@@ -22,23 +22,23 @@ namespace sj
     template <class NodeType>
     requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>::node_ref 
-        UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator*()
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>::node_ref 
+        unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator*()
     {
         return *m_CurrNode;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>::node_ptr
-        UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator->()
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>::node_ptr
+        unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator->()
     {
         return m_CurrNode;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
     template <bool tIsConst>
-    inline bool UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator==(const IteratorBase& other) const
+    inline bool unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator==(const IteratorBase& other) const
     {
         return m_CurrNode == other.m_CurrNode;
     }
@@ -46,15 +46,15 @@ namespace sj
     template <class NodeType>
     requires(is_list_node<NodeType>)
     template <bool tIsConst>
-    inline bool UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator!=(const IteratorBase& other) const
+    inline bool unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator!=(const IteratorBase& other) const
     {
         return !(m_CurrNode == other.m_CurrNode);
     }
 
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>& 
-        UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator++()
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>& 
+        unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator++()
     {
         m_CurrNode = m_CurrNode->GetNext();
         return *this;
@@ -62,7 +62,7 @@ namespace sj
 
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst> UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator++(int)
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst> unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator++(int)
     {
         IteratorBase<tIsConst> tmp(*this);
         this->operator++();
@@ -71,7 +71,7 @@ namespace sj
 
     template <class NodeType> requires(is_list_node<NodeType>)
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst>& UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator--() 
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst>& unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator--() 
         requires is_dl_list_node<NodeType>
     {
         m_CurrNode = m_CurrNode->GetPrev();
@@ -80,7 +80,7 @@ namespace sj
 
     template <class NodeType> requires(is_list_node<NodeType>) 
     template <bool tIsConst>
-    inline UnmanagedList<NodeType>::IteratorBase<tIsConst> UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator--(int)
+    inline unmanaged_list<NodeType>::IteratorBase<tIsConst> unmanaged_list<NodeType>::IteratorBase<tIsConst>::operator--(int)
         requires is_dl_list_node<NodeType>
     {
         IteratorBase<tIsConst> tmp(*this);
@@ -89,7 +89,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline UnmanagedList<NodeType>::UnmanagedList(UnmanagedList<NodeType>&& other)
+    inline unmanaged_list<NodeType>::unmanaged_list(unmanaged_list<NodeType>&& other)
     {
         m_Head = other.m_Head;
         other.m_Head = nullptr;
@@ -103,35 +103,35 @@ namespace sj
 
     template <class NodeType>
         requires(is_list_node<NodeType>)
-    inline NodeType& UnmanagedList<NodeType>::Front()
+    inline NodeType& unmanaged_list<NodeType>::front()
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot peek empty list");
         return *m_Head;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline const NodeType& UnmanagedList<NodeType>::Front() const
+    inline const NodeType& unmanaged_list<NodeType>::front() const
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot peek empty list");
         return *m_Head;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline NodeType& UnmanagedList<NodeType>::Back()
+    inline NodeType& unmanaged_list<NodeType>::back()
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot peek empty list");
         return *m_Tail;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline const NodeType& UnmanagedList<NodeType>::Back() const
+    inline const NodeType& unmanaged_list<NodeType>::back() const
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot peek empty list");
         return *m_Tail;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void sj::UnmanagedList<NodeType>::PushFront(NodeType* node)
+    inline void sj::unmanaged_list<NodeType>::push_front(NodeType* node)
     {
         if(m_Head == nullptr)
         {
@@ -150,7 +150,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void UnmanagedList<NodeType>::InsertAfter(NodeType* oldNode, NodeType* newNode)
+    inline void unmanaged_list<NodeType>::insert_after(NodeType* oldNode, NodeType* newNode)
     {
         NodeType* oldNext = oldNode->GetNext();
 
@@ -176,7 +176,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void UnmanagedList<NodeType>::EraseAfter(NodeType* node)
+    inline void unmanaged_list<NodeType>::erase_after(NodeType* node)
     {
         NodeType* next = node->GetNext();
 
@@ -198,7 +198,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void UnmanagedList<NodeType>::PopFront()
+    inline void unmanaged_list<NodeType>::pop_front()
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot pop from empty list.");
         m_Head = m_Head->GetNext();
@@ -212,11 +212,11 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>) 
-    inline void UnmanagedList<NodeType>::PushBack(NodeType* node)
+    inline void unmanaged_list<NodeType>::push_back(NodeType* node)
     {
         if(m_Tail == nullptr)
         {
-            PushFront(node);
+            push_front(node);
         }
         else
         {
@@ -236,7 +236,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>) 
-    inline void UnmanagedList<NodeType>::InsertBefore(NodeType* oldNode, NodeType* newNode) 
+    inline void unmanaged_list<NodeType>::insert_before(NodeType* oldNode, NodeType* newNode) 
         requires(is_dl_list_node<NodeType>)
     {
         SJ_ASSERT(oldNode != nullptr, "Cannot insert before null node");
@@ -252,13 +252,13 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void UnmanagedList<NodeType>::PopBack() requires(is_dl_list_node<NodeType>)
+    inline void unmanaged_list<NodeType>::pop_back() requires(is_dl_list_node<NodeType>)
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot pop from empty list.");
 
         if(m_Tail == m_Head)
         {
-            PopFront();
+            pop_front();
         }
         else
         {
@@ -267,7 +267,7 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline void UnmanagedList<NodeType>::Erase(NodeType* node) requires(is_dl_list_node<NodeType>)
+    inline void unmanaged_list<NodeType>::erase(NodeType* node) requires(is_dl_list_node<NodeType>)
     {
         NodeType* prev = node->GetPrev(); 
         NodeType* next = node->GetNext();
@@ -288,25 +288,25 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline size_t UnmanagedList<NodeType>::Size() const
+    inline size_t unmanaged_list<NodeType>::size() const
     {
         return m_Size;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline bool UnmanagedList<NodeType>::IsEmpty() const
+    inline bool unmanaged_list<NodeType>::empty() const
     {
-        return Size() == 0;
+        return size() == 0;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline typename UnmanagedList<NodeType>::Iterator UnmanagedList<NodeType>::Begin()
+    inline typename unmanaged_list<NodeType>::Iterator unmanaged_list<NodeType>::begin()
     {
         return Iterator(m_Head);
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
-    inline typename UnmanagedList<NodeType>::Iterator UnmanagedList<NodeType>::End()
+    inline typename unmanaged_list<NodeType>::Iterator unmanaged_list<NodeType>::end()
     {
         return Iterator(nullptr);
     }

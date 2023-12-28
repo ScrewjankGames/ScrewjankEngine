@@ -267,7 +267,7 @@ namespace sj
         size_t Size() const;
 
       private:
-        UnmanagedList<node_type> m_List;
+        unmanaged_list<node_type> m_List;
 
         /** Allocator used to service allocations for container structures */
         HeapZoneBase* m_HeapZone;
