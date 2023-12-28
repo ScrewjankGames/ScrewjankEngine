@@ -17,7 +17,10 @@ namespace sj {
     constexpr size_t CalculateOptimalSize(size_t requestedSize,
                                           float loadFactor = kDefaultMaxLoadFactor)
     {
-        return requestedSize;
+        const float size = requestedSize / loadFactor;
+        const size_t intSize = static_cast<size_t>(size);
+
+        return size == (float)intSize ? intSize : intSize + 1;
     }
 
     template<class T>
@@ -368,11 +371,22 @@ namespace sj {
     class static_unordered_set
         : public unordered_set_base<T, static_unordered_set<T, tRequestedSize, tRealSize>>
     {
+        using Base = unordered_set_base<T, static_unordered_set<T, tRequestedSize, tRealSize>>;
+        friend class Base;
+
     public:
+        template <class InputIterator>
+        static_unordered_set(InputIterator first, InputIterator last);
         
+        using Base::operator=;
+
     private:
         friend class Base;
-        static_vector<Element<T>, tRealSize> m_Elements;
+        static constexpr bool kIsGrowable = false;
+
+        /** Number of elements in the set */
+        size_t m_Count = 0;
+        array<Element<T>, tRealSize> m_Elements;
     };
 
     template<class T>
@@ -415,7 +429,8 @@ namespace sj {
 
     private:
         friend class Base;
-
+        static constexpr bool kIsGrowable = true;
+        
         /** Number of elements in the set */
         size_t m_Count = 0;
 

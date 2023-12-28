@@ -57,7 +57,7 @@ namespace container_tests
         dynamic_array<int> arr({1, 2, 3});
         dynamic_array<int> arr2(arr);
 
-        for(uint32_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.size(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
@@ -69,7 +69,7 @@ namespace container_tests
         dynamic_array<int> arr({1, 2, 3});
         dynamic_array<int> arr2 = arr;
 
-        for(uint32_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.size(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
             ASSERT_EQ(i + 1, arr2[i]);
@@ -80,7 +80,7 @@ namespace container_tests
     {
         dynamic_array<int> arr(dynamic_array<int>({1, 2, 3}));
 
-        for(uint32_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.size(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
         }
@@ -90,7 +90,7 @@ namespace container_tests
     {
         dynamic_array<int> arr = dynamic_array<int>({1, 2, 3});
 
-        for(uint32_t i = 0; i < arr.capacity(); i++)
+        for(uint32_t i = 0; i < arr.size(); i++)
         {
             ASSERT_EQ(i + 1, arr[i]);
         }
@@ -128,7 +128,7 @@ namespace container_tests
         dynamic_array<int> arr = {1, 2, 3, 4, 5};
         
         arr.resize(10);
-        ASSERT_EQ(10, arr.capacity());
+        ASSERT_EQ(10, arr.size());
 
         for(uint32_t i = 0; i < 5; i++)
         {
@@ -137,11 +137,11 @@ namespace container_tests
 
         dynamic_array<std::string> arr2 = {"foo", "bar"};
         arr2.resize(4);
-        ASSERT_EQ(4, arr2.capacity());
+        ASSERT_EQ(4, arr2.size());
         ASSERT_EQ("bar", arr2[1]);
 
         arr2.resize(1);
-        ASSERT_EQ(1, arr2.capacity());
+        ASSERT_EQ(1, arr2.size());
         ASSERT_EQ("foo", arr2[0]);
     }
 

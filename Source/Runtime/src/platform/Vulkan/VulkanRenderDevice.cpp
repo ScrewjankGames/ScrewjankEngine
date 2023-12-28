@@ -75,18 +75,22 @@ namespace sj {
             indices.transferFamilyIndex.has_value();
 
         // Check extension support
+        constexpr uint32_t kMaxExtensionCount = 256;
         uint32_t extension_count;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-        dynamic_vector<VkExtensionProperties> extension_props(MemorySystem::GetRootHeapZone(),
-                                                      extension_count);
+        SJ_ASSERT(extension_count < kMaxExtensionCount,
+                  "Too many extensions to store in following array");
+        array<VkExtensionProperties, kMaxExtensionCount> extension_props;
+
         vkEnumerateDeviceExtensionProperties(device,
                                              nullptr,
                                              &extension_count,
                                              extension_props.data());
 
-        dynamic_unordered_set<std::string_view> missing_extensions(MemorySystem::GetRootHeapZone(),
-                                                     kRequiredDeviceExtensions.begin(),
-                                                     kRequiredDeviceExtensions.end());
+        static_unordered_set<std::string_view, kRequiredDeviceExtensions.size()> missing_extensions(
+            kRequiredDeviceExtensions.begin(),
+            kRequiredDeviceExtensions.end()
+        );
 
         for(const VkExtensionProperties& extension : extension_props)
         {

@@ -109,7 +109,7 @@ namespace sj
         /**
          * @return Size of the array
          */
-        size_type capacity() const;
+        size_type size() const;
 
         /**
          * Returns pointer to backing raw C array, allows modification of elements

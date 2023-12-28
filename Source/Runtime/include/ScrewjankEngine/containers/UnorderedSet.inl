@@ -2,6 +2,13 @@
 
 namespace sj
 {
+    template <class T, size_t tRequestedSize, size_t tRealSize>
+    template <class InputIterator>
+    inline static_unordered_set<T, tRequestedSize, tRealSize>::static_unordered_set(InputIterator first, InputIterator last)
+    {
+        this->emplace(first, last);
+    }
+
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set()
         : dynamic_unordered_set<T>(MemorySystem::GetCurrentHeapZone())
@@ -189,11 +196,19 @@ namespace sj
 
         if(new_count > capacity() || (new_count / capacity()) > s_MaxLoadFactor)
         {
-            rehash(capacity() == 0 ? 2 : capacity() * 2);
+            if constexpr(IMPL::kIsGrowable)
+            {
+                rehash(capacity() == 0 ? 2 : capacity() * 2);
 
-            // Recompute desired index, rehashing changes index mask
-            desired_index = hash & m_IndexMask;
+                // Recompute desired index, rehashing changes index mask
+                desired_index = hash & m_IndexMask;
+            }
+            else
+            {
+                SJ_ASSERT(false, "Unordered set out of space!");
+            }
         }
+
 
         // Perform the robin hood insertion, with a maximum probe count of kProbeLimit
         for (size_type index = desired_index; new_record.Offset < kProbeLimit;
@@ -307,7 +322,7 @@ namespace sj
     template <class T, class IMPL, class Hasher>
     inline size_t unordered_set_base<T, IMPL, Hasher>::capacity() const
     {
-        return GetElements().capacity();
+        return GetElements().size();
     }
 
     template <class T, class IMPL, class Hasher>
@@ -372,13 +387,13 @@ namespace sj
             }
         }
 
-        return iterator(this, &(*GetElements().begin()));
+        return iterator(this, std::to_address(GetElements().begin()));
     }
 
     template <class T, class IMPL, class Hasher>
     inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::end() const
     {
-        return iterator(this, &(*(GetElements().end())));
+        return iterator(this, std::to_address(GetElements().end()));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
