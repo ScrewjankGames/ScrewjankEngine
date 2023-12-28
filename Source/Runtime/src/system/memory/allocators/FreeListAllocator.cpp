@@ -7,7 +7,7 @@
 
 namespace sj {
     FreeListAllocator::FreeListAllocator()
-        : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
+        : m_BufferStart(nullptr), m_BufferEnd(nullptr)
     {
 
     }
@@ -19,13 +19,12 @@ namespace sj {
     }
 
     FreeListAllocator::FreeListAllocator(FreeListAllocator&& other) noexcept 
+        : m_FreeBlocks(std::move(other.m_FreeBlocks))
     {
-        m_FreeBlocks = other.m_FreeBlocks;
         m_BufferStart = other.m_BufferStart;
         m_BufferEnd = other.m_BufferEnd;
         m_AllocatorStats = other.m_AllocatorStats;
 
-        other.m_FreeBlocks = nullptr;
         other.m_BufferStart = nullptr;
         other.m_AllocatorStats = {};
     }
@@ -179,16 +178,13 @@ namespace sj {
         // only padding in the allocation is placed before the header.
         const size_t alignment_requirement = std::max(alignof(AllocationHeader), alignment);
 
-        // Iterator for free list
-        FreeBlock* curr_block = m_FreeBlocks;
-
         // Search the free list for a best-fit block
-        while (curr_block != nullptr) {
-
+        for(FreeBlock& curr_block : m_FreeBlocks)
+        {
             // When allocating, we must calculate alignment from this address to leave room for the
             // allocation header
             void* fist_possible_payload_address =
-                (void*)((uintptr_t)curr_block + sizeof(AllocationHeader));
+                (void*)((uintptr_t)(&curr_block) + sizeof(AllocationHeader));
 
             // Get the padding needed to align payload from first possible playload addresss
             size_t required_padding =
@@ -196,11 +192,9 @@ namespace sj {
             size_t total_allocation_size = header_and_payload_size + required_padding;
 
             // If the current free block is large enough to support allocation
-            if (total_allocation_size <= curr_block->Size) {
-                return {curr_block, required_padding};
+            if (total_allocation_size <= curr_block.Size) {
+                return {&curr_block, required_padding};
             }
-
-            curr_block = curr_block->Next;
         }
 
         return {nullptr, 0};
@@ -209,22 +203,23 @@ namespace sj {
     void FreeListAllocator::AddFreeBlock(FreeBlock* new_block)
     {
         // If there no free list, new_block becomes the new head
-        if (m_FreeBlocks == nullptr) {
-            m_FreeBlocks = new_block;
+        if (m_FreeBlocks.empty()) 
+        {
+            m_FreeBlocks.push_front(new_block);
             return;
         }
 
         // New block needs to be inserted to the front of the free list
-        if ((uintptr_t)new_block < (uintptr_t)m_FreeBlocks) {
-            new_block->Next = m_FreeBlocks;
-            m_FreeBlocks->Previous = new_block;
-            m_FreeBlocks = new_block;
+        if (new_block->GetAddr() < m_FreeBlocks.front().GetAddr()) {
+            new_block->Next = &(m_FreeBlocks.front());
+            m_FreeBlocks.front().Previous = new_block;
+            m_FreeBlocks.push_front(new_block);
             AttemptCoalesceBlock(new_block);
             return;
         }
 
         // Otherwise, iterate the list and find a place to add the free block
-        auto curr_block = m_FreeBlocks;
+        FreeBlock* curr_block = &(m_FreeBlocks.front());
 
         // Insert the free block into the free list sorted by memory address to avoid poor cache
         // performance
@@ -255,7 +250,7 @@ namespace sj {
         SJ_ASSERT(block != nullptr, "Cannot free null block");
 
         // If the block being removed is the head of the list
-        if (block == m_FreeBlocks) {
+        if (*block == m_FreeBlocks.front()) {
             // Rewire the head of the list
             m_FreeBlocks = block->Next;
             return;
