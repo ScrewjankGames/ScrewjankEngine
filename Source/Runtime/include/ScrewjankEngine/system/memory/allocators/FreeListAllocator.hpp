@@ -6,7 +6,6 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
-#include <ScrewjankEngine/containers/UnmanagedList.hpp>
 
 namespace sj {
 
@@ -79,28 +78,6 @@ namespace sj {
             FreeBlock* Previous;
             FreeBlock* Next;
 
-            FreeBlock* GetNext()
-            {
-                return Next;
-            }
-
-            void SetNext(FreeBlock* next)
-            {
-                this->Next = next;
-            }
-
-            FreeBlock* GetPrev()
-            {
-                return Previous;
-            }
-
-            void SetPrev(FreeBlock* newPrev)
-            {
-                Previous = newPrev;
-            }
-
-            uintptr_t GetAddr() const { return reinterpret_cast<uintptr_t>(this); }
-
             /** Constructor */
             FreeBlock(size_t block_size = 0, FreeBlock* prev = nullptr, FreeBlock* next = nullptr)
                 : Size(block_size), Previous(prev), Next(next)
@@ -159,7 +136,7 @@ namespace sj {
         void AttemptCoalesceBlock(FreeBlock* block);
 
         /** The free list of allocation blocks */
-        unmanaged_list<FreeBlock> m_FreeBlocks;
+        FreeBlock* m_FreeBlocks;
 
         /** Pointer to the start of the allocator's memory block */
         void* m_BufferStart;
