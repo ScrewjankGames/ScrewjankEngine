@@ -1,5 +1,6 @@
 // STD Headers
-
+#include <array>
+#include <ranges>
 // Library Headers
 #include "gtest/gtest.h"
 
@@ -26,8 +27,18 @@ namespace container_tests
         FwdListDummy* next;
     };
 
-    struct BiDiDummy : public FwdListDummy
+    struct BiDiDummy
     {
+        BiDiDummy* GetNext()
+        {
+            return next;
+        }
+
+        void SetNext(BiDiDummy* next)
+        {
+            this->next = next;
+        }
+
         BiDiDummy* GetPrev()
         {
             return prev;
@@ -37,10 +48,35 @@ namespace container_tests
         {
             prev = newPrev;
         }
-        
 
         BiDiDummy* prev;
+        BiDiDummy* next;
+        int val;
     };
+
+    TEST(UnmanagedListTests, IterationTest)
+    {
+        constexpr int kCount = 5;
+        std::array<BiDiDummy, kCount> dummiesStorage;
+        for(int i = 0; i < kCount; i++)
+        {
+            dummiesStorage[i].val = i;
+        }
+
+        sj::UnmanagedList<BiDiDummy> dummies;
+        for(BiDiDummy& dummy : dummiesStorage)
+        {
+            dummies.PushBack(&dummy);
+        }
+
+        int i = 0;
+        for(BiDiDummy& dummy : dummies)
+        {
+            ASSERT_EQ(dummy.val, i);
+            i++;
+        }
+
+    }
 
     TEST(UnmanagedListTests, ForwardListPushPopTest)
     {

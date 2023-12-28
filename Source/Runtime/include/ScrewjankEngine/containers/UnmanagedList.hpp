@@ -44,9 +44,10 @@ namespace sj
     public:
         template<bool tIsConst>
         class IteratorBase
+
         {
         public:
-            using node_type = std::conditional<tIsConst, const NodeType, NodeType>::value;
+            using node_type = std::conditional<tIsConst, const NodeType, NodeType>::type;
             using node_ptr = node_type*;
             using node_ref = node_type&;
 
@@ -56,6 +57,11 @@ namespace sj
 
             node_ref operator*();
             node_ptr operator->();
+
+            /** Equality comparison */
+            bool operator==(const IteratorBase& other) const;
+            bool operator!=(const IteratorBase& other) const;
+
 
             /** Pre-increment operator overload */
             IteratorBase& operator++();
@@ -80,9 +86,15 @@ namespace sj
         ~UnmanagedList() = default;
 
         /**
+         * No copy constructor 
          * Can't perform deep copies and shallow copies probably won't work too good
          */
         UnmanagedList(const UnmanagedList<NodeType>& other) = delete;
+
+        /**
+         * Move Constructor
+         */
+        UnmanagedList(UnmanagedList<NodeType>&& other);
 
         NodeType& Front();
         const NodeType& Front() const;
@@ -100,6 +112,8 @@ namespace sj
                           NodeType* newNode) requires(is_dl_list_node<NodeType>);
 
         void PopBack() requires(is_dl_list_node<NodeType>);
+
+        void Erase(NodeType* node) requires(is_dl_list_node<NodeType>);
 
         size_t Size() const;
         bool IsEmpty() const;

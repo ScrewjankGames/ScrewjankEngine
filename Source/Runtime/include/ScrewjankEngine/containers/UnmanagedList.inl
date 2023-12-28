@@ -1,5 +1,4 @@
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
-#include "List.hpp"
 
 namespace sj
 {
@@ -35,6 +34,21 @@ namespace sj
         UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator->()
     {
         return m_CurrNode;
+    }
+
+    template <class NodeType> requires(is_list_node<NodeType>)
+    template <bool tIsConst>
+    inline bool UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator==(const IteratorBase& other) const
+    {
+        return m_CurrNode == other.m_CurrNode;
+    }
+
+    template <class NodeType>
+    requires(is_list_node<NodeType>)
+    template <bool tIsConst>
+    inline bool UnmanagedList<NodeType>::IteratorBase<tIsConst>::operator!=(const IteratorBase& other) const
+    {
+        return !(m_CurrNode == other.m_CurrNode);
     }
 
     template <class NodeType> requires(is_list_node<NodeType>) 
@@ -75,6 +89,20 @@ namespace sj
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
+    inline UnmanagedList<NodeType>::UnmanagedList(UnmanagedList<NodeType>&& other)
+    {
+        m_Head = other.m_Head;
+        other.m_Head = nullptr;
+
+        m_Tail = other.m_Tail;
+        other.m_Tail = nullptr;
+
+        m_Size = other.m_Size;
+        other.m_Size = 0;
+    }
+
+    template <class NodeType>
+        requires(is_list_node<NodeType>)
     inline NodeType& UnmanagedList<NodeType>::Front()
     {
         SJ_ASSERT(m_Head != nullptr, "Cannot peek empty list");
@@ -236,6 +264,27 @@ namespace sj
         {
             m_Tail = m_Tail->GetPrev();
         }
+    }
+
+    template <class NodeType> requires(is_list_node<NodeType>)
+    inline void UnmanagedList<NodeType>::Erase(NodeType* node) requires(is_dl_list_node<NodeType>)
+    {
+        NodeType* prev = node->GetPrev(); 
+        NodeType* next = node->GetNext();
+        
+        // Set Prev Next to Next
+        if (prev)
+        {
+            prev->SetNext(next);
+        }
+
+        // Set Next Prev to Prev
+        if(next)
+        {
+            next->SetPrev(prev);
+        }
+
+        m_Size--;
     }
 
     template <class NodeType> requires(is_list_node<NodeType>)
