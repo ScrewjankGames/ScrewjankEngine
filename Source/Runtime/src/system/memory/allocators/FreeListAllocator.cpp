@@ -59,9 +59,11 @@ namespace sj {
 
         // Search the free list, and return the most suitable free block and the padding required to
         // use it
-        auto free_list_search_result = FindFreeBlock(size, alignment);
-        FreeBlock* best_fit_block = free_list_search_result.first;
-        size_t header_padding = free_list_search_result.second;
+        std::pair<FreeBlock*, size_t> free_list_search_result =
+            FindFreeBlock(size, alignment);
+
+        FreeBlock* const best_fit_block = free_list_search_result.first;
+        const size_t header_padding = free_list_search_result.second;
 
         // If no best fit block was found, halt program
         SJ_ASSERT(best_fit_block != nullptr, "Free list allocator is out of memory.");
@@ -73,8 +75,8 @@ namespace sj {
         FreeBlock old_block_info = *best_fit_block;
 
         // Calculate allocation information
-        void* header_address = (void*)((uintptr_t)best_fit_block + header_padding);
-        void* payload_address = (void*)((uintptr_t)header_address + sizeof(AllocationHeader));
+        void* const header_address = (void*)((uintptr_t)best_fit_block + header_padding);
+        void* const payload_address = (void*)((uintptr_t)header_address + sizeof(AllocationHeader));
 
         // Amount of space left in the block for the payload
         // !!!This operation overwrites the data pointed to by best_fit_block!!!
@@ -115,6 +117,7 @@ namespace sj {
         m_AllocatorStats.TotalBytesAllocated += header->Size;
         m_AllocatorStats.ActiveAllocationCount++;
         m_AllocatorStats.ActiveBytesAllocated += header->Size;
+
         return payload_address;
     }
 
@@ -179,9 +182,6 @@ namespace sj {
         // Iterator for free list
         FreeBlock* curr_block = m_FreeBlocks;
 
-        // Storage for results of the free-list search
-        size_t header_padding = 0;
-
         // Search the free list for a best-fit block
         while (curr_block != nullptr) {
 
@@ -197,13 +197,13 @@ namespace sj {
 
             // If the current free block is large enough to support allocation
             if (total_allocation_size <= curr_block->Size) {
-                return {curr_block, header_padding};
+                return {curr_block, required_padding};
             }
 
             curr_block = curr_block->Next;
         }
 
-        return {nullptr, header_padding};
+        return {nullptr, 0};
     }
 
     void FreeListAllocator::AddFreeBlock(FreeBlock* new_block)
