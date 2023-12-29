@@ -140,7 +140,15 @@ namespace sj {
          */
         void EnableDebugMessaging();
 
-        void CreateCommandPool();
+        void CreateCommandPools();
+
+        void CreateBuffer(VkDeviceSize size,
+                          VkBufferUsageFlags usage,
+                          VkMemoryPropertyFlags properties,
+                          VkBuffer& out_buffer,
+                          VkDeviceMemory& out_bufferMemory);
+
+        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         void CreateDummyVertexBuffer();
 
@@ -169,7 +177,8 @@ namespace sj {
         /** Pipeline used to describe rendering process */
         VulkanPipeline m_defaultPipeline;
 
-        VkCommandPool m_commandPool;
+        VkCommandPool m_graphicsCommandPool;
+        VkCommandPool m_transferCommandPool;
 
         VkBuffer m_dummyVertexBuffer;
         VkDeviceMemory m_dummyVertexBufferMem;

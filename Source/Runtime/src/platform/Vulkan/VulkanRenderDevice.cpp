@@ -168,14 +168,16 @@ namespace sj {
         DeviceQueueFamilyIndices indices =
             GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
-        dynamic_unordered_set<uint32_t> unique_queue_families(MemorySystem::GetRootHeapZone());
+        constexpr int kMaxUniqueQueues = 3;
+        static_unordered_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
         unique_queue_families = 
         {
             indices.graphicsFamilyIndex.value(),
-            indices.presentationFamilyIndex.value()
+            indices.presentationFamilyIndex.value(),
+            indices.transferFamilyIndex.value()
         };
 
-        dynamic_vector<VkDeviceQueueCreateInfo> queue_create_infos(MemorySystem::GetRootHeapZone());
+        static_vector<VkDeviceQueueCreateInfo, kMaxUniqueQueues> queue_create_infos;
         float queue_priorities = 1.0f;
         for (auto family : unique_queue_families)
         {
@@ -206,6 +208,7 @@ namespace sj {
 
         vkGetDeviceQueue(m_Device, *indices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_Device, *indices.presentationFamilyIndex, 0, &m_PresentationQueue);
+        vkGetDeviceQueue(m_Device, *indices.transferFamilyIndex, 0, &m_TransferQueue);
     }
 
     DeviceQueueFamilyIndices

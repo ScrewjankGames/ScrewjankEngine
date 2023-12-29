@@ -56,10 +56,10 @@ namespace sj
 
         m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
-        CreateCommandPool();
+        CreateCommandPools();
         CreateDummyVertexBuffer();
 
-        m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_commandPool);
+        m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
     }
 
     void VulkanRendererAPI::DeInit()
@@ -76,7 +76,8 @@ namespace sj
 
         m_frameData.DeInit(m_renderDevice.GetLogicalDevice());
 
-        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_commandPool, nullptr);
+        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool, nullptr);
+        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_transferCommandPool, nullptr);
 
         m_swapChain.DeInit(m_renderDevice.GetLogicalDevice());
         
@@ -402,68 +403,163 @@ namespace sj
         create_function(m_vkInstance, &messenger_create_info, nullptr, &m_vkDebugMessenger);
     }
 
-    void VulkanRendererAPI::CreateCommandPool()
+    void VulkanRendererAPI::CreateCommandPools()
     {
-        auto indices =
-            m_renderDevice.GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+        DeviceQueueFamilyIndices indices =
+            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
         
-        VkCommandPoolCreateInfo poolInfo {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = *(indices.graphicsFamilyIndex);
+        // Create Graphics Command Pool
+        {
+            VkCommandPoolCreateInfo poolInfo {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            poolInfo.queueFamilyIndex = *(indices.graphicsFamilyIndex);
 
-        VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
-                                           &poolInfo,
-                                           nullptr,
-                                           &m_commandPool);
+            VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
+                                               &poolInfo,
+                                               nullptr,
+                                               &m_graphicsCommandPool);
 
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
+        }
+
+        // Create memory transfer command pool
+        {
+            VkCommandPoolCreateInfo poolInfo {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            poolInfo.queueFamilyIndex = *(indices.transferFamilyIndex);
+            
+            VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
+                                               &poolInfo,
+                                               nullptr,
+                                               &m_transferCommandPool);
+
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
+        }
 
     }
 
-    void VulkanRendererAPI::CreateDummyVertexBuffer()
+    void VulkanRendererAPI::CreateBuffer(VkDeviceSize size,
+                                         VkBufferUsageFlags usage,
+                                         VkMemoryPropertyFlags properties,
+                                         VkBuffer& out_buffer,
+                                         VkDeviceMemory& out_bufferMemory)
     {
+        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
+
+        DeviceQueueFamilyIndices indices =
+            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+
+        array<uint32_t, 2> queueFamilyIndices {*indices.graphicsFamilyIndex,
+                                               *indices.transferFamilyIndex};
+
+
         VkBufferCreateInfo bufferInfo {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(m_dummyVertices[0]) * m_dummyVertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        bufferInfo.queueFamilyIndexCount = 2;
+        bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 
-        VkResult res = vkCreateBuffer(m_renderDevice.GetLogicalDevice(),
-                                      &bufferInfo,
-                                      nullptr,
-                                      &m_dummyVertexBuffer);
-
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create dummy vertex buffer");
+        VkResult res = vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &out_buffer);
+        
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create vulkan buffer");
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_renderDevice.GetLogicalDevice(),
-                                      m_dummyVertexBuffer,
+        vkGetBufferMemoryRequirements(logicalDevice,
+                                      out_buffer,
                                       &memRequirements);
 
         VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits,
-                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        res = vkAllocateMemory(m_renderDevice.GetLogicalDevice(),
-                         &allocInfo,
-                         nullptr,
-                         &m_dummyVertexBufferMem);
+        res = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &out_bufferMemory);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy vertex buffer memory");
 
-        vkBindBufferMemory(m_renderDevice.GetLogicalDevice(),
-                           m_dummyVertexBuffer,
-                           m_dummyVertexBufferMem,
-                           0);
+        vkBindBufferMemory(logicalDevice, out_buffer, out_bufferMemory, 0);
+    }
+
+    void VulkanRendererAPI::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    {
+        VkCommandBufferAllocateInfo allocInfo {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_transferCommandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(m_renderDevice.GetLogicalDevice(), &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        VkBufferCopy copyRegion {};
+        copyRegion.srcOffset = 0; // Optional
+        copyRegion.dstOffset = 0; // Optional
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(m_renderDevice.GetTransferQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_renderDevice.GetTransferQueue());
+
+        vkFreeCommandBuffers(
+            m_renderDevice.GetLogicalDevice(), 
+            m_transferCommandPool, 
+            1, 
+            &commandBuffer);
+    }
+
+    void VulkanRendererAPI::CreateDummyVertexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(m_dummyVertices[0]) * m_dummyVertices.size();
+
+        // Stage vertex data in host visible buffer
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+
+        CreateBuffer(bufferSize,
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer,
+                     stagingBufferMemory);
 
         void* data;
-        vkMapMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem, 0, bufferInfo.size, 0, &data);
-        memcpy(data, m_dummyVertices.data(), static_cast<size_t>(bufferInfo.size));
-        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem);
+        vkMapMemory(m_renderDevice.GetLogicalDevice(),
+                    stagingBufferMemory,
+                    0,
+                    bufferSize,
+                    0,
+                    &data);
+
+        memcpy(data, m_dummyVertices.data(), static_cast<size_t>(bufferSize));
+
+        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+
+        CreateBuffer(bufferSize,
+                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                     m_dummyVertexBuffer,
+                     m_dummyVertexBufferMem);
+
+        CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
+
+        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
     }
 
     void VulkanRendererAPI::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx)

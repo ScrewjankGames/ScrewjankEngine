@@ -357,9 +357,6 @@ namespace sj {
         /** Functor used to hash keys */
         Hasher m_HashFunctor = {};
 
-        /** Mask used to assign hashed keys to buckets */
-        size_t m_IndexMask = 0;
-
         /** The maximum load factor of the set */
         static constexpr float s_MaxLoadFactor = kDefaultMaxLoadFactor;
 
@@ -375,11 +372,13 @@ namespace sj {
         friend class Base;
 
     public:
+        static_unordered_set() = default;
+
         template <class InputIterator>
         static_unordered_set(InputIterator first, InputIterator last);
         
         using Base::operator=;
-
+        
     private:
         friend class Base;
         static constexpr bool kIsGrowable = false;

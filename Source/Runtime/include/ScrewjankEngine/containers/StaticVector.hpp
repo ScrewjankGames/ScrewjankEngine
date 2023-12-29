@@ -25,8 +25,11 @@ namespace sj
         /** Array Index Operator */
         const T& operator[](const SizeType index) const;
 
-        void add(const T& value);
-        void add(T&& value);
+        void push_back(const T& value);
+        void push_back(T&& value);
+
+        template<class... Args>
+        void emplace_back(Args&&... args);
 
         void erase_element(const T& value);
         void erase(SizeType idx);
@@ -46,7 +49,8 @@ namespace sj
         T m_cArray[N] = {};
         SizeType m_Count = 0;
     };
-}
+
+} // namespace sj
 
 // Include Inlines
 #include <ScrewjankEngine/containers/StaticVector.inl>

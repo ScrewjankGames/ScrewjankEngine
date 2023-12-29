@@ -9,6 +9,7 @@ namespace sj
         this->emplace(first, last);
     }
 
+
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set()
         : dynamic_unordered_set<T>(MemorySystem::GetCurrentHeapZone())
@@ -123,11 +124,11 @@ namespace sj
             return end();
         }
 
-        auto desired_index = hash & m_IndexMask;
+        auto desired_index = hash % capacity();
 
         for(auto [index, curr_offset] = std::tuple {desired_index, offset_t(0)};
             GetElements()[index].Offset >= curr_offset;
-            index = (index + 1) & m_IndexMask, curr_offset++)
+            index = ((index + 1) % capacity()), curr_offset++)
         {
 
             if(key == GetElements()[index].Value)
@@ -190,29 +191,26 @@ namespace sj
 
         // The new key is unique, try to insert it
         size_type new_count = GetCount() + 1;
+        
         // If there's not enough space, rehash
-
-        size_type desired_index = hash & m_IndexMask;
-
         if(new_count > capacity() || (new_count / capacity()) > s_MaxLoadFactor)
         {
             if constexpr(IMPL::kIsGrowable)
             {
                 rehash(capacity() == 0 ? 2 : capacity() * 2);
 
-                // Recompute desired index, rehashing changes index mask
-                desired_index = hash & m_IndexMask;
             }
             else
             {
                 SJ_ASSERT(false, "Unordered set out of space!");
             }
         }
-
+        
+        size_type desired_index = hash % capacity();
 
         // Perform the robin hood insertion, with a maximum probe count of kProbeLimit
         for (size_type index = desired_index; new_record.Offset < kProbeLimit;
-             index = (index + 1) & m_IndexMask, new_record.Offset++)
+             index = ((index + 1) % capacity()), new_record.Offset++)
         {
 
             // If we've found an open entry, take it
@@ -242,10 +240,10 @@ namespace sj
     inline bool unordered_set_base<T, IMPL, Hasher>::erase(const T& key)
     {
         auto hash = m_HashFunctor(key);
-        size_type index = hash & m_IndexMask;
+        size_type index = hash % capacity();
         offset_t offset = 0;
 
-        for ( ; GetElements()[index].Offset >= offset; index = (index + 1) & m_IndexMask, offset++)
+        for(; GetElements()[index].Offset >= offset; index = ((index + 1) % capacity()), offset++)
         {
             auto& element = GetElements()[index];
             if(element.Value == key)
@@ -285,9 +283,6 @@ namespace sj
     template <class T, class IMPL, class Hasher>
     inline void unordered_set_base<T, IMPL, Hasher>::rehash(size_t new_capacity)
     {
-        SJ_ASSERT((new_capacity & (new_capacity - 1)) == 0,
-                  "UnorderedSet capacity must be a power of two!");
-
         if (new_capacity <= capacity())
         {
             return;
@@ -298,9 +293,6 @@ namespace sj
 
         // Reserve enough space for the new capacity
         GetElements().resize(new_capacity);
-
-        // Reset tracking data
-        m_IndexMask = new_capacity - 1;
 
         // Reset count and re-insert all the old data back into the set
         GetCount() = 0;
@@ -335,7 +327,7 @@ namespace sj
         GetElements()[rich_index] = std::move(poor_record);
 
         for (size_t index = rich_index; rich_record.Offset < kProbeLimit;
-             index = (index + 1) & m_IndexMask, rich_record.Offset++)
+             index = ((index + 1) % capacity()), rich_record.Offset++)
         {
             // If we've found an open entry, take it
             if (GetElements()[index].IsEmpty())
@@ -361,7 +353,7 @@ namespace sj
 
         do
         {
-            size_t nextIndex = (currIndex + 1) & m_IndexMask;
+            size_t nextIndex = (currIndex + 1) % capacity();
 
             if(GetElements()[nextIndex].IsEmpty() || GetElements()[nextIndex].Offset == 0)
             {

@@ -74,9 +74,9 @@ namespace container_tests {
     {
         static_vector<int, 3> vec;
 
-        vec.add(1);
-        vec.add(2);
-        vec.add(3);
+        vec.push_back(1);
+        vec.push_back(2);
+        vec.push_back(3);
 
         ASSERT_EQ(1, vec[0]);
         ASSERT_EQ(2, vec[1]);

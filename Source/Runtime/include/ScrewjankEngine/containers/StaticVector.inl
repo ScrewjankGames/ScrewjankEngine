@@ -11,7 +11,7 @@ namespace sj
     {
         for(const T& val : vals)
         {
-            add(val);
+            push_back(val);
         }
     }
 
@@ -22,7 +22,7 @@ namespace sj
 
         for(const T& val : vals)
         {
-            add(val);
+            push_back(val);
         }
 
         return *this;
@@ -43,7 +43,7 @@ namespace sj
     }
 
     template <class T, size_t N, class SizeType>
-    void static_vector<T, N, SizeType>::add(const T& value)
+    void static_vector<T, N, SizeType>::push_back(const T& value)
     {
         SJ_ASSERT(m_Count < N, "Error! Trying to add to fixed size array that is full!");
         m_cArray[m_Count] = value;
@@ -51,10 +51,20 @@ namespace sj
     }
 
     template <class T, size_t N, class SizeType>
-    void static_vector<T, N, SizeType>::add(T&& value)
+    void static_vector<T, N, SizeType>::push_back(T&& value)
     {
         SJ_ASSERT(m_Count < N, "Error! Trying to add to fixed size array that is full!");
         new(&m_cArray[m_Count]) T(std::forward<T>(value));
+        m_Count++;
+    }
+
+    template <class T, size_t N, class SizeType>
+    template <class... Args>
+    inline void static_vector<T, N, SizeType>::emplace_back(Args&&... args)
+    {
+        SJ_ASSERT(m_Count < N, "Error! Trying to add to fixed size array that is full!");
+
+        new(&m_cArray[m_Count]) T(std::forward<Args>(args)...);
         m_Count++;
     }
 

@@ -37,7 +37,7 @@ namespace sj
                                                const char* debug_name)
         : m_ParentZone(parent)
     {
-        s_HeapZoneList.add(this);
+        s_HeapZoneList.push_back(this);
 
         void* start;
 
