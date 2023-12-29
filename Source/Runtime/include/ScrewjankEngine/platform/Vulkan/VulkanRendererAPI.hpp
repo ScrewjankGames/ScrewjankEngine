@@ -85,10 +85,14 @@ namespace sj {
             }
         };
 
-        array<DummyVertex, 3> m_dummyVertices = {
-            DummyVertex {Vec2 {0.0f, -0.5f}, Vec3 {1.0f, 0.0f, 1.0f}},
-            DummyVertex {Vec2 {0.5f, 0.5f}, Vec3 {0.0f, 1.0f, 0.0f}},
-            DummyVertex {Vec2 {-0.5f, 0.5f}, Vec3 {0.0f, 0.0f, 1.0f}}};
+        array<DummyVertex, 4> m_dummyVertices = {
+            DummyVertex {Vec2 {-0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}},
+            DummyVertex {Vec2 {0.5f, -0.5f}, Vec3 {0.0f, 1.0f, 0.0f}},
+            DummyVertex {Vec2 {0.5f, 0.5f}, Vec3 {0.0f, 0.0f, 1.0f}}, 
+            DummyVertex {Vec2 {-0.5f, 0.5f}, Vec3 {1.0f, 1.0f, 1.0f}}
+        };
+
+        array<uint16_t, 6> m_dummyIndices = {0, 1, 2, 2, 3, 0};
 
       private:
 
@@ -152,6 +156,8 @@ namespace sj {
 
         void CreateDummyVertexBuffer();
 
+        void CreateDummyIndexBuffer();
+
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx);
 
         bool m_IsInitialized = false;
@@ -182,6 +188,9 @@ namespace sj {
 
         VkBuffer m_dummyVertexBuffer;
         VkDeviceMemory m_dummyVertexBufferMem;
+
+        VkBuffer m_dummyIndexBuffer;
+        VkDeviceMemory m_dummyIndexBufferMem;
 
         /**
          * Data representing a render frames in flight 

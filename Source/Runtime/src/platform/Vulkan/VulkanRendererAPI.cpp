@@ -58,6 +58,7 @@ namespace sj
 
         CreateCommandPools();
         CreateDummyVertexBuffer();
+        CreateDummyIndexBuffer();
 
         m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
     }
@@ -562,6 +563,41 @@ namespace sj
         vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
     }
 
+    void VulkanRendererAPI::CreateDummyIndexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(m_dummyIndices[0]) * m_dummyIndices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        CreateBuffer(bufferSize,
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer,
+                     stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(m_renderDevice.GetLogicalDevice(),
+                    stagingBufferMemory,
+                    0,
+                    bufferSize,
+                    0,
+                    &data);
+
+        memcpy(data, m_dummyIndices.data(), (size_t)bufferSize);
+        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+
+        CreateBuffer(bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    m_dummyIndexBuffer,
+                     m_dummyIndexBufferMem);
+
+        CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
+
+        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+    }
+
     void VulkanRendererAPI::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx)
     {
         VkCommandBufferBeginInfo beginInfo {};
@@ -594,6 +630,7 @@ namespace sj
             VkBuffer vertexBuffers[] = {m_dummyVertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(buffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(buffer, m_dummyIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
             VkViewport viewport {};
             viewport.x = 0.0f;
@@ -609,7 +646,7 @@ namespace sj
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(buffer, 0, 1, &scissor);
 
-            vkCmdDraw(buffer, static_cast<uint32_t>(m_dummyVertices.size()), 1, 0, 0);
+            vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndices.size()), 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(buffer);
 
