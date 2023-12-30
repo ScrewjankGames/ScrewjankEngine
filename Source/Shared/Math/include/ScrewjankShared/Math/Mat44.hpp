@@ -4,10 +4,13 @@
 
 namespace sj
 {
-    class Mat44
+    struct IdentityTag{};
+
+    class alignas(16) Mat44 
     {
     public:
         Mat44() = default;
+        Mat44(IdentityTag);
         Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w);
 
         Vec4& operator[](int row);

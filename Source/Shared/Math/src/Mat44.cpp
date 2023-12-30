@@ -2,7 +2,19 @@
 
 namespace sj
 {
-	Mat44::Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w) 
+    Mat44::Mat44(IdentityTag) 
+        : m_rows
+          {
+            Vec4(1, 0, 0, 0),
+            Vec4(0, 1, 0, 0),
+            Vec4(0, 0, 1, 0),
+            Vec4(0, 0, 0, 1)
+          }
+    {
+
+    }
+
+    Mat44::Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w) 
 		: m_rows {x, y, z, w}
 	{
     }
