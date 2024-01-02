@@ -67,5 +67,3 @@ set_target_properties(benchmark_main
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleBenchmark"
 )
-
-add_subdirectory(glm)

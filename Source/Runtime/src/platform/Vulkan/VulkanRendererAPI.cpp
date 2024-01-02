@@ -1,6 +1,3 @@
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 // Parent Include
 #include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 
@@ -222,7 +219,7 @@ namespace sj
     {
         GlobalUniformBufferObject ubo {};
         ubo.model = Mat44(IdentityTag{});
-        ubo.view = LookAt(Vec4(0.0f, 0.0f, 2.0f, 0), Vec4(), Vec4::UnitY);
+        ubo.view = LookAt(Vec4(-2.0f, 2.0f, 2.0f, 0), Vec4(), Vec4::UnitY);
 
 
         VkExtent2D extent = m_swapChain.GetExtent();
