@@ -16,6 +16,7 @@ namespace sj
     void VulkanPipeline::Init(VkDevice device,
                               VkExtent2D imageExtent,
                               VkRenderPass renderPass,
+                              VkDescriptorSetLayout descriptorSetLayout,
                               const char* vertexShaderPath,
                               const char* fragmentShaderPath)
     {
@@ -85,7 +86,7 @@ namespace sj
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; // Optional
         rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -125,8 +126,8 @@ namespace sj
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0; // Optional
-        pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -190,6 +191,11 @@ namespace sj
     VkPipeline VulkanPipeline::GetPipeline()
     {
         return m_Pipeline;
+    }
+
+    VkPipelineLayout VulkanPipeline::GetLayout()
+    {
+        return m_PipelineLayout;
     }
 
     VkShaderModule VulkanPipeline::LoadShaderModule(const char* path)

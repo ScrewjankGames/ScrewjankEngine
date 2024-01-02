@@ -1,12 +1,10 @@
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 // Parent Include
 #include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 
-// STD Headers
-#include <unordered_set>
-
-// Library Headers
-
-// Screwjank Headers
+// Engine Headers
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
@@ -14,6 +12,12 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
+
+// Shared Headers
+#include <ScrewjankShared/Math/Helpers.hpp>
+
+// STD Headers
+#include <unordered_set>
 
 #ifdef SJ_PLATFORM_WINDOWS
 #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
@@ -46,10 +50,13 @@ namespace sj
 
         CreateRenderPass();
 
+        CreateGlobalDescriptorSetlayout();
+
         m_defaultPipeline.Init(
             m_renderDevice.GetLogicalDevice(),
             m_swapChain.GetExtent(),
             m_defaultRenderPass,
+            m_globalUBODescriptorSetLayout,
             "Data/Engine/Shaders/Default.vert.spv",
             "Data/Engine/Shaders/Default.frag.spv"
         );
@@ -60,7 +67,35 @@ namespace sj
         CreateDummyVertexBuffer();
         CreateDummyIndexBuffer();
 
+        CreateGlobalUniformBuffers();
+        CreateGlobalUBODescriptorPool();
+        CreateGlobalUBODescriptorSets();
+
         m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
+    }
+
+    void VulkanRendererAPI::CreateGlobalDescriptorSetlayout()
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding {};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo {};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+
+        VkResult res = vkCreateDescriptorSetLayout(
+            m_renderDevice.GetLogicalDevice(),
+            &layoutInfo,
+            nullptr,
+            &m_globalUBODescriptorSetLayout);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor set layout");
     }
 
     void VulkanRendererAPI::DeInit()
@@ -70,21 +105,30 @@ namespace sj
             return;
         }
 
-        vkDeviceWaitIdle(m_renderDevice.GetLogicalDevice());
+        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
 
-        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), m_dummyVertexBuffer, nullptr);
-        vkFreeMemory(m_renderDevice.GetLogicalDevice(), m_dummyVertexBufferMem, nullptr);
+        vkDeviceWaitIdle(logicalDevice);
 
-        m_frameData.DeInit(m_renderDevice.GetLogicalDevice());
+        vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, nullptr);
+        vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, nullptr);
 
-        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool, nullptr);
-        vkDestroyCommandPool(m_renderDevice.GetLogicalDevice(), m_transferCommandPool, nullptr);
+        m_frameData.DeInit(logicalDevice);
 
-        m_swapChain.DeInit(m_renderDevice.GetLogicalDevice());
+        vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, nullptr);
+        vkDestroyCommandPool(logicalDevice, m_transferCommandPool, nullptr);
+
+        m_swapChain.DeInit(logicalDevice);
         
+        vkDestroyDescriptorPool(logicalDevice, m_globalUBODescriptorPool, nullptr);
+
+
+        vkDestroyDescriptorSetLayout(logicalDevice,
+                                     m_globalUBODescriptorSetLayout,
+                                     nullptr);
+
         m_defaultPipeline.DeInit();
         
-        vkDestroyRenderPass(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass, nullptr);
+        vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, nullptr);
         
         // Important: All things attached to the device need to be torn down first
         m_renderDevice.DeInit();
@@ -174,10 +218,23 @@ namespace sj
         return m_vkInstance;
     }
 
+    void VulkanRendererAPI::UpdateUniformBuffer(void* bufferMem)
+    {
+        GlobalUniformBufferObject ubo {};
+        ubo.model = Mat44(IdentityTag{});
+        ubo.view = LookAt(Vec4(0.0f, 0.0f, 2.0f, 0), Vec4(), Vec4::UnitY);
+
+
+        VkExtent2D extent = m_swapChain.GetExtent();
+        const float aspectRatio = static_cast<float>(extent.width) / extent.height;
+        ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 0.1f, 10.0f);
+        memcpy(bufferMem, &ubo, sizeof(ubo));
+    }
+
     void VulkanRendererAPI::DrawFrame()
     {
         const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
-        
+
         VkCommandBuffer currCommandBuffer = m_frameData.commandBuffers[frameIdx];
         VkFence currFence = m_frameData.inFlightFences[frameIdx];
         VkSemaphore currImageAvailableSemaphore = m_frameData.imageAvailableSemaphores[frameIdx];
@@ -211,12 +268,14 @@ namespace sj
             SJ_ASSERT(false, "Failed to acquire swap chain image.");
         }
 
+        UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx]);
+
         // Reset fence when we know we're going to be able to draw this frame
         vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
         
         vkResetCommandBuffer(currCommandBuffer, 0);
 
-        RecordCommandBuffer(currCommandBuffer, imageIndex);
+        RecordCommandBuffer(currCommandBuffer, frameIdx, imageIndex);
 
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -598,7 +657,93 @@ namespace sj
         vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
     }
 
-    void VulkanRendererAPI::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx)
+    void VulkanRendererAPI::CreateGlobalUniformBuffers()
+    {
+        VkDeviceSize bufferSize = sizeof(GlobalUniformBufferObject);
+
+        for(size_t i = 0; i < kMaxFramesInFlight; i++)
+        {
+            CreateBuffer(bufferSize,
+                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         m_frameData.globalUniformBuffers[i],
+                         m_frameData.globalUniformBuffersMemory[i]);
+
+            vkMapMemory(m_renderDevice.GetLogicalDevice(),
+                        m_frameData.globalUniformBuffersMemory[i],
+                        0,
+                        bufferSize,
+                        0,
+                        &(m_frameData.globalUniformBuffersMapped[i]));
+        }
+    }
+
+    void VulkanRendererAPI::CreateGlobalUBODescriptorPool()
+    {
+        VkDescriptorPoolSize poolSize {};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = kMaxFramesInFlight;
+
+        VkDescriptorPoolCreateInfo poolInfo {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = kMaxFramesInFlight;
+
+        VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
+                                              &poolInfo,
+                                              nullptr,
+                                              &m_globalUBODescriptorPool);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
+    }
+
+    void VulkanRendererAPI::CreateGlobalUBODescriptorSets()
+    {
+        array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts;
+        for(VkDescriptorSetLayout& layout : layouts)
+        {
+            layout = m_globalUBODescriptorSetLayout;
+        }
+
+        VkDescriptorSetAllocateInfo allocInfo {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = m_globalUBODescriptorPool;
+        allocInfo.descriptorSetCount = kMaxFramesInFlight;
+        allocInfo.pSetLayouts = layouts.data();
+
+        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
+        VkResult res = vkAllocateDescriptorSets(logicalDevice,
+                                                &allocInfo,
+                                                m_frameData.globalUBODescriptorSets.data());
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor sets for global UBOs");
+
+        for(size_t i = 0; i < kMaxFramesInFlight; i++)
+        {
+            VkDescriptorBufferInfo bufferInfo {};
+            bufferInfo.buffer = m_frameData.globalUniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(GlobalUniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite {};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_frameData.globalUBODescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(logicalDevice,
+                                   1,
+                                   &descriptorWrite,
+                                   0, 
+                                   nullptr);
+        }
+    }
+
+    void VulkanRendererAPI::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx)
     {
         VkCommandBufferBeginInfo beginInfo {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -645,6 +790,15 @@ namespace sj
             scissor.offset = {0, 0};
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(buffer, 0, 1, &scissor);
+
+            vkCmdBindDescriptorSets(buffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_defaultPipeline.GetLayout(),
+                                    0,
+                                    1,
+                                    &m_frameData.globalUBODescriptorSets[frameIdx],
+                                    0,
+                                    nullptr);
 
             vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndices.size()), 1, 0, 0, 0);
         }
@@ -732,6 +886,9 @@ namespace sj
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
             vkDestroyFence(device, inFlightFences[i], nullptr);
+
+            vkDestroyBuffer(device, globalUniformBuffers[i], nullptr);
+            vkFreeMemory(device, globalUniformBuffersMemory[i], nullptr);
         }
     }
 

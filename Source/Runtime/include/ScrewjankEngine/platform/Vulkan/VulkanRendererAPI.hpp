@@ -17,6 +17,7 @@
 
 #include <ScrewjankShared/Math/Vec2.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
+#include <ScrewjankShared/Math/Mat44.hpp>
 
 namespace sj {
 
@@ -83,6 +84,16 @@ namespace sj {
 
                 return attributeDescriptions;
             }
+        };
+
+        /**
+         * Global state shared by all shaders 
+         */
+        struct GlobalUniformBufferObject
+        {
+            Mat44 model;
+            Mat44 view;
+            Mat44 projection;
         };
 
         array<DummyVertex, 4> m_dummyVertices = {
@@ -158,7 +169,16 @@ namespace sj {
 
         void CreateDummyIndexBuffer();
 
-        void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t imageIdx);
+        void CreateGlobalDescriptorSetlayout();
+        void CreateGlobalUniformBuffers();
+
+        void CreateGlobalUBODescriptorPool();
+
+        void CreateGlobalUBODescriptorSets();
+
+        void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx);
+
+        void UpdateUniformBuffer(void* bufferMem);
 
         bool m_IsInitialized = false;
 
@@ -186,11 +206,15 @@ namespace sj {
         VkCommandPool m_graphicsCommandPool;
         VkCommandPool m_transferCommandPool;
 
+
         VkBuffer m_dummyVertexBuffer;
         VkDeviceMemory m_dummyVertexBufferMem;
 
         VkBuffer m_dummyIndexBuffer;
         VkDeviceMemory m_dummyIndexBufferMem;
+
+        VkDescriptorSetLayout m_globalUBODescriptorSetLayout;
+        VkDescriptorPool m_globalUBODescriptorPool;
 
         /**
          * Data representing a render frames in flight 
@@ -202,6 +226,12 @@ namespace sj {
             array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
             array<VkSemaphore, kMaxFramesInFlight> renderFinishedSemaphores;
             array<VkFence, kMaxFramesInFlight> inFlightFences;
+
+            array<VkBuffer, kMaxFramesInFlight> globalUniformBuffers;
+            array<VkDeviceMemory, kMaxFramesInFlight> globalUniformBuffersMemory;
+            array<void*, kMaxFramesInFlight> globalUniformBuffersMapped;
+            array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets;
+
 
             void Init(VkDevice device, VkCommandPool commandPool);
             void DeInit(VkDevice device);

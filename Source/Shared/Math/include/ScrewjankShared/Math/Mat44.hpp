@@ -13,7 +13,10 @@ namespace sj
         Mat44(IdentityTag);
         Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w);
 
-        Vec4& operator[](int row);
+        auto&& operator[](this auto&& self, int idx) // -> Vec4& or const Vec4&
+        {
+            return self.m_rows[idx];
+        }
 
         Vec4& X();
         Vec4& Y();
@@ -23,4 +26,6 @@ namespace sj
     private:
         Vec4 m_rows[4];
     };
+
+    Vec4 operator*(const Vec4& vec, const Mat44& m);
 }

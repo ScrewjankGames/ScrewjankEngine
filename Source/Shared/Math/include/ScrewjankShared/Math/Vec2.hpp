@@ -7,8 +7,11 @@ namespace sj
     public:
         Vec2() = default;
         Vec2(float x, float y);
-
-        float& operator[](int idx);
+        
+        auto&& operator[](this auto&& self, int idx) // -> float& or const float&
+        {
+            return self.m_elements[idx];
+        }
 
     private:
         float m_elements[2];

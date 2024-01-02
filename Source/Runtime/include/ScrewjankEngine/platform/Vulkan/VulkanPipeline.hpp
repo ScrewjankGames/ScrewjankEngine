@@ -17,12 +17,14 @@ namespace sj
         void Init(VkDevice device,
                   VkExtent2D imageExtent,
                   VkRenderPass renderPass,
+                  VkDescriptorSetLayout descriptorSetLayout,
                   const char* vertexShaderPath,
                   const char* fragmentShaderPath);
 
         void DeInit();
 
         VkPipeline GetPipeline();
+        VkPipelineLayout GetLayout();
 
     private:
         VkShaderModule LoadShaderModule(const char* path);

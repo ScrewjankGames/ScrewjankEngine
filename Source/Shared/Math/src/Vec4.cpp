@@ -2,6 +2,7 @@
 #include <ScrewjankShared/Math/Vec4.hpp>
 
 // Screwjank Includes
+#include <ScrewjankShared/Math/Vec2.hpp>
 
 // STD Includes
 #include <cmath>
@@ -20,7 +21,13 @@ namespace sj
     Vec4::Vec4(float x, float y, float z, float w) : m_elements{x, y, z, w}
     {
     }
-    
+
+    Vec4::Vec4(const Vec2& v, float z, float w) 
+        : m_elements {v[0], v[1], z, w}
+    {
+
+    }
+
     Vec4 Vec4::operator*(const float s) const
     {
         return Vec4(
@@ -101,22 +108,22 @@ namespace sj
         );
     }
 
-    float& Vec4::X()
+    float Vec4::GetX() const
     {
         return m_elements[0];
     }
 
-    float& Vec4::Y()
+    float Vec4::GetY() const
     {
         return m_elements[1];
     }
 
-    float& Vec4::Z()
+    float Vec4::GetZ() const
     {
         return m_elements[2];
     }
 
-    float& Vec4::W()
+    float Vec4::GetW() const
     {
         return m_elements[3];
     }
