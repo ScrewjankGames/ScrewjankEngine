@@ -6,8 +6,8 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Utils.hpp>
 
 namespace sj {

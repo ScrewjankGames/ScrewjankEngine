@@ -5,7 +5,7 @@
 #include <utility>
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 

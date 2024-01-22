@@ -3,7 +3,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/allocators/ProxyAllocator.hpp>
 
 namespace sj {

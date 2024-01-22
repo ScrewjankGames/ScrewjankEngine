@@ -6,8 +6,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/Utils.hpp>
 

@@ -6,7 +6,7 @@
 // Screwjank Engine Headers
 #include <ScrewjankEngine/containers/StaticVector.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 

@@ -3,8 +3,8 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/rendering/RendererAPI.hpp>

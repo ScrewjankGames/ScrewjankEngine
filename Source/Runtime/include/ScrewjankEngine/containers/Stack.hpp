@@ -1,5 +1,5 @@
 #pragma once
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 
 namespace sj
 {

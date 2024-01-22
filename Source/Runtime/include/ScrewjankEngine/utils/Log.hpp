@@ -10,7 +10,7 @@
 #include <spdlog/spdlog.h>
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {

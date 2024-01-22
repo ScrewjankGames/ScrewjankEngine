@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/system/filesystem/File.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 
 sj::File::~File()
 {

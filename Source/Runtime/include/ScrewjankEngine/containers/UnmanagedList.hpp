@@ -4,7 +4,7 @@
 #include <concepts>
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 
 namespace sj
 {

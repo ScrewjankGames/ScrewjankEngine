@@ -4,8 +4,8 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/containers/StaticStack.hpp>
-#include <ScrewjankEngine/core/Assert.hpp>
-#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/allocators/UnmanagedAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>

@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/containers/StaticVector.hpp>
 
 // Engine Includes
-#include <ScrewjankEngine/core/Assert.hpp>
+#include <ScrewjankEngine/utils/Assert.hpp>
 
 namespace sj
 {

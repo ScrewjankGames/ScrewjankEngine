@@ -4,7 +4,7 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/core/Log.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
