@@ -7,13 +7,13 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
-#include <ScrewjankEngine/system/memory/HeapZone.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 namespace sj {
 
     // Forward declarations
-    class HeapZoneBase;
+    class IMemSpace;
 
     // Common memory sizes
     constexpr uint64_t k1_KiB = 1024;
@@ -34,27 +34,27 @@ namespace sj {
          */
         static MemorySystem* Get();
 
-        static void PushHeapZone(HeapZoneBase* heap_zone);
-        static void PopHeapZone();
+        static void PushMemSpace(IMemSpace* mem_space);
+        static void PopMemSpace();
 
-        static HeapZoneBase* GetRootHeapZone();
+        static IMemSpace* GetRootMemSpace();
 
 #ifndef SJ_GOLD
         /**
          * Used to access debug heap for allocation
          */
-        static HeapZoneBase* GetDebugHeapZone();
+        static IMemSpace* GetDebugMemSpace();
 #endif // !SJ_GOLD
 
         /**
          * Users can push and pop heap zones off the stack to control allocations for scopes
          * Allows custom allocators to be used with third party libraries.
          */
-        static HeapZoneBase* GetCurrentHeapZone();
+        static IMemSpace* GetCurrentMemSpace();
 
       private:
-        HeapZone<FreeListAllocator> m_RootHeapZone;
-        HeapZone<FreeListAllocator> m_DebugHeapZone;
+        MemSpace<FreeListAllocator> m_RootMemSpace;
+        MemSpace<FreeListAllocator> m_DebugMemSpace;
         
         MemorySystem();
         ~MemorySystem();
@@ -144,7 +144,7 @@ namespace sj {
     };
 
     template <typename T, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(HeapZoneBase* zone, Args&&... args);
+    constexpr UniquePtr<T> MakeUnique(IMemSpace* zone, Args&&... args);
 
     // Placeholder SharedPtr alias
     template <typename T>
@@ -168,8 +168,8 @@ namespace sj {
     template <class T, class... Args>
     T* New(Args&&... args)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
-        return heap_zone->New<T>(std::forward<Args>(args)...);
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        return mem_space->New<T>(std::forward<Args>(args)...);
     }
 
     /**
@@ -178,9 +178,9 @@ namespace sj {
      * @note This function should not be used until AFTER the engine initialized the allocator.
      */
     template <class T, class... Args>
-    T* New(HeapZoneBase* heap_zone, Args&&... args)
+    T* New(IMemSpace* mem_space, Args&&... args)
     {
-        return heap_zone->New<T>(std::forward<Args>(args)...);
+        return mem_space->New<T>(std::forward<Args>(args)...);
     }
 
     /**
@@ -208,9 +208,9 @@ namespace sj {
      * allocator.
      */
     template <class T, class... Args>
-    void Delete(HeapZoneBase* heap_zone, T*& memory)
+    void Delete(IMemSpace* mem_space, T*& memory)
     {
-        heap_zone->Delete(memory);
+        mem_space->Delete(memory);
     }
 
 } // namespace sj

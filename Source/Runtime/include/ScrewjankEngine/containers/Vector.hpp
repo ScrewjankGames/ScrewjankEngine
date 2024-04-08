@@ -33,8 +33,8 @@ namespace sj {
         using const_iterator = const T*;
 
         /**
-         * Implicit HeapZone Constructors
-         * Uses MemorySystem::CurrentHeapZone to allocate memory
+         * Implicit MemSpace Constructors
+         * Uses MemorySystem::CurrentMemSpace to allocate memory
          */
         dynamic_vector();
         dynamic_vector(size_t count);
@@ -45,25 +45,25 @@ namespace sj {
          * Default Constructor
          * @param count The number of elements to default construct in this vector
          */
-        explicit dynamic_vector(HeapZoneBase* heap_zone);
+        explicit dynamic_vector(IMemSpace* mem_space);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to default construct in this vector
          */
-        dynamic_vector(HeapZoneBase* heap_zone, size_t count);
+        dynamic_vector(IMemSpace* mem_space, size_t count);
 
         /**
          * Value Initialization Constructor
          * @param count The number of elements to construct in this vector
          * @param value The value to use when initializing constructed elements
          */
-        dynamic_vector(HeapZoneBase* heap_zone, size_t count, const T& value);
+        dynamic_vector(IMemSpace* mem_space, size_t count, const T& value);
 
         /**
          * List initialization Constructor
          */
-        dynamic_vector(HeapZoneBase* heap_zone, std::initializer_list<T> list);
+        dynamic_vector(IMemSpace* mem_space, std::initializer_list<T> list);
 
         /**
          * Copy Constructor
@@ -219,7 +219,7 @@ namespace sj {
         size_t m_Capacity;
 
         /** Allocator used to service this vector */
-        HeapZoneBase* m_BackingZone;
+        IMemSpace* m_BackingZone;
 
         /** Pointer to the data buffer */
         T* m_Data;

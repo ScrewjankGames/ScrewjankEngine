@@ -29,7 +29,7 @@
 //            static WindowsWindow* window = New<WindowsWindow>();
 //
 //            WindowsWindow* window = New<WindowsWindow>();
-//            return UniquePtr<Window>(MemorySystem::GetRootHeapZone(), window);
+//            return UniquePtr<Window>(MemorySystem::GetRootMemSpace(), window);
 //        }
 //        else if constexpr(g_Platform == Platform::Linux)
 //        {

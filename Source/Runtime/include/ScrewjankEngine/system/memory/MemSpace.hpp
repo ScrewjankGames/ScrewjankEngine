@@ -13,13 +13,13 @@
 namespace sj
 {
     /**
-     * Represents a named zone of memory on the heap, owns associated memory or defers to parent HeapZone
+     * Represents a named zone of memory on the heap, owns associated memory or defers to parent MemSpace
      */
-    class HeapZoneBase
+    class IMemSpace
     {
       public:
-        static HeapZoneBase* FindHeapZoneForPointer(void* ptr);
-        virtual ~HeapZoneBase() = default;
+        static IMemSpace* FindMemSpaceForPointer(void* ptr);
+        virtual ~IMemSpace() = default;
 
         [[nodiscard]] 
         virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
@@ -28,7 +28,7 @@ namespace sj
         T* AllocateType(const size_t count = 1);
 
         /**
-         * Deallocates memory from this heapzone 
+         * Deallocates memory from this MemSpace 
          */
         virtual void Free(void* memory) = 0;
 
@@ -50,7 +50,7 @@ namespace sj
         virtual bool ContainsPointer(void* ptr) const = 0;
   
       protected:
-        static static_vector<HeapZoneBase*, 64> s_HeapZoneList;
+        static static_vector<IMemSpace*, 64> s_MemSpaceList;
 
         #ifndef GOLD_VERSION
         char m_DebugName[256]; 
@@ -61,11 +61,11 @@ namespace sj
      * Specialized heap zone that accepts an allocator type 
      */
     template<allocator_concept AllocatorType = FreeListAllocator>
-    class HeapZone final : public HeapZoneBase
+    class MemSpace final : public IMemSpace
     {
     public:
-        HeapZone(HeapZoneBase* parent, const size_t size, const char* debug_name = "");
-        ~HeapZone() override;
+        MemSpace(IMemSpace* parent, const size_t size, const char* debug_name = "");
+        ~MemSpace() override;
 
         [[nodiscard]] 
         void* Allocate(const size_t size,
@@ -76,7 +76,7 @@ namespace sj
         bool ContainsPointer(void* ptr) const override;
 
     private:
-        HeapZoneBase* m_ParentZone = nullptr;
+        IMemSpace* m_ParentZone = nullptr;
         AllocatorType m_Allocator;
 
         // TODO: Actually put together a thread friendly memory model and remove me
@@ -87,32 +87,32 @@ namespace sj
      * Helper class that pushes a heap zone onto the stack on creature
      * and pops it when it goes out of scope
      */
-    class HeapZoneScope
+    class MemSpaceScope
     {
       public:
-        HeapZoneScope(HeapZoneBase* zone);
-        HeapZoneScope(const HeapZoneScope& other) = delete;
-        HeapZoneScope(HeapZoneScope&& other);
+        MemSpaceScope(IMemSpace* zone);
+        MemSpaceScope(const MemSpaceScope& other) = delete;
+        MemSpaceScope(MemSpaceScope&& other);
 
-        HeapZoneScope& operator=(const HeapZoneScope& other) = delete;
+        MemSpaceScope& operator=(const MemSpaceScope& other) = delete;
 
-        ~HeapZoneScope();
+        ~MemSpaceScope();
 
-        HeapZoneBase& operator*() { return *m_Heap; }
-        HeapZoneBase* operator->() { return m_Heap; }
-        const HeapZoneBase& operator*() const { return *m_Heap; }
-        const HeapZoneBase* operator->() const { return m_Heap; }
+        IMemSpace& operator*() { return *m_Heap; }
+        IMemSpace* operator->() { return m_Heap; }
+        const IMemSpace& operator*() const { return *m_Heap; }
+        const IMemSpace* operator->() const { return m_Heap; }
 
-        HeapZoneBase* Get() { return m_Heap; }
+        IMemSpace* Get() { return m_Heap; }
 
       private:
-        HeapZoneBase* m_Heap;
+        IMemSpace* m_Heap;
     };
 
     template <class T>
-    HeapZone() -> HeapZone<FreeListAllocator>; 
+    MemSpace() -> MemSpace<FreeListAllocator>; 
 
 } // namespace sj
 
 // Include inlines
-#include <ScrewjankEngine/system/memory/HeapZone.inl>
+#include <ScrewjankEngine/system/memory/MemSpace.inl>

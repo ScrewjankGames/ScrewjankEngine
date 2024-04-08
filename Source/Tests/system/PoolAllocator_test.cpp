@@ -20,8 +20,8 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, AllocationTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
-        void* memory = heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        void* memory = mem_space->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
         PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
@@ -84,14 +84,14 @@ namespace system_tests {
         allocator.Free(mem_loc3);
         allocator.Free(mem_loc4);
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
     TEST(PoolAllocatorTests, ObjectPoolTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
         void* memory =
-            heap_zone->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
+            mem_space->Allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
         ObjectPoolAllocator<PoolAllocatorDummy> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
@@ -154,7 +154,7 @@ namespace system_tests {
         allocator.Free(mem_loc3);
         allocator.Free(mem_loc4);
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
 } // namespace system_tests

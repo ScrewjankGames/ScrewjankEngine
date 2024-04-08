@@ -49,42 +49,42 @@ namespace sj {
     template <typename... Args>
     inline void Logger::LogTrace(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::trace(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogDebug(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::debug(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogInfo(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::info(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogWarn(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::warn(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogError(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::error(fmt::runtime(format), args...);
     }
 
     template <typename... Args>
     inline void Logger::LogFatal(const char* format, Args... args)
     {
-        HeapZoneScope hz(MemorySystem::GetDebugHeapZone());
+        MemSpaceScope hz(MemorySystem::GetDebugMemSpace());
         spdlog::critical(fmt::runtime(format), args...);
     }
 } // namespace sj

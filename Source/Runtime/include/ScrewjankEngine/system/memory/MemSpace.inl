@@ -1,4 +1,4 @@
-#include <ScrewjankEngine/system/memory/HeapZone.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 
 namespace sj
 {
@@ -7,21 +7,21 @@ namespace sj
     ///////////////////////////////////////////////////////////////////////
 
     template <class T>
-    inline T* HeapZoneBase::AllocateType(const size_t count)
+    inline T* IMemSpace::AllocateType(const size_t count)
     {
         return static_cast<T*>(Allocate(sizeof(T) * count, alignof(T)));     
     }
 
     template <class T, class... Args>
-    inline T* HeapZoneBase::New(Args&&... args)
+    inline T* IMemSpace::New(Args&&... args)
     {
         return new(this->AllocateType<T>()) T(std::forward<Args>(args)...);
     }
 
     template <class T>
-    inline void HeapZoneBase::Delete(T*& memory)
+    inline void IMemSpace::Delete(T*& memory)
     {
-        SJ_ASSERT(this->ContainsPointer(memory), "Freeing pointer from wrong HeapZone!!");
+        SJ_ASSERT(this->ContainsPointer(memory), "Freeing pointer from wrong MemSpace!!");
         memory->~T();
         this->Free(memory);
         memory = nullptr;
@@ -32,12 +32,12 @@ namespace sj
     ///////////////////////////////////////////////////////////////////////
 
     template <allocator_concept AllocatorType>
-    inline HeapZone<AllocatorType>::HeapZone(HeapZoneBase* parent,
+    inline MemSpace<AllocatorType>::MemSpace(IMemSpace* parent,
                                                const size_t size,
                                                const char* debug_name)
         : m_ParentZone(parent)
     {
-        s_HeapZoneList.push_back(this);
+        s_MemSpaceList.push_back(this);
 
         void* start;
 
@@ -58,9 +58,9 @@ namespace sj
     }
 
     template <allocator_concept AllocatorType>
-    inline HeapZone<AllocatorType>::~HeapZone()
+    inline MemSpace<AllocatorType>::~MemSpace()
     {
-        s_HeapZoneList.erase_element(this);
+        s_MemSpaceList.erase_element(this);
 
         if(m_ParentZone)
         {
@@ -73,21 +73,21 @@ namespace sj
     }
 
     template <allocator_concept AllocatorType>
-    inline void* HeapZone<AllocatorType>::Allocate(const size_t size, const size_t alignment)
+    inline void* MemSpace<AllocatorType>::Allocate(const size_t size, const size_t alignment)
     {
         std::scoped_lock<std::mutex> lock(m_HeapLock);
         return m_Allocator.Allocate(size, alignment);
     }
     
     template <allocator_concept AllocatorType>
-    inline void HeapZone<AllocatorType>::Free(void* memory)
+    inline void MemSpace<AllocatorType>::Free(void* memory)
     {
         std::scoped_lock<std::mutex> lock(m_HeapLock);
         m_Allocator.Free(memory);
     }
 
     template <allocator_concept AllocatorType>
-    bool HeapZone<AllocatorType>::ContainsPointer(void* ptr) const
+    bool MemSpace<AllocatorType>::ContainsPointer(void* ptr) const
     {
         uintptr_t ptr_int = reinterpret_cast<uintptr_t>(ptr);
 

@@ -3,47 +3,47 @@
 namespace sj
 {
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector() : dynamic_vector(MemorySystem::GetCurrentHeapZone())
+    inline dynamic_vector<T>::dynamic_vector() : dynamic_vector(MemorySystem::GetCurrentMemSpace())
     {
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(size_t count) : dynamic_vector(MemorySystem::GetCurrentHeapZone(), count)
+    inline dynamic_vector<T>::dynamic_vector(size_t count) : dynamic_vector(MemorySystem::GetCurrentMemSpace(), count)
     {
     }
 
     template <class T>
     inline dynamic_vector<T>::dynamic_vector(size_t count, const T& value)
-        : dynamic_vector(MemorySystem::GetCurrentHeapZone(), count, value)
+        : dynamic_vector(MemorySystem::GetCurrentMemSpace(), count, value)
     {
     }
 
     template <class T>
     inline dynamic_vector<T>::dynamic_vector(std::initializer_list<T> list)
-        : dynamic_vector(MemorySystem::GetCurrentHeapZone(), list)
+        : dynamic_vector(MemorySystem::GetCurrentMemSpace(), list)
     {
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone)
-        : m_Data(nullptr), m_BackingZone(heap_zone), m_Size(0), m_Capacity(0)
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space)
+        : m_Data(nullptr), m_BackingZone(mem_space), m_Size(0), m_Capacity(0)
     {
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, size_t count) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, size_t count) : dynamic_vector(mem_space)
     {
         resize(count);
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, size_t count, const T& value) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, size_t count, const T& value) : dynamic_vector(mem_space)
     {
         resize(count, value);
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(HeapZoneBase* heap_zone, std::initializer_list<T> list) : dynamic_vector(heap_zone)
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, std::initializer_list<T> list) : dynamic_vector(mem_space)
     {
         // Make sure vector has space for size() elements
         reserve(list.size());

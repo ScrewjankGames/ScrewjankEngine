@@ -21,8 +21,8 @@ namespace system_tests {
 
     TEST(StackAllocatorTests, PushPopTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
-        void* memory = heap_zone->Allocate(128);
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        void* memory = mem_space->Allocate(128);
         StackAllocator allocator(128, memory);
 
         // Assign memory and construct test data in the addresses
@@ -96,7 +96,7 @@ namespace system_tests {
         allocator.PopAlloc();
         allocator.PopAlloc();
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
 } // namespace system_tests

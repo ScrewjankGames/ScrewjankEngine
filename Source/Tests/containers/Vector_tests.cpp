@@ -127,7 +127,7 @@ namespace container_tests {
 
     TEST(VectorTests, ElementAccessTest)
     {
-        dynamic_vector<int> vec1(MemorySystem::GetRootHeapZone(), {1, 2, 3});
+        dynamic_vector<int> vec1(MemorySystem::GetRootMemSpace(), {1, 2, 3});
 
         ASSERT_EQ(1, vec1[0]);
 
@@ -325,8 +325,8 @@ namespace container_tests {
 
     TEST(VectorTests, CopyAssignmentOperatorTest)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        dynamic_vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(MemorySystem::GetRootMemSpace(), {"Biz", "Baz"});
 
         // Copy Assignment
         vec1 = vec2;
@@ -338,18 +338,18 @@ namespace container_tests {
 
     TEST(VectorTests, MoveAssignmentOperatorTest)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
-        dynamic_vector<std::string> vec2(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec2(MemorySystem::GetRootMemSpace(), {"Biz", "Baz"});
 
         // Move Assign a vector temporary into vec2
-        vec2 = dynamic_vector<std::string>(MemorySystem::GetRootHeapZone(), {"One", "Two"});
+        vec2 = dynamic_vector<std::string>(MemorySystem::GetRootMemSpace(), {"One", "Two"});
         ASSERT_EQ("One", vec2[0]);
         ASSERT_EQ("Two", vec2[1]);
     }
 
     TEST(VectorTests, CopyContructorTest)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), {"Foo", "Bar"});
         dynamic_vector<std::string> vec2(vec1);
 
         ASSERT_EQ("Foo", vec2[0]);
@@ -358,7 +358,7 @@ namespace container_tests {
 
     TEST(VectorTests, MoveContructorTest)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), {"Foo", "Bar"});
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), {"Foo", "Bar"});
         dynamic_vector<std::string> vec2(std::move(vec1));
         
         ASSERT_EQ(0, vec1.size());
@@ -370,14 +370,14 @@ namespace container_tests {
         ASSERT_EQ(1, vec1.size());
 
         dynamic_vector<std::string> vec3(
-            dynamic_vector<std::string>(MemorySystem::GetRootHeapZone(), {"Biz", "Baz"}));
+            dynamic_vector<std::string>(MemorySystem::GetRootMemSpace(), {"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
         ASSERT_EQ("Baz", vec3[1]);
     }
 
     TEST(VectorTests, ResizeTest)
     {
-        dynamic_vector<int> vec(MemorySystem::GetRootHeapZone(), 10);
+        dynamic_vector<int> vec(MemorySystem::GetRootMemSpace(), 10);
         ASSERT_EQ(10, vec.capacity());
         ASSERT_EQ(10, vec.size());
 
@@ -433,7 +433,7 @@ namespace container_tests {
 
     TEST(VectorTests, ValueInitializingConstructorTest)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), 10, "Foo");
 
         for (size_t i = 0; i < vec1.size(); i++) {
             ASSERT_EQ("Foo", vec1[i]);
@@ -442,7 +442,7 @@ namespace container_tests {
 
     TEST(VectorTests, StdSpanConstruction)
     {
-        dynamic_vector<std::string> vec1(MemorySystem::GetRootHeapZone(), 10, "Foo");
+        dynamic_vector<std::string> vec1(MemorySystem::GetRootMemSpace(), 10, "Foo");
 
         std::span testSpan(vec1);
 

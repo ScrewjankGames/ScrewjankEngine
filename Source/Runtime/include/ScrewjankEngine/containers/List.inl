@@ -117,25 +117,25 @@ namespace sj
     /// Managed List
     ///////////////////////////////////////////////////////////////////////
     template <class T, bool tIsBidirectional>
-    inline List<T, tIsBidirectional>::List() : List(MemorySystem::GetCurrentHeapZone())
+    inline List<T, tIsBidirectional>::List() : List(MemorySystem::GetCurrentMemSpace())
     {
     }
 
     template <class T, bool tIsBidirectional>
     inline List<T, tIsBidirectional>::List(std::initializer_list<T> list)
-        : List(MemorySystem::GetCurrentHeapZone(), list)
+        : List(MemorySystem::GetCurrentMemSpace(), list)
     {
     }
 
     template <class T, bool tIsBidirectional>
-    inline List<T, tIsBidirectional>::List(HeapZoneBase* heap_zone)
-        : m_HeapZone(heap_zone)
+    inline List<T, tIsBidirectional>::List(IMemSpace* mem_space)
+        : m_MemSpace(mem_space)
     {
     }
 
     template <class T, bool tIsBidirectional>
-    inline List<T, tIsBidirectional>::List(HeapZoneBase* heap_zone, std::initializer_list<T> list)
-        : List<T, tIsBidirectional>(heap_zone)
+    inline List<T, tIsBidirectional>::List(IMemSpace* mem_space, std::initializer_list<T> list)
+        : List<T, tIsBidirectional>(mem_space)
     {
         for(auto it = list.end() - 1; it >= list.begin(); it--)
         {
@@ -146,8 +146,8 @@ namespace sj
     template <class T, bool tIsBidirectional>
     inline List<T, tIsBidirectional>::List(const List<T, tIsBidirectional>& other)
     {
-        m_HeapZone = other.m_HeapZone;
-        HeapZoneScope hzScope(m_HeapZone);
+        m_MemSpace = other.m_MemSpace;
+        MemSpaceScope hzScope(m_MemSpace);
 
         if(other.IsEmpty())
         {
@@ -162,7 +162,7 @@ namespace sj
 
         for(; it != other.end(); it++)
         {
-            m_List.insert_after(currNode, m_HeapZone->New<node_type>(*it));
+            m_List.insert_after(currNode, m_MemSpace->New<node_type>(*it));
             currNode = currNode->GetNext();
         }
     }
@@ -181,7 +181,7 @@ namespace sj
 
         if(!other.IsEmpty())
         {
-            m_HeapZone = other.m_HeapZone;
+            m_MemSpace = other.m_MemSpace;
 
             ConstIterator otherIt = other.begin();
             PushFront(*otherIt);
@@ -215,7 +215,7 @@ namespace sj
     inline void List<T, tIsBidirectional>::PushFront(const T& value)
     {
         // Allocate node and copy data
-        node_ptr newNode = m_HeapZone->New<node_type>(value);
+        node_ptr newNode = m_MemSpace->New<node_type>(value);
 
         // Push to list impl
         m_List.push_front(newNode);
@@ -224,7 +224,7 @@ namespace sj
     template <class T, bool tIsBidirectional>
     inline void List<T, tIsBidirectional>::PushBack(const T& value)
     {
-        node_ptr newNode = m_HeapZone->New<node_type>(value);
+        node_ptr newNode = m_MemSpace->New<node_type>(value);
 
         m_List.push_back(newNode);
     }
@@ -236,14 +236,14 @@ namespace sj
 
         node_type& tmp = m_List.front();
         m_List.pop_front();
-        m_HeapZone->Free(&tmp);
+        m_MemSpace->Free(&tmp);
     }
 
     template <class T, bool tIsBidirectional>
     template <class... Args>
     inline void List<T, tIsBidirectional>::EmplaceFront(Args&&... args)
     {
-        node_ptr nodePtr = static_cast<node_ptr>(m_HeapZone->AllocateType<node_type>());
+        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->AllocateType<node_type>());
         new (nodePtr) node_type (T(std::forward<Args>(args)...));
         m_List.push_front(nodePtr);
     }
@@ -252,7 +252,7 @@ namespace sj
     inline typename List<T, tIsBidirectional>::Iterator 
     List<T, tIsBidirectional>::InsertAfter(Iterator pos, const T& value)
     {
-        node_ptr nodePtr = m_HeapZone->New<node_type>(value);
+        node_ptr nodePtr = m_MemSpace->New<node_type>(value);
 
         m_List.insert_after(pos.GetNode(), nodePtr);
 
@@ -264,7 +264,7 @@ namespace sj
     inline typename List<T, tIsBidirectional>::Iterator List<T, tIsBidirectional>::EmplaceAfter(Iterator pos,
                                                                           Args&&... args)
     {
-        node_ptr nodePtr = static_cast<node_ptr>(m_HeapZone->AllocateType<node_type>());
+        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->AllocateType<node_type>());
         new(nodePtr) node_type {T(std::forward<Args>(args)...)};
 
         m_List.insert_after(pos.GetNode(), nodePtr);
@@ -279,7 +279,7 @@ namespace sj
 
         node_ptr dead_node = pos.GetNode()->Next;
         m_List.erase_after(pos.GetNode());
-        m_HeapZone->Delete(dead_node);
+        m_MemSpace->Delete(dead_node);
 
         return ++pos;
     }
@@ -292,7 +292,7 @@ namespace sj
         {
             node_ptr curr = &m_List.front();
             m_List.pop_front();
-            m_HeapZone->Delete(curr);
+            m_MemSpace->Delete(curr);
         }
     }
 

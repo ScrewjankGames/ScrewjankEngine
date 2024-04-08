@@ -174,7 +174,7 @@ namespace sj
         if constexpr (g_IsDebugBuild) 
         {
             static dynamic_vector<const char*> layers( 
-                MemorySystem::GetRootHeapZone(),
+                MemorySystem::GetRootMemSpace(),
                 {"VK_LAYER_KHRONOS_validation"}
             );
 

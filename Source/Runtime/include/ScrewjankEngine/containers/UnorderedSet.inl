@@ -12,7 +12,7 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set()
-        : dynamic_unordered_set<T>(MemorySystem::GetCurrentHeapZone())
+        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemSpace())
     {
     }
 
@@ -36,26 +36,26 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(std::initializer_list<T> list)
-        : dynamic_unordered_set<T>(MemorySystem::GetCurrentHeapZone(), list)
+        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemSpace(), list)
     {
     }
 
     template <class T>
     template <class InputIterator>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(InputIterator first, InputIterator last)
-        : dynamic_unordered_set(MemorySystem::GetCurrentHeapZone(), first, last)
+        : dynamic_unordered_set(MemorySystem::GetCurrentMemSpace(), first, last)
     {
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set(HeapZoneBase* heap_zone)
-        : m_Elements(heap_zone, 0)    
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(IMemSpace* mem_space)
+        : m_Elements(mem_space, 0)    
     {
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set( HeapZoneBase* heap_zone, std::initializer_list<T> list)
-        : dynamic_unordered_set<T>(heap_zone)
+    inline dynamic_unordered_set<T>::dynamic_unordered_set( IMemSpace* mem_space, std::initializer_list<T> list)
+        : dynamic_unordered_set<T>(mem_space)
     {
         for (auto key : list)
         {
@@ -65,10 +65,10 @@ namespace sj
 
     template <class T>
     template <class InputIterator>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set(HeapZoneBase* heap_zone,
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(IMemSpace* mem_space,
                                                  InputIterator first,
                                                  InputIterator last)
-        : dynamic_unordered_set<T>(heap_zone)
+        : dynamic_unordered_set<T>(mem_space)
     {
         this->emplace(first, last);
     }

@@ -5,12 +5,12 @@ namespace sj
 {
 
     template <class T, class size_type>
-    inline dynamic_array<T, size_type>::dynamic_array(HeapZoneBase* zone, size_type capacity)
-        : m_heapZone(zone), m_capacity(capacity)
+    inline dynamic_array<T, size_type>::dynamic_array(IMemSpace* zone, size_type capacity)
+        : m_MemSpace(zone), m_capacity(capacity)
     {
         if(capacity > 0)
         {
-            m_array = m_heapZone->AllocateType<T>(capacity);
+            m_array = m_MemSpace->AllocateType<T>(capacity);
         }
 
         if constexpr (!std::is_trivially_constructible_v<T>)
@@ -25,12 +25,12 @@ namespace sj
 
     template <class T, class size_type>
     inline dynamic_array<T, size_type>::dynamic_array(std::initializer_list<T> elems) 
-        : m_heapZone(MemorySystem::GetCurrentHeapZone()),
+        : m_MemSpace(MemorySystem::GetCurrentMemSpace()),
           m_capacity(static_cast<size_type>( elems.size() ) )
     {
         if(m_capacity > 0)
         {
-            m_array = m_heapZone->AllocateType<T>(m_capacity);
+            m_array = m_MemSpace->AllocateType<T>(m_capacity);
         }
 
         // Construct all elements
@@ -44,7 +44,7 @@ namespace sj
 
     template <class T, class size_type>
     inline dynamic_array<T, size_type>::dynamic_array(const dynamic_array<T, size_type>& other) 
-        : dynamic_array(MemorySystem::GetCurrentHeapZone(), other.size())
+        : dynamic_array(MemorySystem::GetCurrentMemSpace(), other.size())
     {
         if constexpr (std::is_trivially_constructible_v<T>)
         {
@@ -63,7 +63,7 @@ namespace sj
 
     template <class T, class size_type>
     inline dynamic_array<T, size_type>::dynamic_array(dynamic_array<T, size_type>&& other) 
-        : m_heapZone(other.m_heapZone), m_array(other.m_array), m_capacity(other.m_capacity)
+        : m_MemSpace(other.m_MemSpace), m_array(other.m_array), m_capacity(other.m_capacity)
     {
         other.m_array = nullptr;
         other.m_capacity = 0;
@@ -85,7 +85,7 @@ namespace sj
             }
         }
 
-        m_heapZone->Free(m_array);
+        m_MemSpace->Free(m_array);
     }
 
     template <class T, class size_type>
@@ -147,7 +147,7 @@ namespace sj
     template <class T, class size_type>
     inline void dynamic_array<T, size_type>::resize(size_type newCapacity)
     {
-        T* newArray = m_heapZone->AllocateType<T>(newCapacity);
+        T* newArray = m_MemSpace->AllocateType<T>(newCapacity);
         if constexpr(std::is_trivially_constructible_v<T>)
         {
             memcpy(newArray, m_array, sizeof(T) * m_capacity);

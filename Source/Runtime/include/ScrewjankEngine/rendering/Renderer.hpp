@@ -17,7 +17,7 @@ namespace sj {
     class Renderer
     {
     public:
-        static HeapZone<FreeListAllocator>* WorkBuffer();
+        static MemSpace<FreeListAllocator>* WorkBuffer();
 
         /**
          * Constructor

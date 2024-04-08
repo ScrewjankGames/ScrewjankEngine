@@ -33,8 +33,8 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
-        void* memory = heap_zone->Allocate(128);
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        void* memory = mem_space->Allocate(128);
         LinearAllocator allocator(128, memory);
 
         void* dummy_memory = allocator.AllocateType<LinearAllocatorDummy>();
@@ -51,14 +51,14 @@ namespace system_tests {
 
         allocator.Reset();
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = heap_zone->Allocate(mem_size);
+        void* memory = mem_space->Allocate(mem_size);
 
         LinearAllocator packingTest(mem_size, memory);
 
@@ -71,43 +71,43 @@ namespace system_tests {
             mem = packingTest.AllocateType<SBS>();
         }
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = heap_zone->Allocate(mem_size);
+        void* memory = mem_space->Allocate(mem_size);
 
         LinearAllocator allocator(mem_size, memory);
         auto mem = allocator.Allocate(sizeof(SBS) * 10);
         ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = heap_zone->Allocate(mem_size);
+        void* memory = mem_space->Allocate(mem_size);
         
         LinearAllocator allocator(mem_size, memory);
 
         auto mem = allocator.Allocate(sizeof(SBS) * 9);
         ASSERT_EQ(nullptr, allocator.Allocate(sizeof(SBS) * 2));
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 
     TEST(LinearAllocatorTests, MemoryStompTest)
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        HeapZoneBase* heap_zone = MemorySystem::GetCurrentHeapZone();
+        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
         size_t mem_size = 256;
-        void* memory = heap_zone->Allocate(mem_size);
+        void* memory = mem_space->Allocate(mem_size);
 
         LinearAllocator allocator(mem_size, memory);
 
@@ -122,6 +122,6 @@ namespace system_tests {
         ASSERT_EQ(3, dummy3->m_num);
         ASSERT_EQ(3.0, dummy3->m_double);
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 } // namespace system_tests

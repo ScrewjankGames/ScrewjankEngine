@@ -149,8 +149,8 @@ namespace sj
         using ConstIterator = IteratorBase<true>;
 
         /**
-         * Implicit HeapZone Constructors
-         * Uses MemorySystem::CurrentHeapZone to allocate memory
+         * Implicit MemSpace Constructors
+         * Uses MemorySystem::CurrentMemSpace to allocate memory
          */
         List();
         List(std::initializer_list<T> list);
@@ -158,12 +158,12 @@ namespace sj
         /**
          * Constructor
          */
-        List(HeapZoneBase* heap_zone);
+        List(IMemSpace* mem_space);
 
         /**
          * Initializer List Construction
          */
-        List(HeapZoneBase* heap_zone, std::initializer_list<T> list);
+        List(IMemSpace* mem_space, std::initializer_list<T> list);
 
         /**
          * Copy constructor 
@@ -270,7 +270,7 @@ namespace sj
         unmanaged_list<node_type> m_List;
 
         /** Allocator used to service allocations for container structures */
-        HeapZoneBase* m_HeapZone;
+        IMemSpace* m_MemSpace;
 
       public:
         /** Begin function to allow range-based loop iterator */

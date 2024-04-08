@@ -6,7 +6,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/HeapZone.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Concepts.hpp>
 
@@ -31,7 +31,7 @@ namespace sj
         /**
          * Constructor
          */
-        dynamic_array(HeapZoneBase* zone, size_type capacity);
+        dynamic_array(IMemSpace* zone, size_type capacity);
         dynamic_array(std::initializer_list<T> elems);
 
         /**
@@ -125,8 +125,8 @@ namespace sj
         void resize(size_type newCapacity);
 
     private:
-        /** Heap zone we live in */
-        HeapZoneBase* m_heapZone = nullptr;
+        /** MemSpace we live in */
+        IMemSpace* m_MemSpace = nullptr;
 
         /** C style array this datastructure encapsulates */
         T* m_array = nullptr;

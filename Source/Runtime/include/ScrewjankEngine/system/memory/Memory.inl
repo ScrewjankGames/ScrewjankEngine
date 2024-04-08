@@ -60,7 +60,7 @@ namespace sj
     }
 
     template <typename T, typename... Args>
-    constexpr UniquePtr<T> MakeUnique(HeapZoneBase* zone, Args&&... args)
+    constexpr UniquePtr<T> MakeUnique(IMemSpace* zone, Args&&... args)
     {
         // Allocate the memory using the desired allocator
         auto memory = zone->New<T>(std::forward<Args>(args)...);

@@ -115,7 +115,7 @@ namespace sj {
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
-        dynamic_vector<VkPhysicalDevice> devices(MemorySystem::GetRootHeapZone(), deviceCount);
+        dynamic_vector<VkPhysicalDevice> devices(MemorySystem::GetRootMemSpace(), deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
         
         int best_score = -1; 
@@ -217,7 +217,7 @@ namespace sj {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
-        dynamic_vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootHeapZone(), queue_count);
+        dynamic_vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootMemSpace(), queue_count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
 
         DeviceQueueFamilyIndices indices;

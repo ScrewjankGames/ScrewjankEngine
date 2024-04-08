@@ -395,8 +395,8 @@ namespace sj {
         friend class Base;
     public:
         /**
-         * Implicit HeapZone Constructors
-         * Uses MemorySystem::CurrentHeapZone to allocate memory
+         * Implicit MemSpace Constructors
+         * Uses MemorySystem::CurrentMemSpace to allocate memory
          */
         dynamic_unordered_set();
 
@@ -411,18 +411,18 @@ namespace sj {
         /**
          * Default constructor
          */
-        dynamic_unordered_set(HeapZoneBase* heap_zone);
+        dynamic_unordered_set(IMemSpace* mem_space);
 
         /**
          * List Initialization Constructor
          */
-        dynamic_unordered_set(HeapZoneBase* heap_zone, std::initializer_list<T> list);
+        dynamic_unordered_set(IMemSpace* mem_space, std::initializer_list<T> list);
 
         /**
          * Range Constructor
          */
         template <class InputIterator>
-        dynamic_unordered_set(HeapZoneBase* heap_zone, InputIterator first, InputIterator last);
+        dynamic_unordered_set(IMemSpace* mem_space, InputIterator first, InputIterator last);
 
         using Base::operator=;
 

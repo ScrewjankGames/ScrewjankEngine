@@ -16,40 +16,40 @@ constexpr uint64_t kDebugHeapSize = sj::k1_MiB * 64;
 
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {
-    return sj::MemorySystem::GetCurrentHeapZone()->Allocate(num_bytes);
+    return sj::MemorySystem::GetCurrentMemSpace()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) noexcept
 {
-    if (sj::MemorySystem::GetCurrentHeapZone()->ContainsPointer(memory))
+    if (sj::MemorySystem::GetCurrentMemSpace()->ContainsPointer(memory))
     {
-        sj::MemorySystem::GetCurrentHeapZone()->Free(memory);
+        sj::MemorySystem::GetCurrentMemSpace()->Free(memory);
     }
     else
     {
-        // Search for correct heapzone for pointer supplied
-        sj::HeapZoneBase* heap_zone = sj::HeapZoneBase::FindHeapZoneForPointer(memory);
+        // Search for correct MemSpace for pointer supplied
+        sj::IMemSpace* mem_space = sj::IMemSpace::FindMemSpaceForPointer(memory);
 
-        SJ_ASSERT(heap_zone != nullptr,
-                  "Failed to find heapzone for pointer! Was heapzone destroyed before the pointer "
+        SJ_ASSERT(mem_space != nullptr,
+                  "Failed to find MemSpace for pointer! Was MemSpace destroyed before the pointer "
                   "was deleted?");
 
-        heap_zone->Free(memory);
+        mem_space->Free(memory);
     }
 }
 
 namespace sj {
     /** Used to track the active heap zone. */
-    thread_local StaticStack<HeapZoneBase*, 64> g_HeapZoneStack;
+    thread_local StaticStack<IMemSpace*, 64> g_MemSpaceStack;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     MemorySystem::MemorySystem() 
-        : m_RootHeapZone(nullptr, kRootHeapSize, "Root Heap")
+        : m_RootMemSpace(nullptr, kRootHeapSize, "Root Heap")
 #ifndef GOLD_VERSION
-          , m_DebugHeapZone(nullptr, kDebugHeapSize, "Debug Heap")
+          , m_DebugMemSpace(nullptr, kDebugHeapSize, "Debug Heap")
 #endif // !GOLD_VERSION
     {
 
@@ -65,39 +65,39 @@ namespace sj {
         return &memSys;
     }
 
-    void MemorySystem::PushHeapZone(HeapZoneBase* heap_zone)
+    void MemorySystem::PushMemSpace(IMemSpace* mem_space)
     {
-        g_HeapZoneStack.Push(heap_zone);
+        g_MemSpaceStack.Push(mem_space);
     }
 
-    void MemorySystem::PopHeapZone()
+    void MemorySystem::PopMemSpace()
     {
-        g_HeapZoneStack.Pop();
+        g_MemSpaceStack.Pop();
     }
 
-    HeapZoneBase* MemorySystem::GetRootHeapZone()
+    IMemSpace* MemorySystem::GetRootMemSpace()
     {
-        return &(Get()->m_RootHeapZone);
+        return &(Get()->m_RootMemSpace);
     }
 
 #ifndef SJ_GOLD
-    HeapZoneBase* MemorySystem::GetDebugHeapZone()
+    IMemSpace* MemorySystem::GetDebugMemSpace()
     {
-        return &(Get()->m_DebugHeapZone);
+        return &(Get()->m_DebugMemSpace);
     }
 #endif
 
-    HeapZoneBase* MemorySystem::GetCurrentHeapZone()
+    IMemSpace* MemorySystem::GetCurrentMemSpace()
     {
         MemorySystem* system = Get();
 
-        if(g_HeapZoneStack.IsEmpty())
+        if(g_MemSpaceStack.IsEmpty())
         {
-            return GetRootHeapZone();
+            return GetRootMemSpace();
         }
         else
         {
-            return g_HeapZoneStack.Top();
+            return g_MemSpaceStack.Top();
         }
     }
 

@@ -123,7 +123,7 @@ namespace container_tests
 
     TEST(ArrayTests, ResizeTest)
     {
-        HeapZoneScope scope(MemorySystem::GetRootHeapZone());
+        MemSpaceScope scope(MemorySystem::GetRootMemSpace());
 
         dynamic_array<int> arr = {1, 2, 3, 4, 5};
         
