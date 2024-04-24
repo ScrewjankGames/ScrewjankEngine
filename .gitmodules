@@ -10,3 +10,6 @@
 [submodule "Dependencies/benchmark"]
 	path = Dependencies/benchmark
 	url = https://github.com/google/benchmark.git
+[submodule "Dependencies/imgui"]
+	path = Dependencies/imgui
+	url = https://github.com/ocornut/imgui.git
