@@ -180,6 +180,8 @@ namespace sj {
 
         void UpdateUniformBuffer(void* bufferMem);
 
+        void InitImGui();
+
         bool m_IsInitialized = false;
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
@@ -235,9 +237,15 @@ namespace sj {
 
             void Init(VkDevice device, VkCommandPool commandPool);
             void DeInit(VkDevice device);
-        };
+        } m_frameData;
 
-        RenderFrameData m_frameData;
+        struct ImmediateModeData
+        {
+            VkFence fence;
+            VkCommandBuffer commandBuffer;
+            VkCommandPool commandPool;
+        } m_immediateModeData;
+
         uint32_t m_frameCount = 0;
     };
 

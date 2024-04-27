@@ -35,6 +35,8 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         ScrewjankMath
         ${Vulkan_LIBRARIES}
+    PUBLIC
+        imgui
 )
 
 ################################################################################
@@ -49,3 +51,4 @@ target_include_directories(${PROJECT_NAME}
         ${ENGINE_DEPENDENCIES_DIR}/glm/
         ${Vulkan_INCLUDE_DIRS}
     )
+

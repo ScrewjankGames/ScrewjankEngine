@@ -67,3 +67,34 @@ set_target_properties(benchmark_main
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleBenchmark"
 )
+
+## ImGui
+set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp) 
+
+set(IMGUI_BACKENDS 
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.h
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_vulkan.h
+    ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
+)
+
+add_library("imgui" STATIC ${IMGUI_SOURCES}  ${IMGUI_BACKENDS})
+target_include_directories("imgui" PUBLIC ${IMGUI_PATH})
+
+find_package(Vulkan REQUIRED)
+
+target_link_libraries(imgui
+    PRIVATE 
+        glfw
+        ${Vulkan_LIBRARIES}
+)
+
+target_include_directories(imgui
+    PRIVATE
+        ${Vulkan_INCLUDE_DIRS}
+    )
+
+set_target_properties(imgui 
+    PROPERTIES 
+        FOLDER Engine/Dependencies)

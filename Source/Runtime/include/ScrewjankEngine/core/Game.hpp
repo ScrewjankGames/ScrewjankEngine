@@ -4,6 +4,7 @@
 // Library Headers
 
 // Engine Headers
+#include <ScrewjankEngine/core/systems/InputSystem.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
@@ -13,6 +14,7 @@ namespace sj {
     class MemorySystem;
     class Window;
     class Renderer;
+    class InputSystem;
 
     class Game
     {
@@ -47,6 +49,8 @@ namespace sj {
 
         /** Handle to game's window */
         Window* m_Window;
+
+        InputSystem m_InputSystem;
 
         /** Engine's rendering subsystem */
         Renderer m_Renderer;
