@@ -7,7 +7,7 @@
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/rendering/RendererAPI.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 
 namespace sj
 {
@@ -17,14 +17,14 @@ namespace sj
         return &zone;
     }
 
-    Renderer::Renderer()
+    Renderer::Renderer() : m_renderAPI(VulkanRendererAPI::GetInstance())
     {
-        m_RendererAPI = RendererAPI::Create();
+        m_renderAPI->Init();
     }
 
     void Renderer::Render()
     {
-        m_RendererAPI->DrawFrame();
+        m_renderAPI->Draw();
     }
 
     Renderer::~Renderer()

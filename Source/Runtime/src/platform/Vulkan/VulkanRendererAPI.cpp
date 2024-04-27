@@ -228,11 +228,7 @@ namespace sj
         memcpy(bufferMem, &ubo, sizeof(ubo));
     }
 
-    void VulkanRendererAPI::InitImGui()
-    {
-    }
-
-    void VulkanRendererAPI::DrawFrame()
+    void VulkanRendererAPI::Draw()
     {
         const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
 

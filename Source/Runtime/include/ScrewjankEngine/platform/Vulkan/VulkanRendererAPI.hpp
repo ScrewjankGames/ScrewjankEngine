@@ -5,7 +5,7 @@
 // Library Headers
 #include <vulkan/vulkan.h>
 
-// Screwjank Headers
+// Engine Headers
 #include <ScrewjankEngine/containers/Array.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
@@ -13,8 +13,8 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
-#include <ScrewjankEngine/rendering/RendererAPI.hpp>
 
+// Shared Headers
 #include <ScrewjankShared/Math/Vec2.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
 #include <ScrewjankShared/Math/Mat44.hpp>
@@ -28,7 +28,7 @@ namespace sj {
     class Window;
     struct DeviceQueueFamilyIndices;
 
-    class VulkanRendererAPI : public RendererAPI
+    class VulkanRendererAPI
     {
       public:
         /**
@@ -41,6 +41,9 @@ namespace sj {
          */
         ~VulkanRendererAPI();
 
+        void Init();
+        void DeInit();
+
         static VulkanRendererAPI* GetInstance();
 
         /**
@@ -48,7 +51,7 @@ namespace sj {
          */
         VkInstance GetVkInstanceHandle() const;
 
-        void DrawFrame() override;
+        void Draw();
 
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -119,12 +122,6 @@ namespace sj {
                                const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                                void* user_data);
 
-
-
-
-        void Init() override;
-        void DeInit() override;
-
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
          */
@@ -179,8 +176,6 @@ namespace sj {
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx);
 
         void UpdateUniformBuffer(void* bufferMem);
-
-        void InitImGui();
 
         bool m_IsInitialized = false;
 

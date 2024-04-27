@@ -2,17 +2,13 @@
 
 // STD Headers
 
-// Library Headers
-
-
 // Screwjank Headers
-#include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
 
-    class RendererAPI;
-    class Window;
+    // Forward declarations
+    class VulkanRendererAPI;
 
     class Renderer
     {
@@ -35,7 +31,7 @@ namespace sj {
         void Render();
 
       private:
-        RendererAPI* m_RendererAPI = nullptr;
+        VulkanRendererAPI* m_renderAPI;
     };
 
 } // namespace sj
