@@ -80,7 +80,11 @@ set(IMGUI_BACKENDS
 )
 
 add_library("imgui" STATIC ${IMGUI_SOURCES}  ${IMGUI_BACKENDS})
-target_include_directories("imgui" PUBLIC ${IMGUI_PATH})
+target_include_directories("imgui" 
+    PUBLIC 
+    ${IMGUI_PATH}
+    ${IMGUI_PATH}/backends
+)
 
 find_package(Vulkan REQUIRED)
 

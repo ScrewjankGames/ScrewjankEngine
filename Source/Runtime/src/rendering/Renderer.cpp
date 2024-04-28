@@ -17,18 +17,26 @@ namespace sj
         return &zone;
     }
 
-    Renderer::Renderer() : m_renderAPI(VulkanRendererAPI::GetInstance())
-    {
-        m_renderAPI->Init();
-    }
-
     void Renderer::Render()
     {
         m_renderAPI->Draw();
     }
 
-    Renderer::~Renderer()
+    void Renderer::Init() 
     {
+        SJ_ASSERT(!m_renderAPI, "Double renderer init detected");
+        m_renderAPI = VulkanRendererAPI::GetInstance();
+        m_renderAPI->Init();
+    }
+
+    void Renderer::DeInit()
+    {
+        m_renderAPI->DeInit();
+    }
+
+    void Renderer::StartRenderFrame()
+    {
+        m_renderAPI->StartRenderFrame();
     }
 
 } // namespace sj

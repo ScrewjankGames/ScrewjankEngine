@@ -35,8 +35,6 @@ namespace sj {
 
     void Game::Start()
     {
-        m_Window = Window::GetInstance();
-
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -47,6 +45,10 @@ namespace sj {
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
+        // Initialize systems
+        m_Window = Window::GetInstance();
+        m_Window->Init();
+        m_Renderer.Init();
 
         Run();
     }
@@ -60,15 +62,27 @@ namespace sj {
         while (!m_Window->IsWindowClosed()) {
             currentTime = Timer::now();
             m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
+                      
+            m_Renderer.StartRenderFrame();
+            {
+                m_Window->ProcessEvents();
+                m_InputSystem.Process();
 
-            m_Window->ProcessEvents();
-
-            m_InputSystem.Process();
-
-            previousTime = currentTime;
-
+                ImGui::ShowDemoWindow();
+            }
+            
             m_Renderer.Render();
             m_FrameCount++;
+            previousTime = currentTime;
         }
+
+        ShutDown();
     }
+    
+    void Game::ShutDown()
+    {
+        m_Window->DeInit();
+        m_Renderer.DeInit();
+    }
+
 } // namespace sj

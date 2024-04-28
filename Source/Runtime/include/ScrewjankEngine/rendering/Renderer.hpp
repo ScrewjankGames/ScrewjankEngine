@@ -18,12 +18,17 @@ namespace sj {
         /**
          * Constructor
          */
-        Renderer();
+        Renderer() = default;
 
         /**
          * Destructor
          */
-        ~Renderer();
+        ~Renderer() = default;
+
+        void Init();
+        void DeInit();
+
+        void StartRenderFrame();
 
         /**
          * Execute draw commands 

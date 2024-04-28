@@ -27,6 +27,9 @@ namespace sj {
          */
         static Window* GetInstance();
         
+        void Init();
+        void DeInit();
+
         /**
          * Pump the window's event queue
          */
@@ -55,15 +58,8 @@ namespace sj {
 #endif
 
       private:
-        /**
-         * Constructor
-         */
-        Window();
-
-        /**
-         * Destructor
-         */
-        ~Window();
+        Window() = default;
+        ~Window() = default;
 
         GLFWwindow* m_NativeWindow;
     };

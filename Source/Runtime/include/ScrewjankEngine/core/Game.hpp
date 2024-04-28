@@ -44,6 +44,8 @@ namespace sj {
          */
         void Run();
 
+        void ShutDown();
+
       private:
         static uint64_t m_FrameCount;
 

@@ -12,9 +12,6 @@
 
 namespace sj 
 {
-    template <class T, std::size_t N> 
-	using array = std::array<T, N>;
-    
     template <class T, class size_type=uint32_t>
     class dynamic_array
     {

@@ -17,7 +17,7 @@
 namespace sj {
     
     /** List of extensions devices must support */
-    static constexpr array<std::string_view, 1> kRequiredDeviceExtensions = {
+    static constexpr std::array<std::string_view, 1> kRequiredDeviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
@@ -80,7 +80,7 @@ namespace sj {
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
         SJ_ASSERT(extension_count < kMaxExtensionCount,
                   "Too many extensions to store in following array");
-        array<VkExtensionProperties, kMaxExtensionCount> extension_props;
+        std::array<VkExtensionProperties, kMaxExtensionCount> extension_props;
 
         vkEnumerateDeviceExtensionProperties(device,
                                              nullptr,

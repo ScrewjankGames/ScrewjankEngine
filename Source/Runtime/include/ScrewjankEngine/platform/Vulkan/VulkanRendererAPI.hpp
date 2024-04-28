@@ -39,7 +39,7 @@ namespace sj {
         /**
          * Destructor
          */
-        ~VulkanRendererAPI();
+        ~VulkanRendererAPI() = default;
 
         void Init();
         void DeInit();
@@ -50,6 +50,8 @@ namespace sj {
          * @return The active VkInstance
          */
         VkInstance GetVkInstanceHandle() const;
+
+        void StartRenderFrame();
 
         void Draw();
 
@@ -71,7 +73,7 @@ namespace sj {
                 return desc;
             }
 
-            static array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+            static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
             {
                 std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
 
@@ -99,14 +101,14 @@ namespace sj {
             Mat44 projection;
         };
 
-        array<DummyVertex, 4> m_dummyVertices = {
+        std::array<DummyVertex, 4> m_dummyVertices = {
             DummyVertex {Vec2 {-0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}},
             DummyVertex {Vec2 {0.5f, -0.5f}, Vec3 {0.0f, 1.0f, 0.0f}},
             DummyVertex {Vec2 {0.5f, 0.5f}, Vec3 {0.0f, 0.0f, 1.0f}}, 
             DummyVertex {Vec2 {-0.5f, 0.5f}, Vec3 {1.0f, 1.0f, 1.0f}}
         };
 
-        array<uint16_t, 6> m_dummyIndices = {0, 1, 2, 2, 3, 0};
+        std::array<uint16_t, 6> m_dummyIndices = {0, 1, 2, 2, 3, 0};
 
       private:
 
@@ -170,6 +172,8 @@ namespace sj {
         void CreateGlobalUniformBuffers();
 
         void CreateGlobalUBODescriptorPool();
+        void CreateImGuiDescriptorPool();
+
 
         void CreateGlobalUBODescriptorSets();
 
@@ -213,33 +217,28 @@ namespace sj {
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout;
         VkDescriptorPool m_globalUBODescriptorPool;
 
+        VkDescriptorPool m_imguiDescriptorPool;
+
         /**
          * Data representing a render frames in flight 
          */
         struct RenderFrameData
         {
-            array<VkCommandBuffer, kMaxFramesInFlight> commandBuffers;
+            std::array<VkCommandBuffer, kMaxFramesInFlight> commandBuffers;
             
-            array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
-            array<VkSemaphore, kMaxFramesInFlight> renderFinishedSemaphores;
-            array<VkFence, kMaxFramesInFlight> inFlightFences;
+            std::array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
+            std::array<VkSemaphore, kMaxFramesInFlight> renderFinishedSemaphores;
+            std::array<VkFence, kMaxFramesInFlight> inFlightFences;
 
-            array<VkBuffer, kMaxFramesInFlight> globalUniformBuffers;
-            array<VkDeviceMemory, kMaxFramesInFlight> globalUniformBuffersMemory;
-            array<void*, kMaxFramesInFlight> globalUniformBuffersMapped;
-            array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets;
+            std::array<VkBuffer, kMaxFramesInFlight> globalUniformBuffers;
+            std::array<VkDeviceMemory, kMaxFramesInFlight> globalUniformBuffersMemory;
+            std::array<void*, kMaxFramesInFlight> globalUniformBuffersMapped;
+            std::array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets;
 
 
             void Init(VkDevice device, VkCommandPool commandPool);
             void DeInit(VkDevice device);
         } m_frameData;
-
-        struct ImmediateModeData
-        {
-            VkFence fence;
-            VkCommandBuffer commandBuffer;
-            VkCommandPool commandPool;
-        } m_immediateModeData;
 
         uint32_t m_frameCount = 0;
     };

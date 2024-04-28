@@ -271,7 +271,7 @@ namespace container_tests {
         ASSERT_EQ(true, insert_res.second);
 
         // Degenerate Case: After Range Insertion?
-        array<const char*, 1> arr = {"VK_KHR_swapchain"};
+        std::array<const char*, 1> arr = {"VK_KHR_swapchain"};
         dynamic_unordered_set<const char*> set2( MemorySystem::GetRootMemSpace(), arr.begin(), arr.end() );
 
         ASSERT_TRUE(set2.contains(arr[0]));

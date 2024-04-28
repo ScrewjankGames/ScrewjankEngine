@@ -385,7 +385,7 @@ namespace sj {
 
         /** Number of elements in the set */
         size_t m_Count = 0;
-        array<Element<T>, tRealSize> m_Elements;
+        std::array<Element<T>, tRealSize> m_Elements;
     };
 
     template<class T>

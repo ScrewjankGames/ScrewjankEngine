@@ -13,19 +13,20 @@
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
 
+// Library Headers
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
 // STD Headers
 #include <unordered_set>
 
-#ifdef SJ_PLATFORM_WINDOWS
-#include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
-#endif // SJ_PLATFORM_WINDOWS
 
 
 namespace sj
 {
-    VulkanRendererAPI::~VulkanRendererAPI()
+    static void CheckImguiVulkanResult(VkResult res)
     {
-        DeInit();
+        SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
     }
 
     void VulkanRendererAPI::Init()
@@ -65,10 +66,34 @@ namespace sj
         CreateDummyIndexBuffer();
 
         CreateGlobalUniformBuffers();
+        
         CreateGlobalUBODescriptorPool();
+        CreateImGuiDescriptorPool();
+
         CreateGlobalUBODescriptorSets();
 
         m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
+
+        DeviceQueueFamilyIndices indices =
+            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+
+        // Init ImGui
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = m_vkInstance;
+        init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
+        init_info.Device = m_renderDevice.GetLogicalDevice();
+        init_info.QueueFamily = *indices.graphicsFamilyIndex;
+        init_info.Queue = m_renderDevice.GetGraphicsQueue();
+        init_info.PipelineCache = VK_NULL_HANDLE;
+        init_info.DescriptorPool = m_imguiDescriptorPool;
+        init_info.Allocator = nullptr;
+        init_info.MinImageCount = kMaxFramesInFlight;
+        init_info.ImageCount = kMaxFramesInFlight;
+        init_info.CheckVkResultFn = CheckImguiVulkanResult;
+
+        init_info.RenderPass = m_defaultRenderPass;
+
+        ImGui_ImplVulkan_Init(&init_info);
     }
 
     void VulkanRendererAPI::CreateGlobalDescriptorSetlayout()
@@ -103,11 +128,9 @@ namespace sj
         }
 
         VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
-
         vkDeviceWaitIdle(logicalDevice);
 
-        vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, nullptr);
-        vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, nullptr);
+        ImGui_ImplVulkan_Shutdown();
 
         m_frameData.DeInit(logicalDevice);
 
@@ -117,7 +140,7 @@ namespace sj
         m_swapChain.DeInit(logicalDevice);
         
         vkDestroyDescriptorPool(logicalDevice, m_globalUBODescriptorPool, nullptr);
-
+        vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, nullptr);
 
         vkDestroyDescriptorSetLayout(logicalDevice,
                                      m_globalUBODescriptorSetLayout,
@@ -127,6 +150,12 @@ namespace sj
         
         vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, nullptr);
         
+        vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, nullptr);
+        vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, nullptr);
+        
+        vkDestroyBuffer(logicalDevice, m_dummyIndexBuffer, nullptr);
+        vkFreeMemory(logicalDevice, m_dummyIndexBufferMem, nullptr);
+
         // Important: All things attached to the device need to be torn down first
         m_renderDevice.DeInit();
 
@@ -215,6 +244,16 @@ namespace sj
         return m_vkInstance;
     }
 
+    void VulkanRendererAPI::StartRenderFrame()
+    {
+        Viewport viewport = Window::GetInstance()->GetViewportSize();
+        ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
+
+        // Start the Dear ImGui frame
+        ImGui_ImplVulkan_NewFrame();
+        ImGui::NewFrame();
+    }
+
     void VulkanRendererAPI::UpdateUniformBuffer(void* bufferMem)
     {
         GlobalUniformBufferObject ubo {};
@@ -230,6 +269,8 @@ namespace sj
 
     void VulkanRendererAPI::Draw()
     {
+        ImGui::Render();
+
         const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
 
         VkCommandBuffer currCommandBuffer = m_frameData.commandBuffers[frameIdx];
@@ -412,7 +453,7 @@ namespace sj
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
         SJ_ASSERT(layer_count <= 64, "Overflow");
-        array<VkLayerProperties, 64> available_layers;
+        std::array<VkLayerProperties, 64> available_layers;
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
         // Verify required validation layers are supported
@@ -508,7 +549,7 @@ namespace sj
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
-        array<uint32_t, 2> queueFamilyIndices {*indices.graphicsFamilyIndex,
+        std::array<uint32_t, 2> queueFamilyIndices {*indices.graphicsFamilyIndex,
                                                *indices.transferFamilyIndex};
 
 
@@ -695,9 +736,39 @@ namespace sj
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
     }
 
+    void VulkanRendererAPI::CreateImGuiDescriptorPool()
+    {
+        VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+                                             {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+        VkDescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.maxSets = 1;
+        poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+        poolInfo.pPoolSizes = pool_sizes;
+
+        VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
+                                              &poolInfo,
+                                              nullptr,
+                                              &m_imguiDescriptorPool);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
+
+    }
+
     void VulkanRendererAPI::CreateGlobalUBODescriptorSets()
     {
-        array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts;
+        std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts;
         for(VkDescriptorSetLayout& layout : layouts)
         {
             layout = m_globalUBODescriptorSetLayout;
@@ -798,6 +869,8 @@ namespace sj
                                     nullptr);
 
             vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndices.size()), 1, 0, 0, 0);
+
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
         }
         vkCmdEndRenderPass(buffer);
 

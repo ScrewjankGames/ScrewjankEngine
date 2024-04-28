@@ -25,9 +25,8 @@ namespace sj
 
             if(std::fabsf(axis) > kDeadZone)
             {
-                SJ_ENGINE_LOG_INFO("Axis {}: {}", i, axis);
+                //SJ_ENGINE_LOG_INFO("Axis {}: {}", i, axis);
             }
         }
-
     }
 } // namespace sj
