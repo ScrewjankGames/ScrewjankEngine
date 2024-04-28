@@ -11,7 +11,7 @@
 
 namespace sj {
 
-    class VulkanRendererAPI;
+    class Renderer;
     class Window;
     
     class VulkanSwapChain

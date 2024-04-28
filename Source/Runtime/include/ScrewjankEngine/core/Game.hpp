@@ -6,7 +6,6 @@
 // Engine Headers
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
-#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
 namespace sj {
@@ -49,13 +48,10 @@ namespace sj {
       private:
         static uint64_t m_FrameCount;
 
-        /** Handle to game's window */
         Window* m_Window;
+        Renderer* m_Renderer;
 
         InputSystem m_InputSystem;
-
-        /** Engine's rendering subsystem */
-        Renderer m_Renderer;
 
         /** Current frame time */
         float m_DeltaTime;

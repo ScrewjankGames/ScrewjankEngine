@@ -1,4 +1,6 @@
-// STD Headers
+#ifndef SJ_GOLD
+
+    // STD Headers
 
 // Library Headers
 
@@ -23,3 +25,5 @@ namespace sj {
         return &s_GameLogger;
     }
 } // namespace sj
+
+#endif

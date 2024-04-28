@@ -7,7 +7,6 @@
 // Engine Headers
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/filesystem/File.hpp>
 
@@ -39,8 +38,8 @@ namespace sj
         
         static_vector<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
         
-        auto bindingDescription = VulkanRendererAPI::DummyVertex::GetBindingDescription();
-        auto attributeDescriptions = VulkanRendererAPI::DummyVertex::GetAttributeDescriptions();
+        auto bindingDescription = Renderer::DummyVertex::GetBindingDescription();
+        auto attributeDescriptions = Renderer::DummyVertex::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

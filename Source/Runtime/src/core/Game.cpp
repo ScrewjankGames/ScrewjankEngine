@@ -48,7 +48,9 @@ namespace sj {
         // Initialize systems
         m_Window = Window::GetInstance();
         m_Window->Init();
-        m_Renderer.Init();
+
+        m_Renderer = Renderer::GetInstance();
+        m_Renderer->Init();
 
         Run();
     }
@@ -63,15 +65,23 @@ namespace sj {
             currentTime = Timer::now();
             m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
                       
-            m_Renderer.StartRenderFrame();
+            m_Renderer->StartRenderFrame();
             {
                 m_Window->ProcessEvents();
                 m_InputSystem.Process();
 
-                ImGui::ShowDemoWindow();
+                if constexpr(g_IsDebugBuild)
+                {
+                    if(ImGui::Begin("Status"))
+                    {
+                        ImGui::Text("%f", m_DeltaTime);
+                    }
+                    ImGui::End();
+                }
+
             }
             
-            m_Renderer.Render();
+            m_Renderer->Render();
             m_FrameCount++;
             previousTime = currentTime;
         }
@@ -82,7 +92,7 @@ namespace sj {
     void Game::ShutDown()
     {
         m_Window->DeInit();
-        m_Renderer.DeInit();
+        m_Renderer->DeInit();
     }
 
 } // namespace sj

@@ -344,11 +344,6 @@ namespace container_tests {
         char buff[256];
         for(int i = 0; i < 25; i++)
         {
-            if(i == 8)
-            {
-                __nop();
-            }
-
             bool insert = std::rand() % 2 || testset.count() == 0;
             if(insert)
             {

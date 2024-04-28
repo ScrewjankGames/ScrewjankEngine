@@ -6,6 +6,7 @@
 
 // STD Includes
 #include <span>
+#include <cmath>
 
 // Engine Includes
 #include <ScrewjankEngine/utils/Log.hpp>

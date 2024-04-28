@@ -7,7 +7,6 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Window.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 

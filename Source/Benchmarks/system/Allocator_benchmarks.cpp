@@ -4,6 +4,7 @@
 #include <benchmark/benchmark.h>
 
 // Screwjank Headers
+#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>

@@ -9,7 +9,7 @@
 namespace sj {
 
     // Forward Declarations
-    class VulkanRendererAPI;
+    class Renderer;
 
     struct DeviceQueueFamilyIndices
     {

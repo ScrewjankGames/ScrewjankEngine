@@ -6,11 +6,9 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
-
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanRendererAPI.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
 
 
@@ -108,7 +106,7 @@ namespace sj {
 
     void VulkanRenderDevice::SelectPhysicalDevice(VkSurfaceKHR renderSurface)
     {
-        VulkanRendererAPI* vulkanAPI = VulkanRendererAPI::GetInstance();
+        Renderer* vulkanAPI = Renderer::GetInstance();
         VkInstance instance = vulkanAPI->GetVkInstanceHandle();
         
         uint32_t deviceCount = 0;
@@ -161,7 +159,7 @@ namespace sj {
 
     void VulkanRenderDevice::CreateLogicalDevice(VkSurfaceKHR renderSurface)
     {
-        VulkanRendererAPI* vulkanAPI = VulkanRendererAPI::GetInstance();
+        Renderer* vulkanAPI = Renderer::GetInstance();
         SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "CreateLogicalDevice requires a selected physical device");
         SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
     
