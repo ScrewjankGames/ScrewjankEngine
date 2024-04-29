@@ -79,11 +79,4 @@ namespace sj {
     constexpr bool g_VulkanEnabled = false;
 #endif 
 
-#ifdef SJ_DX12_SUPPORT
-    constexpr bool g_DirectX12Enabled = true;
- #else
-    constexpr bool g_DirectX12Enabled = false;
-#endif 
-
-
 } // namespace sj

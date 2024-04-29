@@ -9,6 +9,5 @@ namespace sj
         InputSystem() = default;
 
         void Process();
-
     };
 }

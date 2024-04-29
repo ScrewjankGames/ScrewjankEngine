@@ -1,18 +1,22 @@
 #include <ScrewjankEngine/platform/PlatformDetection.hpp>
-
 #ifdef SJ_PLATFORM_WINDOWS
-// STD Headers
 
 // Library Headers
 #ifdef SJ_VULKAN_SUPPORT
     #define GLFW_INCLUDE_VULKAN
 #endif
-
 #include <GLFW/glfw3.h>
+
 #include <imgui_impl_glfw.h>
 
-// Screwjank Headers
+
+
+// Engine Headers
 #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
+
+// STD Headers
+
+// Library Headers
 
 namespace sj {
     Window* Window::GetInstance()

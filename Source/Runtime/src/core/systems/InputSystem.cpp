@@ -1,8 +1,8 @@
-// Parent Include
-#include <ScrewjankEngine/core/systems/InputSystem.hpp>
-
 // Library Headers
 #include <GLFW/glfw3.h>
+
+// Parent Include
+#include <ScrewjankEngine/core/systems/InputSystem.hpp>
 
 // STD Includes
 #include <span>
@@ -11,6 +11,9 @@
 // Engine Includes
 #include <ScrewjankEngine/utils/Log.hpp>
 
+// Library Includes
+#include <imgui.h>
+
 namespace sj
 {
     void InputSystem::Process()
@@ -18,16 +21,23 @@ namespace sj
         constexpr float kDeadZone = 0.0f;
 
         int count;
-        const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &count);
 
-        for(int i = 0; i < count; i++)
+        GLFWgamepadstate state = {};
+        auto connected = glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
+
+        if constexpr(g_IsDebugBuild)
         {
-            float axis = axes[i];
-
-            if(std::fabsf(axis) > kDeadZone)
+            if(ImGui::Begin("Input") && connected == GLFW_TRUE)
             {
-                //SJ_ENGINE_LOG_INFO("Axis {}: {}", i, axis);
+                ImGui::TextUnformatted(glfwGetGamepadName(GLFW_JOYSTICK_1));
+                ImGui::Text("LeftX: %f", state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]);
+                ImGui::Text("LeftY: %f", state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
+                ImGui::Text("RightX: %f", state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
+                ImGui::Text("RightY: %f", state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
             }
+            ImGui::End();
         }
+
+
     }
 } // namespace sj
