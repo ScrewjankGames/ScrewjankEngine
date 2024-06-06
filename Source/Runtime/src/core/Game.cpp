@@ -17,14 +17,20 @@
 
 namespace sj {
 
-    uint64_t Game::m_FrameCount = 0;
+    uint64_t Game::s_FrameCount = 0;
+    float Game::s_DeltaTime = 0.0f;
 
     uint64_t Game::GetFrameCount()
     {
-        return m_FrameCount;
+        return s_FrameCount;
     }
 
-    Game::Game() : m_DeltaTime(0)
+    float Game::GetDeltaTime()
+    {
+        return s_DeltaTime;
+    }
+
+    Game::Game() 
     {
     }
 
@@ -63,26 +69,24 @@ namespace sj {
 
         while (!m_Window->IsWindowClosed()) {
             currentTime = Timer::now();
-            m_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
+            s_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
                       
             m_Renderer->StartRenderFrame();
+            m_Window->ProcessEvents();
+            m_InputSystem.Process();
+            m_CameraSystem.Process(s_DeltaTime);
+
+            if constexpr(g_IsDebugBuild)
             {
-                m_Window->ProcessEvents();
-                m_InputSystem.Process();
-
-                if constexpr(g_IsDebugBuild)
+                if(ImGui::Begin("Status"))
                 {
-                    if(ImGui::Begin("Status"))
-                    {
-                        ImGui::Text("%f", m_DeltaTime);
-                    }
-                    ImGui::End();
+                    ImGui::Text("timestep: %f", s_DeltaTime);
                 }
-
+                ImGui::End();
             }
             
-            m_Renderer->Render();
-            m_FrameCount++;
+            m_Renderer->Render(m_CameraSystem.GetOutputCameraMatrix());
+            s_FrameCount++;
             previousTime = currentTime;
         }
 

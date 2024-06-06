@@ -40,7 +40,7 @@ namespace sj {
         void DeInit();
 
         void StartRenderFrame();
-        void Render();
+        void Render(const Mat44& cameraMatrix);
 
         VkInstance GetVkInstanceHandle() const;
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -158,7 +158,7 @@ namespace sj {
 
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx);
 
-        void UpdateUniformBuffer(void* bufferMem);
+        void UpdateUniformBuffer(void* bufferMem, const Mat44& cameraMatrix);
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_vkInstance;
@@ -216,7 +216,6 @@ namespace sj {
         } m_frameData;
 
         uint32_t m_frameCount = 0;
-
     };
 
 } // namespace sj

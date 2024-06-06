@@ -17,7 +17,8 @@ namespace sj
             return self.m_elements[idx];
         }
 
-        [[nodiscard]] Vec4 operator*(const float s) const;
+        Vec4& operator+=(const Vec4& other);
+
         [[nodiscard]] Vec4 operator/(const float s) const;
         [[nodiscard]] Vec4 operator-(const Vec4& other) const;
 
@@ -26,7 +27,6 @@ namespace sj
         [[nodiscard]] bool operator==(const Vec4& other) const;
 
         [[nodiscard]] float Dot(const Vec4& other) const;
-        [[nodiscard]] float Magnitude() const;
 
         [[nodiscard]] Vec4 Cross(const Vec4& b) const;
 
@@ -50,6 +50,9 @@ namespace sj
         float m_elements[4] = {};
     };
 
+    [[nodiscard]] Vec4 operator*(const Vec4& v, const float s);
+    [[nodiscard]] Vec4 operator*(const float s, const Vec4& v);
+    [[nodiscard]] float Magnitude(const Vec4& v);
     [[nodiscard]] Vec4 Normalize(const Vec4& v);
     [[nodiscard]] Vec4 Normalize3_W0(const Vec4& v);
 

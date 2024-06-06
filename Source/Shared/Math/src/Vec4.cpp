@@ -28,14 +28,14 @@ namespace sj
 
     }
 
-    Vec4 Vec4::operator*(const float s) const
+    Vec4& Vec4::operator+=(const Vec4& other)
     {
-        return Vec4(
-            m_elements[0] * s, 
-            m_elements[1] * s, 
-            m_elements[2] * s, 
-            m_elements[3] * s
-        );
+        m_elements[0] += other[0];
+        m_elements[1] += other[1];
+        m_elements[2] += other[2];
+        m_elements[3] += other[3];
+
+        return *this;
     }
 
     Vec4 Vec4::operator/(const float s) const
@@ -81,14 +81,24 @@ namespace sj
             (m_elements[3] * other.m_elements[3]);
     }
 
-    float Vec4::Magnitude() const
+    Vec4 operator*(const Vec4& v, const float s)
     {
-        return std::sqrtf(this->Dot(*this));
+        return Vec4(v[0] * s, v[1] * s, v[2] * s, v[3] * s);
+    }
+
+    Vec4 operator*(const float s, const Vec4& v)
+    {
+        return v * s;
+    }
+
+    float Magnitude(const Vec4& v)
+    {
+        return std::sqrtf(v.Dot(v));
     }
 
     Vec4 Normalize(const Vec4& v)
     {
-        return v / v.Magnitude();
+        return v / Magnitude(v);
     }
 
     Vec4 Normalize3_W0(const Vec4& v)

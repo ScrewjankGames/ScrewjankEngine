@@ -4,6 +4,7 @@
 // Library Headers
 
 // Engine Headers
+#include <ScrewjankEngine/core/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
@@ -13,7 +14,6 @@ namespace sj {
     class MemorySystem;
     class Window;
     class Renderer;
-    class InputSystem;
 
     class Game
     {
@@ -37,6 +37,8 @@ namespace sj {
         /** Returns number of frames fully simulated since game start */
         static uint64_t GetFrameCount(); 
 
+        static float GetDeltaTime();
+
       protected:
         /**
          * Main game loop
@@ -46,15 +48,15 @@ namespace sj {
         void ShutDown();
 
       private:
-        static uint64_t m_FrameCount;
 
         Window* m_Window;
         Renderer* m_Renderer;
 
         InputSystem m_InputSystem;
+        CameraSystem m_CameraSystem;
 
-        /** Current frame time */
-        float m_DeltaTime;
+        static uint64_t s_FrameCount;
+        static float s_DeltaTime;
     };
 
     // API function externed to allow users to create custom game classes for main

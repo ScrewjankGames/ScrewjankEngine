@@ -3,7 +3,7 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
+// Engine Headers
 #include <ScrewjankShared/Math/Vec4.hpp>
 
 
@@ -17,9 +17,9 @@ namespace math_tests {
         Vec4 nonUnit(1, 1, 0, 0);
         Vec4 twonit(2, 0, 0, 0);
         
-        ASSERT_EQ(1, unit.Magnitude());
-        ASSERT_NE(1, nonUnit.Magnitude());
-        ASSERT_EQ(2, twonit.Magnitude());
+        ASSERT_EQ(1, Magnitude(unit));
+        ASSERT_NE(1, Magnitude(nonUnit));
+        ASSERT_EQ(2, Magnitude(twonit));
     }
 
     TEST(Vec4Tests, CrossProductTest)

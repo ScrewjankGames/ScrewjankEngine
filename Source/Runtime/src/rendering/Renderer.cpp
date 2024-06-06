@@ -32,7 +32,7 @@ namespace sj
         return &s_renderer;
     }
 
-    void Renderer::Render()
+    void Renderer::Render(const Mat44& cameraMatrix)
     {
         ImGui::Render();
 
@@ -71,7 +71,7 @@ namespace sj
             SJ_ASSERT(false, "Failed to acquire swap chain image.");
         }
 
-        UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx]);
+        UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx], cameraMatrix);
 
         // Reset fence when we know we're going to be able to draw this frame
         vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
@@ -868,11 +868,11 @@ namespace sj
         }
     }
 
-    void Renderer::UpdateUniformBuffer(void* bufferMem)
+    void Renderer::UpdateUniformBuffer(void* bufferMem, const Mat44& cameraMatrix)
     {
         GlobalUniformBufferObject ubo {};
-        ubo.model = Mat44(IdentityTag {});
-        ubo.view = LookAt(Vec4(-2.0f, 2.0f, 2.0f, 0), Vec4(), Vec4::UnitY);
+        ubo.model = Mat44(kIdentityTag);
+        ubo.view = AffineInverse(cameraMatrix); 
 
         VkExtent2D extent = m_swapChain.GetExtent();
         const float aspectRatio = static_cast<float>(extent.width) / extent.height;
