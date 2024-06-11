@@ -35,18 +35,14 @@ namespace sj
         m_outputCameraMatrix = FromEulerXYZ(m_eulerAngles, m_outputCameraMatrix[3]);
 
         const Vec2& leftStick = InputSystem::GetLeftStick();
-        constexpr float linearSpeed = 1.0f;
+        constexpr float linearSpeed = 4.0f;
 
         const Vec4 forwardAxis = -m_outputCameraMatrix.GetZ();
         const Vec4& rightAxis = m_outputCameraMatrix.GetX();
 
-        if(MagnitudeSqr(leftStick) > 0.01f)
-        {
-            Vec4 deltaPosition =
-                Normalize(rightAxis * leftStick.GetX() + forwardAxis * -leftStick.GetY());
-            deltaPosition *= deltaTime * linearSpeed;
-            m_outputCameraMatrix[3] += deltaPosition;
-        }
+        Vec4 deltaPosition = rightAxis * leftStick.GetX() + forwardAxis * -leftStick.GetY();
+        deltaPosition *= deltaTime * linearSpeed;
+        m_outputCameraMatrix[3] += deltaPosition;
     }
 
     Mat44 CameraSystem::GetOutputCameraMatrix() const
