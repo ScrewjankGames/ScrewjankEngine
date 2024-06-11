@@ -1,4 +1,8 @@
+// Parent Include
 #include <ScrewjankShared/Math/Mat44.hpp>
+
+// STD Includes
+#include <cmath>
 
 namespace sj
 {
@@ -70,6 +74,26 @@ namespace sj
         };
     }
 
+    Mat44 operator*(const Mat44& m, float s)
+    {
+        return Mat44(
+            m[0] * s, 
+            m[1] * s, 
+            m[2] * s, 
+            m[3] * s
+        );
+    }
+
+    Mat44 operator+(const Mat44& a, const Mat44& b)
+    {
+        return Mat44(
+            a[0] + b[0], 
+            a[1] + b[1], 
+            a[2] + b[2],
+            a[3] + b[3]
+        );
+    }
+
     Mat44 AffineInverse(const Mat44& m)
     {
         const float invScaleX = 1.0f / Magnitude(m.GetX());
@@ -86,11 +110,38 @@ namespace sj
                           {0.0f,     0.0f,     0.0f,     1}};
 
         Vec4 inverseT = ( -m.GetW() ) * inverseRot;
+        inverseT[3] = 1.0f;
 
         return Mat44(
             inverseRot.GetX(), 
             inverseRot.GetY(), 
             inverseRot.GetZ(), 
             inverseT);
+    }
+
+    Mat44 FromEulerXYZ(const Vec3& eulers)
+    {
+        Mat44 x {
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, std::cosf(eulers[0]), std::sinf(eulers[0]), 0.0f},
+            {0.0f, -std::sinf(eulers[0]), std::cosf(eulers[0]), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        Mat44 y {
+            {std::cosf(eulers[1]), 0.0f, -std::sinf(eulers[1]), 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {std::sinf(eulers[1]), 0.0f, std::cosf(eulers[1]), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        Mat44 z {
+            {std::cosf(eulers[2]), std::sinf(eulers[2]), 0.0f, 0.0f},
+            {-std::sinf(eulers[2]), std::cosf(eulers[2]), 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        return x * y * z;
     }
 }

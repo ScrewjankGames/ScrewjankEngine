@@ -8,7 +8,12 @@ namespace sj
         Vec3() = default;
         Vec3(float x, float y, float z);
 
-        float& operator[](int idx);
+        auto&& operator[](this auto&& self, int idx) // -> float& or const float&
+        {
+            return self.m_elements[idx];
+        }
+
+        Vec3& operator+=(const Vec3& other);
 
     private:
         float m_elements[3];

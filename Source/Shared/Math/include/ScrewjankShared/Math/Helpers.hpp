@@ -3,6 +3,7 @@
 // Screwjank Includes
 #include <ScrewjankShared/Math/Vec4.hpp>
 #include <ScrewjankShared/Math/Mat44.hpp>
+#include <ScrewjankShared/Math/Quat.hpp>
 
 // STD Includes
 #include <numbers>
@@ -26,5 +27,22 @@ namespace sj
      * @param far: Far render plane
      */
     Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far);
+
+    Mat44 ToAngularVelocityTensor(const Vec4& omega);
+
+    
+    /**
+     * Computes the exponential map from R^3 (vector space) to S^3 (Unit Quaternion Space)
+     * @param v This argument is interpereted as an axis of rotation scaled
+     *        by the angle of rotation
+     *
+     *  Useful for turning angular velocities in to rotations
+     *
+     * These helped me understand it better:
+     * https://thenumb.at/Exponential-Rotations/
+     * http://pajarito.materials.cmu.edu/documents/Exp_map_rotations.pdf
+     */
+    Quat Exp_Q(const Vec4& v);
+    Mat44 Exp_M(const Vec4& v);
 
 }

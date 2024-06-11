@@ -1,12 +1,11 @@
 #pragma once
 
 #include <ScrewjankShared/Math/Vec4.hpp>
+#include <ScrewjankShared/Math/Vec3.hpp>
+#include <ScrewjankShared/Math/IdentityTag.hpp>
 
 namespace sj
 {
-    struct IdentityTagT{};
-    constexpr IdentityTagT kIdentityTag;
-
     class alignas(16) Mat44 
     {
     public:
@@ -34,5 +33,12 @@ namespace sj
 
     Mat44 operator*(const Mat44& a, const Mat44& b);
 
+    Mat44 operator*(const Mat44& m, float s);
+    inline Mat44 operator*(float s, const Mat44& m) { return m * s; };
+
+    Mat44 operator+(const Mat44& a, const Mat44& b);
+
     [[nodiscard]] Mat44 AffineInverse(const Mat44& m);
+   
+    [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers);
 }

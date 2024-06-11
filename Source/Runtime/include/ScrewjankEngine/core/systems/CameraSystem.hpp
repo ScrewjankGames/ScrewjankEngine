@@ -1,6 +1,8 @@
 #pragma once
+
 // Shared Includes
 #include <ScrewjankShared/Math/Mat44.hpp>
+#include <ScrewjankShared/Math/Vec3.hpp>
 
 namespace sj
 {
@@ -10,9 +12,10 @@ namespace sj
         CameraSystem();
 
         void Process(float deltaTime);
-        const Mat44& GetOutputCameraMatrix() const;
+        Mat44 GetOutputCameraMatrix() const;
 
     private:
-        Mat44 m_outputCameraMatrix;
+        Vec3 m_eulerAngles;
+        Vec4 m_translation;
     };
 }

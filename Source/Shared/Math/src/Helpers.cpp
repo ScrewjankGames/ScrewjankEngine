@@ -3,6 +3,7 @@
 
 // STD Includes
 #include <cmath>
+#include <limits>
 
 namespace sj
 {
@@ -46,4 +47,67 @@ namespace sj
         return res;
     }
 
+    Mat44 ToAngularVelocityTensor(const Vec4& omega)
+    {
+        /**
+         * https://en.wikipedia.org/wiki/Angular_velocity_tensor
+         * https://www.youtube.com/watch?v=zJJldJYMxVU
+         */
+        return Mat44(
+            {0, -omega[3], omega[2], 0}, 
+            {omega[3], 0, -omega[1], 0}, 
+            {-omega[2], -omega[1], 0, 0}, 
+            {0,0,0,1}
+        );
+    }
+    
+    static const float small_theta_epsilon = std::pow(std::numeric_limits<float>::epsilon(), 0.5f);
+
+    Quat Exp_Q(const Vec4& v)
+    {
+
+        float theta = Magnitude(v);
+        float halfTheta = theta / 2.0f;
+        if(theta <= small_theta_epsilon)
+        {
+            Vec4 asVec = (0.5f + ((theta * theta) / 48)) * v;
+            asVec[3] = std::cosf(halfTheta);
+            return Quat(asVec);
+        }
+        else
+        {
+            Vec4 asVec = (std::sinf(halfTheta) / theta) * v;
+            asVec[3] = std::cosf(halfTheta);
+            return Quat(asVec);
+        }
+    }
+
+    Mat44 Exp_M(const Vec4& v)
+    {
+        float theta = Magnitude(v);
+
+        if(theta < small_theta_epsilon)
+        {
+            return Mat44(kIdentityTag);
+        }
+        else
+        {
+            const Vec4 omega = v / theta;
+
+            Mat44 tensor {
+                {     0.0f,  omega[2], -omega[1], 0.0f}, 
+                {-omega[2],      0.0f,  omega[0], 0.0f},
+                { omega[1], -omega[0],      0.0f, 0.0f},
+                {     0.0f,      0.0f,      0.0f, 0.0f}
+            };
+
+            Mat44 tensorSqr = tensor * tensor;
+
+            Mat44 t1 = Mat44(kIdentityTag);
+            Mat44 t2 = (std::sinf(theta) * tensor);
+            Mat44 t3 = (1 - std::cosf(theta)) * tensorSqr;
+            Mat44 res = t1 + t2 + t3;
+            return res;
+        }
+    }
 }

@@ -91,6 +91,11 @@ namespace sj
         return v * s;
     }
 
+    Vec4 operator+(const Vec4& a, const Vec4& b)
+    {
+        return Vec4(a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]);
+    }
+
     float Magnitude(const Vec4& v)
     {
         return std::sqrtf(v.Dot(v));

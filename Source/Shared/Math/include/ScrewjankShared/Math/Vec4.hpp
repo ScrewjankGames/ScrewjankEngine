@@ -4,6 +4,7 @@ namespace sj
 {
     // Forward Declares
     class Vec2;
+    class Quat;
 
     class alignas(16) Vec4
     {
@@ -52,6 +53,8 @@ namespace sj
 
     [[nodiscard]] Vec4 operator*(const Vec4& v, const float s);
     [[nodiscard]] Vec4 operator*(const float s, const Vec4& v);
+    [[nodiscard]] Vec4 operator+(const Vec4& a, const Vec4& b);
+
     [[nodiscard]] float Magnitude(const Vec4& v);
     [[nodiscard]] Vec4 Normalize(const Vec4& v);
     [[nodiscard]] Vec4 Normalize3_W0(const Vec4& v);
