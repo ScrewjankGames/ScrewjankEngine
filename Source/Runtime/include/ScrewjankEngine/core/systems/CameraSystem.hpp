@@ -16,6 +16,6 @@ namespace sj
 
     private:
         Vec3 m_eulerAngles;
-        Vec4 m_translation;
+        Mat44 m_outputCameraMatrix;
     };
 }

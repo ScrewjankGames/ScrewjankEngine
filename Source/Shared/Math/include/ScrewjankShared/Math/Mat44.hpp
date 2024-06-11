@@ -41,4 +41,6 @@ namespace sj
     [[nodiscard]] Mat44 AffineInverse(const Mat44& m);
    
     [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers);
+    [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation);
+
 }

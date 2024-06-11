@@ -1,12 +1,5 @@
-// Library Headers
-#include <GLFW/glfw3.h>
-
 // Parent Include
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
-
-// STD Includes
-#include <span>
-#include <cmath>
 
 // Engine Includes
 #include <ScrewjankEngine/utils/Log.hpp>
@@ -14,6 +7,12 @@
 
 // Library Includes
 #include <imgui.h>
+#include <GLFW/glfw3.h>
+
+// STD Includes
+#include <span>
+#include <cmath>
+
 
 namespace sj
 {

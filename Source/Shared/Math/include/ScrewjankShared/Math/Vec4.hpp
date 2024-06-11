@@ -27,6 +27,8 @@ namespace sj
 
         [[nodiscard]] bool operator==(const Vec4& other) const;
 
+        Vec4& operator*=(float scalar);
+
         [[nodiscard]] float Dot(const Vec4& other) const;
 
         [[nodiscard]] Vec4 Cross(const Vec4& b) const;
@@ -56,6 +58,7 @@ namespace sj
     [[nodiscard]] Vec4 operator+(const Vec4& a, const Vec4& b);
 
     [[nodiscard]] float Magnitude(const Vec4& v);
+    [[nodiscard]] float MagnitudeSqr(const Vec4& v);
     [[nodiscard]] Vec4 Normalize(const Vec4& v);
     [[nodiscard]] Vec4 Normalize3_W0(const Vec4& v);
 

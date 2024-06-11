@@ -144,4 +144,11 @@ namespace sj
 
         return x * y * z;
     }
+
+    Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation)
+    {
+        Mat44 output = FromEulerXYZ(eulers);
+        output[3] = translation;
+        return output;
+    }
 }

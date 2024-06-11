@@ -38,6 +38,17 @@ namespace sj
         return *this;
     }
 
+    Vec4& Vec4::operator*=(float scalar)
+    {
+        m_elements[0] *= scalar;
+        m_elements[1] *= scalar;
+        m_elements[2] *= scalar;
+        m_elements[3] *= scalar;
+
+        return *this;
+    }
+
+
     Vec4 Vec4::operator/(const float s) const
     {
         return Vec4(
@@ -98,7 +109,12 @@ namespace sj
 
     float Magnitude(const Vec4& v)
     {
-        return std::sqrtf(v.Dot(v));
+        return std::sqrtf(MagnitudeSqr(v));
+    }
+
+    float MagnitudeSqr(const Vec4& v)
+    {
+        return v.Dot(v);
     }
 
     Vec4 Normalize(const Vec4& v)

@@ -16,40 +16,42 @@ namespace sj
 
     CameraSystem::CameraSystem() 
         : m_eulerAngles {0.0f, 0.0f, 0.0f},
-          m_translation {0, 0, 2.0f, 1.0f}
-
+          m_outputCameraMatrix {kIdentityTag}
     {
+        m_outputCameraMatrix[3] = Vec4 {0.0f, 0.0f, 2.0f, 1.0f};
     }
 
     void CameraSystem::Process(float deltaTime)
     {
-        Vec4 deltaPosition;
-        {
-            const Vec2& leftStick = InputSystem::GetLeftStick();
-            constexpr float linearSpeed = 1.0f;
-            deltaPosition = Vec4(leftStick[0], 0, leftStick[1], 0) * linearSpeed * deltaTime;
-        }
-
         const Vec2& rightStick = InputSystem::GetRightStick();
         constexpr float yawSpeed = ToRadians(45.0f);
         const float deltaYaw = -rightStick.GetX() * yawSpeed * deltaTime;
 
         constexpr float pitchSpeed = ToRadians(45.0f);
         const float deltaPitch = -rightStick.GetY() * pitchSpeed * deltaTime;
-
         m_eulerAngles[0] += deltaPitch;
         m_eulerAngles[1] += deltaYaw;
 
-        m_translation += deltaPosition;
-        //m_outputCameraMatrix = m_outputCameraMatrix * deltaYaw * deltaPitch;
+        m_outputCameraMatrix = FromEulerXYZ(m_eulerAngles, m_outputCameraMatrix[3]);
+
+        const Vec2& leftStick = InputSystem::GetLeftStick();
+        constexpr float linearSpeed = 1.0f;
+
+        const Vec4 forwardAxis = -m_outputCameraMatrix.GetZ();
+        const Vec4& rightAxis = m_outputCameraMatrix.GetX();
+
+        if(MagnitudeSqr(leftStick) > 0.01f)
+        {
+            Vec4 deltaPosition =
+                Normalize(rightAxis * leftStick.GetX() + forwardAxis * -leftStick.GetY());
+            deltaPosition *= deltaTime * linearSpeed;
+            m_outputCameraMatrix[3] += deltaPosition;
+        }
     }
 
     Mat44 CameraSystem::GetOutputCameraMatrix() const
     {
-        Mat44 output = FromEulerXYZ(m_eulerAngles);
-        output[3] = m_translation;
-
-        return output;
+        return m_outputCameraMatrix;
     }
 
 } // namespace sj
