@@ -876,7 +876,7 @@ namespace sj
 
         VkExtent2D extent = m_swapChain.GetExtent();
         const float aspectRatio = static_cast<float>(extent.width) / extent.height;
-        ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 0.1f, 10.0f);
+        ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 0.1f, 100.0f);
         memcpy(bufferMem, &ubo, sizeof(ubo));
     }
 

@@ -28,9 +28,6 @@ namespace sj
      */
     Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far);
 
-    Mat44 ToAngularVelocityTensor(const Vec4& omega);
-
-    
     /**
      * Computes the exponential map from R^3 (vector space) to S^3 (Unit Quaternion Space)
      * @param v This argument is interpereted as an axis of rotation scaled

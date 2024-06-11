@@ -47,20 +47,7 @@ namespace sj
         return res;
     }
 
-    Mat44 ToAngularVelocityTensor(const Vec4& omega)
-    {
-        /**
-         * https://en.wikipedia.org/wiki/Angular_velocity_tensor
-         * https://www.youtube.com/watch?v=zJJldJYMxVU
-         */
-        return Mat44(
-            {0, -omega[3], omega[2], 0}, 
-            {omega[3], 0, -omega[1], 0}, 
-            {-omega[2], -omega[1], 0, 0}, 
-            {0,0,0,1}
-        );
-    }
-    
+   
     static const float small_theta_epsilon = std::pow(std::numeric_limits<float>::epsilon(), 0.5f);
 
     Quat Exp_Q(const Vec4& v)
