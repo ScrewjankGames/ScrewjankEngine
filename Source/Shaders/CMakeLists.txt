@@ -59,7 +59,7 @@ foreach(source IN LISTS EngineShaders)
         OUTPUT 
             ${Engine_Shader_Built_Data_Dir}/${FILENAME}.spv
         DEPENDS 
-            ${source} ${Engine_Shader_Built_Data_Dir}
+            ${source}
         COMMENT 
             "Compiling ${FILENAME}"
     )
@@ -74,7 +74,7 @@ foreach(source IN LISTS GameShaders)
         OUTPUT 
             ${Game_Shader_Built_Data_Dir}/${FILENAME}.spv
         DEPENDS 
-            ${source} ${Game_Shader_Built_Data_Dir}
+            ${source}
         COMMENT 
             "Compiling ${FILENAME}"
     )
