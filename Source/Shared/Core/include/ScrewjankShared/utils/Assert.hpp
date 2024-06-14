@@ -1,6 +1,6 @@
 #pragma once
 // Screwjank Headers
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 #ifdef SJ_PLATFORM_LINUX
     #include <signal.h>

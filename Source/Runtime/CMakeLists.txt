@@ -36,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}
         ${Vulkan_LIBRARIES}
     PUBLIC
         ScrewjankMath
+        ScrewjankSharedCore
         imgui
 )
 

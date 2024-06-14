@@ -3,7 +3,7 @@
 
 // Engine Includes
 #include <ScrewjankEngine/utils/Log.hpp>
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 // Library Includes
 #include <imgui.h>

@@ -5,7 +5,6 @@
 #include <ScrewjankEngine/containers/Array.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>

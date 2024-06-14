@@ -1,8 +1,8 @@
 // Parent
-#include <ScrewjankEngine/system/filesystem/File.hpp>
+#include <ScrewjankShared/IO/File.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
 sj::File::~File()
 {

@@ -4,7 +4,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/allocators/UnmanagedAllocator.hpp>
 
 namespace sj {

@@ -1,5 +1,6 @@
 #pragma once
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
+
 #ifdef SJ_PLATFORM_WINDOWS
 // STD Headers
 

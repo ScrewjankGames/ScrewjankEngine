@@ -102,3 +102,17 @@ target_include_directories(imgui
 set_target_properties(imgui 
     PROPERTIES 
         FOLDER Engine/Dependencies)
+
+## STB
+file(GLOB STB_HEADERS CONFIGURE_DEPENDS "stb/*.h")
+add_library(STB INTERFACE ${STB_HEADERS} )
+
+set_target_properties(STB
+    PROPERTIES 
+        FOLDER Engine/Dependencies
+)
+
+target_include_directories(STB
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/stb
+    )

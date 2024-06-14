@@ -6,56 +6,57 @@ using System.IO;
 
 namespace build_tool 
 {
-	class ShaderBuilder 
+	class TextureBuilder 
 	{
 		/**
-		 * @param shaders The shaders to build
+		 * @param textures The textures to build
 		 * @param input_dir Root directory to use for making file paths relative
 		 * @param output_dir Root directory assets will be placed in
 		 */
-		void BuildShaders(List<FileInfo> shaders, DirectoryInfo input_dir, DirectoryInfo output_dir) 
+		void BuildTextures(List<FileInfo> textures, DirectoryInfo input_dir, DirectoryInfo output_dir) 
 		{
-			foreach (var shader in shaders)
+			foreach (var texture in textures)
 			{
-				Log.Information("Building shader {@ShaderName}", shader.Name);
-				
-				FileInfo output_file = new FileInfo(String.Format("{0}{1}", output_dir, Utils.GetRelativePath(input_dir, shader)));
+				Log.Information("Building texture {@TextureName}", texture.FullName);
+				string newPath = String.Format("{0}{1}", output_dir, Utils.GetRelativePath(input_dir, texture));
+				FileInfo output_file = new FileInfo(Path.ChangeExtension(newPath, ".sj_tex"));
 				output_file.Directory.Create();
 
-				string args = String.Format("{0} -o {1}.spv", shader.FullName, output_file);
+				string args = String.Format("{0} {1}", texture.FullName, output_file);
 
-				Process glslc = new Process();
-				glslc.StartInfo.FileName = "glslc.exe";
-				glslc.StartInfo.Arguments = args;
-				glslc.StartInfo.UseShellExecute = false;
-				glslc.StartInfo.RedirectStandardOutput = true;
+				Process textureBuilder = new Process();
+				textureBuilder.StartInfo.FileName = BuildToolConfig.BuildersBinDir + "TextureBuilder/Release/TextureBuilder.exe";
+				textureBuilder.StartInfo.Arguments = args;
+				Log.Information("command line: {0} {1}", textureBuilder.StartInfo.FileName, args);
+				textureBuilder.StartInfo.UseShellExecute = false;
+				textureBuilder.StartInfo.RedirectStandardOutput = true;
 
-				glslc.Start();
+				textureBuilder.Start();
 
 				// Todo [NL] Remove this bullshit and allow processes to be spawned and error reported async
-				glslc.WaitForExit();
+				textureBuilder.WaitForExit();
 
-				if (glslc.ExitCode != 0)
+				if (textureBuilder.ExitCode != 0)
 				{
-					Log.Error("Shader Compilation {@ShaderName} Failed!", shader.Name);
+					Log.Error("Texture Builder {@TextureName} Failed!", texture.Name);
 				}
 			}
 		}
 
 		public void BuildAll() 
 		{
-			Log.Information("Building engine shaders");
-			List<FileInfo> engine_shaders = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.EngineAssetDir, extensions, engine_shaders);			
-			BuildShaders(engine_shaders, BuildToolConfig.EngineAssetDir, BuildToolConfig.EngineDataDir);
+			Log.Information("Building engine textures");
+			List<FileInfo> engine_textures = new List<FileInfo>();
+			Utils.GlobFiles(BuildToolConfig.EngineAssetDir, extensions, engine_textures);			
+			BuildTextures(engine_textures, BuildToolConfig.EngineAssetDir, BuildToolConfig.EngineDataDir);
 
-			Log.Information("Building game shaders");
-			List<FileInfo> game_shaders = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.GameAssetDir, extensions, game_shaders);
-			BuildShaders(game_shaders, BuildToolConfig.GameAssetDir, BuildToolConfig.GameDataDir);
+			Log.Information("Building game textures");
+			List<FileInfo> game_textures = new List<FileInfo>();
+			Utils.GlobFiles(BuildToolConfig.GameAssetDir, extensions, game_textures);
+			BuildTextures(game_textures, BuildToolConfig.GameAssetDir, BuildToolConfig.GameDataDir);
 		}
 
-		string[] extensions = new string[] { "*.vert", "*.frag" };
+		string[] extensions = new string[] { "*.jpg" };
 	}
 
 	class BuildTool 
@@ -64,8 +65,8 @@ namespace build_tool
 		{
 			BuildToolConfig.Init();
 
-			ShaderBuilder shader_builder = new ShaderBuilder();
-			shader_builder.BuildAll();
+			TextureBuilder texture_builder = new TextureBuilder();
+			texture_builder.BuildAll();
 
 			Log.Information("Build Complete. Press any key to close...");
 			Console.ResetColor();

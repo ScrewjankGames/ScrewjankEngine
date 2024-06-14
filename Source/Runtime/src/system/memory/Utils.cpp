@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/system/memory/Utils.hpp>
 
 // Engine Includes
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 
 namespace sj

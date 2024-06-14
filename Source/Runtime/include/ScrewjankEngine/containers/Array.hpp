@@ -7,7 +7,7 @@
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Concepts.hpp>
 
 namespace sj 

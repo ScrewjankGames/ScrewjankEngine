@@ -13,6 +13,8 @@ namespace build_tool
         public static System.IO.DirectoryInfo EngineDataDir =  new System.IO.DirectoryInfo("${Game_Built_Data_Dir}Engine/");
         public static System.IO.DirectoryInfo GameDataDir =  new System.IO.DirectoryInfo("${Game_Built_Data_Dir}");
 
+         public static System.IO.DirectoryInfo BuildersBinDir = new System.IO.DirectoryInfo("${Binaries_Directory}/Tools/Builders/");
+
         public static void Init()
         {
             Log.Logger = new LoggerConfiguration()

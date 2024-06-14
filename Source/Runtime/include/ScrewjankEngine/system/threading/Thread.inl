@@ -4,8 +4,8 @@
 // STD Includes
 #include <type_traits>
 
-// Engine Includes
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+// Shared Includes
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 // Conditional Includes
 #ifdef SJ_PLATFORM_WINDOWS

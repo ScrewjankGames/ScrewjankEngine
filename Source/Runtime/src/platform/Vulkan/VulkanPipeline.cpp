@@ -8,7 +8,9 @@
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/filesystem/File.hpp>
+
+// Shared Headers
+#include <ScrewjankShared/io/File.hpp>
 
 namespace sj
 {

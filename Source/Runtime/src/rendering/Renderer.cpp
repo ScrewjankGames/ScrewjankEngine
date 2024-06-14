@@ -1,5 +1,5 @@
 // Screwjank Headers
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>

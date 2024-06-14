@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 #include <ScrewjankEngine/system/memory/Utils.hpp>

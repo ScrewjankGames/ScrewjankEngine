@@ -3,7 +3,7 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Utils.hpp>
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
 namespace sj {
     FreeListAllocator::FreeListAllocator()

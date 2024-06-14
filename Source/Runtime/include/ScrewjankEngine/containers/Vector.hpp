@@ -8,7 +8,7 @@
 
 // Scewjank Headers
 #include <ScrewjankEngine/containers/Array.hpp>
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 

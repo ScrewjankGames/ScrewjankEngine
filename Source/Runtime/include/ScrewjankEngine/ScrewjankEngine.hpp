@@ -3,7 +3,7 @@
 /**
  * Core includes needed for gameplay code
  */
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/core/Game.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>

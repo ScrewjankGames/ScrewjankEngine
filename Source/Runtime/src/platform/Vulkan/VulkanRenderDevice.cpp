@@ -9,7 +9,7 @@
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/platform/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 
 namespace sj {

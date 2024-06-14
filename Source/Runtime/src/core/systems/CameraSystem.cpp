@@ -3,7 +3,7 @@
 
 // Engine Incudes
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
 // Shared Includes
 #include <ScrewjankShared/Math/Helpers.hpp>

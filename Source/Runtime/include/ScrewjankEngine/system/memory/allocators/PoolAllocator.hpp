@@ -5,7 +5,7 @@
 
 // Engine Headers
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
-#include <ScrewjankEngine/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/Utils.hpp>
