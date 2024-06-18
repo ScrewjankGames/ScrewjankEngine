@@ -129,9 +129,19 @@ namespace sj {
 
         void CreateRenderPass();
 
+        VkCommandBuffer BeginSingleTimeCommands();
+        void EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
+
         void EnableValidationLayers(const dynamic_vector<const char*>& required_validation_layers);
 
         void EnableDebugMessaging();
+
+        void TransitionImageLayout(VkImage image,
+                                   VkFormat format,
+                                   VkImageLayout oldLayout,
+                                   VkImageLayout newLayout,
+                                   uint32_t srcQueueIdx,
+                                   uint32_t dstQueueIdx);
 
         void CreateCommandPools();
 
@@ -141,11 +151,16 @@ namespace sj {
                           VkBuffer& out_buffer,
                           VkDeviceMemory& out_bufferMemory);
 
+        void CreateImage(const VkImageCreateInfo& info, VkImage& image, VkDeviceMemory& imageMem);
+
+
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         void CreateDummyVertexBuffer();
 
         void CreateDummyIndexBuffer();
+
+        void CreateDummyTexture();
 
         void CreateGlobalDescriptorSetlayout();
         void CreateGlobalUniformBuffers();
@@ -181,13 +196,15 @@ namespace sj {
         VulkanPipeline m_defaultPipeline;
 
         VkCommandPool m_graphicsCommandPool;
-        VkCommandPool m_transferCommandPool;
 
         VkBuffer m_dummyVertexBuffer;
         VkDeviceMemory m_dummyVertexBufferMem;
 
         VkBuffer m_dummyIndexBuffer;
         VkDeviceMemory m_dummyIndexBufferMem;
+
+        VkImage m_dummyTextureImage;
+        VkDeviceMemory m_dummyTextureImageMemory;
 
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout;
         VkDescriptorPool m_globalUBODescriptorPool;

@@ -15,7 +15,6 @@ namespace sj {
     {
         std::optional<uint32_t> graphicsFamilyIndex;
         std::optional<uint32_t> presentationFamilyIndex;
-        std::optional<uint32_t> transferFamilyIndex;
     };
 
     class VulkanRenderDevice
@@ -47,8 +46,6 @@ namespace sj {
 
         VkQueue GetPresentationQueue() const;
 
-        VkQueue GetTransferQueue();
-
       private:
         /**
          * Iterates over the system's rendering hardware, and selects the most suitable GPU for
@@ -74,9 +71,6 @@ namespace sj {
 
         /** Used to execute presentation commands */
         VkQueue m_PresentationQueue = VK_NULL_HANDLE;
-
-        /** Used to execute memory transfer commands */
-        VkQueue m_TransferQueue = VK_NULL_HANDLE;
 
         /**
          * Vulkan's representation of the physical rendering device

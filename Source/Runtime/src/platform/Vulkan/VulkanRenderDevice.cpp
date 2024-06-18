@@ -57,20 +57,13 @@ namespace sj {
         return m_PresentationQueue;
     }
 
-    VkQueue VulkanRenderDevice::GetTransferQueue()
-    {
-        return m_TransferQueue;
-    }
-
     bool VulkanRenderDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
         DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
 
         // Query queue support
         bool indicies_complete =
-            indices.graphicsFamilyIndex.has_value() && 
-            indices.presentationFamilyIndex.has_value() && 
-            indices.transferFamilyIndex.has_value();
+            indices.graphicsFamilyIndex.has_value() && indices.presentationFamilyIndex.has_value();
 
         // Check extension support
         constexpr uint32_t kMaxExtensionCount = 256;
@@ -166,13 +159,12 @@ namespace sj {
         DeviceQueueFamilyIndices indices =
             GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
-        constexpr int kMaxUniqueQueues = 3;
+        constexpr int kMaxUniqueQueues = 2;
         static_unordered_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
         unique_queue_families = 
         {
             indices.graphicsFamilyIndex.value(),
             indices.presentationFamilyIndex.value(),
-            indices.transferFamilyIndex.value()
         };
 
         static_vector<VkDeviceQueueCreateInfo, kMaxUniqueQueues> queue_create_infos;
@@ -206,7 +198,6 @@ namespace sj {
 
         vkGetDeviceQueue(m_Device, *indices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_Device, *indices.presentationFamilyIndex, 0, &m_PresentationQueue);
-        vkGetDeviceQueue(m_Device, *indices.transferFamilyIndex, 0, &m_TransferQueue);
     }
 
     DeviceQueueFamilyIndices
@@ -226,13 +217,6 @@ namespace sj {
             if(family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
                 indices.graphicsFamilyIndex = i;
-            }
-
-            // Find a transfer only queue
-            if((family.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-               !(family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-            {
-                indices.transferFamilyIndex = i;
             }
 
             if(renderSurface != VK_NULL_HANDLE)

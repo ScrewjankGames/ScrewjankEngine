@@ -27,7 +27,7 @@ set_target_properties(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
         STB 
-        DataDefinitions
+        ScrewjankDataDefs
         ScrewjankSharedCore
 )
 

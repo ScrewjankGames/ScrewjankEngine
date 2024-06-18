@@ -6,6 +6,8 @@
 
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
+#include <ScrewjankShared/DataDefinitions/Texture.hpp>
+#include <ScrewjankShared/io/File.hpp>
 
 // Library Headers
 #include <imgui_impl_glfw.h>
@@ -22,7 +24,7 @@ namespace sj
 
     MemSpace<FreeListAllocator>* Renderer::WorkBuffer()
     {
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), 8 * k1_KiB, "Renderer Work Buffer");
+        static MemSpace zone(MemorySystem::GetRootMemSpace(), k1_MiB * 2, "Renderer Work Buffer");
         return &zone;
     }
 
@@ -157,6 +159,7 @@ namespace sj
 
         CreateCommandPools();
         CreateDummyVertexBuffer();
+        CreateDummyTexture();
         CreateDummyIndexBuffer();
 
         CreateGlobalUniformBuffers();
@@ -223,7 +226,6 @@ namespace sj
         m_frameData.DeInit(logicalDevice);
 
         vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, nullptr);
-        vkDestroyCommandPool(logicalDevice, m_transferCommandPool, nullptr);
 
         m_swapChain.DeInit(logicalDevice);
 
@@ -439,6 +441,26 @@ namespace sj
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create render pass.");
     }
 
+    VkCommandBuffer Renderer::BeginSingleTimeCommands()
+    {
+        VkCommandBufferAllocateInfo allocInfo {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_graphicsCommandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(m_renderDevice.GetLogicalDevice(), &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        return commandBuffer;
+    }
+
     void
     Renderer::EnableValidationLayers(const dynamic_vector<const char*>& required_validation_layers)
     {
@@ -498,6 +520,27 @@ namespace sj
         create_function(m_vkInstance, &messenger_create_info, nullptr, &m_vkDebugMessenger);
     }
 
+    void Renderer::TransitionImageLayout(VkImage image,
+                                         VkFormat format,
+                                         VkImageLayout oldLayout,
+                                         VkImageLayout newLayout,
+                                         uint32_t srcQueueIdx,
+                                         uint32_t dstQueueIdx)
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkImageMemoryBarrier barrier {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcQueueFamilyIndex = srcQueueIdx;
+        barrier.dstAccessMask = dstQueueIdx;
+
+        //asdfasdf
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+
     void Renderer::CreateCommandPools()
     {
         DeviceQueueFamilyIndices indices =
@@ -517,43 +560,28 @@ namespace sj
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
         }
-
-        // Create memory transfer command pool
-        {
-            VkCommandPoolCreateInfo poolInfo {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            poolInfo.queueFamilyIndex = *(indices.transferFamilyIndex);
-
-            VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
-                                               &poolInfo,
-                                               nullptr,
-                                               &m_transferCommandPool);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
-        }
     }
 
-        void Renderer::CreateBuffer(VkDeviceSize size,
-                                         VkBufferUsageFlags usage,
-                                         VkMemoryPropertyFlags properties,
-                                         VkBuffer& out_buffer,
-                                         VkDeviceMemory& out_bufferMemory)
+    void Renderer::CreateBuffer(VkDeviceSize size,
+                                VkBufferUsageFlags usage,
+                                VkMemoryPropertyFlags properties,
+                                VkBuffer& out_buffer,
+                                VkDeviceMemory& out_bufferMemory)
     {
         VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
 
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
-        std::array<uint32_t, 2> queueFamilyIndices {*indices.graphicsFamilyIndex,
-                                                    *indices.transferFamilyIndex};
+        std::array<uint32_t, 1> queueFamilyIndices {*indices.graphicsFamilyIndex};
+        
 
         VkBufferCreateInfo bufferInfo {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        bufferInfo.queueFamilyIndexCount = 2;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.queueFamilyIndexCount = 1;
         bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 
         VkResult res = vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, &out_buffer);
@@ -575,43 +603,66 @@ namespace sj
         vkBindBufferMemory(logicalDevice, out_buffer, out_bufferMemory, 0);
     }
 
-    void Renderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    void
+    Renderer::CreateImage(const VkImageCreateInfo& imageInfo, VkImage& image, VkDeviceMemory& imageMem)
     {
-        VkCommandBufferAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_transferCommandPool;
-        allocInfo.commandBufferCount = 1;
+        VkResult res = vkCreateImage(m_renderDevice.GetLogicalDevice(),
+                                     &imageInfo,
+                                     nullptr,
+                                     &m_dummyTextureImage);
 
-        VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(m_renderDevice.GetLogicalDevice(), &allocInfo, &commandBuffer);
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create dummy texture image");
 
-        VkCommandBufferBeginInfo beginInfo {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_renderDevice.GetLogicalDevice(),
+                                     m_dummyTextureImage,
+                                     &memRequirements);
 
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        VkMemoryAllocateInfo allocInfo {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex =
+            FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        VkBufferCopy copyRegion {};
-        copyRegion.srcOffset = 0; // Optional
-        copyRegion.dstOffset = 0; // Optional
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        res = vkAllocateMemory(m_renderDevice.GetLogicalDevice(),
+                               &allocInfo,
+                               nullptr,
+                               &m_dummyTextureImageMemory);
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy texture memory on GPU");
 
+        vkBindImageMemory(m_renderDevice.GetLogicalDevice(),
+                          m_dummyTextureImage,
+                          m_dummyTextureImageMemory,
+                          0);
+    }
+
+    void Renderer::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
+    {
         vkEndCommandBuffer(commandBuffer);
 
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
-
-        vkQueueSubmit(m_renderDevice.GetTransferQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_renderDevice.GetTransferQueue());
+        VkQueue targetQueue = m_renderDevice.GetGraphicsQueue();
+        vkQueueSubmit(targetQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(targetQueue);
 
         vkFreeCommandBuffers(m_renderDevice.GetLogicalDevice(),
-                             m_transferCommandPool,
+                             m_graphicsCommandPool,
                              1,
                              &commandBuffer);
+    }
+
+    void Renderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkBufferCopy copyRegion {};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        EndSingleTimeCommands(commandBuffer);
     }
 
     void Renderer::CreateDummyVertexBuffer()
@@ -685,6 +736,54 @@ namespace sj
 
         vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
         vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+    }
+
+    void Renderer::CreateDummyTexture()
+    {
+        File textureFile;
+        textureFile.Open("Data/Engine/texture.sj_tex", sj::File::OpenMode::kReadBinary);
+        uint64_t bytes = textureFile.Size();
+        MemSpaceScope scope(WorkBuffer());
+        void* textureMem = scope->Allocate(bytes, alignof(Texture));
+        textureFile.Read(textureMem, bytes);
+        Texture* texture = reinterpret_cast<Texture*>(textureMem);
+
+        VkDeviceSize imageSize = texture->width * texture->height * 4;
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+
+        CreateBuffer(imageSize,
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer,
+                     stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+        memcpy(data, texture->data, static_cast<size_t>(imageSize));
+        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+
+        VkImageCreateInfo imageInfo {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = texture->width;
+        imageInfo.extent.height = texture->height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.flags = 0; // Optional
+        
+        scope->Free(textureMem);
+        textureFile.Close();
+        CreateImage(imageInfo, m_dummyTextureImage, m_dummyTextureImageMemory);
+        
+        return;
     }
 
     void Renderer::CreateGlobalUniformBuffers()
