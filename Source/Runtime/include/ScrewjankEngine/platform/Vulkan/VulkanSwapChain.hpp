@@ -68,6 +68,8 @@ namespace sj {
          */
         VkExtent2D QuerySwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
         
+        void CreateDepthResources(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
+
         bool m_isInitialized = false;
 
         /** Non-owning handle to the window the swap chain presents to */
@@ -91,6 +93,10 @@ namespace sj {
         /** Size of the images in the swap chain (in pixels) */
         VkExtent2D m_imageExtent = {};
 
+        /** Depth buffer resources */
+        VkImage m_depthImage;
+        VkDeviceMemory m_depthImageMemory;
+        VkImageView m_depthImageView;
     };
 
 }

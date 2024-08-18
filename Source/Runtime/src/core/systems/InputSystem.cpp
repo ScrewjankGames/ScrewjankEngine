@@ -6,13 +6,16 @@
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 // Library Includes
-#include <imgui.h>
 #include <GLFW/glfw3.h>
+#ifndef SJ_GOLD
+#include <imgui.h>
+#endif // !SJ_GOLD
+
 
 // STD Includes
 #include <span>
 #include <cmath>
-
+#include <algorithm>
 
 namespace sj
 {
@@ -58,20 +61,19 @@ namespace sj
         s_publishedLeftStick = applyDeadZoneFn(rawLeftStick);
         s_publishedRightStick = applyDeadZoneFn(rawRightStick);
 
-        if constexpr(g_IsDebugBuild)
+        #ifndef SJ_GOLD
+        if(ImGui::Begin("Input") && connected == GLFW_TRUE)
         {
-            if(ImGui::Begin("Input") && connected == GLFW_TRUE)
-            {
-                ImGui::Text("Raw %s:", glfwGetGamepadName(GLFW_JOYSTICK_1));
-                ImGui::Text("Left:  [%f, %f]", rawLeftStick[0], rawLeftStick[1]);
-                ImGui::Text("Right: [%f, %f]", rawRightStick[0], rawRightStick[1]);
+            ImGui::Text("Raw %s:", glfwGetGamepadName(GLFW_JOYSTICK_1));
+            ImGui::Text("Left:  [%f, %f]", rawLeftStick[0], rawLeftStick[1]);
+            ImGui::Text("Right: [%f, %f]", rawRightStick[0], rawRightStick[1]);
 
-                ImGui::Text("Published %s: ", glfwGetGamepadName(GLFW_JOYSTICK_1));
-                ImGui::Text("Left:  [%f, %f]", s_publishedLeftStick[0], s_publishedLeftStick[1]);
-                ImGui::Text("Right: [%f, %f]", s_publishedRightStick[0], s_publishedRightStick[1]);
-            }
-            ImGui::End();
+            ImGui::Text("Published %s: ", glfwGetGamepadName(GLFW_JOYSTICK_1));
+            ImGui::Text("Left:  [%f, %f]", s_publishedLeftStick[0], s_publishedLeftStick[1]);
+            ImGui::Text("Right: [%f, %f]", s_publishedRightStick[0], s_publishedRightStick[1]);
         }
+        ImGui::End();
+        #endif // !SJ_GOLD
     }
     
     const Vec2& InputSystem::GetLeftStick()

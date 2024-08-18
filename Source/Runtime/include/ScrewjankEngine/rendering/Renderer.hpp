@@ -28,8 +28,6 @@ namespace sj {
     class Window;
     struct DeviceQueueFamilyIndices;
     
-    VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format);
-
     class Renderer
     {
     public:
@@ -44,11 +42,10 @@ namespace sj {
         void Render(const Mat44& cameraMatrix);
 
         VkInstance GetVkInstanceHandle() const;
-        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
         struct DummyVertex
         {
-            Vec2 pos;
+            Vec3 pos;
             Vec3 color;
             Vec2 uv;
 
@@ -69,7 +66,7 @@ namespace sj {
 
                 attributeDescriptions[0].binding = 0;
                 attributeDescriptions[0].location = 0;
-                attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+                attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
                 attributeDescriptions[0].offset = offsetof(DummyVertex, pos);
 
                 attributeDescriptions[1].binding = 0;
@@ -97,14 +94,22 @@ namespace sj {
             Mat44 projection;
         };
 
-        std::array<DummyVertex, 4> m_dummyVertices = {
-            DummyVertex {Vec2 {-0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
-            DummyVertex {Vec2 {0.5f, -0.5f},  Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
-            DummyVertex {Vec2 {0.5f, 0.5f},   Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
-            DummyVertex {Vec2 {-0.5f, 0.5f},  Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}}
+        std::array<DummyVertex, 8> m_dummyVertices = {
+            DummyVertex {Vec3 {-0.5f, -0.5f, 0.0f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
+            DummyVertex {Vec3 {0.5f, -0.5f, 0.0f}, Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
+            DummyVertex {Vec3 {0.5f, 0.5f, 0.0f}, Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
+            DummyVertex {Vec3 {-0.5f, 0.5f, 0.0f}, Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}},
+
+            DummyVertex {Vec3 {-0.5f, -0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
+            DummyVertex {Vec3 {0.5f, -0.5f, -0.5f}, Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
+            DummyVertex {Vec3 {0.5f, 0.5f, -0.5f}, Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
+            DummyVertex {Vec3 {-0.5f, 0.5f, -0.5f}, Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}}
         };
 
-        std::array<uint16_t, 6> m_dummyIndices = {0, 1, 2, 2, 3, 0};
+        std::array<uint16_t, 12> m_dummyIndices = {
+            0, 1, 2, 2, 3, 0, 
+            4, 5, 6, 6, 7, 4
+        };
 
       private:
         Renderer() = default;
@@ -121,6 +126,8 @@ namespace sj {
                                VkDebugUtilsMessageTypeFlagsEXT message_type,
                                const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                                void* user_data);
+
+        static bool HasStencilComponent(VkFormat format);
 
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
@@ -161,8 +168,6 @@ namespace sj {
                           VkBuffer& out_buffer,
                           VkDeviceMemory& out_bufferMemory);
 
-        void CreateImage(const VkImageCreateInfo& info, VkImage& image, VkDeviceMemory& imageMem);
-
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         void CreateDummyVertexBuffer();
@@ -179,7 +184,7 @@ namespace sj {
         void CreateImGuiDescriptorPool();
 
         void CreateGlobalUBODescriptorSets();
-
+        
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx);
 
         void UpdateUniformBuffer(void* bufferMem, const Mat44& cameraMatrix);

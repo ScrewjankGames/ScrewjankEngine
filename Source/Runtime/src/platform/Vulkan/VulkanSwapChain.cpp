@@ -1,14 +1,12 @@
 // Parent Include
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 
-// STD Headers
-
-// Library Headers
-
 // Screwjank Headers
+#include <ScrewjankEngine/platform/vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
+#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 namespace sj
 {
@@ -132,9 +130,14 @@ namespace sj
 
         for(size_t i = 0; i < m_images.size(); i++)
         {
-            m_imageViews[i] = CreateImageView(logicalDevice, m_images[i], m_chainImageFormat);
+            m_imageViews[i] = CreateImageView(logicalDevice,
+                                              m_images[i],
+                                              m_chainImageFormat,
+                                              VK_IMAGE_ASPECT_COLOR_BIT);
         }
 
+
+        CreateDepthResources(logicalDevice, physicalDevice);
     }
 
     void VulkanSwapChain::InitFrameBuffers(VkDevice device, VkRenderPass pass)
@@ -146,12 +149,13 @@ namespace sj
         int i = 0;
         for(VkImageView& view : m_imageViews)
         {
+            std::array attachments = {view, m_depthImageView};
 
             VkFramebufferCreateInfo framebufferInfo {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = pass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &view;
+            framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+            framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = GetExtent().width;
             framebufferInfo.height = GetExtent().height;
             framebufferInfo.layers = 1;
@@ -169,6 +173,10 @@ namespace sj
 
     void VulkanSwapChain::DeInit(VkDevice logicalDevice)
     {
+        vkDestroyImageView(logicalDevice, m_depthImageView, nullptr);
+        vkDestroyImage(logicalDevice, m_depthImage, nullptr);
+        vkFreeMemory(logicalDevice, m_depthImageMemory, nullptr);
+
         for(VkFramebuffer buffer : m_swapChainBuffers)
         {
             vkDestroyFramebuffer(logicalDevice, buffer, nullptr);
@@ -197,7 +205,6 @@ namespace sj
         vkDeviceWaitIdle(device);
 
         DeInit(device);
-
         Init(physicalDevice, device, renderingSurface);
         InitFrameBuffers(device, pass);
     }
@@ -235,6 +242,35 @@ namespace sj
                                  std::min(capabilities.maxImageExtent.height, extent.height));
 
         return extent;
+    }
+
+    void VulkanSwapChain::CreateDepthResources(VkDevice logicalDevice,
+                                               VkPhysicalDevice physicalDevice)
+    {
+        VkFormat depthFormat = FindDepthFormat(physicalDevice);
+
+        VkImageCreateInfo imageInfo = {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = GetExtent().width;
+        imageInfo.extent.height = GetExtent().height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = depthFormat;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        CreateImage(logicalDevice, 
+                    physicalDevice,
+                    imageInfo,
+                    m_depthImage,
+                    m_depthImageMemory);
+
+        m_depthImageView = CreateImageView(logicalDevice, m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
     VulkanSwapChain::SwapChainParams

@@ -2,6 +2,7 @@
 
 // STD Headers
 #include <optional>
+#include <span>
 
 // Library Headers
 #include <vulkan/vulkan.h>
