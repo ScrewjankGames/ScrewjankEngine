@@ -27,6 +27,8 @@ namespace sj {
     class VulkanSwapChain;
     class Window;
     struct DeviceQueueFamilyIndices;
+    
+    VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format);
 
     class Renderer
     {
@@ -48,6 +50,7 @@ namespace sj {
         {
             Vec2 pos;
             Vec3 color;
+            Vec2 uv;
 
             static VkVertexInputBindingDescription GetBindingDescription()
             {
@@ -60,9 +63,9 @@ namespace sj {
                 return desc;
             }
 
-            static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+            static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
             {
-                std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
+                std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
 
                 attributeDescriptions[0].binding = 0;
                 attributeDescriptions[0].location = 0;
@@ -73,6 +76,12 @@ namespace sj {
                 attributeDescriptions[1].location = 1;
                 attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
                 attributeDescriptions[1].offset = offsetof(DummyVertex, color);
+
+                
+                attributeDescriptions[2].binding = 0;
+                attributeDescriptions[2].location = 2;
+                attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+                attributeDescriptions[2].offset = offsetof(DummyVertex, uv);
 
                 return attributeDescriptions;
             }
@@ -89,10 +98,11 @@ namespace sj {
         };
 
         std::array<DummyVertex, 4> m_dummyVertices = {
-            DummyVertex {Vec2 {-0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}},
-            DummyVertex {Vec2 {0.5f, -0.5f}, Vec3 {0.0f, 1.0f, 0.0f}},
-            DummyVertex {Vec2 {0.5f, 0.5f}, Vec3 {0.0f, 0.0f, 1.0f}},
-            DummyVertex {Vec2 {-0.5f, 0.5f}, Vec3 {1.0f, 1.0f, 1.0f}}};
+            DummyVertex {Vec2 {-0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
+            DummyVertex {Vec2 {0.5f, -0.5f},  Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
+            DummyVertex {Vec2 {0.5f, 0.5f},   Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
+            DummyVertex {Vec2 {-0.5f, 0.5f},  Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}}
+        };
 
         std::array<uint16_t, 6> m_dummyIndices = {0, 1, 2, 2, 3, 0};
 
@@ -139,9 +149,9 @@ namespace sj {
         void TransitionImageLayout(VkImage image,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
-                                   VkImageLayout newLayout,
-                                   uint32_t srcQueueIdx,
-                                   uint32_t dstQueueIdx);
+                                   VkImageLayout newLayout);
+
+        void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
         void CreateCommandPools();
 
@@ -153,14 +163,14 @@ namespace sj {
 
         void CreateImage(const VkImageCreateInfo& info, VkImage& image, VkDeviceMemory& imageMem);
 
-
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         void CreateDummyVertexBuffer();
 
         void CreateDummyIndexBuffer();
 
-        void CreateDummyTexture();
+        void CreateDummyTextureImage();
+        void CreateDummyTextureSampler();
 
         void CreateGlobalDescriptorSetlayout();
         void CreateGlobalUniformBuffers();
@@ -205,6 +215,8 @@ namespace sj {
 
         VkImage m_dummyTextureImage;
         VkDeviceMemory m_dummyTextureImageMemory;
+        VkImageView m_dummyTextureImageView;
+        VkSampler m_dummyTextureSampler;
 
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout;
         VkDescriptorPool m_globalUBODescriptorPool;

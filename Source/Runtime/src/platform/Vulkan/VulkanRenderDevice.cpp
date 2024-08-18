@@ -93,7 +93,12 @@ namespace sj {
             VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
         bool swap_chain_supported = !params.Formats.empty() && !params.PresentModes.empty();
 
-        return indicies_complete && missing_extensions.count() == 0 && swap_chain_supported;
+
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        
+        return indicies_complete && missing_extensions.count() == 0 && swap_chain_supported &&
+               supportedFeatures.samplerAnisotropy;
     }
 
 
@@ -180,6 +185,7 @@ namespace sj {
         }
 
         VkPhysicalDeviceFeatures device_features = {};
+        device_features.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo device_create_info = {};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

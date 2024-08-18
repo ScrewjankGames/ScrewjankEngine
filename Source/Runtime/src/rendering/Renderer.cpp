@@ -17,6 +17,28 @@
 
 namespace sj
 {
+
+    VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format)
+    {
+        VkImageViewCreateInfo viewInfo {};
+
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = format;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        VkImageView imageView;
+        VkResult res = vkCreateImageView(device, &viewInfo, nullptr, &imageView);
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create texture image view");
+
+        return imageView;
+    }
+
     static void CheckImguiVulkanResult(VkResult res)
     {
         SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
@@ -24,7 +46,7 @@ namespace sj
 
     MemSpace<FreeListAllocator>* Renderer::WorkBuffer()
     {
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), k1_MiB * 2, "Renderer Work Buffer");
+        static MemSpace zone(MemorySystem::GetRootMemSpace(), 8_KiB, "Renderer Work Buffer");
         return &zone;
     }
 
@@ -158,14 +180,24 @@ namespace sj
         m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
         CreateCommandPools();
+        
         CreateDummyVertexBuffer();
-        CreateDummyTexture();
         CreateDummyIndexBuffer();
+
+        CreateDummyTextureImage();
+        m_dummyTextureImageView = CreateImageView(m_renderDevice.GetLogicalDevice(),
+                                                  m_dummyTextureImage,
+                                                  VK_FORMAT_R8G8B8A8_SRGB);
+
+        CreateDummyTextureSampler();
 
         CreateGlobalUniformBuffers();
 
         CreateGlobalUBODescriptorPool();
-        CreateImGuiDescriptorPool();
+        if constexpr(g_IsDebugBuild)
+        {
+            CreateImGuiDescriptorPool();
+        }
 
         CreateGlobalUBODescriptorSets();
 
@@ -202,10 +234,19 @@ namespace sj
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
+        VkDescriptorSetLayoutBinding samplerLayoutBinding {};
+        samplerLayoutBinding.binding = 1;
+        samplerLayoutBinding.descriptorCount = 1;
+        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.pImmutableSamplers = nullptr;
+        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        std::array bindings = {uboLayoutBinding, samplerLayoutBinding};
+
         VkDescriptorSetLayoutCreateInfo layoutInfo {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &uboLayoutBinding;
+        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        layoutInfo.pBindings = bindings.data();
 
         VkResult res = vkCreateDescriptorSetLayout(m_renderDevice.GetLogicalDevice(),
                                                    &layoutInfo,
@@ -228,9 +269,18 @@ namespace sj
         vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, nullptr);
 
         m_swapChain.DeInit(logicalDevice);
+        
+        vkDestroySampler(logicalDevice, m_dummyTextureSampler, nullptr);
+        vkDestroyImageView(logicalDevice, m_dummyTextureImageView, nullptr);
+        vkDestroyImage(logicalDevice, m_dummyTextureImage, nullptr);
+        vkFreeMemory(logicalDevice, m_dummyTextureImageMemory, nullptr);
 
         vkDestroyDescriptorPool(logicalDevice, m_globalUBODescriptorPool, nullptr);
-        vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, nullptr);
+
+        if constexpr(g_IsDebugBuild)
+        {
+            vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, nullptr);
+        }
 
         vkDestroyDescriptorSetLayout(logicalDevice, m_globalUBODescriptorSetLayout, nullptr);
 
@@ -523,9 +573,7 @@ namespace sj
     void Renderer::TransitionImageLayout(VkImage image,
                                          VkFormat format,
                                          VkImageLayout oldLayout,
-                                         VkImageLayout newLayout,
-                                         uint32_t srcQueueIdx,
-                                         uint32_t dstQueueIdx)
+                                         VkImageLayout newLayout)
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -533,10 +581,81 @@ namespace sj
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
         barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = srcQueueIdx;
-        barrier.dstAccessMask = dstQueueIdx;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
 
-        //asdfasdf
+        VkPipelineStageFlags sourceStage;
+        VkPipelineStageFlags destinationStage;
+        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+           newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+                newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+           SJ_ASSERT(false, "unsupported layout transition!");
+        }
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             sourceStage,
+                             destinationStage,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &barrier);
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+
+    void
+    Renderer::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkBufferImageCopy region {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {width, height, 1};
+
+        // "Assuming here that the image has already been transitioned to the layout that is optimal for copying pixels to"
+        vkCmdCopyBufferToImage(commandBuffer,
+                               buffer,
+                               image,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               1,
+                               &region);
 
         EndSingleTimeCommands(commandBuffer);
     }
@@ -738,17 +857,14 @@ namespace sj
         vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
     }
 
-    void Renderer::CreateDummyTexture()
+    void Renderer::CreateDummyTextureImage()
     {
         File textureFile;
         textureFile.Open("Data/Engine/texture.sj_tex", sj::File::OpenMode::kReadBinary);
-        uint64_t bytes = textureFile.Size();
-        MemSpaceScope scope(WorkBuffer());
-        void* textureMem = scope->Allocate(bytes, alignof(Texture));
-        textureFile.Read(textureMem, bytes);
-        Texture* texture = reinterpret_cast<Texture*>(textureMem);
+        Texture header;
+        textureFile.Read(&header, sizeof(header));
 
-        VkDeviceSize imageSize = texture->width * texture->height * 4;
+        VkDeviceSize imageSize = header.width * header.height * 4;
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
 
@@ -760,14 +876,16 @@ namespace sj
 
         void* data;
         vkMapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, texture->data, static_cast<size_t>(imageSize));
+        
+        // Read texture data straight into GPU memory
+        textureFile.Read(data, imageSize);
         vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
         VkImageCreateInfo imageInfo {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = texture->width;
-        imageInfo.extent.height = texture->height;
+        imageInfo.extent.width = header.width;
+        imageInfo.extent.height = header.height;
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
         imageInfo.arrayLayers = 1;
@@ -779,11 +897,60 @@ namespace sj
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
         
-        scope->Free(textureMem);
         textureFile.Close();
-        CreateImage(imageInfo, m_dummyTextureImage, m_dummyTextureImageMemory);
+        CreateImage(imageInfo, m_dummyTextureImage, m_dummyTextureImageMemory);  //VkDeviceSize imageSize = texture->width * texture->height * 4;
         
+        TransitionImageLayout(m_dummyTextureImage,
+                              VK_FORMAT_R8G8B8A8_SRGB,
+                              VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        CopyBufferToImage(stagingBuffer, m_dummyTextureImage, header.width, header.height);
+        
+        TransitionImageLayout(m_dummyTextureImage,
+                              VK_FORMAT_R8G8B8A8_SRGB,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
+        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+
         return;
+    }
+
+    void Renderer::CreateDummyTextureSampler()
+    {
+        VkSamplerCreateInfo samplerInfo {};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+        samplerInfo.anisotropyEnable = VK_TRUE;
+
+        VkPhysicalDeviceProperties properties {};
+        vkGetPhysicalDeviceProperties(m_renderDevice.GetPhysicalDevice(), &properties);
+
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        VkResult res = vkCreateSampler(m_renderDevice.GetLogicalDevice(),
+                                       &samplerInfo,
+                                       nullptr,
+                                       &m_dummyTextureSampler);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to create image sampler");
     }
 
     void Renderer::CreateGlobalUniformBuffers()
@@ -809,14 +976,16 @@ namespace sj
 
     void Renderer::CreateGlobalUBODescriptorPool()
     {
-        VkDescriptorPoolSize poolSize {};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = kMaxFramesInFlight;
+        std::array<VkDescriptorPoolSize, 2> poolSizes {};
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = kMaxFramesInFlight;
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount = kMaxFramesInFlight;
 
         VkDescriptorPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = kMaxFramesInFlight;
 
         VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
@@ -884,16 +1053,34 @@ namespace sj
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(GlobalUniformBufferObject);
 
-            VkWriteDescriptorSet descriptorWrite {};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_frameData.globalUBODescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
+            VkDescriptorImageInfo imageInfo {};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = m_dummyTextureImageView;
+            imageInfo.sampler = m_dummyTextureSampler;
 
-            vkUpdateDescriptorSets(logicalDevice, 1, &descriptorWrite, 0, nullptr);
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
+
+            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet = m_frameData.globalUBODescriptorSets[i];
+            descriptorWrites[0].dstBinding = 0;
+            descriptorWrites[0].dstArrayElement = 0;
+            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet = m_frameData.globalUBODescriptorSets[i];
+            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].dstArrayElement = 0;
+            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pImageInfo = &imageInfo;
+
+            vkUpdateDescriptorSets(logicalDevice,
+                                   static_cast<uint32_t>(descriptorWrites.size()),
+                                   descriptorWrites.data(),
+                                   0,
+                                   nullptr);
         }
     }
 
