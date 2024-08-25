@@ -22,18 +22,13 @@ int main(int argc, char** argv)
 
     size_t imageBytes = texWidth * texHeight * 4; // 4 bytes per pixel with STBI_rgb_alpha
 
-    void* textureMem = malloc(sizeof(Texture) + imageBytes);
-
-    Texture& texture = *new(textureMem) Texture {AssetType::kTexture, texWidth, texHeight};
-    memcpy(texture.data, pixels, imageBytes);
+    TextureHeader texture {AssetType::kTexture, texWidth, texHeight};
 
     File outputFile;
     outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
 
-    outputFile.Write(&texture.type, sizeof(Texture::type));
-    outputFile.Write(&texture.width, sizeof(Texture::width));
-    outputFile.Write(&texture.height, sizeof(Texture::height));
-    outputFile.Write(&texture.data, imageBytes);
+    outputFile.Write(&texture, sizeof(TextureHeader));
+    outputFile.Write(pixels, imageBytes);
     outputFile.Close();
 
     stbi_image_free(pixels);

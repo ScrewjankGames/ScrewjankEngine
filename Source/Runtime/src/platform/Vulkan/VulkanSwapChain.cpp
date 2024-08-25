@@ -18,12 +18,12 @@ namespace sj
 
     }
 
-    VkSurfaceFormatKHR ChoseSurfaceFormat(const dynamic_vector<VkSurfaceFormatKHR>& formats)
+    VkSurfaceFormatKHR ChoseSurfaceFormat(const std::span<VkSurfaceFormatKHR> formats)
     {
         for(const VkSurfaceFormatKHR& format : formats)
         {
             if(format.format == VK_FORMAT_B8G8R8A8_SRGB &&
-               format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+               format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
                 return format;
             }
@@ -32,7 +32,7 @@ namespace sj
         return formats[0];
     }
 
-    VkPresentModeKHR ChosePresentMode(const dynamic_vector<VkPresentModeKHR>& present_modes)
+    VkPresentModeKHR ChosePresentMode(const std::span<VkPresentModeKHR>& present_modes)
     {
         for(const VkPresentModeKHR& mode : present_modes)
         {
@@ -249,24 +249,14 @@ namespace sj
     {
         VkFormat depthFormat = FindDepthFormat(physicalDevice);
 
-        VkImageCreateInfo imageInfo = {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = GetExtent().width;
-        imageInfo.extent.height = GetExtent().height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = depthFormat;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
         CreateImage(logicalDevice, 
                     physicalDevice,
-                    imageInfo,
+                    GetExtent().width,
+                    GetExtent().height,
+                    depthFormat,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     m_depthImage,
                     m_depthImageMemory);
 
@@ -276,33 +266,39 @@ namespace sj
     VulkanSwapChain::SwapChainParams
     VulkanSwapChain::QuerySwapChainParams(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
     {
-        SwapChainParams params {};
+        VkSurfaceCapabilitiesKHR capabilities;
+
 
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
-                                                  surface,
-                                                  &params.Capabilities);
+                                                  surface, &capabilities);
 
         uint32_t format_count;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface,
                                              &format_count,
                                              nullptr);
-
         SJ_ASSERT(format_count != 0, "No surface formats found");
-
-        params.Formats.reserve(format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
-                                             surface,
-                                             &format_count,
-                                             params.Formats.data());
 
         uint32_t present_mode_count;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
                                                   surface,
                                                   &present_mode_count,
                                                   nullptr);
-
         SJ_ASSERT(present_mode_count != 0, "No present modes found");
-        params.PresentModes.reserve(present_mode_count);
+
+        IMemSpace* currMemSpace = MemorySystem::GetCurrentMemSpace();
+        SwapChainParams params
+        {
+            capabilities,
+            dynamic_array<VkSurfaceFormatKHR>(format_count, currMemSpace),
+            dynamic_array<VkPresentModeKHR>(present_mode_count, currMemSpace),
+        };
+
+
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
+                                             surface,
+                                             &format_count,
+                                             params.Formats.data());
+
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
                                                   surface,
                                                   &present_mode_count,

@@ -5,7 +5,7 @@ namespace sj
 {
 
     template <class T, class size_type>
-    inline dynamic_array<T, size_type>::dynamic_array(IMemSpace* zone, size_type capacity)
+    inline dynamic_array<T, size_type>::dynamic_array(size_type capacity, IMemSpace* zone)
         : m_MemSpace(zone), m_capacity(capacity)
     {
         if(capacity > 0)
@@ -44,7 +44,7 @@ namespace sj
 
     template <class T, class size_type>
     inline dynamic_array<T, size_type>::dynamic_array(const dynamic_array<T, size_type>& other) 
-        : dynamic_array(MemorySystem::GetCurrentMemSpace(), other.size())
+        : dynamic_array(other.size(), MemorySystem::GetCurrentMemSpace())
     {
         if constexpr (std::is_trivially_constructible_v<T>)
         {

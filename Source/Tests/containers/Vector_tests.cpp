@@ -73,10 +73,12 @@ namespace container_tests {
     TEST(StaticVectorTests, AddRemoveTest)
     {
         static_vector<int, 3> vec;
+        ASSERT_TRUE(vec.empty());
 
         vec.push_back(1);
         vec.push_back(2);
         vec.push_back(3);
+        ASSERT_FALSE(vec.empty());
 
         ASSERT_EQ(1, vec[0]);
         ASSERT_EQ(2, vec[1]);
@@ -88,6 +90,9 @@ namespace container_tests {
 
         vec.erase(0);
         ASSERT_NE(1, vec[0]);
+        
+        vec.erase(0);
+        ASSERT_TRUE(vec.empty());
     }
 
     TEST(VectorTests, ListInitializationTest)

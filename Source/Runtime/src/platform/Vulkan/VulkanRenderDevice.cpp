@@ -91,7 +91,7 @@ namespace sj {
         // Check swap chain support
         VulkanSwapChain::SwapChainParams params =
             VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
-        bool swap_chain_supported = !params.Formats.empty() && !params.PresentModes.empty();
+        bool swap_chain_supported = (params.Formats.size() > 0) && (params.PresentModes.size() > 0);
 
 
         VkPhysicalDeviceFeatures supportedFeatures;
@@ -111,7 +111,7 @@ namespace sj {
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
-        dynamic_vector<VkPhysicalDevice> devices(MemorySystem::GetRootMemSpace(), deviceCount);
+        static_vector<VkPhysicalDevice, 4> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
         
         int best_score = -1; 

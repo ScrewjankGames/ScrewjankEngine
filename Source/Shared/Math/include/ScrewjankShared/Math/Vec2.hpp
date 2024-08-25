@@ -18,6 +18,10 @@ namespace sj
         [[nodiscard]] Vec2 operator*(float s) const;
         [[nodiscard]] Vec2 operator/(float s) const;
 
+        inline bool operator==(const Vec2& other) const
+        {
+            return m_elements[0] == other.m_elements[0] && m_elements[1] == other.m_elements[1];
+        }
 
         static Vec2 Zero;
         static Vec2 UnitX;

@@ -15,6 +15,9 @@ namespace sj
         constexpr static_vector() = default;
         constexpr ~static_vector() = default;
 
+        static_vector(SizeType count);
+        static_vector(SizeType count, const T& value);
+
         static_vector(std::initializer_list<T> vals);
 
         static_vector& operator=(std::initializer_list<T> vals);
@@ -36,6 +39,9 @@ namespace sj
 
         SizeType size() const;
 
+        void resize(SizeType new_size);
+        void resize(SizeType new_size, const T& value);
+
         SizeType capacity() const;
 
         T* data();
@@ -44,6 +50,8 @@ namespace sj
 
         T* begin();
         T* end();
+
+        [[nodiscard]] bool empty() const;
 
     private:
         T m_cArray[N] = {};

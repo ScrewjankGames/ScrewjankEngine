@@ -573,7 +573,7 @@ namespace sj
     template <class T>
     inline bool dynamic_vector<T>::empty()
     {
-        return size() != 0;
+        return size() == 0;
     }
     
     template <class T>

@@ -23,8 +23,8 @@ namespace sj {
         struct SwapChainParams
         {
             VkSurfaceCapabilitiesKHR Capabilities;
-            dynamic_vector<VkSurfaceFormatKHR> Formats;
-            dynamic_vector<VkPresentModeKHR> PresentModes;
+            dynamic_array<VkSurfaceFormatKHR> Formats;
+            dynamic_array<VkPresentModeKHR> PresentModes;
         };
 
         VulkanSwapChain();

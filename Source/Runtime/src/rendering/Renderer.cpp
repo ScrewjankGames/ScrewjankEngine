@@ -7,12 +7,14 @@
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
 #include <ScrewjankShared/DataDefinitions/Texture.hpp>
+#include <ScrewjankShared/DataDefinitions/Model.hpp>
 #include <ScrewjankShared/io/File.hpp>
 
 // Library Headers
+#ifndef SJ_GOLD
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
-
+#endif
 // STD Headers
 
 namespace sj
@@ -36,7 +38,10 @@ namespace sj
 
     void Renderer::Render(const Mat44& cameraMatrix)
     {
+        #ifndef SJ_GOLD
         ImGui::Render();
+        #endif // !SJ_GOLD
+
 
         const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
 
@@ -159,10 +164,9 @@ namespace sj
 
         CreateCommandPools();
         
-        CreateDummyVertexBuffer();
-        CreateDummyIndexBuffer();
-
+        LoadDummyModel();
         CreateDummyTextureImage();
+
         m_dummyTextureImageView = CreateImageView(m_renderDevice.GetLogicalDevice(),
                                                   m_dummyTextureImage,
                                                   VK_FORMAT_R8G8B8A8_SRGB,
@@ -173,10 +177,10 @@ namespace sj
         CreateGlobalUniformBuffers();
 
         CreateGlobalUBODescriptorPool();
-        if constexpr(g_IsDebugBuild)
-        {
-            CreateImGuiDescriptorPool();
-        }
+        
+        #ifndef SJ_GOLD
+        CreateImGuiDescriptorPool();
+        #endif // !SJ_GOLD
 
         CreateGlobalUBODescriptorSets();
 
@@ -185,6 +189,7 @@ namespace sj
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
+        #ifndef SJ_GOLD
         // Init ImGui
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance = m_vkInstance;
@@ -202,6 +207,7 @@ namespace sj
         init_info.RenderPass = m_defaultRenderPass;
 
         ImGui_ImplVulkan_Init(&init_info);
+        #endif
     }
 
     void Renderer::CreateGlobalDescriptorSetlayout()
@@ -241,7 +247,10 @@ namespace sj
         VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
         vkDeviceWaitIdle(logicalDevice);
 
+        #ifndef SJ_GOLD
         ImGui_ImplVulkan_Shutdown();
+        #endif // !SJ_GOLD
+
 
         m_frameData.DeInit(logicalDevice);
 
@@ -300,11 +309,14 @@ namespace sj
     void Renderer::StartRenderFrame()
     {
         Viewport viewport = Window::GetInstance()->GetViewportSize();
+
+        #ifndef SJ_GOLD
         ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
 
         // Start the Dear ImGui frame
         ImGui_ImplVulkan_NewFrame();
         ImGui::NewFrame();
+        #endif // !SJ_GOLD
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::VulkanDebugLogCallback(
@@ -365,7 +377,7 @@ namespace sj
         // Compile-time check for adding validation layers
         if constexpr(g_IsDebugBuild)
         {
-            static dynamic_vector<const char*> layers(MemorySystem::GetRootMemSpace(),
+            static dynamic_vector<const char*> layers(MemorySystem::GetDebugMemSpace(),
                                                       {"VK_LAYER_KHRONOS_validation"});
 
             EnableValidationLayers(layers);
@@ -556,7 +568,6 @@ namespace sj
     }
 
     void Renderer::TransitionImageLayout(VkImage image,
-                                         VkFormat format,
                                          VkImageLayout oldLayout,
                                          VkImageLayout newLayout)
     {
@@ -568,22 +579,9 @@ namespace sj
         barrier.newLayout = newLayout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        
         barrier.image = image;
-        if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-        {
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-            if(HasStencilComponent(format))
-            {
-                barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-            }
-        }
-        else
-        {
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
@@ -591,29 +589,14 @@ namespace sj
 
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
-        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+           newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
-            if(newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-            {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            }
-            else if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-            {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            }
-            else
-            {
-                SJ_ASSERT(false, "unsupported layout transition!");
-            }
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
                 newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -624,9 +607,9 @@ namespace sj
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
-        else
+        else 
         {
-           SJ_ASSERT(false, "unsupported layout transition!");
+            SJ_ASSERT(false, "unsupported layout transition!");
         }
 
         vkCmdPipelineBarrier(commandBuffer,
@@ -766,84 +749,97 @@ namespace sj
         EndSingleTimeCommands(commandBuffer);
     }
 
-    void Renderer::CreateDummyVertexBuffer()
+    void Renderer::LoadDummyModel()
     {
-        VkDeviceSize bufferSize = sizeof(m_dummyVertices[0]) * m_dummyVertices.size();
+        File modelFile;
+        modelFile.Open("Data/Engine/viking_room.sj_mesh", sj::File::OpenMode::kReadBinary);
+        Model header;
+        modelFile.Read(&header, sizeof(header));
 
-        // Stage vertex data in host visible buffer
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        // Read verts into GPU memory
+        {
+            VkDeviceSize bufferSize = sizeof(Vertex) * header.numVerts;
+            // Stage vertex data in host visible buffer
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
 
-        CreateBuffer(bufferSize,
-                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     stagingBuffer,
-                     stagingBufferMemory);
+            CreateBuffer(bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    stagingBuffer,
+                    stagingBufferMemory);
 
-        void* data;
-        vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                    stagingBufferMemory,
-                    0,
-                    bufferSize,
-                    0,
-                    &data);
+            void* data;
+            vkMapMemory(m_renderDevice.GetLogicalDevice(),
+                        stagingBufferMemory,
+                        0,
+                        bufferSize,
+                        0,
+                        &data);
 
-        memcpy(data, m_dummyVertices.data(), static_cast<size_t>(bufferSize));
+            // Copy data from file to GPU
+            modelFile.Read(data, bufferSize);
 
-        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+            vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-        CreateBuffer(bufferSize,
-                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                     m_dummyVertexBuffer,
-                     m_dummyVertexBufferMem);
+            CreateBuffer(bufferSize,
+                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                         m_dummyVertexBuffer,
+                         m_dummyVertexBufferMem);
 
-        CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
+            CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
 
-        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
-    }
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+        }
 
-    void Renderer::CreateDummyIndexBuffer()
-    {
-        VkDeviceSize bufferSize = sizeof(m_dummyIndices[0]) * m_dummyIndices.size();
+        // Read Indices into GPU memory
+        {
+            m_dummyIndexBufferIndexCount = header.numIndices;
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        CreateBuffer(bufferSize,
-                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     stagingBuffer,
-                     stagingBufferMemory);
+            VkDeviceSize bufferSize = sizeof(uint16_t) * header.numIndices;
 
-        void* data;
-        vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                    stagingBufferMemory,
-                    0,
-                    bufferSize,
-                    0,
-                    &data);
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            CreateBuffer(bufferSize,
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer,
+                         stagingBufferMemory);
 
-        memcpy(data, m_dummyIndices.data(), (size_t)bufferSize);
-        vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+            void* data;
+            vkMapMemory(m_renderDevice.GetLogicalDevice(),
+                        stagingBufferMemory,
+                        0,
+                        bufferSize,
+                        0,
+                        &data);
+            // Copy data from file to GPU
+            modelFile.Read(data, bufferSize);
 
-        CreateBuffer(bufferSize,
-                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                     m_dummyIndexBuffer,
-                     m_dummyIndexBufferMem);
+            vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-        CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
+            CreateBuffer(bufferSize,
+                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                         m_dummyIndexBuffer,
+                         m_dummyIndexBufferMem);
 
-        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
-        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+            CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
+
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, nullptr);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, nullptr);
+        }
+
+        modelFile.Close();
     }
 
     void Renderer::CreateDummyTextureImage()
     {
         File textureFile;
-        textureFile.Open("Data/Engine/texture.sj_tex", sj::File::OpenMode::kReadBinary);
-        Texture header;
+        textureFile.Open("Data/Engine/viking_room.sj_tex", sj::File::OpenMode::kReadBinary);
+        TextureHeader header;
         textureFile.Read(&header, sizeof(header));
 
         VkDeviceSize imageSize = header.width * header.height * 4;
@@ -862,39 +858,26 @@ namespace sj
         // Read texture data straight into GPU memory
         textureFile.Read(data, imageSize);
         vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
-
-        VkImageCreateInfo imageInfo {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = header.width;
-        imageInfo.extent.height = header.height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0; // Optional
-        
+      
         textureFile.Close();
-        CreateImage(m_renderDevice.GetLogicalDevice(),
-                    m_renderDevice.GetPhysicalDevice(),
-                    imageInfo,
+        CreateImage(m_renderDevice.GetLogicalDevice(), 
+                    m_renderDevice.GetPhysicalDevice(), 
+                    header.width,
+                    header.height,
+                    VK_FORMAT_R8G8B8A8_SRGB,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     m_dummyTextureImage,
                     m_dummyTextureImageMemory);
         
         TransitionImageLayout(m_dummyTextureImage,
-                              VK_FORMAT_R8G8B8A8_SRGB,
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         CopyBufferToImage(stagingBuffer, m_dummyTextureImage, header.width, header.height);
         
         TransitionImageLayout(m_dummyTextureImage,
-                              VK_FORMAT_R8G8B8A8_SRGB,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -906,30 +889,23 @@ namespace sj
 
     void Renderer::CreateDummyTextureSampler()
     {
+        VkPhysicalDeviceProperties properties {};
+        vkGetPhysicalDeviceProperties(m_renderDevice.GetPhysicalDevice(), &properties);
+
         VkSamplerCreateInfo samplerInfo {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_LINEAR;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
-
         samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
         samplerInfo.anisotropyEnable = VK_TRUE;
-
-        VkPhysicalDeviceProperties properties {};
-        vkGetPhysicalDeviceProperties(m_renderDevice.GetPhysicalDevice(), &properties);
-
         samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
         samplerInfo.compareEnable = VK_FALSE;
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerInfo.mipLodBias = 0.0f;
-        samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 0.0f;
 
         VkResult res = vkCreateSampler(m_renderDevice.GetLogicalDevice(),
                                        &samplerInfo,
@@ -981,7 +957,8 @@ namespace sj
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
     }
-
+    
+    #ifndef SJ_GOLD
     void Renderer::CreateImGuiDescriptorPool()
     {
         VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
@@ -1010,6 +987,7 @@ namespace sj
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
     }
+    #endif
 
     void Renderer::CreateGlobalUBODescriptorSets()
     {
@@ -1132,9 +1110,11 @@ namespace sj
                                     0,
                                     nullptr);
 
-            vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndices.size()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndexBufferIndexCount), 1, 0, 0, 0);
 
+            #ifndef SJ_GOLD
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
+            #endif
         }
         vkCmdEndRenderPass(buffer);
 

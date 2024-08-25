@@ -7,6 +7,18 @@
 namespace sj
 {
     template <class T, size_t N, class SizeType>
+    inline static_vector<T, N, SizeType>::static_vector(SizeType count)
+    {
+        resize(count);
+    }
+
+    template <class T, size_t N, class SizeType>
+    inline static_vector<T, N, SizeType>::static_vector(SizeType count, const T& value)
+    {
+        resize(count, value);
+    }
+
+    template <class T, size_t N, class SizeType>
     inline static_vector<T, N, SizeType>::static_vector(std::initializer_list<T> vals)
     {
         for(const T& val : vals)
@@ -102,6 +114,36 @@ namespace sj
     }
 
     template <class T, size_t N, class SizeType>
+    inline void static_vector<T, N, SizeType>::resize(SizeType new_size)
+    {
+        resize(new_size, T {});
+    }
+
+    template <class T, size_t N, class SizeType>
+    inline void static_vector<T, N, SizeType>::resize(SizeType new_size, const T& value)
+    {
+        SJ_ASSERT(new_size <= capacity(), "Cannot resize static vector past it's own capacity");
+
+        if(new_size < m_Count)
+        {
+            // If the vector is shrinking, destroy the elements that aren't getting copied
+            for(size_t i = new_size; i < m_Count; i++)
+            {
+                m_cArray[i].~T();
+            }
+        }
+        else if(new_size > m_Count)
+        {
+            for(auto i = m_Count; i < N; i++)
+            {
+                new(&m_cArray[i]) T(value);
+            }
+        }
+
+        m_Count = new_size;
+    }
+
+    template <class T, size_t N, class SizeType>
     inline SizeType static_vector<T, N, SizeType>::capacity() const
     {
         return (SizeType)N;
@@ -137,5 +179,11 @@ namespace sj
     inline T* static_vector<T, N, SizeType>::end()
     {
         return std::begin(m_cArray) + m_Count;
+    }
+
+    template <class T, size_t N, class SizeType>
+    inline bool static_vector<T, N, SizeType>::empty() const
+    {
+        return size() == 0;
     }
 }

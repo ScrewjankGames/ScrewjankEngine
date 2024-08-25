@@ -49,7 +49,7 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(IMemSpace* mem_space)
-        : m_Elements(mem_space, 0)    
+        : m_Elements(0, mem_space)    
     {
     }
 

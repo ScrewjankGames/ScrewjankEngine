@@ -29,15 +29,34 @@ namespace sj
         return -1;
     }
 
-    void CreateImage(VkDevice logicalDevice,
+    void CreateImage(VkDevice logicalDevice, 
                      VkPhysicalDevice physicalDevice,
-                     const VkImageCreateInfo& imageInfo,
+                     uint32_t width,
+                     uint32_t height,
+                     VkFormat format,
+                     VkImageTiling tiling,
+                     VkImageUsageFlags usage,
+                     VkMemoryPropertyFlags properties,
                      VkImage& image,
-                     VkDeviceMemory& imageMem)
+                     VkDeviceMemory& imageMemory)
     {
-        VkResult res = vkCreateImage(logicalDevice, &imageInfo, nullptr, &image);
+        VkImageCreateInfo imageInfo {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = usage;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create dummy texture image");
+        VkResult success = vkCreateImage(logicalDevice, &imageInfo, nullptr, &image);
+        SJ_ASSERT(success == VK_SUCCESS, "failed to create image!");
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(logicalDevice, image, &memRequirements);
@@ -45,15 +64,12 @@ namespace sj
         VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice,
-                                                   memRequirements.memoryTypeBits,
-                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
-        res = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMem);
+        success = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMemory);
+        SJ_ASSERT(success == VK_SUCCESS, "failed to allocate image memory!");
 
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy texture memory on GPU");
-
-        vkBindImageMemory(logicalDevice, image, imageMem, 0);
+        vkBindImageMemory(logicalDevice, image, imageMemory, 0);
     }
 
     VkImageView

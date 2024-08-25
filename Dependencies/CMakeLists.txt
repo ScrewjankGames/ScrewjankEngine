@@ -116,3 +116,11 @@ target_include_directories(STB
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/stb
     )
+
+## TinyObjLoader
+add_subdirectory(tinyobjloader)
+
+set_target_properties(tinyobjloader
+    PROPERTIES 
+        FOLDER Engine/Dependencies
+)
