@@ -1,5 +1,5 @@
 // Shared Includes
-#include <ScrewjankShared/DataDefinitions/Texture.hpp>
+#include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/IO/File.hpp>
 
 // Library Includes

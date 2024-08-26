@@ -1,7 +1,6 @@
 // Shared Includes
-#include <ScrewjankShared/DataDefinitions/Texture.hpp>
 #include <ScrewjankShared/IO/File.hpp>
-#include <ScrewjankShared/DataDefinitions/Model.hpp>
+#include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
 // Library Includes

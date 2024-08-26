@@ -1,7 +1,7 @@
 #pragma once
 
 // Shared Includes
-#include <ScrewjankShared/DataDefinitions/AssetType.hpp>
+#include <ScrewjankShared/DataDefinitions/Assets/AssetType.hpp>
 #include <ScrewjankShared/Math/Vec2.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
 #include <ScrewjankShared/Math/VecHash.hpp>

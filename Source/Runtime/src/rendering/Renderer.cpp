@@ -6,8 +6,8 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
-#include <ScrewjankShared/DataDefinitions/Texture.hpp>
-#include <ScrewjankShared/DataDefinitions/Model.hpp>
+#include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
+#include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/io/File.hpp>
 
 // Library Headers
@@ -325,19 +325,19 @@ namespace sj
         const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
         void* user_data)
     {
-        if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+        if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
             SJ_ENGINE_LOG_TRACE("Vulkan Validation Layer message: {}", callback_data->pMessage);
         }
-        else if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
             SJ_ENGINE_LOG_INFO("Vulkan Validation Layer message: {}", callback_data->pMessage);
         }
-        else if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
             SJ_ENGINE_LOG_WARN("Vulkan Validation Layer message: {}", callback_data->pMessage);
         }
-        else if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
             SJ_ENGINE_LOG_ERROR("Vulkan Validation Layer message: {}", callback_data->pMessage);
         }
