@@ -20,6 +20,11 @@ namespace sj {
     uint64_t Game::s_FrameCount = 0;
     float Game::s_DeltaTime = 0.0f;
 
+    void Game::LoadScene(const char* path)
+    {
+        m_Scene = std::make_unique<Scene>(path);
+    }
+
     uint64_t Game::GetFrameCount()
     {
         return s_FrameCount;
@@ -56,7 +61,9 @@ namespace sj {
         m_Window->Init();
 
         m_Renderer = Renderer::GetInstance();
-        m_Renderer->Init();
+        m_Renderer->Init();     
+
+        LoadScene("Data/Engine/Scenes/Default.sj_scene");
 
         Run();
     }
@@ -74,7 +81,7 @@ namespace sj {
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();
-            m_CameraSystem.Process(s_DeltaTime);
+            m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
 
             if constexpr(g_IsDebugBuild)
             {

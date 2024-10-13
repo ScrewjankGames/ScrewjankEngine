@@ -1,11 +1,11 @@
 #pragma once
 
 // STD Headers
-#include <Mutex>
+#include <mutex>
+#include <cstddef>
 
 // Screwjank Engine Headers
 #include <ScrewjankEngine/containers/StaticVector.hpp>
-#include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
@@ -64,8 +64,11 @@ namespace sj
     class MemSpace final : public IMemSpace
     {
     public:
+        MemSpace() = default;
         MemSpace(IMemSpace* parent, const size_t size, const char* debug_name = "");
         ~MemSpace() override;
+
+        void Init(IMemSpace* parent, const size_t size, const char* debug_name = "");
 
         [[nodiscard]] 
         void* Allocate(const size_t size,

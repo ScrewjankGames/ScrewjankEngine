@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     File outputFile;
     outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
 
-    outputFile.Write(&texture, sizeof(TextureHeader));
+    outputFile.WriteStruct(texture);
     outputFile.Write(pixels, imageBytes);
     outputFile.Close();
 

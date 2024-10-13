@@ -7,7 +7,6 @@
 
 namespace sj
 {
-
     constexpr uint32_t FNV1a_32(std::string_view str, uint32_t seed = 0x811c9dc5)
     {
         for(char c : str)
@@ -22,6 +21,9 @@ namespace sj
     class StringHash
     {
     public:
+
+        inline constexpr StringHash() : m_hash(0) { }
+
         inline constexpr StringHash(const char* str) : m_hash(FNV1a_32(str))
         {
 
@@ -31,7 +33,7 @@ namespace sj
         inline constexpr bool operator==(const StringHash& other) const { return m_hash == other.m_hash; }
         inline constexpr bool operator!=(const StringHash& other) const { return !(*this == other); }
 
-        inline constexpr uint32_t GetIntValue() const { return m_hash; }
+        inline constexpr uint32_t AsInt() const { return m_hash; }
 
     private:
         uint32_t m_hash;
@@ -50,7 +52,7 @@ namespace std
     {
         std::size_t operator()(const sj::StringHash& strHash) const
         {
-            return std::hash<uint32_t>()(strHash.GetIntValue());
+            return std::hash<uint32_t>()(strHash.AsInt());
         }
     };
 } // namespace std

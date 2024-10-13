@@ -6,6 +6,7 @@
 // Engine Headers
 #include <ScrewjankEngine/core/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
+#include <ScrewjankEngine/core/Scene.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
@@ -20,6 +21,11 @@ namespace sj {
       public:
 
         /**
+         * Runtime Configuration functions- fill these out in your game class
+         */
+        virtual void RegisterScriptComponents() = 0;
+
+        /**
          * Constructor
          */
         Game();
@@ -29,10 +35,16 @@ namespace sj {
          */
         virtual ~Game();
 
+
         /**
          * Launches engine subsystems and starts game
          */
         void Start();
+
+        /**
+         * Loads contents of scene file into game 
+         */
+        void LoadScene(const char* path);
 
         /** Returns number of frames fully simulated since game start */
         static uint64_t GetFrameCount(); 
@@ -48,6 +60,7 @@ namespace sj {
         void ShutDown();
 
       private:
+        std::unique_ptr<Scene> m_Scene;
 
         Window* m_Window;
         Renderer* m_Renderer;

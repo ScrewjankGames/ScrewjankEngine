@@ -124,3 +124,11 @@ set_target_properties(tinyobjloader
     PROPERTIES 
         FOLDER Engine/Dependencies
 )
+
+## TinyObjLoader
+add_subdirectory(json)
+
+set_target_properties(nlohmann_json
+    PROPERTIES 
+        FOLDER Engine/Dependencies
+)

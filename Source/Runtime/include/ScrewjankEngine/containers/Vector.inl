@@ -25,6 +25,14 @@ namespace sj
     }
 
     template <class T>
+    inline dynamic_vector<T>::dynamic_vector(T* buffer, size_t count) : dynamic_vector()
+    {
+        m_Data = buffer;
+        m_Capacity = count;
+        m_Size = count;
+    }
+
+    template <class T>
     inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space)
         : m_Data(nullptr), m_BackingZone(mem_space), m_Size(0), m_Capacity(0)
     {

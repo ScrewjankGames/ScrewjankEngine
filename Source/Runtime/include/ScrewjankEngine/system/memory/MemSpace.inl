@@ -35,8 +35,31 @@ namespace sj
     inline MemSpace<AllocatorType>::MemSpace(IMemSpace* parent,
                                                const size_t size,
                                                const char* debug_name)
-        : m_ParentZone(parent)
     {
+        Init(parent, size, debug_name);
+    }
+
+    template <allocator_concept AllocatorType>
+    inline MemSpace<AllocatorType>::~MemSpace()
+    {
+        s_MemSpaceList.erase_element(this);
+
+        if(m_ParentZone)
+        {
+            m_ParentZone->Free(reinterpret_cast<void*>(m_Allocator.Begin()));
+        }
+        else
+        {
+            free(reinterpret_cast<void*>(m_Allocator.Begin()));
+        }
+    }
+
+    template <allocator_concept AllocatorType>
+    inline void
+    MemSpace<AllocatorType>::Init(IMemSpace* parent, const size_t size, const char* debug_name)
+    {
+        m_ParentZone = parent;
+
         s_MemSpaceList.push_back(this);
 
         void* start;
@@ -53,23 +76,8 @@ namespace sj
         m_Allocator.Init(size, start);
 
 #ifndef SJ_GOLD
-        sj_strncpy(m_DebugName, debug_name, sizeof(m_DebugName));
+        strncpy_s(m_DebugName, debug_name, sizeof(m_DebugName));
 #endif // !SJ_GOLD
-    }
-
-    template <allocator_concept AllocatorType>
-    inline MemSpace<AllocatorType>::~MemSpace()
-    {
-        s_MemSpaceList.erase_element(this);
-
-        if(m_ParentZone)
-        {
-            m_ParentZone->Free(reinterpret_cast<void*>(m_Allocator.Begin()));
-        }
-        else
-        {
-            free(reinterpret_cast<void*>(m_Allocator.Begin()));
-        }
     }
 
     template <allocator_concept AllocatorType>

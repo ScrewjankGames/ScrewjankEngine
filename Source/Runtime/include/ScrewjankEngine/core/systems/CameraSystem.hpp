@@ -6,16 +6,20 @@
 
 namespace sj
 {
+
+    // Forward Declarations
+    class Scene;
+
     class CameraSystem
     {
     public:
         CameraSystem();
 
-        void Process(float deltaTime);
+        void Process(Scene* scene, float deltaTime);
+
         Mat44 GetOutputCameraMatrix() const;
 
     private:
-        Vec3 m_eulerAngles;
         Mat44 m_outputCameraMatrix;
     };
 }

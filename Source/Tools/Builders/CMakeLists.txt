@@ -1,2 +1,3 @@
 add_subdirectory(TextureBuilder)
 add_subdirectory(ModelBuilder)
+add_subdirectory(SceneBuilder)

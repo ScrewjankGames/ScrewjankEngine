@@ -40,6 +40,7 @@ namespace sj {
         dynamic_vector(size_t count);
         dynamic_vector(size_t count, const T& value);
         dynamic_vector(std::initializer_list<T> list);
+        dynamic_vector(T* buffer, size_t count);
 
         /**
          * Default Constructor

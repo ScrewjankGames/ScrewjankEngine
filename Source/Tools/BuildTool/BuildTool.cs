@@ -3,113 +3,111 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace build_tool 
 {
-	class TextureBuilder 
+	abstract class GlobBuilder
 	{
-		/**
-		 * @param textures The textures to build
-		 * @param input_dir Root directory to use for making file paths relative
-		 * @param output_dir Root directory assets will be placed in
-		 */
-		void BuildTextures(List<FileInfo> textures, DirectoryInfo input_dir, DirectoryInfo output_dir) 
+		public abstract IEnumerable<string> Extensions { get; }
+		public abstract string BuilderName { get; }
+
+		public abstract string BuilderExePath { get; }
+
+		public abstract string OutputExtension { get; }
+
+		bool BuildItem(FileInfo item, DirectoryInfo input_dir, DirectoryInfo output_dir)
 		{
-			foreach (var texture in textures)
+			Log.Information("{@builderName} building {@itemName}", BuilderName, item.Name);
+
+			string newPath = String.Format("{0}{1}", output_dir, Utils.GetRelativePath(input_dir, item));
+			FileInfo output_file = new FileInfo(Path.ChangeExtension(newPath, OutputExtension));
+			output_file.Directory.Create();
+
+			string args = String.Format("{0} {1}", item.FullName, output_file);
+
+			Process builder = new Process();
+			builder.StartInfo.FileName = BuildToolConfig.BuildersBinDir + BuilderExePath;
+			builder.StartInfo.Arguments = args;
+			Log.Information("command line: {0} {1}", builder.StartInfo.FileName, args);
+			builder.StartInfo.UseShellExecute = false;
+			builder.StartInfo.RedirectStandardOutput = true;
+
+			builder.Start();
+
+			// Todo [NL] Remove this bullshit and allow processes to be spawned and error reported async
+			builder.WaitForExit();
+
+			if (builder.ExitCode != 0)
 			{
-				Log.Information("Building texture {@TextureName}", texture.FullName);
-				string newPath = String.Format("{0}{1}", output_dir, Utils.GetRelativePath(input_dir, texture));
-				FileInfo output_file = new FileInfo(Path.ChangeExtension(newPath, ".sj_tex"));
-				output_file.Directory.Create();
-
-				string args = String.Format("{0} {1}", texture.FullName, output_file);
-
-				Process textureBuilder = new Process();
-				textureBuilder.StartInfo.FileName = BuildToolConfig.BuildersBinDir + "TextureBuilder/Release/TextureBuilder.exe";
-				textureBuilder.StartInfo.Arguments = args;
-				Log.Information("command line: {0} {1}", textureBuilder.StartInfo.FileName, args);
-				textureBuilder.StartInfo.UseShellExecute = false;
-				textureBuilder.StartInfo.RedirectStandardOutput = true;
-
-				textureBuilder.Start();
-
-				// Todo [NL] Remove this bullshit and allow processes to be spawned and error reported async
-				textureBuilder.WaitForExit();
-
-				if (textureBuilder.ExitCode != 0)
-				{
-					Log.Error("Texture Builder {@TextureName} Failed!", texture.Name);
-				}
+				Log.Error("{@builderName} {@itemName} Failed!", BuilderName, item.Name);
+				return false;
 			}
-		}
 
-		public void BuildAll() 
-		{
-			Log.Information("Building engine textures");
-			List<FileInfo> engine_textures = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.EngineAssetDir, extensions, engine_textures);			
-			BuildTextures(engine_textures, BuildToolConfig.EngineAssetDir, BuildToolConfig.EngineDataDir);
-
-			Log.Information("Building game textures");
-			List<FileInfo> game_textures = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.GameAssetDir, extensions, game_textures);
-			BuildTextures(game_textures, BuildToolConfig.GameAssetDir, BuildToolConfig.GameDataDir);
-		}
-
-		string[] extensions = new string[] { "*.jpg", "*.png" };
-	}
-
-	class ModelBuilder
-	{
-		/**
-		 * @param textures The textures to build
-		 * @param input_dir Root directory to use for making file paths relative
-		 * @param output_dir Root directory assets will be placed in
-		 */
-		void BuildModels(List<FileInfo> models, DirectoryInfo input_dir, DirectoryInfo output_dir)
-		{
-			foreach (var model in models)
-			{
-				Log.Information("Building model {@ModelName}", model.FullName);
-				string newPath = String.Format("{0}{1}", output_dir, Utils.GetRelativePath(input_dir, model));
-				FileInfo output_file = new FileInfo(Path.ChangeExtension(newPath, ".sj_mesh"));
-				output_file.Directory.Create();
-
-				string args = String.Format("{0} {1}", model.FullName, output_file);
-
-				Process modelBuilder = new Process();
-				modelBuilder.StartInfo.FileName = BuildToolConfig.BuildersBinDir + "ModelBuilder/Release/ModelBuilder.exe";
-				modelBuilder.StartInfo.Arguments = args;
-				Log.Information("command line: {0} {1}", modelBuilder.StartInfo.FileName, args);
-				modelBuilder.StartInfo.UseShellExecute = false;
-				modelBuilder.StartInfo.RedirectStandardOutput = true;
-
-				modelBuilder.Start();
-
-				// Todo [NL] Remove this bullshit and allow processes to be spawned and error reported async
-				modelBuilder.WaitForExit();
-
-				if (modelBuilder.ExitCode != 0)
-				{
-					Log.Error("Texture Builder {@TextureName} Failed!", model.Name);
-				}
-			}
+			return true;
 		}
 
 		public void BuildAll()
 		{
-			Log.Information("Building engine models");
-			List<FileInfo> engine_textures = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.EngineAssetDir, extensions, engine_textures);
-			BuildModels(engine_textures, BuildToolConfig.EngineAssetDir, BuildToolConfig.EngineDataDir);
+			List<FileInfo> engine_items = new List<FileInfo>();
+			Utils.GlobFiles(BuildToolConfig.EngineAssetDir, Extensions, engine_items);
 
-			Log.Information("Building game models");
-			List<FileInfo> game_textures = new List<FileInfo>();
-			Utils.GlobFiles(BuildToolConfig.GameAssetDir, extensions, game_textures);
-			BuildModels(game_textures, BuildToolConfig.GameAssetDir, BuildToolConfig.GameDataDir);
+			List<FileInfo> game_items = new List<FileInfo>();
+			Utils.GlobFiles(BuildToolConfig.GameAssetDir, Extensions, game_items);
+
+			foreach (FileInfo item in engine_items)
+			{
+				bool success = BuildItem(item, BuildToolConfig.EngineAssetDir, BuildToolConfig.EngineDataDir);
+				if (!success)
+				{
+					Log.Error("Failed to build item {itemName}. Build aborted", item.FullName);
+					return;
+				}
+			}
+
+			foreach (FileInfo item in game_items)
+			{
+				bool success = BuildItem(item, BuildToolConfig.GameAssetDir, BuildToolConfig.GameDataDir);
+				if (!success)
+				{
+					Log.Error("Failed to build item {itemName}. Build aborted", item.FullName);
+					return;
+				}
+			}
 		}
+	}
 
-		string[] extensions = new string[] { "*.obj" };
+	class TextureBuilder : GlobBuilder
+	{
+		public override IEnumerable<string> Extensions => new string[] { "*.png", "*.jpg" };
+
+		public override string BuilderName => "Texture Builder";
+
+		public override string BuilderExePath => "TextureBuilder/Release/TextureBuilder.exe";
+
+		public override string OutputExtension => ".sj_tex";
+	}
+
+	class ModelBuilder : GlobBuilder
+	{
+		public override IEnumerable<string> Extensions => new string[] { "*.obj" };
+
+		public override string BuilderName => "Model Builder";
+
+		public override string BuilderExePath => "ModelBuilder/Release/ModelBuilder.exe";
+
+		public override string OutputExtension => ".sj_mesh";
+	}
+
+	class SceneBuilder : GlobBuilder 
+	{
+		public override IEnumerable<string> Extensions => new string[] { "*.scene" };
+
+		public override string BuilderName => "Scene Builder";
+
+		public override string BuilderExePath => "SceneBuilder/Release/SceneBuilder.exe";
+
+		public override string OutputExtension => ".sj_scene";
 	}
 
 	class BuildTool 
@@ -121,9 +119,11 @@ namespace build_tool
 			TextureBuilder texture_builder = new TextureBuilder();
 			texture_builder.BuildAll();
 
-
 			ModelBuilder model_builder = new ModelBuilder();
 			model_builder.BuildAll();
+
+			SceneBuilder scene_builder = new SceneBuilder();
+			scene_builder.BuildAll();
 
 			Log.Information("Build Complete. Press any key to close...");
 			Console.ResetColor();

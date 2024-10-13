@@ -1,0 +1,48 @@
+{
+     "name":"Default",
+     "memory":1024,
+     "game_objects": [
+        {
+            "name":"Player",
+            "translation": [0.0, 0.5, 3.0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+    
+            "components": [
+                {
+                    "type":"CameraComponent",
+                    "translation": [0.0, 0.0, 0.0],
+                    "rotation": [0, 0, 0],
+                    "scale": [1, 1, 1],
+                    "fov": 45.0,
+                    "nearPlane": 0.1,
+                    "farPlane": 100.0
+                },
+                {
+                    "type":"ScriptComponent",
+                    "script_type":"TestPlayerComponent",
+                    "user_data":
+                    {
+                        "pitchSpeed":45.0,
+                        "yawSpeed":45.0,
+                        "linearSpeed":4.0
+                    }
+                }
+            ]
+        },
+        {
+            "name":"TestRoom",
+            "translation": [0.0, 0.0, 0.0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+    
+            "components": [
+                {
+                    "type":"MeshComponent",
+                    "model_path":"Data/Engine/viking_room.sj_mesh",
+                    "texture_path":"Data/Engine/viking_room.sj_mesh"
+                }
+            ]
+        }
+     ]
+}

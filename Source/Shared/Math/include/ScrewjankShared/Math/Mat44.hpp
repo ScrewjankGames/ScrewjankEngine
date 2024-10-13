@@ -43,4 +43,7 @@ namespace sj
     [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers);
     [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation);
 
+    [[nodiscard]] Mat44 BuildTransform(const Vec4 scale, const Vec3& eulers, const Vec4& translation);
+
+
 }

@@ -8,7 +8,7 @@ namespace build_tool
 {
 	class Utils 
 	{
-		public static void GlobFiles(DirectoryInfo root, string[] patterns, List<FileInfo> out_files)
+		public static void GlobFiles(DirectoryInfo root, IEnumerable<string> patterns, List<FileInfo> out_files)
 		{
 			foreach (string pattern in patterns) 
 			{

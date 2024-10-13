@@ -151,4 +151,20 @@ namespace sj
         output[3] = translation;
         return output;
     }
+
+    Mat44 BuildTransform(const Vec4 scale, const Vec3& eulers, const Vec4& translation)
+    {
+        Mat44 r = FromEulerXYZ(eulers);
+        
+        Mat44 s = Mat44 {
+            {scale[0], 0, 0, 0},
+            {0, scale[1], 0, 0},
+            {0, 0, scale[2], 0},
+            {0, 0, 0, 1},
+        };
+
+        Mat44 t(Vec4::UnitX, Vec4::UnitY, Vec4::UnitZ, translation);
+
+        return s * r * t;
+    }
 }

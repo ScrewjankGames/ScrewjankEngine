@@ -30,6 +30,12 @@ namespace sj
 
         size_t Write(const void* buffer, size_t size, size_t count = 1);
 
+        template <class T>
+        size_t ReadStruct(T& dest) { return Read(&dest, sizeof(T)); }
+
+        template<class T>
+        size_t WriteStruct(const T& elem) { return Write(&elem, sizeof(T)); }
+
         uint64_t Size();
 
         bool IsOpen() const;
