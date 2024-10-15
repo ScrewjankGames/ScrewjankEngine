@@ -3,12 +3,14 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
+// Engine Headers
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/Utils.hpp>
 #include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
+
+// Shared Headers
+#include <ScrewjankShared/utils/MemUtils.hpp>
 
 using namespace sj;
 

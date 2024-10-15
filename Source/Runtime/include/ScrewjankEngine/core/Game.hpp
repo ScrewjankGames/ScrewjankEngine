@@ -9,6 +9,7 @@
 #include <ScrewjankEngine/core/Scene.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/core/ScriptFactory.hpp>
 
 namespace sj {
     // Forward declarations
@@ -23,7 +24,7 @@ namespace sj {
         /**
          * Runtime Configuration functions- fill these out in your game class
          */
-        virtual void RegisterScriptComponents() = 0;
+         virtual void RegisterScriptComponents(ScriptFactory& factory) = 0;
 
         /**
          * Constructor
@@ -51,6 +52,8 @@ namespace sj {
 
         static float GetDeltaTime();
 
+        const ScriptFactory& GetScriptFactory() { return s_scriptFactory; }
+
       protected:
         /**
          * Main game loop
@@ -60,6 +63,8 @@ namespace sj {
         void ShutDown();
 
       private:
+        static ScriptFactory s_scriptFactory;
+
         std::unique_ptr<Scene> m_Scene;
 
         Window* m_Window;
@@ -67,6 +72,7 @@ namespace sj {
 
         InputSystem m_InputSystem;
         CameraSystem m_CameraSystem;
+
 
         static uint64_t s_FrameCount;
         static float s_DeltaTime;

@@ -7,6 +7,8 @@
 
 namespace sj
 {
+    using TypeId = uint32_t;
+
     constexpr uint32_t FNV1a_32(std::string_view str, uint32_t seed = 0x811c9dc5)
     {
         for(char c : str)

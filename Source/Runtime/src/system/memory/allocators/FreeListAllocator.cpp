@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/memory/Utils.hpp>
+#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
 namespace sj {

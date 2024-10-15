@@ -17,13 +17,6 @@
 
 namespace sj
 {
-
-    CameraSystem::CameraSystem() 
-        : m_outputCameraMatrix {kIdentityTag}
-    {
-
-    }
-
     void CameraSystem::Process(Scene* scene, float deltaTime)
     {
         std::span<CameraComponent> components = scene->GetCameraComponents();

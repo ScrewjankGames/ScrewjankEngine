@@ -8,7 +8,7 @@
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
-#include <ScrewjankEngine/system/memory/Utils.hpp>
+#include <ScrewjankShared/utils/MemUtils.hpp>
 
 
 namespace sj {
@@ -51,6 +51,8 @@ namespace sj {
          * @param memory Pointer to the memory to free
          */
         virtual void Free(void* memory = nullptr) override;
+
+        static size_t GetBlockSize() { return kBlockSize; } 
 
         uintptr_t Begin() const override;
         uintptr_t End() const override;

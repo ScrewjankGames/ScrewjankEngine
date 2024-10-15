@@ -40,6 +40,8 @@ namespace sj
 
         bool IsOpen() const;
 
+        size_t CursorPos() const;
+
     private:
         FILE* m_File = NULL;
     };

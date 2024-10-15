@@ -34,15 +34,7 @@
             "name":"TestRoom",
             "translation": [0.0, 0.0, 0.0],
             "rotation": [0, 0, 0],
-            "scale": [1, 1, 1],
-    
-            "components": [
-                {
-                    "type":"MeshComponent",
-                    "model_path":"Data/Engine/viking_room.sj_mesh",
-                    "texture_path":"Data/Engine/viking_room.sj_mesh"
-                }
-            ]
+            "scale": [1, 1, 1]
         }
      ]
 }

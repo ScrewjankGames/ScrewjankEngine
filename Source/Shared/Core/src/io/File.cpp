@@ -83,4 +83,9 @@ namespace sj
     {
         return m_File != nullptr;
     }
+
+    size_t File::CursorPos() const
+    {
+        return ftell(m_File);
+    }
 }

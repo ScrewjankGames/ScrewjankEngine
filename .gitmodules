@@ -22,3 +22,6 @@
 [submodule "Dependencies/json"]
 	path = Dependencies/json
 	url = https://github.com/nlohmann/json.git
+[submodule "Dependencies/SG14"]
+	path = Dependencies/SG14
+	url = https://github.com/WG21-SG14/SG14.git

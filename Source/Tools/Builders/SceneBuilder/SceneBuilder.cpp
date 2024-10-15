@@ -17,6 +17,70 @@
 
 using namespace sj;
 
+struct ScriptComponentPrototype
+{
+    ScriptComponent component;
+    nlohmann::json userData;
+    size_t userDataSize;
+};
+
+template<class T>
+void WriteComponentListHeader(File& outputFile, const std::vector<std::any>& components)
+{
+    ComponentListHeader header {T::kTypeId, static_cast<uint32_t>(components.size())};
+    outputFile.WriteStruct(header);
+}
+
+template <class T>
+void WriteComponentList(File& outputFile, const std::vector<std::any>& components)
+{
+    WriteComponentListHeader<T>(outputFile, components);
+
+    for(const std::any& componentEntry : components)
+    {
+        T component = std::any_cast<T>(componentEntry);
+        outputFile.WriteStruct(component);
+    }
+}
+
+template<>
+void WriteComponentList<ScriptComponentPrototype>(File& outputFile,
+                                                  const std::vector<std::any>& components)
+{
+    WriteComponentListHeader<ScriptComponent>(outputFile, components);
+
+    const size_t componentsStart = outputFile.CursorPos();
+    const size_t componentsEnd = componentsStart + sizeof(ScriptComponent) * components.size();
+
+    int i = 0;
+    for(const std::any& componentEntry : components)
+    {
+        ScriptComponentPrototype proto =
+            std::any_cast<ScriptComponentPrototype>(componentEntry);
+
+        outputFile.WriteStruct(proto.component);
+
+        i++;
+    }
+
+    SJ_ASSERT(componentsEnd == outputFile.CursorPos(), "Unexpected number of bytes written");
+    for(const std::any& componentEntry : components)
+    {
+        ScriptComponentPrototype proto = std::any_cast<ScriptComponentPrototype>(componentEntry);
+        for(auto& member : proto.userData)
+        {
+            if(member.is_number_float())
+            {
+                outputFile.WriteStruct<float>(member.get<float>());
+            }
+            else
+            {
+                SJ_ASSERT(false, "Unable to serialize user data");
+            }
+        }
+    }
+}
+
 Mat44 ExtractTransformFromJson(const nlohmann::json& json)
 {
     std::array<float, 3> translationVec = json["translation"].get<std::array<float, 3>>();
@@ -46,17 +110,28 @@ ScriptComponentPrototype BuildScriptComponent(GameObjectId gameobjectId,
                                               const nlohmann::json& component)
 {
     ScriptComponentPrototype proto;
-    proto.ownerGameobjectId = gameobjectId;
-    proto.scriptTypeId = component["script_type"];
-    
+    proto.component.ownerGameobjectId = gameobjectId;
+    proto.component.scriptTypeId = StringHash(component["script_type"].get<std::string>().c_str()).AsInt();
+
     if(!component.contains("user_data"))
     {
         return proto;
     }
 
-    nlohmann::json userData = component["user_data"];
-    
-    // Serialize user data
+    proto.userData = component["user_data"];
+
+    proto.userDataSize = 0;
+    for(auto& member : proto.userData)
+    {
+        if(member.is_number_float())
+        {
+            proto.userDataSize += sizeof(float);
+        }
+        else
+        {
+            SJ_ASSERT(false, "Unkown type");
+        }
+    }
 
     return proto;
 }
@@ -76,7 +151,7 @@ void BuildComponent(GameObjectId gameobjectId,
     case CameraComponent::kTypeId:
         component = BuildCameraComponent(gameobjectId, componentJson);
         break;
-    case ScriptComponentPrototype::kTypeId:
+    case ScriptComponent::kTypeId:
         component = BuildScriptComponent(gameobjectId, componentJson);
         break;
     default:
@@ -120,23 +195,6 @@ void BuildGameObject(uint32_t sceneId,
     out_goPrototypes.emplace_back(prototype);
 }
 
-template<class T>
-void WriteComponentList(File& outputFile, const std::vector<std::any>& components)
-{
-    ComponentListHeader header 
-    {
-        T::kTypeId, 
-        static_cast<uint32_t>(components.size())
-    };
-    outputFile.WriteStruct(header);
-
-    for(const std::any& componentEntry : components)
-    {
-        T component = std::any_cast<T>(componentEntry);
-        outputFile.WriteStruct(component);
-    }
-}
-
 int main(int argc, char** argv)
 {
     const char* inputFilePath = argv[1];
@@ -148,7 +206,6 @@ int main(int argc, char** argv)
     ScenePrototype scenePrototype;
     scenePrototype.name = document["name"].get<std::string>().c_str();
     scenePrototype.memory = document["memory"].get<uint32_t>();
-
 
     std::vector<GameObjectPrototype> goPrototypes;
     std::map<uint32_t, ComponentList> components;
@@ -166,6 +223,11 @@ int main(int argc, char** argv)
 
     scenePrototype.numGameObjects = static_cast<uint32_t>(goPrototypes.size());
     scenePrototype.numComponentLists = static_cast<uint32_t>(components.size());
+    scenePrototype.scriptPoolSize = 0;
+    if(components.find(ScriptComponent::kTypeId) != components.end())
+    {
+        scenePrototype.scriptPoolSize = components[ScriptComponent::kTypeId].size();
+    }
 
     File outputFile;
     outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
@@ -182,6 +244,8 @@ int main(int argc, char** argv)
         case CameraComponent::kTypeId:
             WriteComponentList<CameraComponent>(outputFile, entry.second);
             break;
+        case ScriptComponent::kTypeId:
+            WriteComponentList<ScriptComponentPrototype>(outputFile, entry.second);
         default:
             break;
         }

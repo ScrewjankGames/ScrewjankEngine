@@ -52,6 +52,7 @@ target_include_directories(${PROJECT_NAME}
         ${ENGINE_DEPENDENCIES_DIR}/glfw/include
         ${ENGINE_DEPENDENCIES_DIR}/glm/
         ${ENGINE_DEPENDENCIES_DIR}/imgui/
+        ${ENGINE_DEPENDENCIES_DIR}/SG14/
         ${Vulkan_INCLUDE_DIRS}
     )
 

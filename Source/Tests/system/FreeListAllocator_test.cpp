@@ -3,11 +3,13 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+// Engine Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
-#include <ScrewjankEngine/system/memory/Utils.hpp>
+
+// Shared Headers
+#include <ScrewjankShared/utils/MemUtils.hpp>
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 using namespace sj;
 

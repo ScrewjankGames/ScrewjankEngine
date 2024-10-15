@@ -7,6 +7,7 @@
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/ScenePrototype.hpp>
+#include <ScrewjankShared/DataDefinitions/Components/ScriptComponent.hpp>
 
 // STD Includes
 #include <algorithm>
@@ -25,6 +26,21 @@ namespace sj
         out_list = dynamic_vector(buffer, header.numComponents);
     }
 
+    template<>
+    void LoadComponents<ScriptComponent>(File& sceneFile,
+                        const ComponentListHeader& header,
+                        IMemSpace* memorySpace,
+                        dynamic_vector<ScriptComponent>& out_list)
+    {
+        ScriptComponent* buffer = memorySpace->AllocateType<ScriptComponent>(header.numComponents);
+        sceneFile.Read(buffer, sizeof(ScriptComponent) * header.numComponents);
+        out_list = dynamic_vector(buffer, header.numComponents);
+
+
+
+    }
+
+
     Scene::Scene(const char* path)
     {
         if(path == nullptr)
@@ -39,6 +55,10 @@ namespace sj
         sceneFile.Read(&sceneProto, sizeof(sceneProto));
 
         m_memSpace.Init(MemorySystem::GetRootMemSpace(), sceneProto.memory, "Scene Heap");
+
+        size_t scriptPoolMemSize = sceneProto.scriptPoolSize * m_scriptPool.GetBlockSize();
+        void* sciptPoolMem = m_memSpace.Allocate(scriptPoolMemSize, m_scriptPool.GetBlockSize());
+        m_scriptPool.Init(scriptPoolMemSize, sciptPoolMem);
 
         {
             MemSpaceScope scope(&m_memSpace);
@@ -88,5 +108,10 @@ namespace sj
     std::span<CameraComponent> Scene::GetCameraComponents()
     {
         return std::span<CameraComponent>(m_cameraComponents.data(), m_cameraComponents.size());
+    }
+
+    const ScriptDatabase& Scene::GetScriptComponents()
+    {
+        return m_scriptComponents;
     }
 }

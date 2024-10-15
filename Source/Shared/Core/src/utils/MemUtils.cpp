@@ -1,9 +1,8 @@
 // Self Include
-#include <ScrewjankEngine/system/memory/Utils.hpp>
+#include <ScrewjankShared/utils/MemUtils.hpp>
 
-// Engine Includes
+// Shared Includes
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
 
 namespace sj
 {
@@ -17,7 +16,7 @@ namespace sj
 
         if(buffer_size < adjustment || buffer_size - adjustment < size)
         {
-            SJ_ENGINE_LOG_ERROR("Memory alignment cannot be satisfied in provided space.");
+            SJ_ASSERT(false, "Memory alignment cannot be satisfied in provided space.");
             return nullptr;
         }
 

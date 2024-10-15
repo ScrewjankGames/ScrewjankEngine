@@ -132,3 +132,4 @@ set_target_properties(nlohmann_json
     PROPERTIES 
         FOLDER Engine/Dependencies
 )
+

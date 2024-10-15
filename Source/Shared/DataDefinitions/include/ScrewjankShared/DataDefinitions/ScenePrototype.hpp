@@ -10,9 +10,10 @@ namespace sj
 {
     struct ScenePrototype
     {
-        StringHash name;
-        uint32_t memory;
-        uint32_t numGameObjects;
+        StringHash name; 
+        uint32_t memory; // Free ram allocated to this scene
+        uint32_t scriptPoolSize; // Number of elements needed in the script pool
+        uint32_t numGameObjects; 
         uint32_t numComponentLists;
     };
 

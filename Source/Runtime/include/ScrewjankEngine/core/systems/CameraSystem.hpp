@@ -13,13 +13,11 @@ namespace sj
     class CameraSystem
     {
     public:
-        CameraSystem();
-
         void Process(Scene* scene, float deltaTime);
 
         Mat44 GetOutputCameraMatrix() const;
 
     private:
-        Mat44 m_outputCameraMatrix;
+        Mat44 m_outputCameraMatrix = Mat44(kIdentityTag);
     };
 }

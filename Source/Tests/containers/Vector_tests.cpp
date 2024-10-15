@@ -95,6 +95,19 @@ namespace container_tests {
         ASSERT_TRUE(vec.empty());
     }
 
+    TEST(StaticVectorTests, SwappableTests)
+    {
+        static_vector<int, 3> a;
+        static_vector<int, 3> b;
+
+        ;
+
+        static_assert(std::is_swappable<decltype(a)>::value, "Not swappable?");
+        static_assert(noexcept(swap(a, b)), "");
+        static_assert(std::is_nothrow_swappable<decltype(a)>::value, "Not nothrow swappable?");
+    }
+
+
     TEST(VectorTests, ListInitializationTest)
     {
         dynamic_vector<int> vec1({1, 2, 3, 4, 5});
