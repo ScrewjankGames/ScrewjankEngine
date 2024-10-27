@@ -5,10 +5,15 @@
 
 namespace sj
 {
+    struct VectorOptions
+    {
+        bool kStableOperations = true;
+    };
+
     /**
      * Statically sized vector class
      */
-    template <class T, size_t N, class SizeType = uint32_t>
+    template <class T, size_t N, VectorOptions tOpts = VectorOptions {}, class SizeType = uint32_t>
     class static_vector
     {
     public:
@@ -18,57 +23,58 @@ namespace sj
         using reference = T&;
         using const_reference = const T&;
 
-        constexpr static_vector() = default;
+        constexpr static_vector() noexcept = default;
         constexpr ~static_vector() = default;
 
         static_vector(SizeType count) noexcept;
-        static_vector(SizeType count, const T& value);
+        static_vector(SizeType count, const T& value) noexcept;
 
-        static_vector(std::initializer_list<T> vals);
+        static_vector(std::initializer_list<T> vals) noexcept;
 
-        static_vector& operator=(std::initializer_list<T> vals);
-
-        /** Array Index Operator */
-        T& operator[](const SizeType index);
+        static_vector& operator=(std::initializer_list<T> vals) noexcept;
 
         /** Array Index Operator */
-        const T& operator[](const SizeType index) const;
+        auto&& operator[](this auto&& self, const SizeType index) noexcept; // -> (const?) T&
 
-        void push_back(const T& value);
-        void push_back(T&& value);
+        void push_back(const T& value) noexcept;
+        void push_back(T&& value) noexcept;
+
+        iterator insert(const_iterator pos, const T& value);
+        iterator insert(const_iterator pos, T&& value);
+
+        template <class... Args>
+        iterator emplace(const_iterator pos, Args&&... args) noexcept;
 
         template<class... Args>
-        void emplace_back(Args&&... args);
+        void emplace_back(Args&&... args) noexcept;
 
-        void erase_element(const T& value);
-        void erase(SizeType idx);
+        void erase_element(const T& value) noexcept;
+        void erase(SizeType idx) noexcept;
 
-        SizeType size() const;
+        SizeType size() const noexcept;
 
-        void resize(SizeType new_size);
-        void resize(SizeType new_size, const T& value);
+        void resize(SizeType new_size) noexcept;
+        void resize(SizeType new_size, const T& value) noexcept;
 
-        SizeType capacity() const;
+        SizeType capacity() const noexcept;
 
-        T* data();
+        T* data() noexcept;
 
-        void clear();
+        void clear() noexcept;
 
-        T* begin();
-        T* end();
+        auto&& begin(this auto&& self) noexcept; // -> const? T*
+        auto&& end(this auto&& self) noexcept;
 
-        [[nodiscard]] bool empty() const;
+        [[nodiscard]] bool empty() const noexcept;
 
     private:
-        friend void swap(static_vector<T, N, SizeType>& lhs, static_vector<T, N, SizeType>& rhs);
-
         T m_cArray[N] = {};
         SizeType m_Count = 0;
     };
 
-    template <class T, size_t N, class SizeType = uint32_t>
-    void swap(sj::static_vector<T, N, SizeType>& lhs,
-              sj::static_vector<T, N, SizeType>& rhs) noexcept
+    template <class T, size_t N, VectorOptions tOpts, class SizeType = uint32_t>
+    void swap(sj::static_vector<T, N, tOpts, SizeType>& lhs,
+              sj::static_vector<T, N, tOpts, SizeType>& rhs) noexcept
     {
         std::swap(lhs.m_cArray, rhs.m_cArray, std::nothrow_t);
         std::swap(lhs.m_Count, rhs.m_Count, std::nothrow_t);

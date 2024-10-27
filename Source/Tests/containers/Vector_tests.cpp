@@ -107,6 +107,26 @@ namespace container_tests {
         static_assert(std::is_nothrow_swappable<decltype(a)>::value, "Not nothrow swappable?");
     }
 
+    TEST(StaticVectorTests, EmplaceTests)
+    {
+        static_vector<int, 4> testVec = {0, 2, 3};
+        static_vector<int, 4, VectorOptions {.kStableOperations = false}> testVec2 = {0, 2, 3};
+
+        testVec.emplace(&testVec[1], 1);
+        ASSERT_EQ(testVec.size(), 4);
+        for(int i = 0; i < testVec.size(); i++)
+        {
+            ASSERT_EQ(i, testVec[i]);
+        }
+
+        testVec2.emplace(&testVec2[1], 1);
+
+        ASSERT_EQ(testVec2.size(), 4);
+        ASSERT_EQ(testVec2[0], 0);
+        ASSERT_EQ(testVec2[1], 1);
+        ASSERT_EQ(testVec2[2], 3);
+        ASSERT_EQ(testVec2[3], 1);
+    }
 
     TEST(VectorTests, ListInitializationTest)
     {

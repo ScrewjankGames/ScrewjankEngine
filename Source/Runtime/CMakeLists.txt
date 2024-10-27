@@ -48,11 +48,11 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${ENGINE_DEPENDENCIES_DIR}/spdlog/include
+        ${ENGINE_DEPENDENCIES_DIR}/SG14/
     PRIVATE
         ${ENGINE_DEPENDENCIES_DIR}/glfw/include
         ${ENGINE_DEPENDENCIES_DIR}/glm/
         ${ENGINE_DEPENDENCIES_DIR}/imgui/
-        ${ENGINE_DEPENDENCIES_DIR}/SG14/
         ${Vulkan_INCLUDE_DIRS}
     )
 
