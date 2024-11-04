@@ -51,9 +51,6 @@ set(CMAKE_CONFIGURATION_TYPES
 
 set(CMAKE_CXX_FLAGS_GOLD, CMAKE_CXX_FLAGS_RELEASE)
 set(CMAKE_C_FLAGS_GOLD, CMAKE_C_FLAGS_RELEASE)
-add_compile_definitions($<$<CONFIG:Debug>:SJ_DEBUG>)
-add_compile_definitions($<$<CONFIG:Release>:SJ_DEBUG>)
-add_compile_definitions($<$<CONFIG:Gold>:SJ_GOLD>)
 
 ################################################################################
 # Setup symlinks
