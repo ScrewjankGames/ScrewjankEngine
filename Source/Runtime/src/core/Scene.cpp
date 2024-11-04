@@ -3,6 +3,7 @@
 
 // Engine Includes
 #include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/core/Game.hpp>
 
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
@@ -25,21 +26,6 @@ namespace sj
 
         out_list = dynamic_vector(buffer, header.numComponents);
     }
-
-    template<>
-    void LoadComponents<ScriptComponent>(File& sceneFile,
-                        const ComponentListHeader& header,
-                        IMemSpace* memorySpace,
-                        dynamic_vector<ScriptComponent>& out_list)
-    {
-        ScriptComponent* buffer = memorySpace->AllocateType<ScriptComponent>(header.numComponents);
-        sceneFile.Read(buffer, sizeof(ScriptComponent) * header.numComponents);
-        out_list = dynamic_vector(buffer, header.numComponents);
-
-
-
-    }
-
 
     Scene::Scene(const char* path)
     {
@@ -72,6 +58,8 @@ namespace sj
                            sceneProto.numGameObjects);
 
 
+            const ScriptFactory& scriptFactory = Game::GetScriptFactory();
+
             for(uint32_t i = 0; i < sceneProto.numComponentLists; i++)
             {
                 ComponentListHeader header;
@@ -81,6 +69,20 @@ namespace sj
                 {
                 case CameraComponent::kTypeId:
                     LoadComponents(sceneFile, header, &m_memSpace, m_cameraComponents);
+                    break;
+                case ScriptComponent::kTypeId:
+                    LoadComponents(sceneFile, header, &m_memSpace, m_scriptComponents);
+
+                    for(ScriptComponent& component : m_scriptComponents)
+                    {
+                        const ScriptFactoryFn* createFn =
+                            scriptFactory.GetScriptCreateFn(component.scriptTypeId);
+
+                        SJ_ASSERT(createFn, "Failed to look up script creatue function");
+
+                        component.userScript = (*createFn)(&m_scriptPool);
+                    }
+
                     break;
                 default:
                     SJ_ASSERT(false, "Can't deserialize component type %d", header.componentTypeId);
@@ -110,7 +112,7 @@ namespace sj
         return std::span<CameraComponent>(m_cameraComponents.data(), m_cameraComponents.size());
     }
 
-    const ScriptDatabase& Scene::GetScriptComponents()
+    std::span<ScriptComponent> Scene::GetScriptComponents()
     {
         return m_scriptComponents;
     }

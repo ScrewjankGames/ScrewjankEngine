@@ -52,32 +52,12 @@ void WriteComponentList<ScriptComponentPrototype>(File& outputFile,
     const size_t componentsStart = outputFile.CursorPos();
     const size_t componentsEnd = componentsStart + sizeof(ScriptComponent) * components.size();
 
-    int i = 0;
     for(const std::any& componentEntry : components)
     {
         ScriptComponentPrototype proto =
             std::any_cast<ScriptComponentPrototype>(componentEntry);
 
         outputFile.WriteStruct(proto.component);
-
-        i++;
-    }
-
-    SJ_ASSERT(componentsEnd == outputFile.CursorPos(), "Unexpected number of bytes written");
-    for(const std::any& componentEntry : components)
-    {
-        ScriptComponentPrototype proto = std::any_cast<ScriptComponentPrototype>(componentEntry);
-        for(auto& member : proto.userData)
-        {
-            if(member.is_number_float())
-            {
-                outputFile.WriteStruct<float>(member.get<float>());
-            }
-            else
-            {
-                SJ_ASSERT(false, "Unable to serialize user data");
-            }
-        }
     }
 }
 
@@ -112,27 +92,6 @@ ScriptComponentPrototype BuildScriptComponent(GameObjectId gameobjectId,
     ScriptComponentPrototype proto;
     proto.component.ownerGameobjectId = gameobjectId;
     proto.component.scriptTypeId = StringHash(component["script_type"].get<std::string>().c_str()).AsInt();
-
-    if(!component.contains("user_data"))
-    {
-        return proto;
-    }
-
-    proto.userData = component["user_data"];
-
-    proto.userDataSize = 0;
-    for(auto& member : proto.userData)
-    {
-        if(member.is_number_float())
-        {
-            proto.userDataSize += sizeof(float);
-        }
-        else
-        {
-            SJ_ASSERT(false, "Unkown type");
-        }
-    }
-
     return proto;
 }
 
@@ -226,7 +185,7 @@ int main(int argc, char** argv)
     scenePrototype.scriptPoolSize = 0;
     if(components.find(ScriptComponent::kTypeId) != components.end())
     {
-        scenePrototype.scriptPoolSize = components[ScriptComponent::kTypeId].size();
+        scenePrototype.scriptPoolSize = static_cast<uint32_t>(components[ScriptComponent::kTypeId].size());
     }
 
     File outputFile;

@@ -89,9 +89,12 @@ namespace sj
 
         if constexpr(tOpts.kStableOperations)
         {
-            for(SizeType i = m_Count - 1; i >= idx; i--)
+            if(m_Count > 0)
             {
-                new(&m_cArray[i + 1]) T(std::move(m_cArray[i]));
+                for(SizeType i = m_Count - 1; i >= idx; i--)
+                {
+                    new(&m_cArray[i + 1]) T(std::move(m_cArray[i]));
+                }
             }
         }
         else

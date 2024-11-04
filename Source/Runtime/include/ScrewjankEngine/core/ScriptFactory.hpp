@@ -2,6 +2,7 @@
 
 // Engine Headers
 #include <ScrewjankEngine/containers/UnorderedMap.hpp>
+#include <ScrewjankEngine/system/memory/Allocator.hpp>
 
 // Library Headers
 #include <SG14/inplace_function.h>
@@ -15,14 +16,21 @@ namespace sj
 
     class ScriptFactory
     {
+    public:
         void Register(TypeId id, ScriptFactoryFn fn)
         {
             m_callbacks.emplace(id, fn);
         }
 
-        ScriptFactoryFn GetScriptCreateFn(TypeId id)
+
+        const ScriptFactoryFn* GetScriptCreateFn(TypeId id) const
         {
-            return m_callbacks[id];
+            const auto& it = m_callbacks.find(id);
+
+            if(it == m_callbacks.end())
+                return nullptr;
+            else
+                return &(it->second);
         }
 
     private:

@@ -21,7 +21,6 @@ namespace sj
     // Forward Declarations
     class GameObject; 
     
-    using ScriptDatabase = static_unordered_map<TypeId, dynamic_vector<std::unique_ptr<IScriptComponent>>, 64>;
 
     // Collection of all game objects and components.
     // Systems will reach in to get component lists
@@ -34,16 +33,15 @@ namespace sj
         GameObject* GetGameObject(const GameObjectId& goId) const;
 
         std::span<CameraComponent> GetCameraComponents();
-
-        const ScriptDatabase& GetScriptComponents();
+        std::span<ScriptComponent> GetScriptComponents();
 
     private:
         MemSpace<sj::FreeListAllocator> m_memSpace;
 
         dynamic_vector<GameObject> m_gameObjects;
         dynamic_vector<CameraComponent> m_cameraComponents;
+        dynamic_vector<ScriptComponent> m_scriptComponents;
 
         PoolAllocator<64> m_scriptPool;
-        ScriptDatabase m_scriptComponents;
     };
 }

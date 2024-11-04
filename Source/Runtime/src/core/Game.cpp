@@ -19,6 +19,7 @@ namespace sj {
 
     uint64_t Game::s_FrameCount = 0;
     float Game::s_DeltaTime = 0.0f;
+    ScriptFactory Game::s_scriptFactory;
 
     void Game::LoadScene(const char* path)
     {
@@ -46,6 +47,8 @@ namespace sj {
 
     void Game::Start()
     {
+        RegisterScriptComponents(s_scriptFactory);
+
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -81,6 +84,7 @@ namespace sj {
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();
+            m_ScriptSystem.Process(m_Scene.get(), s_DeltaTime);
             m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
 
             if constexpr(g_IsDebugBuild)

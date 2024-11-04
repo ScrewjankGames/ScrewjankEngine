@@ -6,6 +6,7 @@
 // Engine Headers
 #include <ScrewjankEngine/core/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
+#include <ScrewjankEngine/core/systems/ScriptSystem.hpp>
 #include <ScrewjankEngine/core/Scene.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
@@ -52,7 +53,7 @@ namespace sj {
 
         static float GetDeltaTime();
 
-        const ScriptFactory& GetScriptFactory() { return s_scriptFactory; }
+        static const ScriptFactory& GetScriptFactory() { return s_scriptFactory; }
 
       protected:
         /**
@@ -72,7 +73,7 @@ namespace sj {
 
         InputSystem m_InputSystem;
         CameraSystem m_CameraSystem;
-
+        ScriptSystem m_ScriptSystem;
 
         static uint64_t s_FrameCount;
         static float s_DeltaTime;

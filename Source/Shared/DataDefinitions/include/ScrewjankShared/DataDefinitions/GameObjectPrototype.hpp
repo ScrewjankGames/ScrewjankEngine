@@ -3,6 +3,7 @@
 #include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/string/StringHash.hpp>
 
+#include<limits>
 
 namespace sj
 {
