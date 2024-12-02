@@ -333,7 +333,7 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, CountTest)
     {
-        int seed = 324123871324890;
+        int seed = 1324890;
         std::srand(seed);
 
         dynamic_unordered_set<std::string> testset(MemorySystem::GetRootMemSpace());
@@ -374,7 +374,7 @@ namespace container_tests {
         set.insert("Foo");
         set.insert("Bar");
 
-        int seed = 324123871324890;
+        int seed = 1324890;
         std::srand(seed);
 
         char buff[256];

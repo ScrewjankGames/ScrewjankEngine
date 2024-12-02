@@ -60,6 +60,9 @@ namespace sj
 
             const ScriptFactory& scriptFactory = Game::GetScriptFactory();
 
+            constexpr size_t kMaxUserDataSize = 128;
+            std::array<uint8_t, kMaxUserDataSize> userDataBuffer;
+
             for(uint32_t i = 0; i < sceneProto.numComponentLists; i++)
             {
                 ComponentListHeader header;
@@ -81,6 +84,13 @@ namespace sj
                         SJ_ASSERT(createFn, "Failed to look up script creatue function");
 
                         component.userScript = (*createFn)(&m_scriptPool);
+
+                        SJ_ASSERT(component.userDataSize < kMaxUserDataSize,
+                                  "User data too big to deserialize");
+
+                        sceneFile.Read(userDataBuffer.data(), component.userDataSize);
+                        component.userScript->Deserialize(userDataBuffer.data(),
+                                                          component.userDataSize);
                     }
 
                     break;
@@ -96,6 +106,12 @@ namespace sj
 
     Scene::~Scene()
 	{
+        for(ScriptComponent& component : m_scriptComponents)
+        {
+            m_scriptPool.Free(component.userScript);
+        }
+
+        m_memSpace.Free(reinterpret_cast<void*>(m_scriptPool.Begin()));
     }
 
     GameObject* Scene::GetGameObject(const GameObjectId& goId) const

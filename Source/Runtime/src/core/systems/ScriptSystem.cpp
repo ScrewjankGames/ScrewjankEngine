@@ -12,7 +12,8 @@ namespace sj
 		
 		for(const ScriptComponent& script : scripts)
 		{
-            script.userScript->Process(deltaTime);
+            GameObject* go = scene->GetGameObject(script.ownerGameobjectId);
+            script.userScript->Process(go, deltaTime);
 		}
 	}
 }

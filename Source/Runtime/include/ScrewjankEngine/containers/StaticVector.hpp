@@ -76,8 +76,8 @@ namespace sj
     void swap(sj::static_vector<T, N, tOpts, SizeType>& lhs,
               sj::static_vector<T, N, tOpts, SizeType>& rhs) noexcept
     {
-        std::swap(lhs.m_cArray, rhs.m_cArray, std::nothrow_t);
-        std::swap(lhs.m_Count, rhs.m_Count, std::nothrow_t);
+        std::swap(lhs.m_cArray, rhs.m_cArray, std::nothrow);
+        std::swap(lhs.m_Count, rhs.m_Count, std::nothrow);
     }
 } // namespace sj
 

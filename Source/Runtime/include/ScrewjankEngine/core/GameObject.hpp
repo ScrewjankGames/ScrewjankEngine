@@ -19,6 +19,8 @@ namespace sj
         GameObjectId GetGoId() const { return m_id; }
         
         const Mat44& GetWorldSpaceTransform() const { return m_transform; }
+        void SetWorldSpaceTransform(const Mat44& transform) { m_transform = transform; }
+        void SetWorldSpacePosition(const Vec4& pos) { m_transform[3] = pos; }
 
     private:
         GameObjectId m_id;

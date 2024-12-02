@@ -17,11 +17,12 @@
 
 using namespace sj;
 
+using Json = nlohmann::ordered_json;
+
 struct ScriptComponentPrototype
 {
     ScriptComponent component;
-    nlohmann::json userData;
-    size_t userDataSize;
+    Json userData;
 };
 
 template<class T>
@@ -43,6 +44,42 @@ void WriteComponentList(File& outputFile, const std::vector<std::any>& component
     }
 }
 
+size_t ComputeUserDataSize(Json& userData)
+{
+    size_t out_size = 0;
+
+    // TODO: Padding between members
+    for(const auto& member : userData)
+    {
+        if(member.is_number_float())
+        {
+            out_size += sizeof(float);
+        }
+        else
+        {
+            SJ_ASSERT(false, "User data type not implemented!");
+        }
+    }
+
+    return out_size;
+}
+
+void WriteUserData(File& outputFile, Json& userData)
+{
+    for(const auto& member : userData)
+    {
+        if(member.is_number_float())
+        {
+            float val = member.get<float>();
+            outputFile.WriteStruct<float>(val);
+        }
+        else
+        {
+            SJ_ASSERT(false, "User data type not implemented!");
+        }
+    }
+}
+
 template<>
 void WriteComponentList<ScriptComponentPrototype>(File& outputFile,
                                                   const std::vector<std::any>& components)
@@ -59,9 +96,17 @@ void WriteComponentList<ScriptComponentPrototype>(File& outputFile,
 
         outputFile.WriteStruct(proto.component);
     }
+
+    // Write User Data following component list
+    for(const std::any& componentEntry : components)
+    {
+        ScriptComponentPrototype proto = std::any_cast<ScriptComponentPrototype>(componentEntry);
+        WriteUserData(outputFile, proto.userData);
+    }
+
 }
 
-Mat44 ExtractTransformFromJson(const nlohmann::json& json)
+Mat44 ExtractTransformFromJson(const Json& json)
 {
     std::array<float, 3> translationVec = json["translation"].get<std::array<float, 3>>();
     Vec4 t(translationVec[0], translationVec[1], translationVec[2], 1.0f);
@@ -77,7 +122,7 @@ Mat44 ExtractTransformFromJson(const nlohmann::json& json)
 
 using ComponentList = std::vector<std::any>;
 
-CameraComponent BuildCameraComponent(GameObjectId gameobjectId, const nlohmann::json& component)
+CameraComponent BuildCameraComponent(GameObjectId gameobjectId, const Json& component)
 {
     return {gameobjectId,
             ExtractTransformFromJson(component),
@@ -87,16 +132,23 @@ CameraComponent BuildCameraComponent(GameObjectId gameobjectId, const nlohmann::
 }
 
 ScriptComponentPrototype BuildScriptComponent(GameObjectId gameobjectId,
-                                              const nlohmann::json& component)
+                                              const Json& component)
 {
     ScriptComponentPrototype proto;
     proto.component.ownerGameobjectId = gameobjectId;
     proto.component.scriptTypeId = StringHash(component["script_type"].get<std::string>().c_str()).AsInt();
+
+    if(component.contains("user_data"))
+    {
+        proto.userData = component["user_data"];
+        proto.component.userDataSize = static_cast<uint32_t>(ComputeUserDataSize(proto.userData));
+    }
+
     return proto;
 }
 
 void BuildComponent(GameObjectId gameobjectId, 
-                    const nlohmann::json& componentJson,
+                    const Json& componentJson,
                     std::map<uint32_t, ComponentList>& out_components)
 {
     std::string componentType = componentJson["type"];
@@ -133,7 +185,7 @@ void BuildComponent(GameObjectId gameobjectId,
 }
 
 void BuildGameObject(uint32_t sceneId, 
-                     const nlohmann::json& go,
+                     const Json& go,
                      std::vector<GameObjectPrototype>& out_goPrototypes,
                      std::map<uint32_t, ComponentList>& out_components)
 {
@@ -145,7 +197,7 @@ void BuildGameObject(uint32_t sceneId,
 
     if(go.contains("components"))
     {
-        for(const nlohmann::json& component : go["components"])
+        for(const Json& component : go["components"])
         {
             BuildComponent(prototype.id, component, out_components);
         }
@@ -160,7 +212,7 @@ int main(int argc, char** argv)
     const char* outputFilePath = argv[2];
 
     std::ifstream stream(inputFilePath);
-    nlohmann::json document = nlohmann::json::parse(stream);
+    nlohmann::ordered_json document = nlohmann::ordered_json::parse(stream);
 
     ScenePrototype scenePrototype;
     scenePrototype.name = document["name"].get<std::string>().c_str();
@@ -173,8 +225,8 @@ int main(int argc, char** argv)
         auto goList = document["game_objects"];
         SJ_ASSERT(goList.is_array(), "Expected array of game objects");
 
-        nlohmann::json gameobjects = document["game_objects"];
-        for(const nlohmann::json& go : gameobjects)
+        Json gameobjects = document["game_objects"];
+        for(const Json& go : gameobjects)
         {
             BuildGameObject(scenePrototype.name.AsInt(), go, goPrototypes, components);
         }
