@@ -125,7 +125,7 @@ namespace container_tests {
         ASSERT_EQ(testVec2[0], 0);
         ASSERT_EQ(testVec2[1], 1);
         ASSERT_EQ(testVec2[2], 3);
-        ASSERT_EQ(testVec2[3], 1);
+        ASSERT_EQ(testVec2[3], 2);
     }
 
     TEST(VectorTests, ListInitializationTest)

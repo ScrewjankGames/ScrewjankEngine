@@ -96,6 +96,8 @@ namespace sj
                     new(&m_cArray[i + 1]) T(std::move(m_cArray[i]));
                 }
             }
+
+            m_Count++;
         }
         else
         {
@@ -103,7 +105,6 @@ namespace sj
         }
 
         new(&m_cArray[idx]) T(std::forward<Args>(args)...);
-        m_Count++;
         return &m_cArray[idx];
     }
 
@@ -215,7 +216,7 @@ namespace sj
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
     inline decltype(auto) static_vector<T, N, tOpts, SizeType>::end(this auto&& self) noexcept
     {
-        return std::end(self.m_cArray);
+        return self.m_cArray + self.m_Count;
     }
 
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
