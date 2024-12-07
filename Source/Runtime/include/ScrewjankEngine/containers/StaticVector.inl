@@ -207,15 +207,15 @@ namespace sj
     }
 
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
-    inline auto&& static_vector<T, N, tOpts, SizeType>::begin(this auto&& self) noexcept
+    inline decltype(auto) static_vector<T, N, tOpts, SizeType>::begin(this auto&& self) noexcept
     {
-        return self.m_cArray;
+        return std::begin(self.m_cArray);
     }
 
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
-    inline auto&& static_vector<T, N, tOpts, SizeType>::end(this auto&& self) noexcept
+    inline decltype(auto) static_vector<T, N, tOpts, SizeType>::end(this auto&& self) noexcept
     {
-        return self.m_cArray + self.m_Count;
+        return std::end(self.m_cArray);
     }
 
     template <class T, size_t N, VectorOptions tOpts, class SizeType>

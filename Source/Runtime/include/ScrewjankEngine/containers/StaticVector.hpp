@@ -62,8 +62,8 @@ namespace sj
 
         void clear() noexcept;
 
-        auto&& begin(this auto&& self) noexcept; // -> const? T*
-        auto&& end(this auto&& self) noexcept;
+        decltype(auto) begin(this auto&& self) noexcept; // -> const? T*
+        decltype(auto) end(this auto&& self) noexcept;
 
         [[nodiscard]] bool empty() const noexcept;
 
