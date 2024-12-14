@@ -9,7 +9,7 @@ namespace sj
 {
     struct CameraComponent
     {
-        static constexpr uint32_t kTypeId = StringHash("CameraComponent").AsInt();
+        SJ_STRUCT_TYPE_ID(CameraComponent);
 
         GameObjectId ownerGameobjectId;
 

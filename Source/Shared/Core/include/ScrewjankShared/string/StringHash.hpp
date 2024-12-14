@@ -47,6 +47,9 @@ namespace sj
     }
 }
 
+#define SJ_STRUCT_TYPE_ID(type)                                                                    \
+    static constexpr sj::TypeId kTypeId = sj::StringHash(#type).AsInt();
+
 namespace std
 {
     template <>
