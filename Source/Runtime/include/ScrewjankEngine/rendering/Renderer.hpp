@@ -53,23 +53,6 @@ namespace sj {
             Mat44 projection;
         };
 
-        //std::array<DummyVertex, 8> m_dummyVertices = {
-        //    DummyVertex {Vec3 {-0.5f, -0.5f, 0.0f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
-        //    DummyVertex {Vec3 {0.5f, -0.5f, 0.0f}, Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
-        //    DummyVertex {Vec3 {0.5f, 0.5f, 0.0f}, Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
-        //    DummyVertex {Vec3 {-0.5f, 0.5f, 0.0f}, Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}},
-
-        //    DummyVertex {Vec3 {-0.5f, -0.5f, -0.5f}, Vec3 {1.0f, 0.0f, 0.0f}, Vec2 {0.0f, 1.0f}},
-        //    DummyVertex {Vec3 {0.5f, -0.5f, -0.5f}, Vec3 {0.0f, 1.0f, 0.0f}, Vec2 {1.0f, 1.0f}},
-        //    DummyVertex {Vec3 {0.5f, 0.5f, -0.5f}, Vec3 {0.0f, 0.0f, 1.0f}, Vec2 {1.0f, 0.0f}},
-        //    DummyVertex {Vec3 {-0.5f, 0.5f, -0.5f}, Vec3 {1.0f, 1.0f, 1.0f}, Vec2 {0.0f, 0.0f}}
-        //};
-
-        //std::array<uint16_t, 12> m_dummyIndices = {
-        //    0, 1, 2, 2, 3, 0, 
-        //    4, 5, 6, 6, 7, 4
-        //};
-
       private:
         Renderer() = default;
         ~Renderer() = default;
