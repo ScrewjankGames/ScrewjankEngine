@@ -1,6 +1,6 @@
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
-#include <ScrewjankShared/IO/File.hpp>
+#include <ScrewjankShared/io/File.hpp>
 
 // Library Includes
 #define STB_IMAGE_IMPLEMENTATION

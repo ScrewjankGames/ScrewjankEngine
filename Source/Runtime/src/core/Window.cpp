@@ -7,7 +7,7 @@
 //
 //// Platform specific headers
 //#ifdef SJ_PLATFORM_WINDOWS
-//    #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
+//    #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
 //#elif SJ_PLATFORM_LINUX
 ////#include <ScrewjankEngine/platform/Linux/LinuxWindow.hpp>
 //    #error Linux platform unsupported
@@ -26,9 +26,9 @@
 //
 //        if constexpr(g_Platform == Platform::Windows)
 //        {
-//            static WindowsWindow* window = New<WindowsWindow>();
+//            static GLFW_Window* window = New<GLFW_Window>();
 //
-//            WindowsWindow* window = New<WindowsWindow>();
+//            GLFW_Window* window = New<GLFW_Window>();
 //            return UniquePtr<Window>(MemorySystem::GetRootMemSpace(), window);
 //        }
 //        else if constexpr(g_Platform == Platform::Linux)

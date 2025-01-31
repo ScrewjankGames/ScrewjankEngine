@@ -1,5 +1,5 @@
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
-#ifdef SJ_PLATFORM_WINDOWS
+#if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
 // Library Headers
 #ifdef SJ_VULKAN_SUPPORT
@@ -12,7 +12,7 @@
 
 
 // Engine Headers
-#include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
+#include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
 
 // STD Headers
 

@@ -11,7 +11,12 @@ option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
 
-add_subdirectory(GLFW)
+if(UNIX)
+option(GLFW_BUILD_X11 OFF) 
+option(GLFW_BUILD_WAYLAND ON)
+endif(UNIX)
+
+add_subdirectory(glfw)
 
 set_target_properties(glfw 
     PROPERTIES 
@@ -79,7 +84,9 @@ set(IMGUI_BACKENDS
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
 )
 
+
 add_library("imgui" STATIC ${IMGUI_SOURCES}  ${IMGUI_BACKENDS})
+target_compile_definitions("imgui" PUBLIC GLFW_INCLUDE_VULKAN)
 target_include_directories("imgui" 
     PUBLIC 
     ${IMGUI_PATH}

@@ -1,0 +1,11 @@
+/// ${BuildTool_Generated_File_Message}
+
+
+namespace build_tool::config
+{
+    inline constexpr const char* EngineAssetDir = "${Engine_Asset_Dir}";
+    inline constexpr const char* GameAssetDir = "${Game_Asset_Dir}";
+    inline constexpr const char* EngineDataDir =  "${Game_Built_Data_Dir}Engine/";
+    inline constexpr const char* GameDataDir =  "${Game_Built_Data_Dir}";
+    inline constexpr const char* BuildersBinDir = "${Binaries_Directory}/Tools/Builders/";
+}

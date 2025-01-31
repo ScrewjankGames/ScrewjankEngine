@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Engine Headers
-#include <ScrewjankShared/String/StringHash.hpp>
+#include <ScrewjankShared/string/StringHash.hpp>
 
 using namespace sj;
 

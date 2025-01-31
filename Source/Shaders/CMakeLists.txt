@@ -36,19 +36,8 @@ file(GLOB GameShaders
     ${Game_Shader_Source_Dir}/*.rmiss
     )
 
-add_custom_command(
-	COMMAND
-		${CMAKE_COMMAND} -E make_directory ${Game_Shader_Built_Data_Dir}
-	OUTPUT ${Game_Shader_Built_Data_Dir}
-	COMMENT "Creating ${Game_Shader_Built_Data_Dir}"
-)
-
-add_custom_command(
-	COMMAND
-		${CMAKE_COMMAND} -E make_directory ${Engine_Shader_Built_Data_Dir}
-	OUTPUT ${Engine_Shader_Built_Data_Dir}
-	COMMENT "Creating ${Engine_Shader_Built_Data_Dir}"
-)
+file(MAKE_DIRECTORY ${Game_Shader_Built_Data_Dir})
+file(MAKE_DIRECTORY ${Engine_Shader_Built_Data_Dir})
 
 ## fucking why can't I make cmake functions work
 foreach(source IN LISTS EngineShaders)

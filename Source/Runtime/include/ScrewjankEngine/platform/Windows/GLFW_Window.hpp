@@ -1,7 +1,7 @@
 #pragma once
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
-#ifdef SJ_PLATFORM_WINDOWS
+#if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 // STD Headers
 
 // Library Headers

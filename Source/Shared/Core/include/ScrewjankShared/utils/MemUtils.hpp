@@ -2,6 +2,7 @@
 
 // STD Headers
 #include <cstddef>
+#include <cstdint>
 
 namespace sj
 {

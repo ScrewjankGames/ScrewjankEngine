@@ -9,7 +9,7 @@ option(OPT_Engine_Build_Sample "Build the Engine's sample project" ON)
 # Project Settings
 ################################################################################
 project(ScrewjankEngine C CXX)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(ScrewjankEngine_VERSION_MAJOR 0 CACHE STRING "major version" FORCE)
 set(ScrewjankEngine_VERSION_MINOR 1 CACHE STRING "minor version" FORCE)

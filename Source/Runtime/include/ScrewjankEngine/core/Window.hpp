@@ -1,6 +1,7 @@
 #pragma once
 
 // STD Headers
+#include <cstdint>
 
 // Library Headers
 
@@ -21,7 +22,7 @@ namespace sj
 
 // Platform specific implementations
 #ifdef SJ_PLATFORM_WINDOWS
-    #include <ScrewjankEngine/platform/Windows/WindowsWindow.hpp>
+    #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
 #elif SJ_PLATFORM_LINUX
 //#include <ScrewjankEngine/platform/Linux/LinuxWindow.hpp>
     #error Linux platform unsupported

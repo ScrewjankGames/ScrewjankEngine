@@ -1,5 +1,5 @@
 // Shared Includes
-#include <ScrewjankShared/IO/File.hpp>
+#include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
@@ -10,6 +10,7 @@
 #include <new>
 #include <cstdio>
 #include <unordered_map>
+#include <limits>
 
 using namespace sj;
 

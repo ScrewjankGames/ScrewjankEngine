@@ -1,8 +1,11 @@
 // Parent
-#include <ScrewjankShared/IO/File.hpp>
+#include <ScrewjankShared/io/File.hpp>
 
 // Screwjank Headers
 #include <ScrewjankShared/utils/Assert.hpp>
+
+// STD Headers
+#include <cstdio>
 
 namespace sj
 {
@@ -33,7 +36,7 @@ namespace sj
             }
         }();
 
-        fopen_s(&m_File, path, modeString);
+        m_File = std::fopen(path, modeString);
        
         return m_File != nullptr;
     }
