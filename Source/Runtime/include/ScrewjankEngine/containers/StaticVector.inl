@@ -1,3 +1,5 @@
+#pragma once
+
 // Parent Include
 #include <ScrewjankEngine/containers/StaticVector.hpp>
 
@@ -210,7 +212,7 @@ namespace sj
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
     inline decltype(auto) static_vector<T, N, tOpts, SizeType>::begin(this auto&& self) noexcept
     {
-        return std::begin(self.m_cArray);
+        return &self.m_cArray[0];
     }
 
     template <class T, size_t N, VectorOptions tOpts, class SizeType>

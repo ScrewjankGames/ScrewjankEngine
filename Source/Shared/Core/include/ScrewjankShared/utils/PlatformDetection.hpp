@@ -61,12 +61,11 @@ namespace sj {
 #endif // !SJ_GOLD
 
     
-#ifndef SJ_DEBUG
-    // Debug and Release builds are considered debug builds.
-    constexpr bool g_IsDebugBuild = false;
-#else
-    // Gold builds have all debug functionalities removed.
+#ifndef SJ_GOLD
     constexpr bool g_IsDebugBuild = true;
+#else
+    // Gold builds have all debug/dev functionalities removed.
+    constexpr bool g_IsDebugBuild = false;
 #endif
 
 

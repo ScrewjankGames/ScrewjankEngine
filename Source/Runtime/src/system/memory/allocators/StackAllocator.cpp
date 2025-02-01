@@ -2,6 +2,7 @@
 #include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
 
 // STD Headers
+#include <algorithm>
 
 // Library Headers
 

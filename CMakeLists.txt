@@ -45,12 +45,12 @@ set(SAMPLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SampleProject)
 set(CMAKE_CONFIGURATION_TYPES
     "Debug"
     "Release"
-    "Gold"
+    "DebugGold"
+    "ReleaseGold"
     CACHE STRING "" FORCE
 )
-
-set(CMAKE_CXX_FLAGS_GOLD, CMAKE_CXX_FLAGS_RELEASE)
-set(CMAKE_C_FLAGS_GOLD, CMAKE_C_FLAGS_RELEASE)
+set(CMAKE_CXX_FLAGS_ReleaseGold, CMAKE_CXX_FLAGS_RELEASE)
+set(CMAKE_C_FLAGS_ReleaseGold, CMAKE_C_FLAGS_RELEASE)
 
 ################################################################################
 # Setup symlinks

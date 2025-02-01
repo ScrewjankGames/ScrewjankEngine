@@ -1,5 +1,6 @@
 #pragma once
 // STD Headers
+#include <algorithm>
 #include <utility>
 
 // Library Headers

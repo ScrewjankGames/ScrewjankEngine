@@ -16,20 +16,20 @@ option(GLFW_BUILD_X11 OFF)
 option(GLFW_BUILD_WAYLAND ON)
 endif(UNIX)
 
-add_subdirectory(glfw)
+find_package(glfw3 REQUIRED)
 
-set_target_properties(glfw 
-    PROPERTIES 
-        FOLDER Engine/Dependencies/GLFW3
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GLFW"
-)
+# set_target_properties(glfw3
+#     PROPERTIES 
+#         FOLDER Engine/Dependencies/GLFW3
+#         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
+#         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GLFW"
+#         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GLFW"
+# )
 
-set_target_properties(update_mappings 
-    PROPERTIES 
-        FOLDER Engine/Dependencies/GLFW3
-)
+# set_target_properties(update_mappings 
+#     PROPERTIES 
+#         FOLDER Engine/Dependencies/GLFW3
+# )
 #set_target_properties(uninstall PROPERTIES FOLDER Engine/Dependencies/GLFW)
 
 ## GoogleTest
@@ -78,10 +78,10 @@ set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp) 
 
 set(IMGUI_BACKENDS 
-    ${IMGUI_PATH}/backends/imgui_impl_glfw.h
-    ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.h
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.h
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp
 )
 
 

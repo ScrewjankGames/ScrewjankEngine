@@ -107,17 +107,17 @@ namespace sj {
     #define SJ_GAME_LOG_FATAL(...)
 #else
     #define SJ_ENGINE_LOG_TRACE(format, ...)                                                       \
-        sj::Logger::GetEngineLogger()->LogTrace(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogTrace(format, ## __VA_ARGS__)
     #define SJ_ENGINE_LOG_DEBUG(format, ...)                                                       \
-        sj::Logger::GetEngineLogger()->LogDebug(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogDebug(format, ## __VA_ARGS__)
     #define SJ_ENGINE_LOG_INFO(format, ...)                                                        \
-        sj::Logger::GetEngineLogger()->LogInfo(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogInfo(format, ## __VA_ARGS__)
     #define SJ_ENGINE_LOG_WARN(format, ...)                                                        \
-        sj::Logger::GetEngineLogger()->LogWarn(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogWarn(format, ## __VA_ARGS__)
     #define SJ_ENGINE_LOG_ERROR(format, ...)                                                       \
-        sj::Logger::GetEngineLogger()->LogError(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogError(format, ## __VA_ARGS__)
     #define SJ_ENGINE_LOG_FATAL(format, ...)                                                       \
-        sj::Logger::GetEngineLogger()->LogFatal(format, __VA_ARGS__)
+        sj::Logger::GetEngineLogger()->LogFatal(format, ## __VA_ARGS__)
 
     #define SJ_GAME_LOG_TRACE(...) SJ_ASSERT_NOT_IMPLEMENTED();
     #define SJ_GAME_LOG_DEBUG(...) SJ_ASSERT_NOT_IMPLEMENTED();

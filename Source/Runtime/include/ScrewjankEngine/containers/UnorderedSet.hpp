@@ -73,7 +73,7 @@ namespace sj {
 
         ~Element() requires std::is_trivially_destructible_v<T> = default;
         ~Element()
-            requires !std::is_trivially_destructible_v<T>
+            requires (!std::is_trivially_destructible_v<T>)
         {
             if(!IsEmpty())
             {
@@ -128,11 +128,11 @@ namespace sj {
       public:
         using iterator_category = std::forward_iterator_tag;
 
-        using value_type = typename const Set_t::value_type;
-        using element_type = typename const Set_t::element_type;
+        using value_type = const Set_t::value_type;
+        using element_type = const Set_t::element_type;
         using pointer = typename Set_t::const_pointer;
         using const_pointer = typename Set_t::const_pointer;
-        using element_pointer = typename element_type*;
+        using element_pointer = element_type*;
         using reference = typename Set_t::const_reference;
         using const_reference = typename Set_t::const_reference;
         using difference_type = typename Set_t::difference_type;
@@ -198,7 +198,7 @@ namespace sj {
         using const_pointer = const T*;
 
         // Iterator definitions
-        using const_iterator = typename SetIterator_t<const unordered_set_base<T, IMPL, Hasher>>;
+        using const_iterator = SetIterator_t<const unordered_set_base<T, IMPL, Hasher>>;
         using iterator = const_iterator;
         using element_type = Element<T>;
 
@@ -369,7 +369,7 @@ namespace sj {
         : public unordered_set_base<T, static_unordered_set<T, tRequestedSize, tRealSize>>
     {
         using Base = unordered_set_base<T, static_unordered_set<T, tRequestedSize, tRealSize>>;
-        friend class Base;
+        friend Base;
 
     public:
         static_unordered_set() = default;
@@ -380,7 +380,7 @@ namespace sj {
         using Base::operator=;
         
     private:
-        friend class Base;
+        friend Base;
         static constexpr bool kIsGrowable = false;
 
         /** Number of elements in the set */
@@ -392,7 +392,7 @@ namespace sj {
     class dynamic_unordered_set : public unordered_set_base<T, dynamic_unordered_set<T>>
     {
         using Base = unordered_set_base<T, dynamic_unordered_set<T>>;
-        friend class Base;
+        friend Base;
     public:
         /**
          * Implicit MemSpace Constructors
@@ -427,7 +427,7 @@ namespace sj {
         using Base::operator=;
 
     private:
-        friend class Base;
+        friend Base;
         static constexpr bool kIsGrowable = true;
         
         /** Number of elements in the set */

@@ -1,3 +1,5 @@
+#pragma once
+
 // Screwjank Headers
 #include <ScrewjankEngine/containers/List.hpp>
 
@@ -22,7 +24,7 @@ namespace sj
 
     template <class T, bool tIsBidirectional>
     template <bool tIsConst>
-    inline List<T, tIsBidirectional>::IteratorBase<tIsConst>::IteratorBase(nullptr_t null)
+    inline List<T, tIsBidirectional>::IteratorBase<tIsConst>::IteratorBase(std::nullptr_t null)
         : m_CurrNode(nullptr)
     {
     }

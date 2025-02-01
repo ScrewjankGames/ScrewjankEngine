@@ -1,6 +1,6 @@
 #pragma once
 // STD Headers
-#include <concepts>
+#include <cstddef>
 #include <initializer_list>
 #include <utility>
 
@@ -15,7 +15,6 @@ namespace sj
     class List
     {
     public:
-        template <class T>
         struct FwdListNodeWrapper
         {
             T Data;
@@ -48,7 +47,6 @@ namespace sj
             }
         };
 
-        template <class T>
         struct BiDiListNodeWrapper
         {
             T Data;
@@ -96,9 +94,9 @@ namespace sj
             }
         };
 
-        using node_type = std::conditional<tIsBidirectional, BiDiListNodeWrapper<T>, FwdListNodeWrapper<T>>::type;      
-        using node_ptr = std::conditional<tIsBidirectional, BiDiListNodeWrapper<T>*, FwdListNodeWrapper<T>*>::type;
-        using const_node_ptr = std::conditional<tIsBidirectional, const BiDiListNodeWrapper<T>*, const FwdListNodeWrapper<T>*>::type;
+        using node_type = std::conditional_t<tIsBidirectional, BiDiListNodeWrapper, FwdListNodeWrapper>;      
+        using node_ptr = std::conditional_t<tIsBidirectional, BiDiListNodeWrapper*, FwdListNodeWrapper*>;
+        using const_node_ptr = std::conditional<tIsBidirectional, const BiDiListNodeWrapper*, const FwdListNodeWrapper*>::type;
 
         template <bool tIsConst>
         class IteratorBase
@@ -115,7 +113,7 @@ namespace sj
 
             IteratorBase(const_node_ptr node) requires tIsConst;
 
-            IteratorBase(nullptr_t null);
+            IteratorBase(std::nullptr_t null);
 
             /** Allows iterators of either type to be constructed from non-const iterator */
             IteratorBase(const IteratorBase<false>& other);

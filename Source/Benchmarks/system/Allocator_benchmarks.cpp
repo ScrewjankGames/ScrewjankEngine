@@ -1,5 +1,3 @@
-// STD Header
-
 // Library Headers
 #include <benchmark/benchmark.h>
 
@@ -9,6 +7,9 @@
 #include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
+
+// STD Header
+#include <cmath>
 
 sj::MemSpace<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
 

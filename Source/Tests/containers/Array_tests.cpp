@@ -1,5 +1,4 @@
 // STD Headers
-#include <ranges>
 
 // Library Headers
 #include <gtest/gtest.h>
@@ -22,9 +21,9 @@ namespace container_tests
         ASSERT_EQ(2, arr[1]);
         ASSERT_EQ(3, arr[2]);
 
-#ifdef SJ_DEBUG
+#ifndef SJ_GOLD
         ASSERT_DEATH(arr.at(5), ".*");
-#endif // SJ_DEBUG
+#endif // NDEBUG
     }
 
     TEST(ArrayTests, ModifyElementTest)

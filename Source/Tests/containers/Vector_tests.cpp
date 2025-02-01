@@ -1,5 +1,4 @@
 // STD Headers
-#include <vector>
 #include <span>
 
 // Library Headers
@@ -173,9 +172,9 @@ namespace container_tests {
         ASSERT_EQ(vec1[0], vec1.front());
         ASSERT_EQ(vec1[2], vec1.back());
         
-#ifdef SJ_DEBUG
+#ifndef SJ_GOLD
         ASSERT_DEATH(vec1.at(-1), ".*");
-#endif // SJ_DEBUG
+#endif // SJ_GOLD
     }
 
     TEST(VectorTests, IterationTest)

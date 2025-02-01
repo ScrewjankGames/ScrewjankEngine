@@ -1,6 +1,7 @@
 #pragma once
 // STD Headers
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 
 namespace sj {

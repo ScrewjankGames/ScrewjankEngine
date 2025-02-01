@@ -1,9 +1,7 @@
 #pragma once
 
 // STD Headers
-#include <cstddef>
 #include <memory>
-#include <functional>
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Allocator.hpp>

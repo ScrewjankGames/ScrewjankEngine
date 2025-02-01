@@ -2,14 +2,14 @@
 // Screwjank Headers
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
-#ifdef SJ_PLATFORM_LINUX
+#if defined(SJ_PLATFORM_LINUX) && !defined(SJ_GOLD)
     #include <signal.h>
 #endif
 
-#ifdef SJ_DEBUG
+#ifndef SJ_GOLD
     #ifdef SJ_PLATFORM_WINDOWS
         #define SJ_DEBUGBREAK() __debugbreak()
-    #elif SJ_PLATFORM_LINUX
+    #elif defined(SJ_PLATFORM_LINUX)
         #define SJ_DEBUGBREAK() raise(SIGTRAP)
     #else
         #error "Debug break NYI for this platform"

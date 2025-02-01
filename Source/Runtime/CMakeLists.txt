@@ -12,9 +12,12 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_INLINES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_SOURCE})
 
-target_compile_definitions( ${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:SJ_DEBUG>)
-target_compile_definitions( ${PROJECT_NAME} PUBLIC $<$<CONFIG:Release>:SJ_DEBUG>)
 target_compile_definitions( ${PROJECT_NAME} PUBLIC $<$<CONFIG:Gold>:SJ_GOLD>)
+
+
+if(SJ_GOLD_OPT)
+target_compile_definitions(${PROJECT_NAME} PUBLIC SJ_GOLD)
+endif()
 
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 

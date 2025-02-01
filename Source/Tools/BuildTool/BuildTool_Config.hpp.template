@@ -1,5 +1,5 @@
 /// ${BuildTool_Generated_File_Message}
-
+#include <array>
 
 namespace build_tool::config
 {
@@ -7,5 +7,15 @@ namespace build_tool::config
     inline constexpr const char* GameAssetDir = "${Game_Asset_Dir}";
     inline constexpr const char* EngineDataDir =  "${Game_Built_Data_Dir}Engine/";
     inline constexpr const char* GameDataDir =  "${Game_Built_Data_Dir}";
+
     inline constexpr const char* BuildersBinDir = "${Binaries_Directory}/Tools/Builders/";
+
+    // Builder ensures these directories exist before building data
+    inline constexpr std::array RequiredDirs = 
+    {
+        EngineAssetDir,
+        GameAssetDir,
+        EngineDataDir,
+        GameDataDir
+    };
 }

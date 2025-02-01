@@ -1,4 +1,4 @@
-#include <ScrewjankEngine/containers/array.hpp>
+#include <ScrewjankEngine/containers/Array.hpp>
 #include "Array.hpp"
 
 namespace sj

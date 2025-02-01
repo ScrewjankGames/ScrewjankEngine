@@ -116,6 +116,11 @@ namespace build_tool
 
 int main(int argc, const char** argv)
 {
+	for (const char* path : build_tool::config::RequiredDirs) 
+	{
+		std::filesystem::create_directories(path);
+	}
+
 	build_tool::TextureBuilder texture_builder;
 	texture_builder.BuildAll();
 

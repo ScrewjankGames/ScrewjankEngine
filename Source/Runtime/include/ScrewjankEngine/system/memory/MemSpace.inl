@@ -1,4 +1,6 @@
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
+#include <cstring>
+#include <cstdlib>
 
 namespace sj
 {
@@ -76,7 +78,7 @@ namespace sj
         m_Allocator.Init(size, start);
 
 #ifndef SJ_GOLD
-        strncpy_s(m_DebugName, debug_name, sizeof(m_DebugName));
+        strncpy(m_DebugName, debug_name, sizeof(m_DebugName));
 #endif // !SJ_GOLD
     }
 

@@ -6,6 +6,7 @@
 // Library Headers
 
 // Screwjank Headers
+#include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 namespace sj
 {
@@ -21,11 +22,8 @@ namespace sj
 
 
 // Platform specific implementations
-#ifdef SJ_PLATFORM_WINDOWS
+#if defined(SJ_PLATFORM_WINDOWS) || defined (SJ_PLATFORM_LINUX)
     #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
-#elif SJ_PLATFORM_LINUX
-//#include <ScrewjankEngine/platform/Linux/LinuxWindow.hpp>
-    #error Linux platform unsupported
 #elif SJ_PLATFORM_IOS
     #error IOS Platform unsupported
 #elif

@@ -2,6 +2,9 @@
 
 // STD Headers
 #include <utility>
+#include <new>
+#include <cstddef>
+#include <cstdint>
 
 namespace sj
 {

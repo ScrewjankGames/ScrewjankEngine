@@ -2,9 +2,6 @@
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
 // Library Headers
-#ifdef SJ_VULKAN_SUPPORT
-    #define GLFW_INCLUDE_VULKAN
-#endif
 #include <GLFW/glfw3.h>
 
 #include <imgui_impl_glfw.h>

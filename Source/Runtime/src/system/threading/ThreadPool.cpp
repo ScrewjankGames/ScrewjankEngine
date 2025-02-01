@@ -2,7 +2,6 @@
 #include <ScrewjankEngine/system/threading/ThreadPool.hpp>
 
 // STD Headers
-#include <mutex>
 
 // Engine Headers
 #include <ScrewjankEngine/system/threading/Thread.hpp>
@@ -33,9 +32,8 @@ namespace sj
             auto worker_function = [this, worker_id]() {
                 while (!m_Terminated)
                 {
-                    SJ_ENGINE_LOG_INFO("Worker thread {} running on core {}",
-                                       worker_id,
-                                       GetCurrentProcessorNumber());
+                    SJ_ENGINE_LOG_INFO("Worker thread {}",
+                                       worker_id);
 
                     std::this_thread::sleep_for(std::chrono::seconds(20));
                 }

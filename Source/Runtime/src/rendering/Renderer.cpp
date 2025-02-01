@@ -4,6 +4,8 @@
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
@@ -375,7 +377,7 @@ namespace sj
         create_info.ppEnabledExtensionNames = extenstions.data();
 
         // Compile-time check for adding validation layers
-        if constexpr(g_IsDebugBuild)
+#ifndef SJ_GOLD
         {
             static dynamic_vector<const char*> layers(MemorySystem::GetDebugMemSpace(),
                                                       {"VK_LAYER_KHRONOS_validation"});
@@ -385,6 +387,7 @@ namespace sj
             create_info.enabledLayerCount = (uint32_t)layers.size();
             create_info.ppEnabledLayerNames = layers.data();
         }
+#endif
 
         // Create the vulkan instance
         VkResult result = vkCreateInstance(&create_info, nullptr, &m_vkInstance);

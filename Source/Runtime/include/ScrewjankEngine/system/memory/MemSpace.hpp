@@ -112,7 +112,6 @@ namespace sj
         IMemSpace* m_Heap;
     };
 
-    template <class T>
     MemSpace() -> MemSpace<FreeListAllocator>; 
 
 } // namespace sj

@@ -1,3 +1,4 @@
+#pragma once
 #include <ScrewjankEngine/containers/Vector.hpp>
 
 namespace sj

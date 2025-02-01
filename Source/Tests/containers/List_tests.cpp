@@ -1,5 +1,4 @@
 // STD Headers
-#include <forward_list>
 
 // Library Headers
 #include "gtest/gtest.h"
@@ -160,9 +159,9 @@ namespace container_tests {
 
         list.PopFront();
 
-#ifdef SJ_DEBUG
+#ifndef SJ_GOLD
         ASSERT_DEATH(list.PopFront(), ".*");
-#endif // SJ_DEBUG
+#endif // SJ_GOLD
     }
 
     TEST(ListTests, EmplaceFrontTest)
