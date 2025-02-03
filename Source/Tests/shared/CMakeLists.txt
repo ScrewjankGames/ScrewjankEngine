@@ -8,6 +8,9 @@ set_target_properties(SharedTestSuite
 		FOLDER Engine/Testing
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
+		ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Tests/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Tests/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Tests/"
 )
 
 ################################################################################

@@ -16,9 +16,9 @@
 
 // Library Headers
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 // STD Headers
-
 
 namespace sj {
     // Forward declarations
@@ -31,8 +31,12 @@ namespace sj {
     class Renderer
     {
     public:
+        /** Allocator used for engine helper allocations to get data over to vulkan */
         static MemSpace<FreeListAllocator>* WorkBuffer();
 
+        /** Callbacks used to catch vulkan allocations on the CPU and send them to the right memory space */
+        static VkAllocationCallbacks s_vkAllocationFns;
+        
         static Renderer* GetInstance();
 
         void Init();

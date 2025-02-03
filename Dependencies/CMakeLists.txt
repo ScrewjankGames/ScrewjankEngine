@@ -41,16 +41,13 @@ add_subdirectory(googletest)
 set_target_properties(gtest 
     PROPERTIES 
         FOLDER Engine/Dependencies/GoogleTest
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleTest"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleTest"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleTest"
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies"
 )
 set_target_properties(gtest_main     
     PROPERTIES 
         FOLDER Engine/Dependencies/GoogleTest
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleTest"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleTest"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleTest"
 )
 
 ## GoogleBenchmark
@@ -61,16 +58,13 @@ add_subdirectory(benchmark)
 set_target_properties(benchmark 
     PROPERTIES 
         FOLDER Engine/Dependencies/GoogleBenchmark
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleBenchmark"
 )
 set_target_properties(benchmark_main     
     PROPERTIES 
         FOLDER Engine/Dependencies/GoogleBenchmark
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/Dependencies/GoogleBenchmark"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/Dependencies/GoogleBenchmark"
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 
 ## ImGui
@@ -108,7 +102,11 @@ target_include_directories(imgui
 
 set_target_properties(imgui 
     PROPERTIES 
-        FOLDER Engine/Dependencies)
+        FOLDER Engine/Dependencies
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
+)
 
 ## STB
 file(GLOB STB_HEADERS CONFIGURE_DEPENDS "stb/*.h")
@@ -117,6 +115,9 @@ add_library(STB INTERFACE ${STB_HEADERS} )
 set_target_properties(STB
     PROPERTIES 
         FOLDER Engine/Dependencies
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 
 target_include_directories(STB
@@ -130,6 +131,9 @@ add_subdirectory(tinyobjloader)
 set_target_properties(tinyobjloader
     PROPERTIES 
         FOLDER Engine/Dependencies
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 
 ## TinyObjLoader
@@ -138,5 +142,8 @@ add_subdirectory(json)
 set_target_properties(nlohmann_json
     PROPERTIES 
         FOLDER Engine/Dependencies
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 

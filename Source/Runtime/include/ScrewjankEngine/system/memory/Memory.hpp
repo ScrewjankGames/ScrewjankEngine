@@ -8,18 +8,15 @@
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
-namespace sj {
+inline constexpr uint64_t operator""_KiB(unsigned long long val) {return val * 1024;}
+inline constexpr uint64_t operator""_MiB(unsigned long long val) {return val * 1024 * 1024;} 
+inline constexpr uint64_t operator""_GiB(unsigned long long val) {return val * 1024 * 1024 * 1024;} 
 
+namespace sj 
+{
     // Forward declarations
     class IMemSpace;
 
-    // Common memory sizes
-    constexpr uint64_t k1_KiB = 1024;
-    constexpr uint64_t k1_MiB = k1_KiB * 1024;
-    constexpr uint64_t k1_GiB = k1_MiB * 1024;
-
-    inline uint64_t operator""_KiB(unsigned long long val) {return val * 1024;}
-    inline uint64_t operator""_MiB(unsigned long long val) {return val * 1024 * 1024;} 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager

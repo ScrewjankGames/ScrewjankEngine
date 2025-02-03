@@ -27,6 +27,9 @@ namespace sj
         template <class T>
         T* AllocateType(const size_t count = 1);
 
+        [[nodiscard]] 
+        virtual void* Reallocate(const void* const originalPtr, const size_t size, const size_t alignment) = 0;
+
         /**
          * Deallocates memory from this MemSpace 
          */
@@ -73,6 +76,9 @@ namespace sj
         [[nodiscard]] 
         void* Allocate(const size_t size,
                        const size_t alignment = alignof(std::max_align_t)) override;
+
+        [[nodiscard]] 
+        void* Reallocate(const void* const originalPtr, const size_t size, const size_t alignment) override;
 
         void Free(void* memory) override;
 

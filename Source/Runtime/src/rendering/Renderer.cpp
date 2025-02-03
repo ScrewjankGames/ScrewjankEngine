@@ -1,8 +1,10 @@
+// Parent Include
+#include <ScrewjankEngine/rendering/Renderer.hpp>
+
 // Screwjank Headers
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
-#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
@@ -11,6 +13,9 @@
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/io/File.hpp>
+#include <cstddef>
+#include <cstring>
+#include <vulkan/vulkan_core.h>
 
 // Library Headers
 #ifndef SJ_GOLD
@@ -21,6 +26,33 @@
 
 namespace sj
 {
+    void* sjVkAllocate(void* _, size_t size, size_t alignment, VkSystemAllocationScope scope)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK Alloc %llu", size );
+        return Renderer::WorkBuffer()->Allocate(size, alignment);
+    }
+
+    void sjVkFree(void* _, void* ptr)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK free %p", ptr);
+        Renderer::WorkBuffer()->Free(ptr);
+    }
+
+    void* sjVkRealloc(void* _, void* originalPtr, size_t size, size_t alignment, VkSystemAllocationScope scope)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK realloc %p", originalPtr);
+
+        return Renderer::WorkBuffer()->Reallocate(originalPtr, size, alignment);
+    }
+
+    VkAllocationCallbacks Renderer::s_vkAllocationFns = 
+    {
+        .pUserData = nullptr,
+        .pfnAllocation = sjVkAllocate,
+        .pfnReallocation = sjVkRealloc,
+        .pfnFree = sjVkFree
+    };
+
     static void CheckImguiVulkanResult(VkResult res)
     {
         SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
@@ -28,7 +60,8 @@ namespace sj
 
     MemSpace<FreeListAllocator>* Renderer::WorkBuffer()
     {
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), 8_KiB, "Renderer Work Buffer");
+        // TODO: On some platforms vulkan allocates straight into CPU memory using new/delete - inflating this buffer size
+        static MemSpace zone(MemorySystem::GetRootMemSpace(), 4_MiB, "Renderer Work Buffer");
         return &zone;
     }
 

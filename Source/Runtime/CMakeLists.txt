@@ -12,9 +12,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_INLINES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${RUNTIME_SOURCE})
 
-target_compile_definitions( ${PROJECT_NAME} PUBLIC $<$<CONFIG:Gold>:SJ_GOLD>)
-
-
+### For Single-config generators
 if(SJ_GOLD_OPT)
 target_compile_definitions(${PROJECT_NAME} PUBLIC SJ_GOLD)
 endif()
@@ -24,8 +22,9 @@ set_target_properties(${PROJECT_NAME}
         FOLDER Engine/
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
-        ARCHIVE_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"
-        LIBRARY_OUTPUT_DIRECTORY "${Binaries_Directory}/lib/${PROJECT_NAME}"
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}"
 )
 
 ################################################################################
@@ -45,6 +44,7 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankMath
         ScrewjankSharedCore
         ScrewjankDataDefs
+        VulkanMemoryAllocator
         imgui
 )
 

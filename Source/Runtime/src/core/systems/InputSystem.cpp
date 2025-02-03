@@ -6,7 +6,6 @@
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 // Library Includes
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #ifndef SJ_GOLD
 #include <imgui.h>
@@ -14,7 +13,6 @@
 
 
 // STD Includes
-#include <span>
 #include <cmath>
 #include <algorithm>
 

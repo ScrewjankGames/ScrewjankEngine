@@ -15,7 +15,7 @@
 namespace sj {
     
     /** List of extensions devices must support */
-    static constexpr std::array<std::string_view, 1> kRequiredDeviceExtensions = {
+    static constexpr std::array<const char*, 1> kRequiredDeviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
@@ -194,7 +194,7 @@ namespace sj {
         device_create_info.enabledLayerCount = 0;
         device_create_info.pEnabledFeatures = &device_features;
         
-        const char** deviceExtensionNames = (const char**)(kRequiredDeviceExtensions.data());
+        const char* const* deviceExtensionNames = kRequiredDeviceExtensions.data();
         device_create_info.enabledExtensionCount = 
             static_cast<uint32_t>(kRequiredDeviceExtensions.size());
         device_create_info.ppEnabledExtensionNames = deviceExtensionNames;

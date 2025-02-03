@@ -1,3 +1,6 @@
+// Parent Include
+#include "TextureBuilder.hpp"
+
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/io/File.hpp>
@@ -7,25 +10,22 @@
 #include <stb_image.h>
 
 // STD Includes
-#include <new>
 #include <cstdio>
 
-using namespace sj;
-
-int main(int argc, char** argv)
+namespace sj::build 
 {
-    const char* inputFilePath = argv[1];
-    const char* outputFilePath = argv[2];
 
+bool TextureBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const
+{
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(inputFilePath, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(item.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     size_t imageBytes = texWidth * texHeight * 4; // 4 bytes per pixel with STBI_rgb_alpha
 
     TextureHeader texture {AssetType::kTexture, texWidth, texHeight};
 
     File outputFile;
-    outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
+    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
 
     outputFile.WriteStruct(texture);
     outputFile.Write(pixels, imageBytes);
@@ -33,5 +33,7 @@ int main(int argc, char** argv)
 
     stbi_image_free(pixels);
 
-    return 0;
+    return true;
+}
+
 }

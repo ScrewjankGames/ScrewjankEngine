@@ -1,4 +1,5 @@
 // Shared Includes
+#include "ModelBuilder.hpp"
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
@@ -7,13 +8,12 @@
 #include <tiny_obj_loader.h>
 
 // STD Includes
-#include <new>
 #include <cstdio>
 #include <unordered_map>
 #include <limits>
 
-using namespace sj;
-
+namespace sj::build
+{
 void ExtractBuffers(const char* inputFilePath,
                     std::vector<Vertex>& out_verts,
                     std::vector<uint16_t>& out_indices)
@@ -63,14 +63,11 @@ void ExtractBuffers(const char* inputFilePath,
               "Index count out of range of uint16 for index buffers")
 }
 
-int main(int argc, char** argv)
+bool ModelBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const 
 {
-    const char* inputFilePath = argv[1];
-    const char* outputFilePath = argv[2];
-
     std::vector<Vertex> verts;
     std::vector<uint16_t> indices;
-    ExtractBuffers(inputFilePath, verts, indices);
+    ExtractBuffers(item.c_str(), verts, indices);
 
     const size_t vertexMemSize = (sizeof(Vertex) * verts.size());
     const size_t indexMemSize = (sizeof(uint16_t) * indices.size());
@@ -92,7 +89,7 @@ int main(int argc, char** argv)
     model->numIndices = static_cast<decltype(Model::numIndices)>(indices.size());
 
     File outputFile;
-    outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
+    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
 
     outputFile.Write(model, sizeof(Model));
 
@@ -102,5 +99,7 @@ int main(int argc, char** argv)
     outputFile.Close();
 
     free(modelMem);
-    return 0;
+    return true;
+}
+
 }

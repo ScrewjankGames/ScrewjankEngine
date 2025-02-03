@@ -1,3 +1,9 @@
+// Parent Include
+#include "SceneBuilder.hpp"
+
+// Builder Includes
+#include <Utils.hpp>
+
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/ScenePrototype.hpp>
@@ -10,12 +16,12 @@
 #include <nlohmann/json.hpp>
 
 // STD Includes
-#include <new>
 #include <cstdio>
 #include <vector>
 #include <fstream>
 
-using namespace sj;
+namespace sj::build
+{
 
 using Json = nlohmann::ordered_json;
 
@@ -206,12 +212,9 @@ void BuildGameObject(uint32_t sceneId,
     out_goPrototypes.emplace_back(prototype);
 }
 
-int main(int argc, char** argv)
+bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const
 {
-    const char* inputFilePath = argv[1];
-    const char* outputFilePath = argv[2];
-
-    std::ifstream stream(inputFilePath);
+    std::ifstream stream(item);
     nlohmann::ordered_json document = nlohmann::ordered_json::parse(stream);
 
     ScenePrototype scenePrototype;
@@ -241,7 +244,7 @@ int main(int argc, char** argv)
     }
 
     File outputFile;
-    outputFile.Open(outputFilePath, File::OpenMode::kWriteBinary);
+    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
     outputFile.WriteStruct(scenePrototype);
     for(const GameObjectPrototype& goProto : goPrototypes)
     {
@@ -262,5 +265,7 @@ int main(int argc, char** argv)
         }
     }
 
-    return 0;
+    return true;
+}
+
 }

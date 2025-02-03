@@ -9,8 +9,8 @@
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Root heap sizes
-constexpr uint64_t kRootHeapSize = sj::k1_MiB * 1;
-constexpr uint64_t kDebugHeapSize = sj::k1_MiB * 64;
+constexpr uint64_t kRootHeapSize = 2_MiB;
+constexpr uint64_t kDebugHeapSize = 64_MiB;
 
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {

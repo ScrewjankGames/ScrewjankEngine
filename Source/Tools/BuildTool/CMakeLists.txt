@@ -4,30 +4,21 @@ set(BuildTool_Version_Major 0)
 set(BuildTool_Version_Minor 1)
 set(BuildTool_Version_Patch 0)
 
-set(BuildTool_Generated_File_Message "!!!This is a generated file. Do not Edit. Find corresponding *.template.hpp file!!!")
-
-# Generate files
-configure_file(
-    BuildTool_Config.hpp.template 
-    ${CMAKE_BINARY_DIR}/GeneratedSource/BuildTool/BuildTool_Config_generated.hpp
-)
-
-# Collect Generated files
-set(GeneratedFiles ${CMAKE_BINARY_DIR}/GeneratedSource/BuildTool/BuildTool_Config_generated.hpp)
 
 # Collect Source Files
 file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "*.cpp")
 
 # Make Executable
 add_executable(${PROJECT_NAME}
-    ${GeneratedFiles}
     ${SourceFiles}
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PRIVATE 
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}/GeneratedSource/BuildTool
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC
+        BuildersShared
+        ModelBuilder
+        TextureBuilder
+        SceneBuilder
 )
 
 set_target_properties(${PROJECT_NAME} 
@@ -35,5 +26,7 @@ set_target_properties(${PROJECT_NAME}
         FOLDER Tools/
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
-        RUNTIME_OUTPUT_DIRECTORY ${Binaries_Directory}/Tools
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}"
 )

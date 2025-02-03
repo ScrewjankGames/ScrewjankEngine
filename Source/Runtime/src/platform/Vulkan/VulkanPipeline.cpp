@@ -211,7 +211,8 @@ namespace sj
         MemSpaceScope rendererWorkBuffer(Renderer::WorkBuffer());
 
         File shader;
-        shader.Open(path, File::OpenMode::kReadBinary);
+        bool success = shader.Open(path, File::OpenMode::kReadBinary);
+        SJ_ASSERT(success, "Failed to open compiled shader %s", path);
 
         uint64_t shaderBufferSize = shader.Size();
         void* shaderBuffer = rendererWorkBuffer->Allocate(shaderBufferSize);

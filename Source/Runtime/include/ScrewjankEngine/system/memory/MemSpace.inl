@@ -1,3 +1,4 @@
+#pragma once
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <cstring>
 #include <cstdlib>
@@ -5,7 +6,7 @@
 namespace sj
 {
     ///////////////////////////////////////////////////////////////////////
-    /// Base Heap Zone
+    /// Base Mem Space Zone
     ///////////////////////////////////////////////////////////////////////
 
     template <class T>
@@ -30,7 +31,7 @@ namespace sj
     }
 
     ///////////////////////////////////////////////////////////////////////
-    /// THeap Zone
+    /// Templated MemSpace
     ///////////////////////////////////////////////////////////////////////
 
     template <allocator_concept AllocatorType>
@@ -89,6 +90,13 @@ namespace sj
         return m_Allocator.Allocate(size, alignment);
     }
     
+    template <allocator_concept AllocatorType>
+    inline void* MemSpace<AllocatorType>::Reallocate(const void* const originalPtr, const size_t size, const size_t alignment)
+    {
+        std::scoped_lock<std::mutex> lock(m_HeapLock);
+        return m_Allocator.Reallocate(originalPtr, size, alignment);
+    }
+
     template <allocator_concept AllocatorType>
     inline void MemSpace<AllocatorType>::Free(void* memory)
     {
