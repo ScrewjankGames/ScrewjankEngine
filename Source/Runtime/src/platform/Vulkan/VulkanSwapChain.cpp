@@ -1,4 +1,5 @@
 // Parent Include
+#include "ScrewjankEngine/system/memory/MemSpace.hpp"
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 
 // Screwjank Headers
@@ -54,7 +55,6 @@ namespace sj
         m_targetWindow = Window::GetInstance();
 
         SwapChainParams params = QuerySwapChainParams(physicalDevice, renderingSurface);
-
         
         VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
         VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);
@@ -107,7 +107,12 @@ namespace sj
 
         // Create Swap Chain
         VkResult swap_chain_create_success =
-            vkCreateSwapchainKHR(logicalDevice, &create_info, nullptr, &m_swapChain);
+            vkCreateSwapchainKHR(
+                logicalDevice, 
+                &create_info, 
+                &sj::g_vkAllocationFns, 
+                &m_swapChain
+            );
 
         SJ_ASSERT(VkResult::VK_SUCCESS == swap_chain_create_success, "Failed to create swapchain");
 
@@ -162,7 +167,7 @@ namespace sj
 
             VkResult res = vkCreateFramebuffer(device,
                                                &framebufferInfo,
-                                               nullptr,
+                                               &sj::g_vkAllocationFns,
                                                &m_swapChainBuffers[i]);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
@@ -173,21 +178,21 @@ namespace sj
 
     void VulkanSwapChain::DeInit(VkDevice logicalDevice)
     {
-        vkDestroyImageView(logicalDevice, m_depthImageView, nullptr);
-        vkDestroyImage(logicalDevice, m_depthImage, nullptr);
-        vkFreeMemory(logicalDevice, m_depthImageMemory, nullptr);
+        vkDestroyImageView(logicalDevice, m_depthImageView, &sj::g_vkAllocationFns);
+        vkDestroyImage(logicalDevice, m_depthImage, &sj::g_vkAllocationFns);
+        vkFreeMemory(logicalDevice, m_depthImageMemory, &sj::g_vkAllocationFns);
 
         for(VkFramebuffer buffer : m_swapChainBuffers)
         {
-            vkDestroyFramebuffer(logicalDevice, buffer, nullptr);
+            vkDestroyFramebuffer(logicalDevice, buffer, &sj::g_vkAllocationFns);
         }
 
         for(VkImageView view : m_imageViews)
         {
-            vkDestroyImageView(logicalDevice, view, nullptr);
+            vkDestroyImageView(logicalDevice, view, &sj::g_vkAllocationFns);
         }
 
-        vkDestroySwapchainKHR(logicalDevice, m_swapChain, nullptr);
+        vkDestroySwapchainKHR(logicalDevice, m_swapChain, &sj::g_vkAllocationFns);
     }
 
     void VulkanSwapChain::Recreate(VkPhysicalDevice physicalDevice,
@@ -268,7 +273,6 @@ namespace sj
     {
         VkSurfaceCapabilitiesKHR capabilities;
 
-
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
                                                   surface, &capabilities);
 
@@ -285,14 +289,13 @@ namespace sj
                                                   nullptr);
         SJ_ASSERT(present_mode_count != 0, "No present modes found");
 
-        IMemSpace* currMemSpace = MemorySystem::GetCurrentMemSpace();
+        IMemSpace* currMemSpace = Renderer::WorkBuffer();
         SwapChainParams params
         {
             capabilities,
             dynamic_array<VkSurfaceFormatKHR>(format_count, currMemSpace),
             dynamic_array<VkPresentModeKHR>(present_mode_count, currMemSpace),
         };
-
 
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
                                              surface,

@@ -52,20 +52,29 @@ namespace sj
     }
 
     template <class T>
-    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, std::initializer_list<T> list) : dynamic_vector(mem_space)
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, std::initializer_list<T> list) 
+        : dynamic_vector(mem_space, list, std::from_range_t{})
+    {
+
+    }
+
+    template <class T>
+    template<class Range> requires std::ranges::range<Range>
+    inline dynamic_vector<T>::dynamic_vector(IMemSpace* mem_space, Range&& inputRange, std::from_range_t _) 
+        : dynamic_vector(mem_space)
     {
         // Make sure vector has space for size() elements
-        reserve(list.size());
+        reserve(inputRange.size());
 
         // Copy elements into m_Data
         size_t i = 0;
-        for (auto& element : list)
+        for (auto&& element : inputRange)
         {
             new (&m_Data[i]) T(element);
             i++;
         }
 
-        m_Size = list.size();
+        m_Size = inputRange.size();
     }
 
     template <class T>

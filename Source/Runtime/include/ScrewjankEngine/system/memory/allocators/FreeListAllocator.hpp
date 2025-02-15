@@ -42,14 +42,17 @@ namespace sj {
          * @param buffer_size The size (in bytes) of the memory buffer being managed
          * @param memory The memory this allocator should manage
          */
-        void Init(size_t buffer_size, void* memory) override;
+        void Init(size_t buffer_size, void* memory);
 
         /**
          * Allocates size bites with given alignment in a best-fit manner
          * @param size The number of bytes to allocate
          */
-        [[nodiscard]] void* Allocate(const size_t size,
-                                     const size_t alignment = alignof(std::max_align_t)) override;
+        [[nodiscard]] 
+        void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) override;
+
+        [[nodiscard]]
+        void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) override;
 
         /**
          * Marks memory as free
@@ -89,8 +92,13 @@ namespace sj {
         /** Book-keeping structure to correctly de-allocate memory */
         struct AllocationHeader
         {
+            static constexpr uint32_t kMagicHeader = 0x50501312;
+
+            /** Magic number- if this value changes it's explicitly a memory stomp */
+            uint32_t MagicHeader = kMagicHeader;
+
             /** The padding placed before this header in the free block during allocation */
-            size_t Padding;
+            uint32_t Padding;
 
             /** Number of bytes remaining in the current allocation */
             size_t Size;
@@ -135,6 +143,14 @@ namespace sj {
          * Given a block in the free list, attempt to merge it with it's neighbors
          */
         void AttemptCoalesceBlock(FreeBlock* block);
+
+        inline AllocationHeader* GetAllocationHeader(void* ptr)
+        {
+            AllocationHeader* blockHeader =
+            (AllocationHeader*)((uintptr_t)ptr - sizeof(AllocationHeader));
+
+            return blockHeader;
+        }
 
         /** The free list of allocation blocks */
         FreeBlock* m_FreeBlocks;

@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 
 // STD Headers
+#include <span>
 
 namespace sj {
     // Forward declarations
@@ -34,9 +35,6 @@ namespace sj {
         /** Allocator used for engine helper allocations to get data over to vulkan */
         static MemSpace<FreeListAllocator>* WorkBuffer();
 
-        /** Callbacks used to catch vulkan allocations on the CPU and send them to the right memory space */
-        static VkAllocationCallbacks s_vkAllocationFns;
-        
         static Renderer* GetInstance();
 
         void Init();
@@ -81,11 +79,6 @@ namespace sj {
         void InitializeVulkan();
 
         /**
-         * Returns list of Vulkan extenstions the renderer should support
-         */
-        dynamic_vector<const char*> GetRequiredExtenstions() const;
-
-        /**
          * Communicates with the Window to creates the rendering surface
          */
         void CreateRenderSurface();
@@ -95,7 +88,7 @@ namespace sj {
         VkCommandBuffer BeginSingleTimeCommands();
         void EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
 
-        void EnableValidationLayers(const dynamic_vector<const char*>& required_validation_layers);
+        void EnableValidationLayers(std::span<const char*> required_validation_layers);
 
         void EnableDebugMessaging();
 

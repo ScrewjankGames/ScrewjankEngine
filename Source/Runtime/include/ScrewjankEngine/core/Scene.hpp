@@ -14,7 +14,6 @@
 
 // STD Includes
 #include <span>
-#include <memory>
 
 namespace sj
 {

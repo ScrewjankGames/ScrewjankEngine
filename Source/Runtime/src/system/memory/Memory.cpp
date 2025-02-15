@@ -1,4 +1,5 @@
 // STD Headers
+#include "ScrewjankEngine/system/memory/MemSpace.hpp"
 #include <cassert>
 
 // Screwjank Headers
@@ -9,17 +10,31 @@
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Root heap sizes
-constexpr uint64_t kRootHeapSize = 2_MiB;
+constexpr uint64_t kRootHeapSize = 5_MiB;
 constexpr uint64_t kDebugHeapSize = 64_MiB;
 
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {
+    if(num_bytes == 0)
+        num_bytes++;
+
     return sj::MemorySystem::GetCurrentMemSpace()->Allocate(num_bytes);
 }
 
 void operator delete(void* memory) noexcept
 {
-    if (sj::MemorySystem::GetCurrentMemSpace()->ContainsPointer(memory))
+    bool found = false;
+    if(sj::MemorySystem::GetCurrentMemSpace() == sj::MemorySystem::GetUnmanagedMemSpace())
+    {
+        // Search for correct MemSpace for pointer supplied
+        sj::IMemSpace* mem_space = sj::IMemSpace::FindMemSpaceForPointer(memory);
+
+        if(mem_space)
+            mem_space->Free(memory);
+        else
+            sj::MemorySystem::GetUnmanagedMemSpace()->Free(memory);
+    }
+    else if (sj::MemorySystem::GetCurrentMemSpace()->ContainsPointer(memory))
     {
         sj::MemorySystem::GetCurrentMemSpace()->Free(memory);
     }
@@ -46,9 +61,10 @@ namespace sj {
 
     MemorySystem::MemorySystem() 
         : m_RootMemSpace(nullptr, kRootHeapSize, "Root Heap")
-#ifndef GOLD_VERSION
+        , m_UnmanagedMemSpace("Unmanaged Allocations")
+#ifndef SJ_GOLD
           , m_DebugMemSpace(nullptr, kDebugHeapSize, "Debug Heap")
-#endif // !GOLD_VERSION
+#endif // !SJ_GOLD
     {
 
     }
@@ -78,6 +94,11 @@ namespace sj {
         return &(Get()->m_RootMemSpace);
     }
 
+    UnmanagedMemSpace* MemorySystem::GetUnmanagedMemSpace()
+    {
+        return &(Get()->m_UnmanagedMemSpace);        
+    }
+
 #ifndef SJ_GOLD
     IMemSpace* MemorySystem::GetDebugMemSpace()
     {
@@ -91,20 +112,11 @@ namespace sj {
 
         if(g_MemSpaceStack.IsEmpty())
         {
-            return GetRootMemSpace();
+            return GetUnmanagedMemSpace();
         }
         else
         {
             return g_MemSpaceStack.Top();
         }
     }
-
-
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /// Memory Management Utility Functions
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 } // namespace sj

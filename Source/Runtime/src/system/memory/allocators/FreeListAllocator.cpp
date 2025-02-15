@@ -5,6 +5,10 @@
 #include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
+// STD Includes
+#include <cstring>
+#include <print>
+
 namespace sj {
     FreeListAllocator::FreeListAllocator()
         : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
@@ -104,7 +108,7 @@ namespace sj {
         if (unused_space >= kMinBlockSize) {
             // Remove unused_space from the allocation header's representation of the block
             header->Size -= unused_space;
-
+            SJ_ASSERT(header->Size > 0, "Shit");
             // Place a FreeBlock into the buffer after the user's payload
             void* new_block_address = (void*)(payload_end + new_block_adjustment);
             FreeBlock* new_block = new (new_block_address) FreeBlock(unused_space);
@@ -121,16 +125,38 @@ namespace sj {
         return payload_address;
     }
 
+    void* FreeListAllocator::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
+    {
+        // TODO: Would be better to try to grow the current block
+        // and avoid the memcpy but this was easier
+        AllocationHeader* header = GetAllocationHeader(originalPtr);
+        
+        void* newPtr = Allocate(size, alignment);
+        memcpy(newPtr, originalPtr, std::min(size, header->Size));
+        Free(originalPtr);
+
+        size_t bytes = 0;
+        FreeBlock* currBlock = m_FreeBlocks;
+        while(currBlock)
+        {
+            bytes += currBlock->Size;
+            currBlock = currBlock->Next;
+        }
+
+        SJ_ASSERT(bytes > (((uintptr_t)m_BufferEnd - (uintptr_t)m_BufferStart) / 4.0), "nooo");
+
+
+        return newPtr;
+    }
+
     void FreeListAllocator::Free(void* memory)
     {
         SJ_ASSERT(IsInitialized(), "Trying to deallocate with uninitialized allocator");
-
         SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
-
         SJ_ASSERT(IsMemoryInRange(memory), "Pointer is not managed by this allocator!");
 
-        AllocationHeader* block_header =
-            (AllocationHeader*)((uintptr_t)memory - sizeof(AllocationHeader));
+        AllocationHeader* block_header = GetAllocationHeader(memory);
+        SJ_ASSERT(block_header->MagicHeader == AllocationHeader::kMagicHeader, "Free list allocator corruption detected");
 
         // Extract header info
         auto block_size = block_header->Padding + block_header->Size + sizeof(AllocationHeader);
@@ -303,5 +329,4 @@ namespace sj {
             }
         }
     }
-
 } // namespace sj

@@ -11,7 +11,7 @@
 // STD Header
 #include <cmath>
 
-sj::MemSpace<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, sj::k1_GiB * 5, "Benchmark Heap");
+sj::MemSpace<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, 5_GiB, "Benchmark Heap");
 
 static void BM_Malloc(benchmark::State& state)
 {

@@ -1,3 +1,4 @@
+#pragma once
 #include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
 
 namespace sj
@@ -74,6 +75,15 @@ namespace sj
         m_AllocatorStats.ActiveBytesAllocated += kBlockSize;
 
         return (void*)(free_block);
+    }
+
+    template <size_t kBlockSize>
+    void* PoolAllocator<kBlockSize>::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
+    {
+        SJ_ASSERT(size <= kBlockSize,
+            "Pool allocator cannot satisfy allocation of size > block size");
+        
+        return originalPtr;
     }
 
     template <size_t kBlockSize>

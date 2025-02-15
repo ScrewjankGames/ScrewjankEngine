@@ -34,6 +34,8 @@ namespace sj
 
         static IMemSpace* GetRootMemSpace();
 
+        static UnmanagedMemSpace* GetUnmanagedMemSpace();
+
 #ifndef SJ_GOLD
         /**
          * Used to access debug heap for allocation
@@ -49,8 +51,11 @@ namespace sj
 
       private:
         MemSpace<FreeListAllocator> m_RootMemSpace;
+        UnmanagedMemSpace m_UnmanagedMemSpace;
+
+#ifndef SJ_GOLD
         MemSpace<FreeListAllocator> m_DebugMemSpace;
-        
+#endif
         MemorySystem();
         ~MemorySystem();
     };
@@ -154,6 +159,20 @@ namespace sj
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Management Utility Functions
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    class UnmanagedMemSpaceScope : public MemSpaceScope
+    {
+      public:
+        UnmanagedMemSpaceScope() 
+          : MemSpaceScope(MemorySystem::GetUnmanagedMemSpace())
+        {
+          MemorySystem::GetUnmanagedMemSpace()->SetLocked(false);
+        }
+
+        ~UnmanagedMemSpaceScope()
+        {
+          MemorySystem::GetUnmanagedMemSpace()->SetLocked(true);
+        }
+    };
 
     /**
      * Global utility function to allocate and construct and object from the root heap

@@ -1,4 +1,6 @@
 // Parent Include
+#include "ScrewjankEngine/containers/Array.hpp"
+#include "ScrewjankEngine/system/memory/Memory.hpp"
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 
 // STD Headers
@@ -10,7 +12,8 @@
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
-
+#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace sj {
     
@@ -31,7 +34,7 @@ namespace sj {
     {
         if(m_Device != VK_NULL_HANDLE)
         {
-            vkDestroyDevice(m_Device, nullptr);
+            vkDestroyDevice(m_Device, &sj::g_vkAllocationFns);
         }
     }
 
@@ -59,33 +62,33 @@ namespace sj {
 
     bool VulkanRenderDevice::IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
-        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device);
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device, renderSurface);
 
         // Query queue support
         bool indicies_complete =
             indices.graphicsFamilyIndex.has_value() && indices.presentationFamilyIndex.has_value();
-
-        // Check extension support
-        constexpr uint32_t kMaxExtensionCount = 256;
-        uint32_t extension_count;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-        SJ_ASSERT(extension_count < kMaxExtensionCount,
-                  "Too many extensions to store in following array");
-        std::array<VkExtensionProperties, kMaxExtensionCount> extension_props;
-
-        vkEnumerateDeviceExtensionProperties(device,
-                                             nullptr,
-                                             &extension_count,
-                                             extension_props.data());
 
         static_unordered_set<std::string_view, kRequiredDeviceExtensions.size()> missing_extensions(
             kRequiredDeviceExtensions.begin(),
             kRequiredDeviceExtensions.end()
         );
 
-        for(const VkExtensionProperties& extension : extension_props)
+        // Check extension support
         {
-            missing_extensions.erase(extension.extensionName);
+            uint32_t extension_count;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+            
+            dynamic_array<VkExtensionProperties> extension_props(extension_count, Renderer::WorkBuffer());
+
+            vkEnumerateDeviceExtensionProperties(device,
+                                                nullptr,
+                                                &extension_count,
+                                                extension_props.data());
+
+            for(const VkExtensionProperties& extension : extension_props)
+            {
+                missing_extensions.erase(extension.extensionName);
+            }
         }
 
         // Check swap chain support
@@ -108,6 +111,7 @@ namespace sj {
         VkInstance instance = vulkanAPI->GetVkInstanceHandle();
         
         uint32_t deviceCount = 0;
+        
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
 
@@ -121,7 +125,7 @@ namespace sj {
         {
             int score = 0;
 
-            if(IsDeviceSuitable(device, renderSurface))
+            if(!IsDeviceSuitable(device, renderSurface))
             {
                 continue;
             }
@@ -135,6 +139,10 @@ namespace sj {
             if (deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
             {
                 score += 1000;
+            }
+            else if (deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+            {
+                score += 500;
             }
 
             if (score > best_score) {
@@ -199,7 +207,13 @@ namespace sj {
             static_cast<uint32_t>(kRequiredDeviceExtensions.size());
         device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
 
-        VkResult success = vkCreateDevice(m_PhysicalDevice, &device_create_info, nullptr, &m_Device);
+        VkResult success = vkCreateDevice(
+            m_PhysicalDevice, 
+            &device_create_info, 
+            &sj::g_vkAllocationFns, 
+            &m_Device
+        );
+        
         SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");
 
         vkGetDeviceQueue(m_Device, *indices.graphicsFamilyIndex, 0, &m_GraphicsQueue);

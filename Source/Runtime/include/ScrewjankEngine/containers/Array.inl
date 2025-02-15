@@ -1,5 +1,5 @@
+#pragma once
 #include <ScrewjankEngine/containers/Array.hpp>
-#include "Array.hpp"
 
 namespace sj
 {

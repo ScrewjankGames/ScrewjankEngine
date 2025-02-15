@@ -37,14 +37,17 @@ namespace sj {
          */
         ~PoolAllocator();
 
-        void Init(size_t buffer_size, void* memory) override;
+        void Init(size_t buffer_size, void* memory);
 
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
          */
-        [[nodiscard]] virtual void* Allocate(const size_t size, 
-                                             const size_t alignment = alignof(std::max_align_t)) override;
+        [[nodiscard]] 
+        virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) override;
+
+        [[nodiscard]]
+        void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) override;
 
         /**
          * Marks memory as free

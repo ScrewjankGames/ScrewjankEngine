@@ -70,9 +70,14 @@ namespace sj {
         return allocated_memory;
     }
 
+    void* LinearAllocator::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
+    {
+        SJ_ASSERT(false, "Invalid Operation");
+        return nullptr;
+    }
+
     void LinearAllocator::Free(void* memory)
     {
-        SJ_ASSERT(IsInitialized(), "Trying to free with uninitialized allocator!");
         SJ_ASSERT(false, "Linear allocators do not allow memory to be freed.");
     }
 

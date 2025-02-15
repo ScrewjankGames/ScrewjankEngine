@@ -1,9 +1,10 @@
 // Screwjank Engine Headers
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
-
 #include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
+
+#include <ScrewjankShared/utils/Assert.hpp>
 
 namespace sj
 {
@@ -36,6 +37,36 @@ namespace sj
     MemSpaceScope::~MemSpaceScope()
     {
         MemorySystem::PopMemSpace();
+    }
+
+    UnmanagedMemSpace::UnmanagedMemSpace(const char* name)
+    {
+#ifndef SJ_GOLD
+        strcpy(m_DebugName, name);
+#endif
+    }
+
+    void* UnmanagedMemSpace::Allocate(const size_t size, const size_t alignment)
+    {
+        SJ_ASSERT(!m_isLocked, "Unmanaged allocations are prohibited at this time");
+        return std::malloc(size);
+    }
+    
+    void* UnmanagedMemSpace::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
+    {
+        SJ_ASSERT(!m_isLocked, "Unmanaged allocations are prohibited at this time");
+        return std::realloc(originalPtr, size);
+    }
+
+    void UnmanagedMemSpace::Free(void* memory)
+    {
+        std::free(memory);
+    }
+
+    bool UnmanagedMemSpace::ContainsPointer(void* ptr) const
+    {
+        SJ_ASSERT(false, "Unsupported operation!");
+        return false;
     }
 
 } // namespace sj

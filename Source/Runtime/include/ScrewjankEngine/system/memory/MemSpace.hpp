@@ -28,7 +28,7 @@ namespace sj
         T* AllocateType(const size_t count = 1);
 
         [[nodiscard]] 
-        virtual void* Reallocate(const void* const originalPtr, const size_t size, const size_t alignment) = 0;
+        virtual void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) = 0;
 
         /**
          * Deallocates memory from this MemSpace 
@@ -78,7 +78,7 @@ namespace sj
                        const size_t alignment = alignof(std::max_align_t)) override;
 
         [[nodiscard]] 
-        void* Reallocate(const void* const originalPtr, const size_t size, const size_t alignment) override;
+        void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) override;
 
         void Free(void* memory) override;
 
@@ -90,6 +90,33 @@ namespace sj
 
         // TODO: Actually put together a thread friendly memory model and remove me
         std::mutex m_HeapLock;
+    };
+
+
+    /**
+     * Memspace for allocations we can't be bothered to track right now
+     */
+    class UnmanagedMemSpace : public IMemSpace
+    {
+    public:
+        UnmanagedMemSpace(const char* name);
+        ~UnmanagedMemSpace() = default;
+
+        [[nodiscard]] 
+        void* Allocate(const size_t size,
+                       const size_t alignment = alignof(std::max_align_t)) override;
+
+        [[nodiscard]] 
+        void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) override;
+
+        void Free(void* memory) override;
+
+        bool ContainsPointer(void* ptr) const override;
+
+        void SetLocked(bool isLocked) { m_isLocked = isLocked; }
+
+    private:
+        bool m_isLocked = false;
     };
 
     /**

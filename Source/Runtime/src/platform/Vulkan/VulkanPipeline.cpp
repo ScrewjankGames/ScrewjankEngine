@@ -128,7 +128,11 @@ namespace sj
 
         {
             VkResult res =
-                vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout);
+                vkCreatePipelineLayout(
+                    m_Device, 
+                    &pipelineLayoutInfo, 
+                    &sj::g_vkAllocationFns, 
+                    &m_PipelineLayout);
             SJ_ASSERT(res == VK_SUCCESS, "failed to create pipeline layout!");
         }
 
@@ -179,21 +183,21 @@ namespace sj
                                                      VK_NULL_HANDLE,
                                                      1,
                                                      &pipelineInfo,
-                                                     nullptr,
+                                                     &sj::g_vkAllocationFns,
                                                      &m_Pipeline);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics pipeline");
         }
 
 
-        vkDestroyShaderModule(m_Device, fragmentShaderModule, nullptr);
-        vkDestroyShaderModule(m_Device, vertexShaderModule, nullptr);
+        vkDestroyShaderModule(m_Device, fragmentShaderModule, &sj::g_vkAllocationFns);
+        vkDestroyShaderModule(m_Device, vertexShaderModule, &sj::g_vkAllocationFns);
     }
 
     void VulkanPipeline::DeInit()
     {
-        vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
-        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+        vkDestroyPipeline(m_Device, m_Pipeline, &sj::g_vkAllocationFns);
+        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, &sj::g_vkAllocationFns);
     }
 
     VkPipeline VulkanPipeline::GetPipeline()
@@ -224,7 +228,7 @@ namespace sj
         createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
 
         VkShaderModule shaderModule;
-        VkResult res = vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule);
+        VkResult res = vkCreateShaderModule(m_Device, &createInfo, &sj::g_vkAllocationFns, &shaderModule);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");
 

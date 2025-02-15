@@ -2,7 +2,6 @@
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
-// STD Headers
 
 // Library Headers
 #ifdef SJ_VULKAN_SUPPORT
@@ -12,6 +11,9 @@
 // Screwjank Headers
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/containers/Vector.hpp>
+
+// STD Headers
+#include<span>
 
 struct GLFWwindow;
 
@@ -50,7 +52,7 @@ namespace sj {
         /**
          * @return Extensions Vulkan API must support to support this window.   
          */
-        dynamic_vector<const char*> GetRequiredVulkanExtenstions() const;
+        std::span<const char*> GetRequiredVulkanExtenstions() const;
 
         /**
          * @return The Vulkan presentation surface for this window

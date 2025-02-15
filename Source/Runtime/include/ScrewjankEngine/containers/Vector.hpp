@@ -1,8 +1,7 @@
 #pragma once
 
 // STD Headers
-#include <compare>
-#include <utility>
+#include <ranges>
 
 // Library Headers
 
@@ -65,6 +64,12 @@ namespace sj {
          * List initialization Constructor
          */
         dynamic_vector(IMemSpace* mem_space, std::initializer_list<T> list);
+
+        /**
+         * Range initialization Constructor
+         */
+        template<class Range> requires std::ranges::range<Range>
+        dynamic_vector(IMemSpace* mem_space, Range&& inputRange, std::from_range_t _);
 
         /**
          * Copy Constructor

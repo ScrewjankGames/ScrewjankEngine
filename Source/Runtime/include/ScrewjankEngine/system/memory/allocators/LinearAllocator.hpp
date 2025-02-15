@@ -35,11 +35,14 @@ namespace sj {
         [[nodiscard]] void* Allocate(const size_t size,
                                      const size_t alignment = alignof(std::max_align_t)) override;
 
+        [[nodiscard]]
+        void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) override;
+
         /*
          * @param buffer_size The size (in bytes) of the memory buffer being managed
          * @param memory The memory this allocator should manage
          */
-        void Init(size_t buffer_size, void* memory) override;
+        void Init(size_t buffer_size, void* memory);
 
         /**
          * Attempts to free a memory address

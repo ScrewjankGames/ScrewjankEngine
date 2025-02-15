@@ -44,7 +44,6 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankMath
         ScrewjankSharedCore
         ScrewjankDataDefs
-        VulkanMemoryAllocator
         imgui
 )
 

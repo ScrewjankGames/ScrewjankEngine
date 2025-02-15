@@ -2,6 +2,11 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Screwjank Headers
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
+#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/utils/Log.hpp>
+
 #include <ScrewjankShared/utils/Assert.hpp>
 
 //STD Includes
@@ -9,6 +14,38 @@
 
 namespace sj
 {
+    MemSpace<FreeListAllocator>* GetVulkanCPUMemSpace() 
+    {
+        static MemSpace zone(MemorySystem::GetRootMemSpace(), 4_MiB, "Vulkan Host Memory");
+        return &zone;
+    }
+
+    void* sjVkAllocate(void* _, size_t size, size_t alignment, VkSystemAllocationScope scope)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK Alloc %llu", size );
+        return GetVulkanCPUMemSpace()->Allocate(size, alignment);
+    }
+
+    void sjVkFree(void* _, void* ptr)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK free %p", ptr);
+        GetVulkanCPUMemSpace()->Free(ptr);
+    }
+
+    void* sjVkRealloc(void* _, void* originalPtr, size_t size, size_t alignment, VkSystemAllocationScope scope)
+    {
+        SJ_ENGINE_LOG_DEBUG("VK realloc %p", originalPtr);
+        return GetVulkanCPUMemSpace()->Reallocate(originalPtr, size, alignment);
+    }
+
+    VkAllocationCallbacks g_vkAllocationFns = 
+    {
+        .pUserData = nullptr,
+        .pfnAllocation = sjVkAllocate,
+        .pfnReallocation = sjVkRealloc,
+        .pfnFree = sjVkFree
+    };
+
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,
                             uint32_t typeFilter,
                             VkMemoryPropertyFlags properties)
@@ -55,7 +92,13 @@ namespace sj
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult success = vkCreateImage(logicalDevice, &imageInfo, nullptr, &image);
+        VkResult success = vkCreateImage(
+            logicalDevice, 
+            &imageInfo, 
+            &sj::g_vkAllocationFns, 
+            &image
+        );
+
         SJ_ASSERT(success == VK_SUCCESS, "failed to create image!");
 
         VkMemoryRequirements memRequirements;
@@ -66,7 +109,12 @@ namespace sj
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
-        success = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &imageMemory);
+        success = vkAllocateMemory(
+            logicalDevice, 
+            &allocInfo, 
+            &sj::g_vkAllocationFns, 
+            &imageMemory
+        );
         SJ_ASSERT(success == VK_SUCCESS, "failed to allocate image memory!");
 
         vkBindImageMemory(logicalDevice, image, imageMemory, 0);
@@ -88,7 +136,10 @@ namespace sj
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        VkResult res = vkCreateImageView(device, &viewInfo, nullptr, &imageView);
+        VkResult res = vkCreateImageView(
+            device, 
+            &viewInfo, 
+            &sj::g_vkAllocationFns, &imageView);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create texture image view");
 
         return imageView;

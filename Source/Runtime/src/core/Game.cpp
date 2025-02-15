@@ -1,3 +1,4 @@
+#include "ScrewjankEngine/system/memory/Memory.hpp"
 #include <ScrewjankEngine/core/Game.hpp>
 
 // STD Headers
@@ -45,7 +46,7 @@ namespace sj {
     }
 
     void Game::Start()
-    {
+    {        
         RegisterScriptComponents(s_scriptFactory);
 
         // Setup Dear ImGui context
@@ -63,7 +64,9 @@ namespace sj {
         m_Window->Init();
 
         m_Renderer = Renderer::GetInstance();
-        m_Renderer->Init();     
+        m_Renderer->Init();
+        
+        MemorySystem::GetUnmanagedMemSpace()->SetLocked(true);
 
         LoadScene("Data/Engine/Scenes/Default.sj_scene");
 

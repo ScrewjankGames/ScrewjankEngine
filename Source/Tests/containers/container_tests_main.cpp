@@ -4,7 +4,7 @@
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
-sj::MemSpace g_BenchmarkHeap(nullptr, sj::k1_GiB * 1, "Unit Test Heap");
+sj::MemSpace g_BenchmarkHeap(nullptr, 1_GiB, "Unit Test Heap");
 
 int main(int argc, char** argv)
 {

@@ -14,10 +14,8 @@ namespace sj {
     {
         // These statements must compile for something to be considered an allocator
         {obj.Allocate(size_t())};
+        {obj.Reallocate(std::nullptr_t(), size_t(), size_t())};
         {obj.Free(nullptr)};
-        {obj.Begin()} -> std::convertible_to<uintptr_t>;
-        {obj.End()} -> std::convertible_to<uintptr_t>;
-
     };
 
     /**
@@ -72,19 +70,16 @@ namespace sj {
          */
         virtual ~Allocator() = default;
 
-        /*
-         * @param buffer_size The size (in bytes) of the memory buffer being managed
-         * @param memory The memory this allocator should manage
-         */
-        virtual void Init(size_t buffer_size, void* memory) = 0;
-
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
          * @param alignment The alignment requirement for this allocation
          */
-        [[nodiscard]] virtual void*
-        Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
+        [[nodiscard]] 
+        virtual void* Allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) = 0;
+
+        [[nodiscard]]
+        virtual void* Reallocate(void* originalPtr, const size_t size, const size_t alignment) = 0;
 
         /**
          * Marks memory as free

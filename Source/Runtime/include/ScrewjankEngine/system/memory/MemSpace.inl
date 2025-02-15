@@ -1,4 +1,5 @@
 #pragma once
+#include "ScrewjankEngine/system/memory/Allocator.hpp"
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <cstring>
 #include <cstdlib>
@@ -24,7 +25,6 @@ namespace sj
     template <class T>
     inline void IMemSpace::Delete(T*& memory)
     {
-        SJ_ASSERT(this->ContainsPointer(memory), "Freeing pointer from wrong MemSpace!!");
         memory->~T();
         this->Free(memory);
         memory = nullptr;
@@ -91,7 +91,7 @@ namespace sj
     }
     
     template <allocator_concept AllocatorType>
-    inline void* MemSpace<AllocatorType>::Reallocate(const void* const originalPtr, const size_t size, const size_t alignment)
+    inline void* MemSpace<AllocatorType>::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
     {
         std::scoped_lock<std::mutex> lock(m_HeapLock);
         return m_Allocator.Reallocate(originalPtr, size, alignment);
@@ -101,6 +101,7 @@ namespace sj
     inline void MemSpace<AllocatorType>::Free(void* memory)
     {
         std::scoped_lock<std::mutex> lock(m_HeapLock);
+        SJ_ASSERT(this->ContainsPointer(memory), "Freeing pointer from wrong MemSpace!!");
         m_Allocator.Free(memory);
     }
 

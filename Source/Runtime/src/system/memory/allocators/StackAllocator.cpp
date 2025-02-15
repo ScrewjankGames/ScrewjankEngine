@@ -73,6 +73,12 @@ namespace sj {
         return (void*)((uintptr_t)header_memory + sizeof(StackAllocatorHeader));
     }
 
+    void* StackAllocator::Reallocate(void* originalPtr, const size_t size, const size_t alignment)
+    {
+        SJ_ASSERT(false, "Invalid Operation");
+        return nullptr;
+    }
+
     void StackAllocator::Free(void* memory)
     {
         SJ_ASSERT(m_CurrentHeader != nullptr, "You cannot free from an empty stack allocator");

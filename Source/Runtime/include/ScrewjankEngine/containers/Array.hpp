@@ -28,7 +28,7 @@ namespace sj
         /**
          * Constructor
          */
-        dynamic_array(size_type capacity, IMemSpace* zone );
+        dynamic_array(size_type capacity, IMemSpace* zone);
         dynamic_array(std::initializer_list<T> elems);
 
         /**
