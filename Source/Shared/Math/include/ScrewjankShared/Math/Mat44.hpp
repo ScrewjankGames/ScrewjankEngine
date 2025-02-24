@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ScrewjankShared/Math/Vec4.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
+#include <ScrewjankShared/Math/Vec4.hpp>
 #include <ScrewjankShared/Math/IdentityTag.hpp>
 
 namespace sj
@@ -12,6 +12,10 @@ namespace sj
         Mat44() = default;
         Mat44(IdentityTagT);
         Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w);
+
+        [[nodiscard]] static Mat44 AffineInverse(const Mat44& m);
+        [[nodiscard]] static Mat44 FromEulerXYZ(const Vec3& eulers);
+        [[nodiscard]] static Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation);
 
         auto&& operator[](this auto&& self, int idx) // -> Vec4& or const Vec4&
         {
@@ -24,6 +28,7 @@ namespace sj
         const Vec4& GetW() const;
 
         Vec4 GetCol(int idx) const;
+        Vec3 GetEulerAngles() const;
 
     private:
         Vec4 m_rows[4];
@@ -37,11 +42,6 @@ namespace sj
     inline Mat44 operator*(float s, const Mat44& m) { return m * s; };
 
     Mat44 operator+(const Mat44& a, const Mat44& b);
-
-    [[nodiscard]] Mat44 AffineInverse(const Mat44& m);
-   
-    [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers);
-    [[nodiscard]] Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation);
 
     [[nodiscard]] Mat44 BuildTransform(const Vec4 scale, const Vec3& eulers, const Vec4& translation);
 

@@ -3,6 +3,7 @@
 
 // STD Includes
 #include <cmath>
+#include <numbers>
 
 namespace sj
 {
@@ -46,6 +47,41 @@ namespace sj
     Vec4 Mat44::GetCol(int idx) const
     {
         return Vec4(m_rows[0][idx], m_rows[1][idx], m_rows[2][idx], m_rows[3][idx]);
+    }
+
+
+    Vec3 Mat44::GetEulerAngles() const
+    {
+        Vec4 xAxis = Normalize3_W0(m_rows[0]);
+        Vec4 yAxis = Normalize3_W0(m_rows[1]);
+        Vec4 zAxis = Normalize3_W0(m_rows[2]);
+
+        if(!(zAxis[0] == 1 || zAxis[0] == -1))
+        {
+            float yRot = std::asin(zAxis[0]);
+            float invCosY = 1.0f/ std::cos(yRot);
+
+            float xRot = std::atan2(zAxis[1] * invCosY , zAxis[2] * invCosY);
+            float zRot = std::atan2(yAxis[0], xAxis[0]);
+
+            return sj::Vec3(xRot, yRot, zRot);
+        }
+        else
+        {
+            float zRot = 0;
+            if(zAxis[0] == -1)
+            {
+                float yRot = std::numbers::pi_v<float> / 2.0f;
+                float xRot = std::atan2(xAxis[1], xAxis[2]);
+                return sj::Vec3(xRot, yRot, zRot);
+            }
+            else
+            {
+                float yRot = -std::numbers::pi_v<float> / 2.0f;
+                float xRot = std::atan2(-xAxis[1], -xAxis[2]);
+                return sj::Vec3(xRot, yRot, zRot);
+            }
+        }
     }
 
     Vec4 operator*(const Vec4& v, const Mat44& m)
@@ -94,7 +130,7 @@ namespace sj
         );
     }
 
-    Mat44 AffineInverse(const Mat44& m)
+    Mat44 Mat44::AffineInverse(const Mat44& m)
     {
         const float invScaleX = 1.0f / Magnitude(m.GetX());
         const float invScaleY = 1.0f / Magnitude(m.GetY());
@@ -119,7 +155,7 @@ namespace sj
             inverseT);
     }
 
-    Mat44 FromEulerXYZ(const Vec3& eulers)
+    Mat44 Mat44::FromEulerXYZ(const Vec3& eulers)
     {
         Mat44 x {
             {1.0f, 0.0f, 0.0f, 0.0f},
@@ -145,7 +181,7 @@ namespace sj
         return x * y * z;
     }
 
-    Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation)
+    Mat44 Mat44::FromEulerXYZ(const Vec3& eulers, const Vec4& translation)
     {
         Mat44 output = FromEulerXYZ(eulers);
         output[3] = translation;
@@ -154,7 +190,7 @@ namespace sj
 
     Mat44 BuildTransform(const Vec4 scale, const Vec3& eulers, const Vec4& translation)
     {
-        Mat44 r = FromEulerXYZ(eulers);
+        Mat44 r = Mat44::FromEulerXYZ(eulers);
         
         Mat44 s = Mat44 {
             {scale[0], 0, 0, 0},

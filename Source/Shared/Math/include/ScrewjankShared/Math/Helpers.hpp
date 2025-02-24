@@ -41,5 +41,6 @@ namespace sj
      */
     Quat Exp_Q(const Vec4& v);
     Mat44 Exp_M(const Vec4& v);
-
 }
+
+inline constexpr long double operator""_deg_2_rad(const long double degrees) { return (degrees * std::numbers::pi_v<float>) / 180.0f; }
