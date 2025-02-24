@@ -1,11 +1,12 @@
 // Parent include
+#include "ScrewjankEngine/rendering/Renderer.hpp"
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 #include <ScrewjankShared/utils/Assert.hpp>
 
@@ -16,25 +17,25 @@ namespace sj
 {
     MemSpace<FreeListAllocator>* GetVulkanCPUMemSpace() 
     {
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), 4_MiB, "Vulkan Host Memory");
+        static MemSpace zone(Renderer::WorkBuffer(), 2_MiB, "Vulkan Host Memory");
         return &zone;
     }
 
     void* sjVkAllocate(void* _, size_t size, size_t alignment, VkSystemAllocationScope scope)
     {
-        SJ_ENGINE_LOG_DEBUG("VK Alloc %llu", size );
+        SJ_ENGINE_LOG_DEBUG("VK Alloc {}", size );
         return GetVulkanCPUMemSpace()->Allocate(size, alignment);
     }
 
     void sjVkFree(void* _, void* ptr)
     {
-        SJ_ENGINE_LOG_DEBUG("VK free %p", ptr);
+        SJ_ENGINE_LOG_DEBUG("VK free {}", ptr);
         GetVulkanCPUMemSpace()->Free(ptr);
     }
 
     void* sjVkRealloc(void* _, void* originalPtr, size_t size, size_t alignment, VkSystemAllocationScope scope)
     {
-        SJ_ENGINE_LOG_DEBUG("VK realloc %p", originalPtr);
+        SJ_ENGINE_LOG_DEBUG("VK realloc {}", originalPtr);
         return GetVulkanCPUMemSpace()->Reallocate(originalPtr, size, alignment);
     }
 

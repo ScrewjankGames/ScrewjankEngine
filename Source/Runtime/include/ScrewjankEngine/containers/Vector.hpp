@@ -7,9 +7,11 @@
 
 // Scewjank Headers
 #include <ScrewjankEngine/containers/Array.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
+
+#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 namespace sj {
 
@@ -39,11 +41,9 @@ namespace sj {
         dynamic_vector(size_t count);
         dynamic_vector(size_t count, const T& value);
         dynamic_vector(std::initializer_list<T> list);
-        dynamic_vector(T* buffer, size_t count);
 
         /**
          * Default Constructor
-         * @param count The number of elements to default construct in this vector
          */
         explicit dynamic_vector(IMemSpace* mem_space);
 
@@ -70,6 +70,11 @@ namespace sj {
          */
         template<class Range> requires std::ranges::range<Range>
         dynamic_vector(IMemSpace* mem_space, Range&& inputRange, std::from_range_t _);
+
+        /**
+         * Initialization from fixed buffer
+         */
+        dynamic_vector(IMemSpace* mem_space, T* buffer, size_t count);
 
         /**
          * Copy Constructor

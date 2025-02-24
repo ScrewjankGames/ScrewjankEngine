@@ -24,7 +24,7 @@ namespace sj
         T* buffer = memorySpace->AllocateType<T>(header.numComponents);
         sceneFile.Read(buffer, sizeof(T) * header.numComponents);
 
-        out_list = dynamic_vector(buffer, header.numComponents);
+        out_list = dynamic_vector(memorySpace, buffer, header.numComponents);
     }
 
     Scene::Scene(const char* path)

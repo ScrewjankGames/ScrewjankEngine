@@ -6,7 +6,7 @@
 
 // Void Engine Headers
 #include <ScrewjankEngine/containers/Vector.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 using namespace sj;
 

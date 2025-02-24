@@ -123,11 +123,12 @@ namespace sj
     template <class T, size_t N, VectorOptions tOpts, class SizeType>
     inline void static_vector<T, N, tOpts, SizeType>::erase_element(const T& value) noexcept
     {
-        for(SizeType i = 0; i < N; i++)
+        for(SizeType i = 0; i < m_Count; i++)
         {
             if(m_cArray[i] == value)
             {
                 erase(i);
+                break;
             }
         }
     }

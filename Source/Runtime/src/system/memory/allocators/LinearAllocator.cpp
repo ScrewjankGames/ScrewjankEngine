@@ -7,7 +7,7 @@
 
 // Screwjank Headers
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankShared/utils/MemUtils.hpp>
 

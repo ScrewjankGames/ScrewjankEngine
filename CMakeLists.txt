@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.13.0 FATAL_ERROR)
 ################################################################################
 # CMake build options
 ################################################################################
-option(OPT_Engine_Build_Sample "Build the Engine's sample project" ON)
 
 ################################################################################
 # Project Settings
@@ -31,7 +30,6 @@ set(Game_Shader_Built_Data_Dir ${Game_Built_Data_Dir}/Shaders/ )
 
 # Engine crap
 set(ENGINE_DEPENDENCIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies)
-set(SAMPLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SampleProject)
 
 ################################################################################
 # Setup symlinks

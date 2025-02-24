@@ -24,6 +24,8 @@ namespace sj
     class MemorySystem
     {
       public:
+        static void Init();
+
         /**
          * Provides global access to the memory system
          */
@@ -50,12 +52,12 @@ namespace sj
         static IMemSpace* GetCurrentMemSpace();
 
       private:
-        MemSpace<FreeListAllocator> m_RootMemSpace;
         UnmanagedMemSpace m_UnmanagedMemSpace;
-
-#ifndef SJ_GOLD
+        #ifndef SJ_GOLD
         MemSpace<FreeListAllocator> m_DebugMemSpace;
-#endif
+        #endif
+        MemSpace<FreeListAllocator> m_RootMemSpace;
+
         MemorySystem();
         ~MemorySystem();
     };

@@ -5,10 +5,12 @@
 
 // Engine Headers
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
+
+// Shared Headers
 #include <ScrewjankShared/utils/MemUtils.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 
 namespace sj {

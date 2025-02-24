@@ -1,4 +1,3 @@
-#include "ScrewjankEngine/system/memory/Memory.hpp"
 #include <ScrewjankEngine/core/Game.hpp>
 
 // STD Headers
@@ -11,6 +10,8 @@
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/threading/ThreadPool.hpp>
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 
 // Dependencies
 #include <imgui.h>
@@ -23,6 +24,7 @@ namespace sj {
 
     void Game::LoadScene(const char* path)
     {
+        MemSpaceScope _ (MemorySystem::GetRootMemSpace());
         m_Scene = std::make_unique<Scene>(path);
     }
 
@@ -42,7 +44,6 @@ namespace sj {
 
     Game::~Game()
     {
-        SJ_ENGINE_LOG_INFO("Game terminated");
     }
 
     void Game::Start()
@@ -66,8 +67,6 @@ namespace sj {
         m_Renderer = Renderer::GetInstance();
         m_Renderer->Init();
         
-        MemorySystem::GetUnmanagedMemSpace()->SetLocked(true);
-
         LoadScene("Data/Engine/Scenes/Default.sj_scene");
 
         Run();

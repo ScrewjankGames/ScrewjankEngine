@@ -1,6 +1,7 @@
 #pragma once
 // Screwjank Headers
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 #if defined(SJ_PLATFORM_LINUX) && !defined(SJ_GOLD)
     #include <signal.h>
@@ -21,6 +22,7 @@
 #ifdef SJ_ENABLE_ASSERTS
     #define SJ_ASSERT(condition, fmt, ...)                                                         \
         if (!(condition)) {                                                                        \
+            SJ_ENGINE_LOG_FATAL(fmt __VA_OPT__(,) __VA_ARGS__)                                     \
             SJ_DEBUGBREAK();                                                                       \
         }
 

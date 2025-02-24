@@ -6,8 +6,9 @@
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 
 // Shared Headers
 #include <ScrewjankShared/Math/Helpers.hpp>
@@ -37,8 +38,7 @@ namespace sj
 
     MemSpace<FreeListAllocator>* Renderer::WorkBuffer()
     {
-        // TODO: On some platforms vulkan allocates straight into CPU memory using new/delete - inflating this buffer size
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), 256_KiB, "Renderer Work Buffer");
+        static MemSpace zone(MemorySystem::GetRootMemSpace(), 4_MiB, "Renderer Work Buffer");
         return &zone;
     }
 
@@ -76,7 +76,7 @@ namespace sj
                                              VK_NULL_HANDLE,
                                              &imageIndex);
 
-        if(res == VK_ERROR_OUT_OF_DATE_KHR)
+        if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
             m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
                                  m_renderDevice.GetLogicalDevice(),
@@ -323,11 +323,15 @@ namespace sj
         Viewport viewport = Window::GetInstance()->GetViewportSize();
 
         #ifndef SJ_GOLD
-        ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
+        {
+            MemSpaceScope _(MemorySystem::GetDebugMemSpace());
 
-        // Start the Dear ImGui frame
-        ImGui_ImplVulkan_NewFrame();
-        ImGui::NewFrame();
+            ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
+            
+            // Start the Dear ImGui frame
+            ImGui_ImplVulkan_NewFrame();
+            ImGui::NewFrame();
+        }
         #endif // !SJ_GOLD
     }
 
@@ -418,7 +422,7 @@ namespace sj
 
             SJ_ASSERT(result == VK_SUCCESS,
                     "Vulkan instance creation failed with error code {}",
-                    result);
+                    (int)result);
         }
 
         // Compile-time check to enable debug messaging
@@ -965,7 +969,7 @@ namespace sj
 
         VkDescriptorPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = 1;
+        poolInfo.poolSizeCount = poolSizes.size();
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = kMaxFramesInFlight;
 
@@ -1147,7 +1151,7 @@ namespace sj
     {
         GlobalUniformBufferObject ubo {};
         ubo.model = Mat44(kIdentityTag);
-        ubo.view = AffineInverse(cameraMatrix); 
+        ubo.view = Mat44::AffineInverse(cameraMatrix); 
 
         VkExtent2D extent = m_swapChain.GetExtent();
         const float aspectRatio = static_cast<float>(extent.width) / extent.height;

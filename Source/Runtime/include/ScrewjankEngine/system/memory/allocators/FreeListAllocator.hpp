@@ -36,7 +36,7 @@ namespace sj {
         /**
          * Destructor
          */
-        ~FreeListAllocator();
+        ~FreeListAllocator() = default;
 
         /*
          * @param buffer_size The size (in bytes) of the memory buffer being managed

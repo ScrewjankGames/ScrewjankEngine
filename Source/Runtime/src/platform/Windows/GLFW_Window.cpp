@@ -29,7 +29,7 @@ namespace sj {
 
     void Window::Init()
     {
-        SJ_ENGINE_LOG_INFO("Creating Windows window");
+        SJ_ENGINE_LOG_INFO("Creating glfw window");
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_NativeWindow = glfwCreateWindow(1280, 720, "Vulkan window", nullptr, nullptr);
@@ -41,7 +41,7 @@ namespace sj {
 
     void Window::DeInit()
     {
-        SJ_ENGINE_LOG_INFO("Terminating Windows window");
+        SJ_ENGINE_LOG_INFO("Terminating glfw window");
         glfwDestroyWindow(m_NativeWindow);
         glfwTerminate();
     }

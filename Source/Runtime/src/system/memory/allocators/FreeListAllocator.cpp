@@ -33,12 +33,6 @@ namespace sj {
         other.m_BufferStart = nullptr;
         other.m_AllocatorStats = {};
     }
-
-    FreeListAllocator::~FreeListAllocator()
-    {
-        SJ_ASSERT(m_AllocatorStats.ActiveAllocationCount == 0,
-                  "Memory leak detected in FreeListAllocator!");
-    }
     
     void FreeListAllocator::Init(size_t buffer_size, void* memory) 
     {

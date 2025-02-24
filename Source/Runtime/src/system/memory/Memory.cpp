@@ -1,12 +1,14 @@
+// Parent Include
+#include <ScrewjankEngine/system/memory/Memory.hpp>
+
 // STD Headers
-#include "ScrewjankEngine/system/memory/MemSpace.hpp"
 #include <cassert>
 
 // Screwjank Headers
 #include <ScrewjankEngine/containers/StaticStack.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
 
 // Root heap sizes
@@ -23,31 +25,29 @@ constexpr uint64_t kDebugHeapSize = 64_MiB;
 
 void operator delete(void* memory) noexcept
 {
-    bool found = false;
-    if(sj::MemorySystem::GetCurrentMemSpace() == sj::MemorySystem::GetUnmanagedMemSpace())
+    sj::IMemSpace* currMemSpace = sj::MemorySystem::GetCurrentMemSpace();
+    sj::IMemSpace* unmanagedMemSpace = sj::MemorySystem::GetUnmanagedMemSpace();
+
+    if (currMemSpace && currMemSpace != unmanagedMemSpace && currMemSpace->ContainsPointer(memory))
+    {
+        currMemSpace->Free(memory);
+    }
+    else if(sj::MemorySystem::GetRootMemSpace()->ContainsPointer(memory))
     {
         // Search for correct MemSpace for pointer supplied
         sj::IMemSpace* mem_space = sj::IMemSpace::FindMemSpaceForPointer(memory);
-
-        if(mem_space)
-            mem_space->Free(memory);
-        else
-            sj::MemorySystem::GetUnmanagedMemSpace()->Free(memory);
+        SJ_ASSERT(mem_space != nullptr, "Failed to find managed memory region");
+        mem_space->Free(memory);
     }
-    else if (sj::MemorySystem::GetCurrentMemSpace()->ContainsPointer(memory))
+#ifndef GOLD_VERSION
+    else if(sj::MemorySystem::GetDebugMemSpace()->ContainsPointer(memory))
     {
-        sj::MemorySystem::GetCurrentMemSpace()->Free(memory);
+        sj::MemorySystem::GetDebugMemSpace()->Free(memory);
     }
+#endif
     else
     {
-        // Search for correct MemSpace for pointer supplied
-        sj::IMemSpace* mem_space = sj::IMemSpace::FindMemSpaceForPointer(memory);
-
-        SJ_ASSERT(mem_space != nullptr,
-                  "Failed to find MemSpace for pointer! Was MemSpace destroyed before the pointer "
-                  "was deleted?");
-
-        mem_space->Free(memory);
+        sj::MemorySystem::GetUnmanagedMemSpace()->Free(memory);
     }
 }
 
@@ -71,6 +71,13 @@ namespace sj {
 
     MemorySystem::~MemorySystem()
     {
+    }
+
+    void MemorySystem::Init()
+    {
+        // The first thing the program does once entering main should
+        // be initializing the memory system, which happens on first access.
+        Get();
     }
 
     MemorySystem* MemorySystem::Get()

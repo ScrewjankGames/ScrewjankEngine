@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
 
 // Engine Includes
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 
 // Library Includes

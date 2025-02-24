@@ -8,7 +8,7 @@
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
 #include <ScrewjankEngine/core/systems/ScriptSystem.hpp>
 #include <ScrewjankEngine/core/Scene.hpp>
-#include <ScrewjankEngine/utils/Log.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/core/ScriptFactory.hpp>
 
@@ -80,5 +80,5 @@ namespace sj {
     };
 
     // API function externed to allow users to create custom game classes for main
-    extern Game* CreateGame();
+    extern Game& CreateGame();
 } // namespace sj
