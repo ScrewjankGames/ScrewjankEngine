@@ -13,6 +13,8 @@
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 
+#include <ScrewjankShared/utils/Log.hpp>
+
 // Dependencies
 #include <imgui.h>
 
@@ -81,7 +83,13 @@ namespace sj {
         while (!m_Window->IsWindowClosed()) {
             currentTime = Timer::now();
             s_DeltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
-                      
+            constexpr float kMaxDeltaTime = 1.0f / 15.0f;
+            if(s_DeltaTime > kMaxDeltaTime)
+            {
+                SJ_ENGINE_LOG_WARN("Large delta time detected- {}. Capping at {}", s_DeltaTime, kMaxDeltaTime)
+                s_DeltaTime = kMaxDeltaTime;
+            }
+
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();

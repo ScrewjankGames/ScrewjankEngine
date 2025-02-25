@@ -56,29 +56,30 @@ namespace sj
         Vec4 yAxis = Normalize3_W0(m_rows[1]);
         Vec4 zAxis = Normalize3_W0(m_rows[2]);
 
-        if(!(zAxis[0] == 1 || zAxis[0] == -1))
+        if(!(xAxis[2] == 1 || xAxis[2] == -1))
         {
-            float yRot = std::asin(zAxis[0]);
+            float yRot = -std::asin(xAxis[2]);
             float invCosY = 1.0f/ std::cos(yRot);
 
-            float xRot = std::atan2(zAxis[1] * invCosY , zAxis[2] * invCosY);
-            float zRot = std::atan2(yAxis[0], xAxis[0]);
+            float xRot = std::atan2(yAxis[2] * invCosY , zAxis[2] * invCosY);
+            float zRot = std::atan2(xAxis[1] * invCosY, xAxis[0] * invCosY);
 
             return sj::Vec3(xRot, yRot, zRot);
         }
         else
         {
+            constexpr float pi_over_2 = std::numbers::pi_v<float> / 2.0f;;
             float zRot = 0;
-            if(zAxis[0] == -1)
+            if(xAxis[2] == -1)
             {
-                float yRot = std::numbers::pi_v<float> / 2.0f;
-                float xRot = std::atan2(xAxis[1], xAxis[2]);
+                float yRot = pi_over_2;
+                float xRot = std::atan2(yAxis[0], zAxis[0]);
                 return sj::Vec3(xRot, yRot, zRot);
             }
             else
             {
-                float yRot = -std::numbers::pi_v<float> / 2.0f;
-                float xRot = std::atan2(-xAxis[1], -xAxis[2]);
+                float yRot = -pi_over_2;
+                float xRot = std::atan2(-yAxis[0], -zAxis[0]);
                 return sj::Vec3(xRot, yRot, zRot);
             }
         }

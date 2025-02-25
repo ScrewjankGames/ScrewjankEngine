@@ -23,8 +23,8 @@
                     "script_type":"TestPlayerComponent",
                     "user_data":
                     {
-                        "pitchSpeed":45.0,
-                        "yawSpeed":45.0,
+                        "pitchSpeed":180.0,
+                        "yawSpeed":180.0,
                         "linearSpeed":8.0
                     }
                 }

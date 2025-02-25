@@ -10,8 +10,8 @@
 
 namespace sj
 {
-    inline constexpr float ToRadians(float degrees) { return static_cast<float>(degrees * std::numbers::pi / 180); }
-
+    inline constexpr float ToRadians(float degrees) { return degrees * std::numbers::pi_v<float> / 180.0f; }
+    inline constexpr float ToDegrees(float radians) { return radians * 180.0f * std::numbers::inv_pi_v<float>; }
     /**
      * @return Create a view matrix that looks at the given target.
      * 
@@ -43,4 +43,4 @@ namespace sj
     Mat44 Exp_M(const Vec4& v);
 }
 
-inline constexpr long double operator""_deg_2_rad(const long double degrees) { return (degrees * std::numbers::pi_v<float>) / 180.0f; }
+inline constexpr long double operator""_deg_2_rad(const long double degrees) { return sj::ToRadians(degrees); }
