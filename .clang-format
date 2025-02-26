@@ -41,13 +41,14 @@ BreakBeforeInheritanceComma: false
 BreakConstructorInitializers: BeforeColon
 ColumnLimit: 100
 CompactNamespaces: false
+IncludeBlocks: Regroup
 IncludeCategories: 
-  - Regex: '^"(llvm|llvm-c|clang|clang-c)/'
-    Priority: 2
-  - Regex: '^(<|"(gtest|gmock|isl|json)/)'
-    Priority: 3
-  - Regex: '.*'
+  - Regex: '^ScrewjankEngine/'
     Priority: 1
+  - Regex: '^ScrewjankShared/'
+    Priority: 2
+  - Regex: '^<[^.]+' #STL Includes (no "." in path)
+    Priority: 3
 IndentCaseLabels: false
 IndentPPDirectives: BeforeHash
 IndentWidth : 4

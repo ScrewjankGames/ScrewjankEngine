@@ -10,6 +10,12 @@
 
 namespace sj
 {
+    namespace numbers 
+    {
+        template<typename T>
+        T pi_over_2 = std::numbers::pi_v<T> / 2;
+    }
+
     inline constexpr float ToRadians(float degrees) { return degrees * std::numbers::pi_v<float> / 180.0f; }
     inline constexpr float ToDegrees(float radians) { return radians * 180.0f * std::numbers::inv_pi_v<float>; }
     /**
