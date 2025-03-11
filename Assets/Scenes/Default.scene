@@ -1,40 +1,52 @@
 {
-     "name":"Default",
-     "memory":1024,
-     "game_objects": [
+    "scene_name": "Default",
+    "memory": 1024,
+    "game_objects": [
         {
-            "name":"Player",
-            "translation": [0.0, 0.5, 3.0],
-            "rotation": [0, 0, 0],
-            "scale": [1, 1, 1],
-    
+            "id": "Player",
             "components": [
                 {
-                    "type":"CameraComponent",
-                    "translation": [0.0, 0.0, 0.0],
-                    "rotation": [0, 0, 0],
-                    "scale": [1, 1, 1],
-                    "fov": 45.0,
-                    "nearPlane": 0.1,
-                    "farPlane": 100.0
+                    "type": "TransformComponent",
+                    "localToParent" :{
+                        "translation": [0, 0.5, 3],
+                        "rotation": [0, 0, 0],
+                        "scale": [1, 1, 1]
+                    }
                 },
                 {
-                    "type":"ScriptComponent",
-                    "script_type":"TestPlayerComponent",
-                    "user_data":
-                    {
-                        "pitchSpeed":180.0,
-                        "yawSpeed":180.0,
-                        "linearSpeed":8.0
+                    "type": "CameraComponent",
+                    "localToGoTransform": {
+                        "translation": [0, 0, 0],
+                        "rotation": [0, 0, 0],
+                        "scale": [1, 1, 1]
+                    },
+                    "fov": 45,
+                    "nearPlane": 0.1,
+                    "farPlane": 100
+                },
+                {
+                    "type": "ScriptComponent",
+                    "script_type": "TestPlayerComponent",
+                    "user_data": {
+                        "pitchSpeed": 180,
+                        "yawSpeed": 180,
+                        "linearSpeed": 8
                     }
                 }
             ]
         },
         {
-            "name":"TestRoom",
-            "translation": [0.0, 0.0, 0.0],
-            "rotation": [0, 0, 0],
-            "scale": [1, 1, 1]
+            "id": "TestRoom",
+            "components": [
+                {
+                    "type": "TransformComponent",
+                    "localToParent" :{
+                        "translation": [0, 0, 0],
+                        "rotation": [0, 0, 0],
+                        "scale": [1, 1, 1]
+                    }
+                }
+            ]
         }
-     ]
+    ]
 }

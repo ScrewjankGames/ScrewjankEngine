@@ -31,6 +31,11 @@ namespace sj
 
         }
 
+        inline constexpr StringHash(std::string_view str) : m_hash(FNV1a_32(str))
+        {
+
+        }
+
         inline constexpr std::strong_ordering operator<=>(const StringHash& other) const { return m_hash <=> other.m_hash; }
         inline constexpr bool operator==(const StringHash& other) const { return m_hash == other.m_hash; }
         inline constexpr bool operator!=(const StringHash& other) const { return !(*this == other); }

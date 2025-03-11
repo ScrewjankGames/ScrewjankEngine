@@ -22,3 +22,6 @@
 [submodule "Dependencies/SG14"]
 	path = Dependencies/SG14
 	url = https://github.com/WG21-SG14/SG14.git
+[submodule "Dependencies/glaze"]
+	path = Dependencies/glaze
+	url = https://github.com/stephenberry/glaze.git

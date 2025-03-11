@@ -126,7 +126,7 @@ set_target_properties(tinyobjloader
         RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 
-## TinyObjLoader
+## nlohmann json
 add_subdirectory(json)
 
 set_target_properties(nlohmann_json
@@ -137,3 +137,5 @@ set_target_properties(nlohmann_json
         RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
 )
 
+## Glaze
+add_subdirectory(glaze)

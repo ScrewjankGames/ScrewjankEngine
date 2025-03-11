@@ -5,12 +5,10 @@ namespace sj
     class Vec3
     {
     public:
-        Vec3() = default;
-        Vec3(float x, float y, float z);
 
         auto&& operator[](this auto&& self, int idx) // -> float& or const float&
         {
-            return self.m_elements[idx];
+            return (&(self.x))[idx];
         }
 
         Vec3& operator+=(const Vec3& other);
@@ -18,12 +16,11 @@ namespace sj
         inline bool operator==(const Vec3& other) const 
         {
             return 
-                m_elements[0] == other.m_elements[0] && 
-                m_elements[1] == other.m_elements[1] &&
-                m_elements[2] == other.m_elements[2];
+                x == other.x && 
+                y == other.y &&
+                z == other.z;
         }
 
-    private:
-        float m_elements[3];
+        float x, y, z;
     };
 } // namespace sj

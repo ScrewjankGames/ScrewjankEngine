@@ -38,6 +38,7 @@ set_target_properties(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
         ScrewjankSharedCore
+        glaze::glaze
 )
 
 target_include_directories(${PROJECT_NAME} 

@@ -4,6 +4,7 @@ namespace sj
 {
     // Forward Declares
     class Vec2;
+    class Vec3;
     class Quat;
 
     class alignas(16) Vec4
@@ -11,6 +12,8 @@ namespace sj
     public:
         Vec4() = default;
         Vec4(const Vec2& v, float z = 0.0f, float w = 0.0f);
+        Vec4(const Vec3& v, float w = 0.0f);
+
         Vec4(float x, float y, float z, float w);
 
         auto&& operator[](this auto&& self, int idx) // -> float& or const float&

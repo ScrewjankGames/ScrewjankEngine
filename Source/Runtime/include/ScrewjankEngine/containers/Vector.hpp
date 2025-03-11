@@ -15,6 +15,28 @@
 
 namespace sj {
 
+    template <class Storage>
+    concept vector_storage = requires 
+    { 
+      typename Storage::value_type;
+      Storage::data();
+      Storage::begin();
+      Storage::end(); 
+    };
+
+    class static_storage
+    {
+      
+    };
+
+
+
+    template<vector_storage tStorage>
+    class vector_interface
+    {
+
+    };
+
     template <class T>
     class dynamic_vector
     {

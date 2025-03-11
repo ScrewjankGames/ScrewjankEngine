@@ -3,6 +3,7 @@
 
 // Screwjank Includes
 #include <ScrewjankShared/Math/Vec2.hpp>
+#include <ScrewjankShared/Math/Vec3.hpp>
 
 // STD Includes
 #include <cmath>
@@ -24,6 +25,10 @@ namespace sj
 
     Vec4::Vec4(const Vec2& v, float z, float w) 
         : m_elements {v[0], v[1], z, w}
+    {
+
+    }
+    Vec4::Vec4(const Vec3& v, float w) : m_elements {v[0], v[1], v[2], w}
     {
 
     }

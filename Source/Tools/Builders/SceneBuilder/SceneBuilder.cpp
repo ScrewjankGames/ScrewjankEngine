@@ -11,261 +11,238 @@
 #include <ScrewjankShared/DataDefinitions/Components/CameraComponent.hpp>
 #include <ScrewjankShared/DataDefinitions/Components/ScriptComponent.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankShared/DataDefinitions/TypeRegistration.hpp>
 
 // Library Includes
+#include <glaze/core/common.hpp>
+#include <glaze/core/context.hpp>
+#include <glaze/core/opts.hpp>
+#include <glaze/core/read.hpp>
+#include <glaze/core/reflect.hpp>
+#include <glaze/json/json_t.hpp>
+#include <glaze/json/read.hpp>
 #include <nlohmann/json.hpp>
+#include <glaze/glaze.hpp>
+
 
 // STD Includes
 #include <cstdio>
+#include <ranges>
 #include <vector>
 #include <fstream>
+#include "ScrewjankShared/Math/Mat44.hpp"
+#include "ScrewjankShared/string/StringHash.hpp"
+
+struct ComponentSchema
+{
+    std::string type;
+    std::map<glz::sv, glz::raw_json> componentData; // store key/raw_json in extra map
+};
+
+template <>
+struct glz::meta<ComponentSchema> {
+   using T = ComponentSchema;
+   static constexpr auto value = object(
+      "type", &T::type
+   );
+   
+   static constexpr auto unknown_write{&T::componentData};
+   static constexpr auto unknown_read{&T::componentData};
+};
+
+struct GameObjectSchema
+{
+    std::string id;
+    std::vector<ComponentSchema> components;
+
+};
+
+struct SceneSchema
+{
+    sj::StringHash scene_name; 
+    uint32_t memory; // Free ram allocated to this scene
+    std::vector<GameObjectSchema> game_objects;
+};
+
+void ParseComponentJson(const glz::json_t::object_t& object, sj::ComponentData& out_data)
+{
+    const std::string& typeString = object.at("type").get_string();
+
+    sj::TypeId typeId = sj::StringHash(typeString).AsInt();
+    
+    auto registry = sj::GetComponentRegistry();
+    auto it = std::ranges::find(registry, typeId, &sj::ComponentRegistration::m_componentTypeId);
+
+    SJ_ASSERT(it != registry.end(), "Failed to find runtime registration data of component type {}", typeString);
+
+    const sj::ComponentRegistration& registration = *it;
+    
+    registration.m_serializationFuncs.fromJsonFn(object, out_data);
+}
+
+namespace glz
+{
+    // template <>
+    // struct from<JSON, ComponentSchema>
+    // {
+    //     template <auto Opts>
+    //     static void op(ComponentSchema& componentSchema, auto&&... args)
+    //     {
+    //         std::string type;
+    //         glz::parse<JSON>::op<Opts>(type, args...);
+
+    //         int a = 0;
+    //         // glz::json_t componentJson;
+    //         // glz::from<JSON, glz::json_t>::template op<Opts>(componentJson, args...);
+
+
+    //         // ParseComponentJson(componentJson.get_object(), componentSchema.component);
+    //     }
+    // };
+    template <>
+    struct from<JSON, sj::GameObjectId>
+    {
+        template <auto Opts>
+        static void op(sj::GameObjectId& godId, auto&&... args)
+        {
+            godId = {};
+        }
+    };
+
+    template <>
+    struct from<JSON, sj::StringHash>
+    {
+        template <auto Opts>
+        static void op(sj::StringHash& strHash, auto&&... args)
+        {
+            std::string str;
+            glz::parse<JSON>::op<Opts>(str, args...);
+
+            strHash = sj::StringHash(str);
+        }
+    };
+
+    template <>
+    struct from<JSON, sj::Vec3>
+    {
+        template <auto Opts>
+        static void op(sj::Vec3& vec, auto&&... args)
+        {
+            std::array<float, 3> data;
+            glz::from<JSON, decltype(data)>::template op<Opts>(data, args...);
+
+            vec = {data[0], data[1], data[2]};
+        }
+    };
+
+    template <>
+    struct from<JSON, sj::Mat44>
+    {
+        template <auto Opts>
+        static void op(sj::Mat44& transform, auto&&... args)
+        {
+            sj::Vec3 translation;
+            glz::from<JSON, sj::Vec3>::template op<Opts>(translation, args...);
+
+            sj::Vec3 rotation;
+            glz::from<JSON, sj::Vec3>::template op<Opts>(rotation, args...);
+
+            sj::Vec3 scale;
+            glz::from<JSON, sj::Vec3>::template op<Opts>(scale, args...);
+
+            transform = sj::BuildTransform(scale, rotation, translation);
+        }
+    };
+}
 
 namespace sj::build
 {
 
-using Json = nlohmann::ordered_json;
-
-struct ScriptComponentPrototype
+class typed_vector
 {
-    ScriptComponent component;
-    Json userData;
+public:
+    typed_vector() = default;
+
+    typed_vector(TypeId type, void* data, size_t count)
+     : m_typeId(type), m_data(data), m_count(count), m_capacity(count)
+    {
+
+    }
+
+    void SetTypeId(sj::TypeId id) { m_typeId = id; }
+
+    template<class T> requires T::kTypeId
+    void push_back(const T& element)
+    {
+        SJ_ASSERT(m_typeId == T::kTypeId, "Mismatched type ID");
+
+        T* typedData = reinterpret_cast<T*>(m_data);
+
+
+        if(m_count >= m_capacity)
+        {
+            reserve<T>(m_capacity * 2);
+        }
+        
+        new (typedData[m_count]) T(element);
+    }
+
+    template<class T>
+    void reserve(size_t newCount)
+    {
+
+    }
+
+private:
+    TypeId m_typeId;
+    void* m_data;
+
+    size_t m_count;
+    size_t m_capacity;
 };
 
-template<class T>
-void WriteComponentListHeader(File& outputFile, const std::vector<std::any>& components)
+struct ComponentBuffer
 {
-    ComponentListHeader header {T::kTypeId, static_cast<uint32_t>(components.size())};
-    outputFile.WriteStruct(header);
-}
+    TypeId typeId;
+    std::vector<uint8_t> components_array;
+};
 
-template <class T>
-void WriteComponentList(File& outputFile, const std::vector<std::any>& components)
+struct ScenePrototype2
 {
-    WriteComponentListHeader<T>(outputFile, components);
+    StringHash name; 
+    uint32_t memory; // Free ram allocated to this scene
+    uint32_t scriptPoolSize; // Number of elements needed in the script pool
+    std::vector<GameObject> gameObjects;
+    std::vector<sj::ComponentBuffer> componentBuffers;
+};
 
-    for(const std::any& componentEntry : components)
+ComponentData BuildComponent(const ComponentSchema& data)
+{
+    glz::json_t::object_t component;
+    for(const auto& entry : data.componentData)
     {
-        T component = std::any_cast<T>(componentEntry);
-        outputFile.WriteStruct(component);
-    }
-}
+        glz::json_t json;
+        glz::error_ctx err = glz::read<glz::opts{}>(json, entry.second.str); 
+        SJ_ASSERT(err.ec == glz::error_code::none, "Failed to parse unkown keys");
 
-size_t ComputeUserDataSize(Json& userData)
-{
-    size_t out_size = 0;
-
-    // TODO: Padding between members
-    for(const auto& member : userData)
-    {
-        if(member.is_number_float())
-        {
-            out_size += sizeof(float);
-        }
-        else
-        {
-            SJ_ASSERT(false, "User data type not implemented!");
-        }
+        component[std::string(entry.first)] = json;
     }
 
-    return out_size;
-}
-
-void WriteUserData(File& outputFile, Json& userData)
-{
-    for(const auto& member : userData)
-    {
-        if(member.is_number_float())
-        {
-            float val = member.get<float>();
-            outputFile.WriteStruct<float>(val);
-        }
-        else
-        {
-            SJ_ASSERT(false, "User data type not implemented!");
-        }
-    }
-}
-
-template<>
-void WriteComponentList<ScriptComponentPrototype>(File& outputFile,
-                                                  const std::vector<std::any>& components)
-{
-    WriteComponentListHeader<ScriptComponent>(outputFile, components);
-
-    const size_t componentsStart = outputFile.CursorPos();
-    const size_t componentsEnd = componentsStart + sizeof(ScriptComponent) * components.size();
-
-    for(const std::any& componentEntry : components)
-    {
-        ScriptComponentPrototype proto =
-            std::any_cast<ScriptComponentPrototype>(componentEntry);
-
-        outputFile.WriteStruct(proto.component);
-    }
-
-    // Write User Data following component list
-    for(const std::any& componentEntry : components)
-    {
-        ScriptComponentPrototype proto = std::any_cast<ScriptComponentPrototype>(componentEntry);
-        WriteUserData(outputFile, proto.userData);
-    }
-
-}
-
-Mat44 ExtractTransformFromJson(const Json& json)
-{
-    std::array<float, 3> translationVec = json["translation"].get<std::array<float, 3>>();
-    Vec4 t(translationVec[0], translationVec[1], translationVec[2], 1.0f);
-
-    std::array<float, 3> scaleVec = json["scale"].get<std::array<float, 3>>();
-    Vec4 s(scaleVec[0], scaleVec[1], scaleVec[2], 1.0f);
-
-    std::array<float, 3> eulerVec = json["rotation"].get<std::array<float, 3>>();
-    Vec3 eulers(eulerVec[0], eulerVec[1], eulerVec[2]);
-
-    return BuildTransform(s, eulers, t);
-}
-
-using ComponentList = std::vector<std::any>;
-
-CameraComponent BuildCameraComponent(GameObjectId gameobjectId, const Json& component)
-{
-    return {gameobjectId,
-            ExtractTransformFromJson(component),
-            component["fov"],
-            component["nearPlane"],
-            component["farPlane"]};
-}
-
-ScriptComponentPrototype BuildScriptComponent(GameObjectId gameobjectId,
-                                              const Json& component)
-{
-    ScriptComponentPrototype proto;
-    proto.component.ownerGameobjectId = gameobjectId;
-    proto.component.scriptTypeId = StringHash(component["script_type"].get<std::string>().c_str()).AsInt();
-
-    if(component.contains("user_data"))
-    {
-        proto.userData = component["user_data"];
-        proto.component.userDataSize = static_cast<uint32_t>(ComputeUserDataSize(proto.userData));
-    }
-
-    return proto;
-}
-
-void BuildComponent(GameObjectId gameobjectId, 
-                    const Json& componentJson,
-                    std::map<uint32_t, ComponentList>& out_components)
-{
-    std::string componentType = componentJson["type"];
-
-    StringHash componentTypeHash(componentType.c_str());
-    uint32_t componentTypeId = componentTypeHash.AsInt();
-
-    std::any component;
-    switch(componentTypeId)
-    {
-    case CameraComponent::kTypeId:
-        component = BuildCameraComponent(gameobjectId, componentJson);
-        break;
-    case ScriptComponent::kTypeId:
-        component = BuildScriptComponent(gameobjectId, componentJson);
-        break;
-    default:
-        //SJ_ASSERT(false, "Unkown component type %s found in scene", componentType.c_str());
-        return;
-    }
-
-    auto it = out_components.find(componentTypeId);
-    if(it == out_components.end())
-    {
-        out_components.emplace(
-                componentTypeId, // Key
-                ComponentList {component} // value 
-        );
-    }
-    else
-    {
-        it->second.emplace_back(component);
-    }
-}
-
-void BuildGameObject(uint32_t sceneId, 
-                     const Json& go,
-                     std::vector<GameObjectPrototype>& out_goPrototypes,
-                     std::map<uint32_t, ComponentList>& out_components)
-{
-    GameObjectPrototype prototype 
-    {
-        GameObjectId(sceneId, static_cast<uint32_t>(out_goPrototypes.size())),
-        ExtractTransformFromJson(go)
-    };
-
-    if(go.contains("components"))
-    {
-        for(const Json& component : go["components"])
-        {
-            BuildComponent(prototype.id, component, out_components);
-        }
-    }
-
-    out_goPrototypes.emplace_back(prototype);
+    sj::ComponentData finalComponent;
+    ParseComponentJson(component, finalComponent);
+    return finalComponent;
 }
 
 bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const
 {
-    std::ifstream stream(item);
-    nlohmann::ordered_json document = nlohmann::ordered_json::parse(stream);
+    SceneSchema test;
+    std::string buffer;
+    glz::error_ctx error = glz::read_file_json<glz::opts{.error_on_unknown_keys=false}>(test, item.c_str(), buffer);
+    std::string descriptive_error = glz::format_error(error, buffer);
 
-    ScenePrototype scenePrototype;
-    scenePrototype.name = document["name"].get<std::string>().c_str();
-    scenePrototype.memory = document["memory"].get<uint32_t>();
 
-    std::vector<GameObjectPrototype> goPrototypes;
-    std::map<uint32_t, ComponentList> components;
-    if(document.contains("game_objects"))
-    {
-        auto goList = document["game_objects"];
-        SJ_ASSERT(goList.is_array(), "Expected array of game objects");
 
-        Json gameobjects = document["game_objects"];
-        for(const Json& go : gameobjects)
-        {
-            BuildGameObject(scenePrototype.name.AsInt(), go, goPrototypes, components);
-        }
-    }
-
-    scenePrototype.numGameObjects = static_cast<uint32_t>(goPrototypes.size());
-    scenePrototype.numComponentLists = static_cast<uint32_t>(components.size());
-    scenePrototype.scriptPoolSize = 0;
-    if(components.find(ScriptComponent::kTypeId) != components.end())
-    {
-        scenePrototype.scriptPoolSize = static_cast<uint32_t>(components[ScriptComponent::kTypeId].size());
-    }
-
-    File outputFile;
-    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
-    outputFile.WriteStruct(scenePrototype);
-    for(const GameObjectPrototype& goProto : goPrototypes)
-    {
-        outputFile.WriteStruct(goProto);
-    }
-
-    for(const auto& entry : components)
-    {
-        switch(entry.first)
-        {
-        case CameraComponent::kTypeId:
-            WriteComponentList<CameraComponent>(outputFile, entry.second);
-            break;
-        case ScriptComponent::kTypeId:
-            WriteComponentList<ScriptComponentPrototype>(outputFile, entry.second);
-        default:
-            break;
-        }
-    }
-
-    return true;
+    return error.ec == glz::error_code::none;
 }
 
 }

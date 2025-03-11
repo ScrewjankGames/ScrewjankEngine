@@ -56,7 +56,6 @@ namespace sj
     struct GameObjectPrototype
     {
         GameObjectId id;
-        Mat44 transform;
     };
-
+    
 }

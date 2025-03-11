@@ -64,7 +64,7 @@ namespace sj
             float xRot = std::atan2(yAxis[2] * invCosY , zAxis[2] * invCosY);
             float zRot = std::atan2(xAxis[1] * invCosY, xAxis[0] * invCosY);
 
-            return sj::Vec3(xRot, yRot, zRot);
+            return sj::Vec3{xRot, yRot, zRot};
         }
         else
         {
@@ -74,13 +74,13 @@ namespace sj
             {
                 float yRot = pi_over_2;
                 float xRot = std::atan2(yAxis[0], zAxis[0]);
-                return sj::Vec3(xRot, yRot, zRot);
+                return sj::Vec3{xRot, yRot, zRot};
             }
             else
             {
                 float yRot = -pi_over_2;
                 float xRot = std::atan2(-yAxis[0], -zAxis[0]);
-                return sj::Vec3(xRot, yRot, zRot);
+                return sj::Vec3{xRot, yRot, zRot};
             }
         }
     }

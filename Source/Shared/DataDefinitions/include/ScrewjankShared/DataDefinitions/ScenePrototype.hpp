@@ -5,6 +5,12 @@
 
 // STD Includes
 #include <cstdint>
+#include "ScrewjankShared/DataDefinitions/GameObjectPrototype.hpp"
+
+#include <vector>
+#include <any>
+#include <map>
+#include <string>
 
 namespace sj
 {
