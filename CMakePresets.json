@@ -1,0 +1,70 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "base",
+            "generator": "Ninja",
+            "hidden": true,
+            "binaryDir": "build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "SJ_ARCHIVE_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
+                "SJ_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
+                "SJ_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/",
+                "SJ_CODEGEN_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/GeneratedCode"
+            }
+        },
+        {
+            "name": "ClangDebug",
+            "displayName": "Debug - Clang",
+            "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
+            "inherits": "base",
+            "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "ClangRelease",
+            "displayName": "Release - Clang",
+            "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
+            "inherits": "base",
+            "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name":"Debug",
+            "configurePreset": "ClangDebug",
+            "displayName": "Debug"
+        },
+        {
+            "name":"Release",
+            "configurePreset": "ClangRelease",
+            "displayName": "Release"
+        },
+        {
+            "name": "Gold",
+            "description": "Build All Targets with SJ_GOLD defined",
+            "hidden": true,
+            "environment": {
+                "SJ_GOLD": null
+            }
+        },
+        {
+            "name":"ClangDebugGold",
+            "configurePreset": "ClangDebug",
+            "displayName": "Debug - GOLD"
+        },
+        {
+            "name":"ClangReleaseGold",
+            "configurePreset": "ClangRelease",
+            "displayName": "Release - GOLD"
+        }
+    ]
+}
