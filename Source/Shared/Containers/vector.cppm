@@ -41,57 +41,96 @@ export namespace sj_2
 
         typename Storage::allocator_type;
 
-        instance.reserve();
+        instance.replace_buffer(nullptr, 0);
+        instance.get_allocator();
     };
 
     template<class T, size_t N>
     using static_vector_storage = std::array<T, N>;
 
-    template<class T, class Allocator = std::pmr::polymorphic_allocator<std::byte>>
+    template<class T, class Allocator = std::pmr::polymorphic_allocator<T>>
     class dynamic_vector_storage 
     {
+    public:
         using iterator = T*;
         using const_iterator = const T*;
+        using allocator_type = Allocator;
 
-        dynamic_vector_storage() 
-            : allocator(Allocator())
+        dynamic_vector_storage() noexcept
+            : allocator(Allocator()) 
         {
 
         }
 
-        dynamic_vector_storage(const Allocator& alloc)
+        dynamic_vector_storage(const Allocator& alloc) noexcept
             : allocator(alloc)
         {
 
         }
-        auto begin(this auto&& self) 
+
+        auto begin(this auto&& self) noexcept
         {
-            return self.data;
+            return self.buffer;
         }  
 
-        auto end(this auto&& self)
+        auto end(this auto&& self) noexcept
         {
             return self.data[self.capacity];
         }
         
-        size_t size() const { return capacity; }
+        size_t size() const noexcept
+        { 
+            return capacity; 
+        }
+
+        auto data(this auto&& self) noexcept
+        {
+            return self.buffer;
+        }
+
+        decltype(auto) operator[](this auto&& self, size_t idx) noexcept
+        {
+            return self.buffer[idx];
+        }
+
+        allocator_type get_allocator()
+        {
+            return allocator;
+        }
+
+        void replace_buffer(T* new_buffer, size_t new_capacity)
+        {
+            if(buffer)
+            {
+                allocator.deallocate(buffer, capacity);
+            }
+
+            buffer = new_buffer;
+            capacity = new_capacity;
+        }
+
+        T& operator[](size_t index)
+        {
+            return buffer[index];
+        }
+
+    protected:
+        T* buffer;
+        size_t capacity;
 
     private:
-        T* data;
-        Allocator allocator;
-        size_t capacity;
+        allocator_type allocator;
     };
 
     template<class T, vector_storage StorageType, VectorOptions tOpts = VectorOptions {}>
-    class vector_interface
+    class vector_interface : public StorageType
     {
     public:
         using iterator = StorageType::iterator;
         using const_iterator = StorageType::const_iterator;
-        using value_type = StorageType::value_type;
-        using reference = StorageType::reference;
-        using const_reference = StorageType::const_reference;
-        using size_type = StorageType::size_type;
+        using size_type = size_t;
+
+        using StorageType::StorageType;
         
         vector_interface() = default;
 
@@ -128,14 +167,14 @@ export namespace sj_2
         /** Array Index Operator */
         auto&& operator[](this auto&& self, const size_t index) noexcept // -> (const?) T&
         {
-            return self.m_storage[index];
+            return self.StorageType::operator[](index);
         }
 
         template <class... Args>
         iterator emplace(const_iterator pos, Args&&... args) noexcept
             requires std::contiguous_iterator<const_iterator> 
         {
-            SJ_ASSERT(pos >= m_storage.begin() && pos <= m_storage.end(), "Emplace index out of bounds");
+            SJ_ASSERT(pos >= this->begin() && pos <= this->end(), "Emplace index out of bounds");
 
             if constexpr (!growable_vector_storage<StorageType>)
             {
@@ -143,11 +182,11 @@ export namespace sj_2
             }
             else
             {
-                if(m_count >= m_storage.size())
+                if(m_count >= capacity())
                 {
-                    size_t offset = std::distance(m_storage.begin(), pos);
+                    size_t offset = std::distance(begin(), pos);
                     grow();
-                    pos = m_storage.begin() + offset;
+                    pos = begin() + offset;
                 }
             }
     
@@ -180,10 +219,10 @@ export namespace sj_2
             }
             else 
             {
-                if (m_count >= m_storage.size()) grow();
+                if (m_count >= capacity()) grow();
             }            
 
-            auto address = std::addressof(*end());
+            auto address = std::addressof(*this->end());
             new(address) T(std::forward<Args>(args)...);
         }
 
@@ -191,7 +230,7 @@ export namespace sj_2
         {
             for(int i = 0; i < m_count; i++)
             {
-                if(m_storage[i] == value)
+                if((*this)[i] == value)
                 {
                     erase(i);
                     break;
@@ -234,9 +273,9 @@ export namespace sj_2
 
             if (new_size > m_count)
             {
-                for (auto i = m_count; i < m_storage.size(); i++)
+                for (auto i = m_count; i < new_size; i++)
                 {
-                    new (&m_storage[i]) T(value);
+                    new (&(*this)[i]) T(value);
                 }
             }
             else
@@ -246,7 +285,7 @@ export namespace sj_2
                     // If the vector is shrinking, destroy the elements that aren't getting copied
                     for (size_t i = new_size; i < m_count; i++)
                     {
-                        m_storage[i].~T();
+                        (*this)[i].~T();
                     }
                 }
             }
@@ -257,17 +296,29 @@ export namespace sj_2
         void reserve(size_type new_cap) noexcept
             requires growable_vector_storage<StorageType>
         {
-            m_storage.reserve(new_cap);
+            if(new_cap <= capacity())
+                return;
+
+            auto allocator = this->get_allocator();
+            T* new_buffer = allocator.allocate(new_cap);
+            
+            // Move old buffer into new buffer
+            for (size_t i = 0; i < this->size(); i++)
+            {
+                new (&new_buffer[i]) T(std::move((*this)[i]));
+            }
+
+            StorageType::replace_buffer(new_buffer, new_cap);
         }
 
         size_type capacity() const noexcept
         {
-            return m_storage.size();
+            return StorageType::size();
         }
 
         auto data(this auto&& self) noexcept
         {
-            return self.m_storage.data();
+            return self.StorageType::data();
         }
 
         void clear() noexcept
@@ -283,14 +334,14 @@ export namespace sj_2
             m_count = 0;
         }
 
-        decltype(auto) begin(this auto&& self) noexcept
+        auto begin(this auto&& self) noexcept
         {
-            return self.m_storage.begin();
+            return self.StorageType::begin();
         }
 
-        decltype(auto) end(this auto&& self) noexcept
+        auto end(this auto&& self) noexcept
         {
-            return self.m_storage.begin() + self.m_count;
+            return std::to_address(self.begin() + self.m_count);
         }
 
         [[nodiscard]] bool empty() const noexcept 
@@ -302,18 +353,17 @@ export namespace sj_2
         void grow() 
             requires growable_vector_storage<StorageType> 
         {
-            size_t new_capacity = static_cast<size_t>( std::ceil(m_storage.size() * tOpts.growFactor) );
-            m_storage.reserve(new_capacity);
+            size_t new_capacity = static_cast<size_t>( std::ceil(capacity() * tOpts.growFactor) );
+            reserve(new_capacity);
         }
 
-        StorageType m_storage;
-        size_t m_count;
+        size_t m_count = 0;
     };
 
     template<class T, size_t N, VectorOptions tOpts = {}>
     using static_vector = vector_interface<T, std::array<T,N>, tOpts>;
 
-    template<class T, size_t N, VectorOptions tOpts = {}>
-    using dynamic_vector = vector_interface<T, dynamic_vector_storage<T>, tOpts>;
+    template<class T, class AllocatorType = std::pmr::polymorphic_allocator<T>, VectorOptions tOpts = {}>
+    using dynamic_vector = vector_interface<T, dynamic_vector_storage<T, AllocatorType>, tOpts>;
 }
 
