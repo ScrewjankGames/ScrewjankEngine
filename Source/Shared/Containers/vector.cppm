@@ -5,10 +5,10 @@ module;
 #include <memory>
 #include <cstddef>
 #include <array>
-#include <vector>
 #include <algorithm>
 #include <cmath>
 #include <memory_resource>
+#include <ranges>
 
 #include <ScrewjankShared/utils/Assert.hpp>
 
@@ -41,7 +41,6 @@ export namespace sj_2
 
         typename Storage::allocator_type;
 
-        instance.replace_buffer(nullptr, 0);
         instance.get_allocator();
     };
 
@@ -56,16 +55,77 @@ export namespace sj_2
         using const_iterator = const T*;
         using allocator_type = Allocator;
 
-        dynamic_vector_storage() noexcept
-            : allocator(Allocator()) 
+        dynamic_vector_storage() noexcept = default;
+
+        dynamic_vector_storage(const Allocator& alloc) noexcept
+            : allocator(alloc), buffer(nullptr), capacity(0)
         {
 
         }
 
-        dynamic_vector_storage(const Allocator& alloc) noexcept
-            : allocator(alloc)
+        dynamic_vector_storage(const dynamic_vector_storage& other) noexcept
+            : allocator(
+                std::allocator_traits<allocator_type>::select_on_container_copy_construction(other.allocator)
+            ),
+            capacity(other.capacity)
         {
+            buffer = allocator.allocate(other.capacity);
+            
+            for(int i = 0; const auto& entry : other)
+            {
+                new (&buffer[i]) T(entry);
+                i++;
+            }
+        }
 
+        dynamic_vector_storage(dynamic_vector_storage&& other) noexcept
+            : allocator(std::move(other.allocator)),
+              buffer(std::move(other.buffer)),
+              capacity(other.capacity)
+        {
+            other.buffer = nullptr;
+            other.capacity = 0;
+        }
+
+        ~dynamic_vector_storage() noexcept
+        {
+            if(buffer)
+                allocator.deallocate(buffer, capacity);
+        }
+
+        dynamic_vector_storage& operator=(const dynamic_vector_storage& other) noexcept
+        {
+            reserve(other.size());
+
+            for(int i = 0; auto& entry : other)
+            {
+                new (&((*this)[i])) T(entry);
+                i++;
+            }
+
+            capacity = other.size();
+
+            return *this;
+        }
+
+        void reserve(size_t new_cap) noexcept
+        {
+            if(new_cap <= capacity)
+                return;
+
+            T* new_buffer = allocator.allocate(new_cap);
+            
+            // Move old buffer into new buffer
+            for (size_t i = 0; i < capacity; i++)
+            {
+                new (&new_buffer[i]) T(std::move((*this)[i]));
+            }
+
+            if(buffer)
+                allocator.deallocate(buffer, capacity);
+
+            buffer = new_buffer;
+            capacity = new_cap;
         }
 
         auto begin(this auto&& self) noexcept
@@ -75,7 +135,7 @@ export namespace sj_2
 
         auto end(this auto&& self) noexcept
         {
-            return self.data[self.capacity];
+            return &(self.buffer[self.capacity]);
         }
         
         size_t size() const noexcept
@@ -98,28 +158,33 @@ export namespace sj_2
             return allocator;
         }
 
-        void replace_buffer(T* new_buffer, size_t new_capacity)
-        {
-            if(buffer)
-            {
-                allocator.deallocate(buffer, capacity);
-            }
-
-            buffer = new_buffer;
-            capacity = new_capacity;
-        }
-
         T& operator[](size_t index)
         {
             return buffer[index];
         }
 
+        auto&& at(this auto&& self, size_t index)
+        {
+            SJ_ASSERT(index >= 0 && index < self.size(), "Out of bounds access");
+            return self.operator[](index);
+        }
+
+        auto&& front(this auto&& self)
+        {
+            return *self.begin();
+        }
+
+        auto&& back(this auto&& self)
+        {
+            return *(self.end() - 1);
+        }
+
     protected:
-        T* buffer;
-        size_t capacity;
+        T* buffer = nullptr;
+        size_t capacity = 0;
 
     private:
-        allocator_type allocator;
+        allocator_type allocator = {};
     };
 
     template<class T, vector_storage StorageType, VectorOptions tOpts = VectorOptions {}>
@@ -133,17 +198,40 @@ export namespace sj_2
         using StorageType::StorageType;
         
         vector_interface() = default;
+        vector_interface(const vector_interface& other) = default;
+
+        vector_interface(vector_interface&& other) 
+            : StorageType(std::move(other))
+        {
+            other.m_count = 0;
+        };
+
+        vector_interface(size_t count, T&& val = T())
+        {
+            resize(count, std::forward<T>(val));
+        }
 
         vector_interface(std::initializer_list<T> vals) noexcept
         {
             if constexpr (growable_vector_storage<StorageType>)
             {
-                reserve(vals.size());
+                this->reserve(vals.size());
             }
 
             for(const T& val : vals)
             {
                 emplace_back(val);
+            }
+        }
+
+        ~vector_interface()
+        {
+            if constexpr (!std::is_trivially_destructible_v<T>)
+            {
+                for(auto& it : *this)
+                {
+                    it.~T();
+                }
             }
         }
 
@@ -153,16 +241,37 @@ export namespace sj_2
             
             if constexpr (growable_vector_storage<StorageType>)
             {
-                reserve(vals.size());
+                this->reserve(vals.size());
             }
 
             for(const T& val : vals)
             {
-                push_back(val);
+                emplace_back(val);
             }
     
             return *this;
         }
+
+        vector_interface& operator=(const vector_interface& other)
+        {
+            clear();
+
+            StorageType::operator=(other);
+            m_count = other.m_count;
+
+            return *this;
+        }
+
+        vector_interface& operator=(vector_interface&& other)
+        {
+            clear();
+
+            StorageType::operator=(std::forward<vector_interface>(other));
+            m_count = other.m_count;
+
+            return *this;
+        }
+
 
         /** Array Index Operator */
         auto&& operator[](this auto&& self, const size_t index) noexcept // -> (const?) T&
@@ -170,12 +279,35 @@ export namespace sj_2
             return self.StorageType::operator[](index);
         }
 
+        template<class InputRange>
+        iterator insert(const_iterator pos, InputRange&& r, std::from_range_t _)
+        {
+            return insert(pos, r.begin(), r.end());
+        }
+
+        template<class InputIterator>
+        iterator insert(const_iterator pos, InputIterator first, InputIterator last)
+        {
+            size_t offset = pos - begin();
+            size_t numNewElements = last - first;
+            this->reserve(size() + (last - first));
+
+            std::move_backward(begin() + offset, end(), end() + numNewElements);
+            std::move(first, last, begin() + offset);
+
+            m_count += numNewElements;
+
+            return begin() + offset;
+        }
+
         template <class... Args>
         iterator emplace(const_iterator pos, Args&&... args) noexcept
             requires std::contiguous_iterator<const_iterator> 
         {
             SJ_ASSERT(pos >= this->begin() && pos <= this->end(), "Emplace index out of bounds");
-
+            size_t offset = pos - begin();
+            iterator output_pos = begin() + offset;
+            
             if constexpr (!growable_vector_storage<StorageType>)
             {
                 SJ_ASSERT(m_count < capacity(), "Cannot emplace into full vector");
@@ -184,34 +316,35 @@ export namespace sj_2
             {
                 if(m_count >= capacity())
                 {
-                    size_t offset = std::distance(begin(), pos);
                     grow();
-                    pos = begin() + offset;
+                    output_pos = begin() + offset;
                 }
             }
-    
+               
             if constexpr(tOpts.preserveRelativeOrderings)
             {
                 if(m_count > 0)
                 {
-                    auto my_end = end();
-                    std::ranges::move_backward(pos, my_end, my_end+1);
+                    for(auto it = end(); it >= output_pos; it-- )
+                    {
+                        new (std::to_address(it)) T(std::move(*(it-1)));
+                    }
                 }
     
                 m_count++;
             }
             else
             {
-                emplace_back(std::move(*pos));
+                emplace_back(std::move(*output_pos));
             }
 
-            new (std::to_address(pos)) T(std::forward<Args>(args)...);
+            new (std::to_address(output_pos)) T(std::forward<Args>(args)...);
 
-            return pos;
+            return output_pos;
         }
 
         template<class... Args>
-        void emplace_back(Args&&... args) noexcept
+        T& emplace_back(Args&&... args) noexcept
         {
             if constexpr (!growable_vector_storage<StorageType>)
             {
@@ -222,8 +355,12 @@ export namespace sj_2
                 if (m_count >= capacity()) grow();
             }            
 
-            auto address = std::addressof(*this->end());
-            new(address) T(std::forward<Args>(args)...);
+            auto address = std::to_address(this->end());
+            new (address) T(std::forward<Args>(args)...);
+
+            m_count++;
+
+            return *reinterpret_cast<T*>(address);
         }
 
         void erase_element(const T& value) noexcept
@@ -238,27 +375,30 @@ export namespace sj_2
             }
         }
 
-        void erase(const_iterator iter) noexcept 
+        iterator erase(const_iterator pos) noexcept 
             requires std::contiguous_iterator<const_iterator> 
         {
-            SJ_ASSERT(iter >= begin() && iter < end(), "Erase index out of bounds")
+            SJ_ASSERT(pos >= begin() && pos < end(), "Erase index out of bounds")
+            pos->~T();
 
-            iter->~T();
+            size_t offset = pos - begin();
+            iterator output_pos = begin() + offset;
 
             if(m_count > 0)
             {
                 if constexpr (tOpts.preserveRelativeOrderings)
                 {
                     auto my_end = end();
-                    std::ranges::move(iter+1, my_end+1, iter);
+                    std::ranges::move(output_pos+1, my_end+1, output_pos);
                 }
                 else
                 {
-                    new (std::to_address(iter)) T(std::move(*(end() - 1)));
+                    new (std::to_address(output_pos)) T(std::move(*(end() - 1)));
                 }
             }
 
             m_count--;
+            return output_pos;
         }
 
         size_type size() const noexcept 
@@ -267,9 +407,15 @@ export namespace sj_2
         }
 
         void resize(size_type new_size, T&& value = T()) noexcept
-            requires growable_vector_storage<StorageType> 
         {
-            reserve(new_size);
+            if constexpr (growable_vector_storage<StorageType>)
+            {
+                this->reserve(new_size);
+            }
+            else
+            {
+                SJ_ASSERT(new_size < capacity(), "cannot grow statically sized vector");
+            }
 
             if (new_size > m_count)
             {
@@ -291,24 +437,6 @@ export namespace sj_2
             }
     
             m_count = new_size;
-        }
-
-        void reserve(size_type new_cap) noexcept
-            requires growable_vector_storage<StorageType>
-        {
-            if(new_cap <= capacity())
-                return;
-
-            auto allocator = this->get_allocator();
-            T* new_buffer = allocator.allocate(new_cap);
-            
-            // Move old buffer into new buffer
-            for (size_t i = 0; i < this->size(); i++)
-            {
-                new (&new_buffer[i]) T(std::move((*this)[i]));
-            }
-
-            StorageType::replace_buffer(new_buffer, new_cap);
         }
 
         size_type capacity() const noexcept
@@ -341,12 +469,12 @@ export namespace sj_2
 
         auto end(this auto&& self) noexcept
         {
-            return std::to_address(self.begin() + self.m_count);
+            return &(self.begin()[self.m_count]);
         }
 
         [[nodiscard]] bool empty() const noexcept 
         {
-            end() == begin(); 
+            return end() == begin(); 
         }
 
     private: 
@@ -354,11 +482,22 @@ export namespace sj_2
             requires growable_vector_storage<StorageType> 
         {
             size_t new_capacity = static_cast<size_t>( std::ceil(capacity() * tOpts.growFactor) );
-            reserve(new_capacity);
+            if(new_capacity == 0)
+                new_capacity = 1;
+            this->reserve(new_capacity);
         }
 
         size_t m_count = 0;
     };
+
+    template <class T, vector_storage Storage, VectorOptions tOpts>
+    void swap(vector_interface<T, Storage, tOpts>& lhs,
+        vector_interface<T, Storage, tOpts>& rhs) noexcept
+    {
+        vector_interface<T, Storage, tOpts> temp = std::move(lhs);
+        lhs = std::move(rhs);
+        rhs = std::move(temp);
+    }
 
     template<class T, size_t N, VectorOptions tOpts = {}>
     using static_vector = vector_interface<T, std::array<T,N>, tOpts>;
