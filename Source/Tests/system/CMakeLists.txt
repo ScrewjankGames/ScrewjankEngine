@@ -21,6 +21,3 @@ target_link_libraries(SystemTestSuite
 		gtest 
 		ScrewjankEngine
 )
-
-include(GoogleTest)
-gtest_discover_tests(SystemTestSuite)
