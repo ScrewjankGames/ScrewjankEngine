@@ -13,9 +13,9 @@ module;
 #include <ScrewjankShared/utils/Assert.hpp>
 
 // End global module fragment
-export module sj.containers:vector;
+export module sj.shared.containers:vector;
 
-export namespace sj_2
+export namespace sj
 {
     struct VectorOptions
     {
@@ -54,6 +54,9 @@ export namespace sj_2
         using iterator = T*;
         using const_iterator = const T*;
         using allocator_type = Allocator;
+        using value_type = T;
+        using reference = T&;
+        using const_reference = const T&;
 
         dynamic_vector_storage() noexcept = default;
 
@@ -163,22 +166,6 @@ export namespace sj_2
             return buffer[index];
         }
 
-        auto&& at(this auto&& self, size_t index)
-        {
-            SJ_ASSERT(index >= 0 && index < self.size(), "Out of bounds access");
-            return self.operator[](index);
-        }
-
-        auto&& front(this auto&& self)
-        {
-            return *self.begin();
-        }
-
-        auto&& back(this auto&& self)
-        {
-            return *(self.end() - 1);
-        }
-
     protected:
         T* buffer = nullptr;
         size_t capacity = 0;
@@ -212,16 +199,38 @@ export namespace sj_2
         }
 
         vector_interface(std::initializer_list<T> vals) noexcept
+            : vector_interface(std::from_range_t{}, vals)
+        {
+
+        }
+
+        template<std::ranges::range R>
+        vector_interface(std::from_range_t, R&& rg)
         {
             if constexpr (growable_vector_storage<StorageType>)
             {
-                this->reserve(vals.size());
+                resize(rg.size());
             }
 
-            for(const T& val : vals)
+            std::move(rg.begin(), rg.end(), begin());
+
+            m_count = rg.size();
+        }
+
+        template<std::ranges::range R, class Allocator>
+        requires growable_vector_storage<StorageType>
+        vector_interface(std::from_range_t, R&& rg, Allocator alloc)
+        {
+            static_assert(std::is_convertible_v<Allocator, typename StorageType::allocator_type>);
+
+            if constexpr (growable_vector_storage<StorageType>)
             {
-                emplace_back(val);
+                resize(rg.size());
             }
+
+            std::move(rg.begin(), rg.end(), begin());
+
+            m_count = rg.size();
         }
 
         ~vector_interface()
@@ -363,13 +372,18 @@ export namespace sj_2
             return *reinterpret_cast<T*>(address);
         }
 
+        T& push_back(const T& elem)
+        {
+            return emplace_back(elem);
+        }
+
         void erase_element(const T& value) noexcept
         {
-            for(int i = 0; i < m_count; i++)
+            for(const T& elem : *this)
             {
-                if((*this)[i] == value)
+                if(elem == value)
                 {
-                    erase(i);
+                    erase(&elem);
                     break;
                 }
             }
@@ -388,8 +402,10 @@ export namespace sj_2
             {
                 if constexpr (tOpts.preserveRelativeOrderings)
                 {
-                    auto my_end = end();
-                    std::ranges::move(output_pos+1, my_end+1, output_pos);
+                    for(auto it = output_pos + 1; it != end(); ++it)
+                    {
+                        new (std::to_address(it - 1)) T(std::move(*it));
+                    }
                 }
                 else
                 {
@@ -477,6 +493,24 @@ export namespace sj_2
             return end() == begin(); 
         }
 
+        auto&& at(this auto&& self, size_t index)
+        {
+            SJ_ASSERT(index >= 0 && index < self.size(), "Out of bounds access");
+            return self.operator[](index);
+        }
+
+        auto&& front(this auto&& self)
+        {
+            SJ_ASSERT(self.size() > 0, "Out of bounds access");
+            return *self.begin();
+        }
+
+        auto&& back(this auto&& self)
+        {
+            SJ_ASSERT(self.size() > 0, "Out of bounds access");
+            return *(self.end() - 1);
+        }
+
     private: 
         void grow() 
             requires growable_vector_storage<StorageType> 
@@ -502,7 +536,7 @@ export namespace sj_2
     template<class T, size_t N, VectorOptions tOpts = {}>
     using static_vector = vector_interface<T, std::array<T,N>, tOpts>;
 
-    template<class T, class AllocatorType = std::pmr::polymorphic_allocator<T>, VectorOptions tOpts = {}>
+    template<class T, VectorOptions tOpts = {}, class AllocatorType = std::pmr::polymorphic_allocator<T>>
     using dynamic_vector = vector_interface<T, dynamic_vector_storage<T, AllocatorType>, tOpts>;
 }
 

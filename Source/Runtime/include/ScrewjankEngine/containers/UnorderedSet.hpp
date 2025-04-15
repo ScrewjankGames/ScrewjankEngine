@@ -9,7 +9,8 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/containers/Vector.hpp>
+
+import sj.shared.containers;
 
 namespace sj {
 

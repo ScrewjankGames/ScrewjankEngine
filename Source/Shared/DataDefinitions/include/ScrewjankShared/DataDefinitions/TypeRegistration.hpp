@@ -1,53 +1,81 @@
 #pragma once
 
-#include <ScrewjankShared/string/StringHash.hpp>
 #include <array>
 #include <cstring>
-#include <functional>
+#include <glaze/beve/write.hpp>
 #include <glaze/core/context.hpp>
+#include <glaze/core/meta.hpp>
 #include <glaze/glaze.hpp>
 #include <glaze/json/json_t.hpp>
 #include <ranges>
+#include <span>
+#include <vector>
+
+#include <ScrewjankShared/string/StringHash.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
-#include <ScrewjankShared/DataDefinitions/Components/CameraComponent.hpp>
-#include <ScrewjankShared/DataDefinitions/Components/TransformComponent.hpp>
+import sj.shared.datadefs;
 
 namespace sj 
 {
-    struct ComponentData
+    struct ComponentSchema
     {
-        std::vector<uint8_t> blob;
+        std::string type = {};
+        glz::json_t componentJson = glz::json_t::object_t{};
+
+        void unknown_read(const glz::sv& key, const glz::raw_json& value) 
+        {
+            glz::json_t::object_t& obj = componentJson.get_object();
+
+            glz::json_t asJson;
+            glz::error_ctx res = glz::read_json(asJson, value.str);
+            SJ_ASSERT(res.ec == glz::error_code::none, "failed to parse raw json");
+
+            obj[std::string(key)] = asJson;
+        }
     };
 
     struct ComponentRegistration
     {
         sj::TypeId m_componentTypeId;
+        std::string_view m_typeName;
         struct SerializationFuncs
         {
-            void (*fromJsonFn)(const glz::json_t::object_t&, ComponentData&);
+            void (*fromJsonFn)(const glz::json_t::object_t&, void* dest);
+            void (*toBeveFn)(std::span<const ComponentSchema> componentList, std::vector<std::byte>& out_buffer);
             //std::function<bool()> toBeve;
             //std::function<bool()> fromBeve;
         } m_serializationFuncs;
     };
 
     template <class T>
-    void GenericFromJson(const glz::json_t::object_t& json, ComponentData& out_dataBuffer)
+    void GenericToBeve(std::span<const ComponentSchema> componentList, std::vector<std::byte>& out_buffer)
     {
-        T val;
-        glz::error_ctx err = glz::read<glz::opts{.error_on_missing_keys=false}, T>(val, json);
-        SJ_ASSERT(err.ec == glz::error_code::none, "Error deserializing Component data");
-        out_dataBuffer.blob.resize(sizeof(T));
-        memcpy(out_dataBuffer.blob.data(), &val, sizeof(T));
+        std::vector<T> components;
+
+        for(const ComponentSchema& schema : componentList)
+        {
+            T val;
+            glz::error_ctx err = glz::read_json(val, schema.componentJson);
+            SJ_ASSERT(err.ec == glz::error_code::none, "Failed to parse component json");
+            components.emplace_back(std::move(val));
+        }
+
+        glz::error_ctx err = glz::write_beve(components[0], out_buffer);
+        SJ_ASSERT(err.ec == glz::error_code::none, "Failed to serialize component list");
     }
 
     template<class T>
     constexpr ComponentRegistration RegisterComponent()
     {
-        ComponentRegistration registration{};
-        registration.m_componentTypeId = T::kTypeId;
-        registration.m_serializationFuncs.fromJsonFn = GenericFromJson<T>;
-        return registration;
+        return ComponentRegistration 
+        {
+            .m_componentTypeId = T::kTypeId,
+            .m_typeName = glz::name_v<T>,
+            .m_serializationFuncs = {
+                .toBeveFn = GenericToBeve<T>
+            }
+        };
     }
 
     constexpr std::span<const ComponentRegistration> RegisterEngineComponents()
@@ -64,9 +92,26 @@ namespace sj
     constexpr decltype(auto) GetComponentRegistry()
     {
         using ComponentRegistrationList = std::span<const ComponentRegistration>;
-        std::array<ComponentRegistrationList, 2> registrations;
-        registrations[0] = RegisterEngineComponents(); 
+        static std::array<ComponentRegistrationList, 2> registrations
+        {
+            RegisterEngineComponents(),
+            {}
+        };
 
         return registrations | std::views::join;
     }
+
+    class TypeRegistry
+    {
+    public:
+        static const ComponentRegistration& GetComponentRegistration(sj::TypeId typeId)
+        {
+            auto registry = GetComponentRegistry();
+
+            auto registrationIt = std::ranges::find(registry, typeId, &sj::ComponentRegistration::m_componentTypeId);
+            SJ_ASSERT(registrationIt != registry.end(), "Failed to lookup component type");
+
+            return *registrationIt;
+        }
+    };
 }

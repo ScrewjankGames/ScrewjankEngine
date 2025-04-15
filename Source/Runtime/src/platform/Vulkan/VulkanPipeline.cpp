@@ -38,7 +38,7 @@ namespace sj
         fragShaderStageInfo.module = fragmentShaderModule;
         fragShaderStageInfo.pName = "main";
         
-        static_vector<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
         
         auto bindingDescription = GetVertexBindingDescription();
         auto attributeDescriptions = GetVertexAttributeDescriptions();

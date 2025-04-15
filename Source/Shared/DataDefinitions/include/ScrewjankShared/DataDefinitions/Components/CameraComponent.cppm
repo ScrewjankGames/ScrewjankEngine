@@ -1,17 +1,16 @@
-#pragma once
+module;
 
 // Shared Includes
 #include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/string/StringHash.hpp>
-#include <ScrewjankShared/DataDefinitions/GameObjectPrototype.hpp>
 
-namespace sj
+export module sj.shared.datadefs:CameraComponent;
+
+export namespace sj
 {
     struct CameraComponent
     {
         SJ_STRUCT_TYPE_ID(CameraComponent);
-
-        GameObjectId ownerGameobjectId;
 
         Mat44 localToGoTransform;
         float fov;

@@ -1,21 +1,23 @@
 #pragma once
 
 // STD Headers
+#include <memory_resource>
 #include <mutex>
 #include <cstddef>
 
 // Screwjank Engine Headers
-#include <ScrewjankEngine/containers/StaticVector.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/system/memory/Allocator.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
+
+import sj.shared.containers;
 
 namespace sj
 {
     /**
      * Represents a named zone of memory on the heap, owns associated memory or defers to parent MemSpace
      */
-    class IMemSpace
+    class IMemSpace : public std::pmr::memory_resource
     {
       public:
         static IMemSpace* FindMemSpaceForPointer(void* ptr);
@@ -51,7 +53,7 @@ namespace sj
         void Delete(T*& memory);
 
         virtual bool ContainsPointer(void* ptr) const = 0;
-  
+
       protected:
         static static_vector<IMemSpace*, 64> s_MemSpaceList;
 
@@ -84,6 +86,21 @@ namespace sj
 
         bool ContainsPointer(void* ptr) const override;
 
+        void* do_allocate(size_t bytes, size_t alignment) override
+        {
+          return Allocate(bytes, alignment);
+        };
+    
+        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        {
+          Free(memory);
+        };
+    
+        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+        {
+          return this == &other;
+        }
+
     private:
         IMemSpace* m_ParentZone = nullptr;
         AllocatorType m_Allocator;
@@ -114,6 +131,21 @@ namespace sj
         bool ContainsPointer(void* ptr) const override;
 
         void SetLocked(bool isLocked) { m_isLocked = isLocked; }
+
+        void* do_allocate(size_t bytes, size_t alignment) override
+        {
+          return Allocate(bytes, alignment);
+        };
+    
+        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        {
+          Free(memory);
+        };
+    
+        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+        {
+          return this == &other;
+        }
 
     private:
         bool m_isLocked = false;

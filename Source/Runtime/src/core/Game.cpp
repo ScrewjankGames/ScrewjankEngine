@@ -18,11 +18,12 @@
 // Dependencies
 #include <imgui.h>
 
+import sj.core.ecs;
+
 namespace sj {
 
     uint64_t Game::s_FrameCount = 0;
     float Game::s_DeltaTime = 0.0f;
-    ScriptFactory Game::s_scriptFactory;
 
     void Game::LoadScene(const char* path)
     {
@@ -41,6 +42,7 @@ namespace sj {
     }
 
     Game::Game() 
+        : m_ecs(100, MemorySystem::GetRootMemSpace())
     {
     }
 
@@ -50,8 +52,6 @@ namespace sj {
 
     void Game::Start()
     {        
-        RegisterScriptComponents(s_scriptFactory);
-
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -68,6 +68,16 @@ namespace sj {
 
         m_Renderer = Renderer::GetInstance();
         m_Renderer->Init();
+        
+        GameObjectId testGo1 = m_ecs.CreateGameObject();
+        GameObjectId testGo2 = m_ecs.CreateGameObject();
+        GameObjectId testGo3 = m_ecs.CreateGameObject();
+        GameObjectId testGo4 = m_ecs.CreateGameObject();
+        m_ecs.ReleaseGameObject(testGo3);
+        GameObjectId testGo5 = m_ecs.CreateGameObject();
+
+          
+        CameraComponent& test = m_ecs.RegisterComponent<CameraComponent>(testGo1, CameraComponent{.fov=10001});
         
         LoadScene("Data/Engine/Scenes/Default.sj_scene");
 
@@ -93,7 +103,6 @@ namespace sj {
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();
-            m_ScriptSystem.Process(m_Scene.get(), s_DeltaTime);
             m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
 
             if constexpr(g_IsDebugBuild)

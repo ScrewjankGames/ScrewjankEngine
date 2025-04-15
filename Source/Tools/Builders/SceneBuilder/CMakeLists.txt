@@ -29,6 +29,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
         ScrewjankDataDefs
         ScrewjankSharedCore
+        ScrewjankSharedContainers
         BuildersShared
         nlohmann_json
         glaze::glaze

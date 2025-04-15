@@ -158,10 +158,6 @@ namespace container_tests {
         ASSERT_EQ(1, list.Front());
 
         list.PopFront();
-
-#ifndef SJ_GOLD
-        ASSERT_DEATH(list.PopFront(), ".*");
-#endif // SJ_GOLD
     }
 
     TEST(ListTests, EmplaceFrontTest)

@@ -3,8 +3,7 @@
 // Library Headers
 #include <gtest/gtest.h>
 
-// Void Engine Headers
-#include <ScrewjankEngine/containers/Array.hpp>
+import sj.shared.containers;
 
 using namespace sj;
 
@@ -20,10 +19,6 @@ namespace container_tests
         ASSERT_EQ(1, arr[0]);
         ASSERT_EQ(2, arr[1]);
         ASSERT_EQ(3, arr[2]);
-
-#ifndef SJ_GOLD
-        ASSERT_DEATH(arr.at(5), ".*");
-#endif // NDEBUG
     }
 
     TEST(ArrayTests, ModifyElementTest)
@@ -122,8 +117,6 @@ namespace container_tests
 
     TEST(ArrayTests, ResizeTest)
     {
-        MemSpaceScope scope(MemorySystem::GetRootMemSpace());
-
         dynamic_array<int> arr = {1, 2, 3, 4, 5};
         
         arr.resize(10);

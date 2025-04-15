@@ -1,21 +1,17 @@
-#pragma once
+module;
 
 // Shared Includes
 #include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/string/StringHash.hpp>
-#include <ScrewjankShared/DataDefinitions/GameObjectPrototype.hpp>
 
-namespace sj
+export module sj.shared.datadefs:TransformComponent;
+
+export namespace sj
 {
     struct TransformComponent
     {
         SJ_STRUCT_TYPE_ID(TransformComponent);
 
-        // Static Data
-        GameObjectId ownerGameobjectId;
         Mat44 localToParent;
-
-        // Runtime Data
-        TransformComponent* parentTransform;
     };
 }

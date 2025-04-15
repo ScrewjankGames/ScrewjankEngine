@@ -2,7 +2,6 @@
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/core/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
@@ -17,7 +16,6 @@
 #include <ScrewjankShared/io/File.hpp>
 #include <cstddef>
 #include <cstring>
-#include <ranges>
 #include <vulkan/vulkan_core.h>
 
 // Library Headers
@@ -28,6 +26,8 @@
 
 // STD Headers
 #include <array>
+
+import sj.shared.containers;
 
 namespace sj
 {
@@ -393,9 +393,9 @@ namespace sj
 #ifndef SJ_GOLD
         create_info.enabledExtensionCount++;
         dynamic_vector<const char*> debug_required_extensions(
-            MemorySystem::GetDebugMemSpace(),
+            std::from_range_t{},
             required_extensions,
-            std::from_range_t{}
+            MemorySystem::GetDebugMemSpace()
         );
 
         debug_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

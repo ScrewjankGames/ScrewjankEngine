@@ -23,15 +23,6 @@
                     "fov": 45,
                     "nearPlane": 0.1,
                     "farPlane": 100
-                },
-                {
-                    "type": "ScriptComponent",
-                    "script_type": "TestPlayerComponent",
-                    "user_data": {
-                        "pitchSpeed": 180,
-                        "yawSpeed": 180,
-                        "linearSpeed": 8
-                    }
                 }
             ]
         },

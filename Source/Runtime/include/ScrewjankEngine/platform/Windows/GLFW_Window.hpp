@@ -10,10 +10,11 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/core/Window.hpp>
-#include <ScrewjankEngine/containers/Vector.hpp>
 
 // STD Headers
 #include<span>
+
+import sj.shared.containers;
 
 struct GLFWwindow;
 

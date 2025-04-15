@@ -1,4 +1,4 @@
-import sj.containers;
+import sj.shared.containers;
 
 // STD Headers
 #include <span>
@@ -10,7 +10,7 @@ import sj.containers;
 // Void Engine Headers
 #include <ScrewjankShared/utils/Log.hpp>
 
-using namespace sj_2;
+using namespace sj;
 
 namespace container_tests {
 

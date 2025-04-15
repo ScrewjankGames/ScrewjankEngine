@@ -1,15 +1,16 @@
 // Screwjank Engine Headers
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
-#include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 
 #include <ScrewjankShared/utils/Assert.hpp>
 
+import sj.shared.containers;
+
 namespace sj
 {
     // v This is gonna be a fucking thread safety dumpster fire
-    constinit static_vector<IMemSpace*, 64> IMemSpace::s_MemSpaceList;
+    static_vector<IMemSpace*, 64> IMemSpace::s_MemSpaceList;
 
     IMemSpace* IMemSpace::FindMemSpaceForPointer(void* ptr)
     {

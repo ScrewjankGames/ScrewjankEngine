@@ -39,7 +39,7 @@ namespace sj
                 }
             };
 
-            m_Threads.push_back(Thread(i+1, worker_function));
+            m_Threads.emplace_back(Thread(i+1, worker_function));
         }
     }
     

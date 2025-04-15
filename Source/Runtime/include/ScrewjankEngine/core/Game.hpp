@@ -6,11 +6,11 @@
 // Engine Headers
 #include <ScrewjankEngine/core/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
-#include <ScrewjankEngine/core/systems/ScriptSystem.hpp>
 #include <ScrewjankEngine/core/Scene.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/core/ScriptFactory.hpp>
+
+import sj.core;
 
 namespace sj {
     // Forward declarations
@@ -21,12 +21,6 @@ namespace sj {
     class Game
     {
       public:
-
-        /**
-         * Runtime Configuration functions- fill these out in your game class
-         */
-         virtual void RegisterScriptComponents(ScriptFactory& factory) = 0;
-
         /**
          * Constructor
          */
@@ -53,8 +47,6 @@ namespace sj {
 
         static float GetDeltaTime();
 
-        static const ScriptFactory& GetScriptFactory() { return s_scriptFactory; }
-
       protected:
         /**
          * Main game loop
@@ -64,7 +56,7 @@ namespace sj {
         void ShutDown();
 
       private:
-        static ScriptFactory s_scriptFactory;
+        ECSRegistry m_ecs;
 
         std::unique_ptr<Scene> m_Scene;
 
@@ -73,7 +65,6 @@ namespace sj {
 
         InputSystem m_InputSystem;
         CameraSystem m_CameraSystem;
-        ScriptSystem m_ScriptSystem;
 
         static uint64_t s_FrameCount;
         static float s_DeltaTime;

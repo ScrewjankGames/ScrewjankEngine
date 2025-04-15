@@ -1,6 +1,4 @@
 // Parent Include
-#include "ScrewjankEngine/containers/Array.hpp"
-#include "ScrewjankEngine/system/memory/Memory.hpp"
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 
 // STD Headers
@@ -8,12 +6,13 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/Vector.hpp>
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <vulkan/vulkan_core.h>
+
+import sj.shared.containers;
 
 namespace sj {
     
@@ -226,7 +225,7 @@ namespace sj {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
-        dynamic_vector<VkQueueFamilyProperties> queue_data(MemorySystem::GetRootMemSpace(), queue_count);
+        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count, MemorySystem::GetRootMemSpace());
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
 
         DeviceQueueFamilyIndices indices;

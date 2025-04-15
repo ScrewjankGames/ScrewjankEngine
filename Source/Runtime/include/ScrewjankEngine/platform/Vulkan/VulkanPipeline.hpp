@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 
 // SJ Headers
-#include <ScrewjankEngine/containers/StaticVector.hpp>
+import sj.shared.containers;
 
 namespace sj
 {

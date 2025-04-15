@@ -8,8 +8,7 @@
 // Void Engine Headers
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 
-#include <ScrewjankEngine/containers/Array.hpp>
-#include <ScrewjankEngine/containers/Vector.hpp>
+import sj.shared.containers;
 
 using namespace sj;
 
@@ -96,10 +95,11 @@ namespace container_tests {
 
     TEST(UnorderedSetTests, RangeConstructionTest)
     {
-        dynamic_vector<std::string> vec(MemorySystem::GetRootMemSpace());
+        IMemSpace* memSpace = MemorySystem::GetRootMemSpace();
+        dynamic_vector<std::string> vec(memSpace);
         vec = {"FOO", "BAR", "BIZ", "BAZ", "BUZZ"};
 
-        dynamic_unordered_set<std::string> set(MemorySystem::GetRootMemSpace(),
+        dynamic_unordered_set<std::string> set(memSpace,
                                       vec.begin(),
                                       vec.end());
 

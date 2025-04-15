@@ -93,8 +93,10 @@ namespace container_tests
             {
                 ASSERT_EQ(i, fwdList.size());
                 ASSERT_EQ(i-1, fwdList.front().val);
-                delete &(fwdList.front());
+                FwdListDummy& dummy = fwdList.front();
                 fwdList.pop_front();
+
+                delete &(dummy);
             }
         }
 
@@ -113,9 +115,10 @@ namespace container_tests
 
                 if( pop && fwdList.size() > 0 )
                 {
-                    popped += fwdList.front().val;
-                    delete &(fwdList.front());
+                    FwdListDummy& dummy = fwdList.front();
+                    popped += dummy.val;
                     fwdList.pop_front();
+                    delete &(dummy);
                 }
                 else
                 {
