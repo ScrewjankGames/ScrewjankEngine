@@ -1,4 +1,4 @@
-#include <ScrewjankEngine/core/Game.hpp>
+#include <ScrewjankEngine/framework/Game.hpp>
 
 // STD Headers
 #include <chrono>
@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 
 // Engine Headers
-#include <ScrewjankEngine/core/Window.hpp>
+#include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/threading/ThreadPool.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
@@ -18,7 +18,7 @@
 // Dependencies
 #include <imgui.h>
 
-import sj.core;
+import sj.engine.framework;
 import sj.shared.datadefs;
 
 namespace sj {

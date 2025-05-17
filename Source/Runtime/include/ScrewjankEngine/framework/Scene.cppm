@@ -9,8 +9,8 @@ module;
 
 #include <glaze/beve/read.hpp>
 
-export module sj.core:Scene;
-import sj.core.ecs;
+export module sj.engine.framework:Scene;
+import sj.engine.framework.ecs;
 import sj.shared.containers;
 import sj.shared.datadefs;
 

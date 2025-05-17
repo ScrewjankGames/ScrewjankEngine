@@ -4,7 +4,7 @@
 #include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
 
-import sj.core;
+import sj.engine.framework;
 
 namespace sj
 {

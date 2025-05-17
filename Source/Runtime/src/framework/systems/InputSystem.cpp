@@ -1,5 +1,5 @@
 // Parent Include
-#include <ScrewjankEngine/core/systems/InputSystem.hpp>
+#include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 
 // Engine Includes
 #include <ScrewjankShared/utils/Log.hpp>

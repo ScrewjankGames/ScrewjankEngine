@@ -1,6 +1,6 @@
 // Engine Headers
 #include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/core/Game.hpp>
+#include <ScrewjankEngine/framework/Game.hpp>
 
 // Shared Headers
 #include <ScrewjankShared/utils/Log.hpp>

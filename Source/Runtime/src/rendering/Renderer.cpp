@@ -2,7 +2,7 @@
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 
 // Screwjank Headers
-#include <ScrewjankEngine/core/Window.hpp>
+#include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>

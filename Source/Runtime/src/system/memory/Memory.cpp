@@ -5,11 +5,12 @@
 #include <cassert>
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/StaticStack.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
+
+import sj.shared.containers;
 
 // Root heap sizes
 constexpr uint64_t kRootHeapSize = 5_MiB;
@@ -53,7 +54,7 @@ void operator delete(void* memory) noexcept
 
 namespace sj {
     /** Used to track the active heap zone. */
-    thread_local StaticStack<IMemSpace*, 64> g_MemSpaceStack;
+    thread_local static_stack<IMemSpace*, 64> g_MemSpaceStack;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// Memory Manager
@@ -88,12 +89,12 @@ namespace sj {
 
     void MemorySystem::PushMemSpace(IMemSpace* mem_space)
     {
-        g_MemSpaceStack.Push(mem_space);
+        g_MemSpaceStack.push(mem_space);
     }
 
     void MemorySystem::PopMemSpace()
     {
-        g_MemSpaceStack.Pop();
+        g_MemSpaceStack.pop();
     }
 
     IMemSpace* MemorySystem::GetRootMemSpace()
@@ -117,13 +118,13 @@ namespace sj {
     {
         MemorySystem* system = Get();
 
-        if(g_MemSpaceStack.IsEmpty())
+        if(g_MemSpaceStack.empty())
         {
             return GetUnmanagedMemSpace();
         }
         else
         {
-            return g_MemSpaceStack.Top();
+            return g_MemSpaceStack.top();
         }
     }
 } // namespace sj

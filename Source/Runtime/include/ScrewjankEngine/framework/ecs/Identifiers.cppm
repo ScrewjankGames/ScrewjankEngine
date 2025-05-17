@@ -3,7 +3,7 @@ module;
 #include <cstdint>
 #include <functional>
 
-export module sj.core.ecs:Identifiers;
+export module sj.engine.framework.ecs:Identifiers;
 import sj.shared.containers;
 
 export namespace sj

@@ -3,7 +3,7 @@
 //// Library Headers
 //
 //// Screwjank Headers
-//#include <ScrewjankEngine/core/Window.hpp>
+//#include <ScrewjankEngine/framework/Window.hpp>
 //
 //// Platform specific headers
 //#ifdef SJ_PLATFORM_WINDOWS

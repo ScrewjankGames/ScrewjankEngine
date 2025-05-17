@@ -4,10 +4,11 @@ module;
 #include <ScrewjankShared/utils/Assert.hpp>
 
 #include <any>
-export module sj.core.ecs:ECSRegistry;
+export module sj.engine.framework.ecs:ECSRegistry;
+import :Identifiers;
+
 import sj.shared.containers;
 import sj.shared.datadefs;
-import :Identifiers;
 
 export namespace sj
 {

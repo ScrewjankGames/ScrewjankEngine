@@ -1,8 +1,8 @@
 // Parent Include
-#include <ScrewjankEngine/core/systems/CameraSystem.hpp>
+#include <ScrewjankEngine/framework/systems/CameraSystem.hpp>
 
 // Engine Incudes
-#include <ScrewjankEngine/core/systems/InputSystem.hpp>
+#include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 
 // Shared Includes
 #include <ScrewjankShared/utils/Assert.hpp>

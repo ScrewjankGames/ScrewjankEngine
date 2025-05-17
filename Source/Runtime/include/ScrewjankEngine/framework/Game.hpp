@@ -4,12 +4,12 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/core/systems/CameraSystem.hpp>
-#include <ScrewjankEngine/core/systems/InputSystem.hpp>
+#include <ScrewjankEngine/framework/systems/CameraSystem.hpp>
+#include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
-import sj.core;
+import sj.engine.framework;
 import sj.shared.containers;
 
 namespace sj {
