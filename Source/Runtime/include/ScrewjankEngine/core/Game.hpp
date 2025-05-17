@@ -6,11 +6,11 @@
 // Engine Headers
 #include <ScrewjankEngine/core/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/core/systems/InputSystem.hpp>
-#include <ScrewjankEngine/core/Scene.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankEngine/system/memory/Memory.hpp>
 
 import sj.core;
+import sj.shared.containers;
 
 namespace sj {
     // Forward declarations
@@ -31,7 +31,6 @@ namespace sj {
          */
         virtual ~Game();
 
-
         /**
          * Launches engine subsystems and starts game
          */
@@ -46,7 +45,7 @@ namespace sj {
         static uint64_t GetFrameCount(); 
 
         static float GetDeltaTime();
-
+        
       protected:
         /**
          * Main game loop
@@ -57,8 +56,7 @@ namespace sj {
 
       private:
         ECSRegistry m_ecs;
-
-        std::unique_ptr<Scene> m_Scene;
+        sj::dynamic_vector<std::unique_ptr<Scene>> m_scenes;
 
         Window* m_Window;
         Renderer* m_Renderer;

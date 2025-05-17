@@ -1,4 +1,5 @@
 // STD Headers
+#include <algorithm>
 
 // Library Headers
 #include <gtest/gtest.h>

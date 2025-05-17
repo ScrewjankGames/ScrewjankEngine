@@ -118,7 +118,7 @@ export namespace sj
         }
 
         template<class DenseElement>
-        auto&& get(this auto&& self, IdType id) //-> const? DenseElement&
+        auto get(this auto&& self, IdType id) //-> const? DenseElement*
         {
             IndexType denseIndex = self.m_sparse[id.sparseIndex].dense;
 
@@ -127,7 +127,10 @@ export namespace sj
                  "Accesing sparse set with stale handle"
                 );
 
-            return std::get<DenseContainer<DenseElement>>(self.m_denseElements)[denseIndex];
+            if(self.m_sparse[id.sparseIndex].dense == kInvalidIndex)
+                return (DenseElement*)nullptr;
+            else
+                return &std::get<DenseContainer<DenseElement>>(self.m_denseElements)[denseIndex];
         }
 
         template<class DenseElement>

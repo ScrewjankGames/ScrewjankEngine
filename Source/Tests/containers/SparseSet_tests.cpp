@@ -77,16 +77,16 @@ namespace container_tests
         {
             if(id.sparseIndex % 2 == 0)
             {
-                const TestComponentA& a = componentASet.get<TestComponentA>(id);
-                ASSERT_EQ(id.sparseIndex, a.ownerId.sparseIndex);
-                ASSERT_EQ(id.generation, a.ownerId.generation);
+                const TestComponentA* a = componentASet.get<TestComponentA>(id);
+                ASSERT_EQ(id.sparseIndex, a->ownerId.sparseIndex);
+                ASSERT_EQ(id.generation, a->ownerId.generation);
             }
 
             if(id.sparseIndex % 3 == 0 )
             {
-                const TestComponentB& b = componentBSet.get<TestComponentB>(id);
-                ASSERT_EQ(id.sparseIndex, b.ownerId.sparseIndex);
-                ASSERT_EQ(id.generation, b.ownerId.generation);
+                const TestComponentB* b = componentBSet.get<TestComponentB>(id);
+                ASSERT_EQ(id.sparseIndex, b->ownerId.sparseIndex);
+                ASSERT_EQ(id.generation, b->ownerId.generation);
             }
         }
     }

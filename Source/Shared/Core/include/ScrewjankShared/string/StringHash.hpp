@@ -26,6 +26,11 @@ namespace sj
 
         inline constexpr StringHash() : m_hash(0) { }
 
+        inline explicit constexpr StringHash(uint32_t intVal) : m_hash(intVal)
+        {
+            
+        }
+
         inline constexpr StringHash(const char* str) : m_hash(FNV1a_32(str))
         {
 

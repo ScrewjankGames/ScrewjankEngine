@@ -4,12 +4,10 @@
 #include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/Math/Vec3.hpp>
 
+import sj.core;
+
 namespace sj
 {
-
-    // Forward Declarations
-    class Scene;
-
     class CameraSystem
     {
     public:

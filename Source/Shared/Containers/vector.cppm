@@ -37,7 +37,7 @@ export namespace sj
     template <class Storage>
     concept growable_vector_storage = requires(Storage instance)
     {
-        vector_storage<Storage>;
+        requires vector_storage<Storage>;
 
         typename Storage::allocator_type;
 
@@ -184,28 +184,28 @@ export namespace sj
 
         using StorageType::StorageType;
         
-        vector_interface() = default;
-        vector_interface(const vector_interface& other) = default;
+        constexpr vector_interface() = default;
+        constexpr vector_interface(const vector_interface& other) = default;
 
-        vector_interface(vector_interface&& other) 
+        constexpr vector_interface(vector_interface&& other) 
             : StorageType(std::move(other))
         {
-            other.m_count = 0;
+            m_count = std::exchange(other.m_count, 0);
         };
 
-        vector_interface(size_t count, T&& val = T())
+        constexpr vector_interface(size_t count, T&& val = T())
         {
             resize(count, std::forward<T>(val));
         }
 
-        vector_interface(std::initializer_list<T> vals) noexcept
+        constexpr vector_interface(std::initializer_list<T> vals) noexcept
             : vector_interface(std::from_range_t{}, vals)
         {
 
         }
 
         template<std::ranges::range R>
-        vector_interface(std::from_range_t, R&& rg)
+        constexpr vector_interface(std::from_range_t, R&& rg)
         {
             if constexpr (growable_vector_storage<StorageType>)
             {
@@ -219,7 +219,7 @@ export namespace sj
 
         template<std::ranges::range R, class Allocator>
         requires growable_vector_storage<StorageType>
-        vector_interface(std::from_range_t, R&& rg, Allocator alloc)
+        constexpr vector_interface(std::from_range_t, R&& rg, Allocator alloc)
         {
             static_assert(std::is_convertible_v<Allocator, typename StorageType::allocator_type>);
 
@@ -233,7 +233,7 @@ export namespace sj
             m_count = rg.size();
         }
 
-        ~vector_interface()
+        constexpr ~vector_interface()
         {
             if constexpr (!std::is_trivially_destructible_v<T>)
             {
@@ -244,7 +244,7 @@ export namespace sj
             }
         }
 
-        vector_interface& operator=(std::initializer_list<T> vals) noexcept
+        constexpr vector_interface& operator=(std::initializer_list<T> vals) noexcept
         {
             clear();
             
@@ -261,7 +261,7 @@ export namespace sj
             return *this;
         }
 
-        vector_interface& operator=(const vector_interface& other)
+        constexpr vector_interface& operator=(const vector_interface& other)
         {
             clear();
 
@@ -271,7 +271,7 @@ export namespace sj
             return *this;
         }
 
-        vector_interface& operator=(vector_interface&& other)
+        constexpr vector_interface& operator=(vector_interface&& other)
         {
             clear();
 
@@ -283,19 +283,19 @@ export namespace sj
 
 
         /** Array Index Operator */
-        auto&& operator[](this auto&& self, const size_t index) noexcept // -> (const?) T&
+        constexpr auto&& operator[](this auto&& self, const size_t index) noexcept // -> (const?) T&
         {
             return self.StorageType::operator[](index);
         }
 
         template<class InputRange>
-        iterator insert(const_iterator pos, InputRange&& r, std::from_range_t _)
+        constexpr iterator insert(const_iterator pos, InputRange&& r, std::from_range_t _)
         {
             return insert(pos, r.begin(), r.end());
         }
 
         template<class InputIterator>
-        iterator insert(const_iterator pos, InputIterator first, InputIterator last)
+        constexpr iterator insert(const_iterator pos, InputIterator first, InputIterator last)
         {
             size_t offset = pos - begin();
             size_t numNewElements = last - first;
@@ -309,8 +309,13 @@ export namespace sj
             return begin() + offset;
         }
 
+        constexpr iterator insert(const_iterator pos, T&& elem)
+        {
+            return emplace(pos, std::forward<T>(elem));
+        } 
+
         template <class... Args>
-        iterator emplace(const_iterator pos, Args&&... args) noexcept
+        constexpr iterator emplace(const_iterator pos, Args&&... args) noexcept
             requires std::contiguous_iterator<const_iterator> 
         {
             SJ_ASSERT(pos >= this->begin() && pos <= this->end(), "Emplace index out of bounds");
@@ -334,7 +339,7 @@ export namespace sj
             {
                 if(m_count > 0)
                 {
-                    for(auto it = end(); it >= output_pos; it-- )
+                    for(auto it = end(); it > output_pos; it-- )
                     {
                         new (std::to_address(it)) T(std::move(*(it-1)));
                     }
@@ -353,7 +358,7 @@ export namespace sj
         }
 
         template<class... Args>
-        T& emplace_back(Args&&... args) noexcept
+        constexpr T& emplace_back(Args&&... args) noexcept
         {
             if constexpr (!growable_vector_storage<StorageType>)
             {
@@ -372,12 +377,12 @@ export namespace sj
             return *reinterpret_cast<T*>(address);
         }
 
-        T& push_back(const T& elem)
+        constexpr T& push_back(const T& elem)
         {
             return emplace_back(elem);
         }
 
-        void erase_element(const T& value) noexcept
+        constexpr void erase_element(const T& value) noexcept
         {
             for(const T& elem : *this)
             {
@@ -389,7 +394,7 @@ export namespace sj
             }
         }
 
-        iterator erase(const_iterator pos) noexcept 
+        constexpr iterator erase(const_iterator pos) noexcept 
             requires std::contiguous_iterator<const_iterator> 
         {
             SJ_ASSERT(pos >= begin() && pos < end(), "Erase index out of bounds")
@@ -417,12 +422,12 @@ export namespace sj
             return output_pos;
         }
 
-        size_type size() const noexcept 
+        constexpr size_type size() const noexcept 
         {
             return m_count;
         }
 
-        void resize(size_type new_size, T&& value = T()) noexcept
+        constexpr void resize(size_type new_size, T&& value = T()) noexcept
         {
             if constexpr (growable_vector_storage<StorageType>)
             {
@@ -455,17 +460,17 @@ export namespace sj
             m_count = new_size;
         }
 
-        size_type capacity() const noexcept
+        constexpr size_type capacity() const noexcept
         {
             return StorageType::size();
         }
 
-        auto data(this auto&& self) noexcept
+        constexpr auto data(this auto&& self) noexcept
         {
             return self.StorageType::data();
         }
 
-        void clear() noexcept
+        constexpr void clear() noexcept
         {
             if constexpr(!std::is_trivially_destructible<T>::value)
             {
@@ -478,34 +483,44 @@ export namespace sj
             m_count = 0;
         }
 
-        auto begin(this auto&& self) noexcept
+        constexpr auto begin(this auto&& self) noexcept
         {
             return self.StorageType::begin();
         }
 
-        auto end(this auto&& self) noexcept
+        constexpr const_iterator cbegin() const noexcept
+        {
+            return begin();
+        }
+
+        constexpr auto end(this auto&& self) noexcept
         {
             return &(self.begin()[self.m_count]);
         }
 
-        [[nodiscard]] bool empty() const noexcept 
+        constexpr const_iterator cend() const noexcept
+        {
+            return end();
+        }
+
+        [[nodiscard]] constexpr bool empty() const noexcept 
         {
             return end() == begin(); 
         }
 
-        auto&& at(this auto&& self, size_t index)
+        constexpr auto&& at(this auto&& self, size_t index)
         {
             SJ_ASSERT(index >= 0 && index < self.size(), "Out of bounds access");
             return self.operator[](index);
         }
 
-        auto&& front(this auto&& self)
+        constexpr auto&& front(this auto&& self)
         {
             SJ_ASSERT(self.size() > 0, "Out of bounds access");
             return *self.begin();
         }
 
-        auto&& back(this auto&& self)
+        constexpr auto&& back(this auto&& self)
         {
             SJ_ASSERT(self.size() > 0, "Out of bounds access");
             return *(self.end() - 1);
@@ -525,7 +540,7 @@ export namespace sj
     };
 
     template <class T, vector_storage Storage, VectorOptions tOpts>
-    void swap(vector_interface<T, Storage, tOpts>& lhs,
+    constexpr void swap(vector_interface<T, Storage, tOpts>& lhs,
         vector_interface<T, Storage, tOpts>& rhs) noexcept
     {
         vector_interface<T, Storage, tOpts> temp = std::move(lhs);

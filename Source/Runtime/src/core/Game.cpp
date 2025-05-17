@@ -18,7 +18,8 @@
 // Dependencies
 #include <imgui.h>
 
-import sj.core.ecs;
+import sj.core;
+import sj.shared.datadefs;
 
 namespace sj {
 
@@ -28,7 +29,7 @@ namespace sj {
     void Game::LoadScene(const char* path)
     {
         MemSpaceScope _ (MemorySystem::GetRootMemSpace());
-        m_Scene = std::make_unique<Scene>(path);
+        m_scenes.emplace_back(new Scene(path));
     }
 
     uint64_t Game::GetFrameCount()
@@ -42,8 +43,15 @@ namespace sj {
     }
 
     Game::Game() 
-        : m_ecs(100, MemorySystem::GetRootMemSpace())
+        : m_ecs(100, MemorySystem::GetRootMemSpace()),
+          m_scenes(MemorySystem::GetRootMemSpace())
     {
+        auto registerFn = []<class T>(ECSRegistry& registry)
+        {
+            registry.RegisterComponentType<T>();
+        };
+        
+        ComponentTypeRegistry::ForEachComponentType<registerFn>(m_ecs);
     }
 
     Game::~Game()
@@ -56,7 +64,6 @@ namespace sj {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
-        (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
 
@@ -68,17 +75,7 @@ namespace sj {
 
         m_Renderer = Renderer::GetInstance();
         m_Renderer->Init();
-        
-        GameObjectId testGo1 = m_ecs.CreateGameObject();
-        GameObjectId testGo2 = m_ecs.CreateGameObject();
-        GameObjectId testGo3 = m_ecs.CreateGameObject();
-        GameObjectId testGo4 = m_ecs.CreateGameObject();
-        m_ecs.ReleaseGameObject(testGo3);
-        GameObjectId testGo5 = m_ecs.CreateGameObject();
-
-          
-        CameraComponent& test = m_ecs.RegisterComponent<CameraComponent>(testGo1, CameraComponent{.fov=10001});
-        
+       
         LoadScene("Data/Engine/Scenes/Default.sj_scene");
 
         Run();
@@ -103,7 +100,7 @@ namespace sj {
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();
-            m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
+            //m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
 
             if constexpr(g_IsDebugBuild)
             {

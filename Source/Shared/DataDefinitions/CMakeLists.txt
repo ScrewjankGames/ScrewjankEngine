@@ -8,11 +8,18 @@ file(GLOB_RECURSE DATA_DEFINITIONS_INLINE CONFIGURE_DEPENDS "*.inl")
 file(GLOB_RECURSE DATA_DEFINITIONS_SOURCE CONFIGURE_DEPENDS "*.cpp")
 file(GLOB_RECURSE DATA_DEFINITIONS_MODULES CONFIGURE_DEPENDS "*.cppm")
 
+file(GLOB_RECURSE GAME_DATA_DEFINITIONS CONFIGURE_DEPENDS "${Game_Datadefs_Directory}/*.cppm")
+
 add_library(${PROJECT_NAME} ${DATA_DEFINITIONS_HEADERS} ${DATA_DEFINITIONS_INLINE} ${DATA_DEFINITIONS_SOURCE} )
 target_sources(${PROJECT_NAME}
     PUBLIC
       FILE_SET CXX_MODULES FILES
         ${DATA_DEFINITIONS_MODULES}
+        ${GAME_DATA_DEFINITIONS}
+      BASE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${Game_Datadefs_Directory}
+
 )
 
 set_target_properties(${PROJECT_NAME} 
@@ -33,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankSharedCore
         ScrewjankSharedContainers
         ScrewjankMath
+        glaze::glaze
 )
 
 ################################################################################

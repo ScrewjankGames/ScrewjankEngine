@@ -35,6 +35,28 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "GccDebug",
+            "displayName": "Debug - GCC",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
+            "inherits": "base",
+            "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "GccRelease",
+            "displayName": "Release - GCC",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
+            "inherits": "base",
+            "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
     ],
     "buildPresets": [
@@ -65,6 +87,16 @@
             "name":"ClangReleaseGold",
             "configurePreset": "ClangRelease",
             "displayName": "Release - GOLD"
+        },
+        {
+            "name":"GccDebug",
+            "configurePreset": "GccDebug",
+            "displayName": "Debug"
+        },
+        {
+            "name":"GccRelease",
+            "configurePreset": "GccRelease",
+            "displayName": "Release"
         }
     ]
 }
