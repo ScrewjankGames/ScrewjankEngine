@@ -382,6 +382,18 @@ export namespace sj
             return emplace_back(elem);
         }
 
+        constexpr void pop_back()
+        {
+            SJ_ASSERT(!empty(), "Cannot pop empty vector!");
+            
+            if(!std::is_trivially_destructible_v<T>)
+            {
+                (end() - 1)->~T();
+            }
+
+            m_count--;
+        }
+
         constexpr void erase_element(const T& value) noexcept
         {
             for(const T& elem : *this)
