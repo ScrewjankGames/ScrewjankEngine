@@ -4,8 +4,6 @@
 // Screwjank Headers
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 
@@ -27,6 +25,7 @@
 // STD Headers
 #include <array>
 
+import sj.engine.system.memory;
 import sj.shared.containers;
 
 namespace sj
@@ -247,7 +246,7 @@ namespace sj
 
         VkResult res = vkCreateDescriptorSetLayout(m_renderDevice.GetLogicalDevice(),
                                                    &layoutInfo,
-                                                   &sj::g_vkAllocationFns,
+                                                   sj::g_vkAllocationFns,
                                                    &m_globalUBODescriptorSetLayout);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor set layout");
@@ -266,38 +265,38 @@ namespace sj
 
         m_frameData.DeInit(logicalDevice);
 
-        vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, &sj::g_vkAllocationFns);
+        vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
 
         m_swapChain.DeInit(logicalDevice);
         
-        vkDestroySampler(logicalDevice, m_dummyTextureSampler, &sj::g_vkAllocationFns);
-        vkDestroyImageView(logicalDevice, m_dummyTextureImageView, &sj::g_vkAllocationFns);
-        vkDestroyImage(logicalDevice, m_dummyTextureImage, &sj::g_vkAllocationFns);
-        vkFreeMemory(logicalDevice, m_dummyTextureImageMemory, &sj::g_vkAllocationFns);
+        vkDestroySampler(logicalDevice, m_dummyTextureSampler, sj::g_vkAllocationFns);
+        vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
+        vkDestroyImage(logicalDevice, m_dummyTextureImage, sj::g_vkAllocationFns);
+        vkFreeMemory(logicalDevice, m_dummyTextureImageMemory, sj::g_vkAllocationFns);
 
-        vkDestroyDescriptorPool(logicalDevice, m_globalUBODescriptorPool, &sj::g_vkAllocationFns);
+        vkDestroyDescriptorPool(logicalDevice, m_globalUBODescriptorPool, sj::g_vkAllocationFns);
 
         if constexpr(g_IsDebugBuild)
         {
-            vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, &sj::g_vkAllocationFns);
+            vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, sj::g_vkAllocationFns);
         }
 
-        vkDestroyDescriptorSetLayout(logicalDevice, m_globalUBODescriptorSetLayout, &sj::g_vkAllocationFns);
+        vkDestroyDescriptorSetLayout(logicalDevice, m_globalUBODescriptorSetLayout, sj::g_vkAllocationFns);
 
         m_defaultPipeline.DeInit();
 
-        vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, &sj::g_vkAllocationFns);
+        vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, sj::g_vkAllocationFns);
 
-        vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, &sj::g_vkAllocationFns);
-        vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, &sj::g_vkAllocationFns);
+        vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, sj::g_vkAllocationFns);
+        vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, sj::g_vkAllocationFns);
 
-        vkDestroyBuffer(logicalDevice, m_dummyIndexBuffer, &sj::g_vkAllocationFns);
-        vkFreeMemory(logicalDevice, m_dummyIndexBufferMem, &sj::g_vkAllocationFns);
+        vkDestroyBuffer(logicalDevice, m_dummyIndexBuffer, sj::g_vkAllocationFns);
+        vkFreeMemory(logicalDevice, m_dummyIndexBufferMem, sj::g_vkAllocationFns);
 
         // Important: All things attached to the device need to be torn down first
         m_renderDevice.DeInit();
 
-        vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, &sj::g_vkAllocationFns);
+        vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, sj::g_vkAllocationFns);
 
         if constexpr(g_IsDebugBuild)
         {
@@ -307,10 +306,10 @@ namespace sj
             SJ_ASSERT(messenger_destroy_func != nullptr,
                       "Failed to load Vulkan Debug messenger destroy function");
 
-            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, &sj::g_vkAllocationFns);
+            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, sj::g_vkAllocationFns);
         }
 
-        vkDestroyInstance(m_vkInstance, &sj::g_vkAllocationFns);
+        vkDestroyInstance(m_vkInstance, sj::g_vkAllocationFns);
     }
 
     VkInstance Renderer::GetVkInstanceHandle() const
@@ -416,7 +415,7 @@ namespace sj
         {
             VkResult result = vkCreateInstance(
                 &create_info, 
-                &sj::g_vkAllocationFns,
+                sj::g_vkAllocationFns,
                 &m_vkInstance
             );
 
@@ -501,7 +500,7 @@ namespace sj
 
         VkResult res = vkCreateRenderPass(m_renderDevice.GetLogicalDevice(),
                                           &renderPassInfo,
-                                          &sj::g_vkAllocationFns,
+                                          sj::g_vkAllocationFns,
                                           &m_defaultRenderPass);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create render pass.");
@@ -586,7 +585,7 @@ namespace sj
         create_function(
             m_vkInstance, 
             &messenger_create_info, 
-            &sj::g_vkAllocationFns, 
+            sj::g_vkAllocationFns, 
             &m_vkDebugMessenger );
     }
 
@@ -693,7 +692,7 @@ namespace sj
 
             VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
                                                &poolInfo,
-                                               &sj::g_vkAllocationFns,
+                                               sj::g_vkAllocationFns,
                                                &m_graphicsCommandPool);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
@@ -722,7 +721,7 @@ namespace sj
         bufferInfo.queueFamilyIndexCount = 1;
         bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 
-        VkResult res = vkCreateBuffer(logicalDevice, &bufferInfo, &sj::g_vkAllocationFns, &out_buffer);
+        VkResult res = vkCreateBuffer(logicalDevice, &bufferInfo, sj::g_vkAllocationFns, &out_buffer);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create vulkan buffer");
 
@@ -813,8 +812,8 @@ namespace sj
 
             CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
 
-            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, &sj::g_vkAllocationFns);
-            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, &sj::g_vkAllocationFns);
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, sj::g_vkAllocationFns);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, sj::g_vkAllocationFns);
         }
 
         // Read Indices into GPU memory
@@ -851,8 +850,8 @@ namespace sj
 
             CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
 
-            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, &sj::g_vkAllocationFns);
-            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, &sj::g_vkAllocationFns);
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, sj::g_vkAllocationFns);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, sj::g_vkAllocationFns);
         }
 
         modelFile.Close();
@@ -904,8 +903,8 @@ namespace sj
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, &sj::g_vkAllocationFns);
-        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, &sj::g_vkAllocationFns);
+        vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, sj::g_vkAllocationFns);
+        vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, sj::g_vkAllocationFns);
 
         return;
     }
@@ -932,7 +931,7 @@ namespace sj
 
         VkResult res = vkCreateSampler(m_renderDevice.GetLogicalDevice(),
                                        &samplerInfo,
-                                       &sj::g_vkAllocationFns,
+                                       sj::g_vkAllocationFns,
                                        &m_dummyTextureSampler);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create image sampler");
@@ -975,7 +974,7 @@ namespace sj
 
         VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
                                               &poolInfo,
-                                              &sj::g_vkAllocationFns,
+                                              sj::g_vkAllocationFns,
                                               &m_globalUBODescriptorPool);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
@@ -1005,7 +1004,7 @@ namespace sj
 
         VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
                                               &poolInfo,
-                                              &sj::g_vkAllocationFns,
+                                              sj::g_vkAllocationFns,
                                               &m_imguiDescriptorPool);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
@@ -1187,17 +1186,17 @@ namespace sj
             {
                 VkResult res = vkCreateSemaphore(device,
                                                  &semaphoreInfo,
-                                                 &sj::g_vkAllocationFns,
+                                                 sj::g_vkAllocationFns,
                                                  &imageAvailableSemaphores[i]);
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
 
                 res = vkCreateSemaphore(device,
                                         &semaphoreInfo,
-                                        &sj::g_vkAllocationFns,
+                                        sj::g_vkAllocationFns,
                                         &renderFinishedSemaphores[i]);
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
 
-                res = vkCreateFence(device, &fenceInfo, &sj::g_vkAllocationFns, &inFlightFences[i]);
+                res = vkCreateFence(device, &fenceInfo, sj::g_vkAllocationFns, &inFlightFences[i]);
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
             }
         }
@@ -1210,12 +1209,12 @@ namespace sj
 
         for(int i = 0; i < kMaxFramesInFlight; i++)
         {
-            vkDestroySemaphore(device, imageAvailableSemaphores[i], &sj::g_vkAllocationFns);
-            vkDestroySemaphore(device, renderFinishedSemaphores[i], &sj::g_vkAllocationFns);
-            vkDestroyFence(device, inFlightFences[i], &sj::g_vkAllocationFns);
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], sj::g_vkAllocationFns);
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], sj::g_vkAllocationFns);
+            vkDestroyFence(device, inFlightFences[i], sj::g_vkAllocationFns);
 
-            vkDestroyBuffer(device, globalUniformBuffers[i], &sj::g_vkAllocationFns);
-            vkFreeMemory(device, globalUniformBuffersMemory[i], &sj::g_vkAllocationFns);
+            vkDestroyBuffer(device, globalUniformBuffers[i], sj::g_vkAllocationFns);
+            vkFreeMemory(device, globalUniformBuffersMemory[i], sj::g_vkAllocationFns);
         }
     }
 

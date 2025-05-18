@@ -3,14 +3,10 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Engine Headers
-#include <ScrewjankEngine/system/memory/Allocator.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
-#include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
-
 // Shared Headers
 #include <ScrewjankShared/utils/MemUtils.hpp>
+
+import sj.engine.system.memory;
 
 using namespace sj;
 
@@ -42,13 +38,6 @@ namespace system_tests {
         ASSERT_EQ(5.0, dummy->m_double);
 
         delete dummy;
-    }
-
-    TEST(MemoryTests, CustomNewDeleteTest)
-    {
-        auto num_ptr = New<int>(1);
-        ASSERT_EQ(1, *num_ptr);
-        Delete<int>(num_ptr);
     }
 
     TEST(MemoryTests, UnmanagedAllocatorNewDeleteTest)

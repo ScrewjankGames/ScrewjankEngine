@@ -1,9 +1,10 @@
 // Engine Headers
-#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/framework/Game.hpp>
 
 // Shared Headers
 #include <ScrewjankShared/utils/Log.hpp>
+
+import sj.engine.system.memory;
 
 // Initialize engine global static objects so they are 
 // destroyed in the correct order during shutdown

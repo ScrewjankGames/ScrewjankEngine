@@ -1,7 +1,6 @@
 #pragma once
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/memory/Memory.hpp>
 #include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
@@ -19,6 +18,7 @@
 // STD Headers
 #include <span>
 
+import sj.engine.system;
 import sj.shared.containers;
 
 namespace sj {

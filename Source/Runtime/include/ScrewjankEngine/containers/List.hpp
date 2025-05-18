@@ -7,7 +7,8 @@
 // Screwjank Headers
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
+
+import sj.engine.system.memory;
 
 namespace sj 
 {

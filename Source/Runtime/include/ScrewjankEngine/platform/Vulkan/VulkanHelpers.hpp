@@ -1,8 +1,6 @@
 #pragma once
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 
 // Library Headers
@@ -12,10 +10,11 @@
 #include <span>
 #include <array>
 
+import sj.engine.system.memory;
+
 namespace sj
 {
-    extern VkAllocationCallbacks g_vkAllocationFns;
-    static MemSpace<FreeListAllocator>* GetVulkanCPUMemSpace();
+    inline constexpr VkAllocationCallbacks* g_vkAllocationFns = nullptr;
 
     [[nodiscard]]
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,

@@ -1,4 +1,3 @@
-#include "ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp"
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
@@ -7,9 +6,11 @@
 #include <imgui_impl_glfw.h>
 
 // Engine Headers
+#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
+#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
 namespace sj {
     Window* Window::GetInstance()
@@ -86,7 +87,7 @@ namespace sj {
     VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance) const
     {
         VkSurfaceKHR surface;
-        VkResult success = glfwCreateWindowSurface(instance, m_NativeWindow, &sj::g_vkAllocationFns, &surface);
+        VkResult success = glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
         SJ_ASSERT(success == VK_SUCCESS, "Failed to create vulkan window surface");
 
         return surface;

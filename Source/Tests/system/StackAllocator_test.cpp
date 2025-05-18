@@ -5,8 +5,8 @@
 
 // Void Engine Headers
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
+
+import sj.engine.system.memory;
 
 using namespace sj;
 
@@ -22,17 +22,17 @@ namespace system_tests {
     TEST(StackAllocatorTests, PushPopTest)
     {
         IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
-        void* memory = mem_space->Allocate(128);
+        void* memory = mem_space->allocate(128);
         StackAllocator allocator(128, memory);
 
         // Assign memory and construct test data in the addresses
         auto mem1 = allocator.AllocateType<StackAllocatorDummy>();
         auto sd1 = new (mem1) StackAllocatorDummy {1, 1, 1};
 
-        auto mem2 = allocator.Allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
+        auto mem2 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
         auto sd2 = new (mem2) StackAllocatorDummy {2, 2, 2};
 
-        auto mem3 = allocator.PushType<StackAllocatorDummy>();
+        auto mem3 = allocator.AllocateType<StackAllocatorDummy>();
         auto sd3 = new (mem3) StackAllocatorDummy {3, 3, 3};
 
         // Make sure no data got stomped on or corrupted
@@ -51,7 +51,7 @@ namespace system_tests {
         // free mem3
         allocator.PopAlloc();
 
-        auto mem4 = allocator.PushAlloc(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
+        auto mem4 = allocator.AllocateType<StackAllocatorDummy>();
         auto sd4 = new (mem4) StackAllocatorDummy {4, 4, 4};
 
         // mem4 should re-use mem3's space
@@ -72,7 +72,7 @@ namespace system_tests {
         allocator.PopAlloc();
         allocator.PopAlloc();
 
-        auto mem5 = allocator.PushType<int>();
+        auto mem5 = allocator.AllocateType<int>();
         auto sd5 = new (mem5) int(5);
         // mem5 should re-use mem1's freed space exactly
         EXPECT_EQ(mem1, mem5);
@@ -80,10 +80,10 @@ namespace system_tests {
         // Make sure 5th allocation worked
         EXPECT_EQ(5, *sd5);
 
-        auto mem6 = allocator.PushType<double>();
+        auto mem6 = allocator.AllocateType<double>();
         auto sd6 = new (mem6) double(6.0f);
 
-        auto mem7 = allocator.PushType<StackAllocatorDummy>();
+        auto mem7 = allocator.AllocateType<StackAllocatorDummy>();
         auto sd7 = new StackAllocatorDummy {7, 7, 7};
 
         EXPECT_EQ(6.0, *sd6);
@@ -96,7 +96,7 @@ namespace system_tests {
         allocator.PopAlloc();
         allocator.PopAlloc();
 
-        mem_space->Free(memory);
+        mem_space->deallocate(memory, 128);
     }
 
 } // namespace system_tests

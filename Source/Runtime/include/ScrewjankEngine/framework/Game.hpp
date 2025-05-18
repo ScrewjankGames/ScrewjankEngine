@@ -7,14 +7,13 @@
 #include <ScrewjankEngine/framework/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
 
 import sj.engine.framework;
+import sj.engine.system.memory;
 import sj.shared.containers;
 
 namespace sj {
     // Forward declarations
-    class MemorySystem;
     class Window;
     class Renderer;
 

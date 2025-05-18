@@ -6,6 +6,8 @@
 // Engine Headers
 #include <ScrewjankEngine/system/threading/Thread.hpp>
 
+#include <ScrewjankShared/utils/Log.hpp>
+
 // TODO: Remove me
 #ifdef SJ_PLATFORM_WINDOWS
 #include <Windows.h>

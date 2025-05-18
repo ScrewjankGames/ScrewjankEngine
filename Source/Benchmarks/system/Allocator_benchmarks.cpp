@@ -1,15 +1,10 @@
 // Library Headers
 #include <benchmark/benchmark.h>
 
-// Screwjank Headers
-#include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/allocators/LinearAllocator.hpp>
-#include <ScrewjankEngine/system/memory/allocators/StackAllocator.hpp>
-#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
-#include <ScrewjankEngine/system/memory/allocators/FreeListAllocator.hpp>
-
 // STD Header
 #include <cmath>
+
+import sj.engine.system.memory;
 
 sj::MemSpace<sj::FreeListAllocator> g_BenchmarkHeap(nullptr, 5_GiB, "Benchmark Heap");
 
@@ -37,32 +32,32 @@ static void BM_LinearAllocator(benchmark::State& state)
 {
     size_t alloc_size = state.range(0) * state.range(1);
 
-    void* test_memory = g_BenchmarkHeap.Allocate(alloc_size);
+    void* test_memory = g_BenchmarkHeap.allocate(alloc_size);
 
     // Reserve a buffer that is alloc_size * num_allocs large
     sj::LinearAllocator allocator(alloc_size, test_memory);
 
     while (state.KeepRunning()) {
         for (int i = 0; i < state.range(1); i++) {
-            auto memory = allocator.Allocate(state.range(0));
+            auto memory = allocator.allocate(state.range(0));
         }
         allocator.Reset();
     }
 
-    g_BenchmarkHeap.Free(test_memory);
+    g_BenchmarkHeap.deallocate(test_memory, alloc_size);
 }
 
 static void BM_StackAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
     size_t alloc_size = state.range(0) * (size_t)std::ceil(state.range(1) * 1.5);
-    void* memory = g_BenchmarkHeap.Allocate(alloc_size);
+    void* memory = g_BenchmarkHeap.allocate(alloc_size);
     sj::StackAllocator allocator(alloc_size, memory);
 
     while (state.KeepRunning()) {
         int i = 0;
         for (; i < state.range(1); i++) {
-            auto memory = allocator.Allocate(state.range(0));
+            auto memory = allocator.allocate(state.range(0));
         }
 
         for (int j = 0; j < i; j++) {
@@ -70,7 +65,7 @@ static void BM_StackAllocator(benchmark::State& state)
         }
     }
 
-    g_BenchmarkHeap.Free(memory);
+    g_BenchmarkHeap.deallocate(memory, alloc_size);
 }
 
 template <size_t kBlockSize>
@@ -78,7 +73,7 @@ void BM_PoolAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
     size_t alloc_size = state.range(1);
-    void* memory = g_BenchmarkHeap.Allocate(alloc_size);
+    void* memory = g_BenchmarkHeap.allocate(alloc_size);
     sj::PoolAllocator<kBlockSize> allocator(alloc_size, memory);
 
     // Reserve a vector to store memory addresses so things can be freed properly
@@ -86,22 +81,22 @@ void BM_PoolAllocator(benchmark::State& state)
 
     while (state.KeepRunning()) {
         for (int i = 0; i < state.range(1); i++) {
-            vec[i] = allocator.Allocate(state.range(0));
+            vec[i] = allocator.allocate(state.range(0));
         }
 
         for (auto address : vec) {
-            allocator.Free(address);
+            allocator.deallocate(address);
         }
     }
 
-    g_BenchmarkHeap.Free(memory);
+    g_BenchmarkHeap.deallocate(memory, alloc_size);
 }
 
 static void BM_FreeListAllocator(benchmark::State& state)
 {
     // Reserve a buffer that is alloc_size * num_allocs large
     size_t alloc_size = state.range(0) * (size_t)std::ceil(state.range(1) * 1.5);
-    void* test_memory = g_BenchmarkHeap.Allocate(alloc_size);
+    void* test_memory = g_BenchmarkHeap.allocate(alloc_size);
 
     sj::FreeListAllocator allocator(alloc_size, test_memory);
 
@@ -110,17 +105,17 @@ static void BM_FreeListAllocator(benchmark::State& state)
 
     while (state.KeepRunning()) {
         for (int i = 0; i < state.range(1); i++) {
-            auto memory = allocator.Allocate(state.range(0));
+            auto memory = allocator.allocate(state.range(0));
 
             vec[i] = memory;
         }
 
         for (auto address : vec) {
-            allocator.Free(address);
+            allocator.deallocate(address);
         }
     }
 
-    g_BenchmarkHeap.Free(test_memory);
+    g_BenchmarkHeap.deallocate(test_memory, alloc_size);
 }
 
 // Run the benchmark with allocation sizes from 32 bytes to 16 MB, 1 to 256 times

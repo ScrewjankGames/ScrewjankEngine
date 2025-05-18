@@ -8,9 +8,12 @@
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
+
 // Shared Headers
 #include <ScrewjankShared/io/File.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
+
+import sj.engine.system.memory;
 
 namespace sj
 {
@@ -131,7 +134,7 @@ namespace sj
                 vkCreatePipelineLayout(
                     m_Device, 
                     &pipelineLayoutInfo, 
-                    &sj::g_vkAllocationFns, 
+                    sj::g_vkAllocationFns, 
                     &m_PipelineLayout);
             SJ_ASSERT(res == VK_SUCCESS, "failed to create pipeline layout!");
         }
@@ -183,21 +186,21 @@ namespace sj
                                                      VK_NULL_HANDLE,
                                                      1,
                                                      &pipelineInfo,
-                                                     &sj::g_vkAllocationFns,
+                                                     sj::g_vkAllocationFns,
                                                      &m_Pipeline);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics pipeline");
         }
 
 
-        vkDestroyShaderModule(m_Device, fragmentShaderModule, &sj::g_vkAllocationFns);
-        vkDestroyShaderModule(m_Device, vertexShaderModule, &sj::g_vkAllocationFns);
+        vkDestroyShaderModule(m_Device, fragmentShaderModule, sj::g_vkAllocationFns);
+        vkDestroyShaderModule(m_Device, vertexShaderModule, sj::g_vkAllocationFns);
     }
 
     void VulkanPipeline::DeInit()
     {
-        vkDestroyPipeline(m_Device, m_Pipeline, &sj::g_vkAllocationFns);
-        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, &sj::g_vkAllocationFns);
+        vkDestroyPipeline(m_Device, m_Pipeline, sj::g_vkAllocationFns);
+        vkDestroyPipelineLayout(m_Device, m_PipelineLayout, sj::g_vkAllocationFns);
     }
 
     VkPipeline VulkanPipeline::GetPipeline()
@@ -219,7 +222,7 @@ namespace sj
         SJ_ASSERT(success, "Failed to open compiled shader %s", path);
 
         uint64_t shaderBufferSize = shader.Size();
-        void* shaderBuffer = rendererWorkBuffer->Allocate(shaderBufferSize);
+        void* shaderBuffer = rendererWorkBuffer->allocate(shaderBufferSize);
         shader.Read(shaderBuffer, shaderBufferSize);
 
         VkShaderModuleCreateInfo createInfo = {};
@@ -228,12 +231,12 @@ namespace sj
         createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
 
         VkShaderModule shaderModule;
-        VkResult res = vkCreateShaderModule(m_Device, &createInfo, &sj::g_vkAllocationFns, &shaderModule);
+        VkResult res = vkCreateShaderModule(m_Device, &createInfo, sj::g_vkAllocationFns, &shaderModule);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");
 
         shader.Close();
-        rendererWorkBuffer->Free(shaderBuffer);
+        rendererWorkBuffer->deallocate(shaderBuffer, shaderBufferSize);
 
         return shaderModule;
     }

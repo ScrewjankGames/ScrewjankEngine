@@ -10,8 +10,6 @@
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/system/threading/ThreadPool.hpp>
-#include <ScrewjankEngine/system/memory/Memory.hpp>
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
 
 #include <ScrewjankShared/utils/Log.hpp>
 
@@ -19,6 +17,7 @@
 #include <imgui.h>
 
 import sj.engine.framework;
+import sj.engine.system;
 import sj.shared.datadefs;
 
 namespace sj {

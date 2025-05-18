@@ -5,9 +5,8 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/system/threading/Thread.hpp>
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
-#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
 
+import sj.engine.system.memory;
 import sj.shared.containers;
 
 namespace sj

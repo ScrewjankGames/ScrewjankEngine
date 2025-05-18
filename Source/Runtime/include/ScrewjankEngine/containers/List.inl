@@ -164,7 +164,7 @@ namespace sj
 
         for(; it != other.end(); it++)
         {
-            m_List.insert_after(currNode, m_MemSpace->New<node_type>(*it));
+            m_List.insert_after(currNode, m_MemSpace->sj_new<node_type>(*it));
             currNode = currNode->GetNext();
         }
     }
@@ -217,7 +217,7 @@ namespace sj
     inline void List<T, tIsBidirectional>::PushFront(const T& value)
     {
         // Allocate node and copy data
-        node_ptr newNode = m_MemSpace->New<node_type>(value);
+        node_ptr newNode = m_MemSpace->sj_new<node_type>(value);
 
         // Push to list impl
         m_List.push_front(newNode);
@@ -226,7 +226,7 @@ namespace sj
     template <class T, bool tIsBidirectional>
     inline void List<T, tIsBidirectional>::PushBack(const T& value)
     {
-        node_ptr newNode = m_MemSpace->New<node_type>(value);
+        node_ptr newNode = m_MemSpace->sj_new<node_type>(value);
 
         m_List.push_back(newNode);
     }
@@ -238,14 +238,14 @@ namespace sj
 
         node_type& tmp = m_List.front();
         m_List.pop_front();
-        m_MemSpace->Free(&tmp);
+        m_MemSpace->sj_delete(&tmp);
     }
 
     template <class T, bool tIsBidirectional>
     template <class... Args>
     inline void List<T, tIsBidirectional>::EmplaceFront(Args&&... args)
     {
-        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->AllocateType<node_type>());
+        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->allocate_type<node_type>());
         new (nodePtr) node_type (T(std::forward<Args>(args)...));
         m_List.push_front(nodePtr);
     }
@@ -254,7 +254,7 @@ namespace sj
     inline typename List<T, tIsBidirectional>::Iterator 
     List<T, tIsBidirectional>::InsertAfter(Iterator pos, const T& value)
     {
-        node_ptr nodePtr = m_MemSpace->New<node_type>(value);
+        node_ptr nodePtr = m_MemSpace->sj_new<node_type>(value);
 
         m_List.insert_after(pos.GetNode(), nodePtr);
 
@@ -266,7 +266,7 @@ namespace sj
     inline typename List<T, tIsBidirectional>::Iterator List<T, tIsBidirectional>::EmplaceAfter(Iterator pos,
                                                                           Args&&... args)
     {
-        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->AllocateType<node_type>());
+        node_ptr nodePtr = static_cast<node_ptr>(m_MemSpace->allocate_type<node_type>());
         new(nodePtr) node_type {T(std::forward<Args>(args)...)};
 
         m_List.insert_after(pos.GetNode(), nodePtr);
@@ -281,7 +281,7 @@ namespace sj
 
         node_ptr dead_node = pos.GetNode()->Next;
         m_List.erase_after(pos.GetNode());
-        m_MemSpace->Delete(dead_node);
+        m_MemSpace->sj_delete(dead_node);
 
         return ++pos;
     }
@@ -294,7 +294,7 @@ namespace sj
         {
             node_ptr curr = &m_List.front();
             m_List.pop_front();
-            m_MemSpace->Delete(curr);
+            m_MemSpace->sj_delete(curr);
         }
     }
 

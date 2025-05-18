@@ -1,16 +1,15 @@
 module;
 
-// Engine Includes
-#include <ScrewjankEngine/system/memory/MemSpace.hpp>
-#include <ScrewjankEngine/system/memory/allocators/PoolAllocator.hpp>
-
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
+// Library Includes
 #include <glaze/beve/read.hpp>
 
 export module sj.engine.framework:Scene;
 import sj.engine.framework.ecs;
+import sj.engine.system.memory;
 import sj.shared.containers;
 import sj.shared.datadefs;
 

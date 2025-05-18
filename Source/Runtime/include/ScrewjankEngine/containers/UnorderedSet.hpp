@@ -8,8 +8,9 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankEngine/system/memory/Memory.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
+import sj.engine.system.memory;
 import sj.shared.containers;
 
 namespace sj {

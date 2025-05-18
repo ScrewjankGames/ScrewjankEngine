@@ -33,7 +33,7 @@ namespace sj {
     {
         if(m_Device != VK_NULL_HANDLE)
         {
-            vkDestroyDevice(m_Device, &sj::g_vkAllocationFns);
+            vkDestroyDevice(m_Device, sj::g_vkAllocationFns);
         }
     }
 
@@ -209,7 +209,7 @@ namespace sj {
         VkResult success = vkCreateDevice(
             m_PhysicalDevice, 
             &device_create_info, 
-            &sj::g_vkAllocationFns, 
+            sj::g_vkAllocationFns, 
             &m_Device
         );
         

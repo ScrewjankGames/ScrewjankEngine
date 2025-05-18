@@ -1,5 +1,4 @@
 // Parent Include
-#include "ScrewjankEngine/system/memory/MemSpace.hpp"
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 
 // Screwjank Headers
@@ -8,6 +7,8 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+
+#include <ScrewjankShared/utils/Assert.hpp>
 
 namespace sj
 {
@@ -110,7 +111,7 @@ namespace sj
             vkCreateSwapchainKHR(
                 logicalDevice, 
                 &create_info, 
-                &sj::g_vkAllocationFns, 
+                sj::g_vkAllocationFns, 
                 &m_swapChain
             );
 
@@ -167,7 +168,7 @@ namespace sj
 
             VkResult res = vkCreateFramebuffer(device,
                                                &framebufferInfo,
-                                               &sj::g_vkAllocationFns,
+                                               sj::g_vkAllocationFns,
                                                &m_swapChainBuffers[i]);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
@@ -178,21 +179,21 @@ namespace sj
 
     void VulkanSwapChain::DeInit(VkDevice logicalDevice)
     {
-        vkDestroyImageView(logicalDevice, m_depthImageView, &sj::g_vkAllocationFns);
-        vkDestroyImage(logicalDevice, m_depthImage, &sj::g_vkAllocationFns);
-        vkFreeMemory(logicalDevice, m_depthImageMemory, &sj::g_vkAllocationFns);
+        vkDestroyImageView(logicalDevice, m_depthImageView, sj::g_vkAllocationFns);
+        vkDestroyImage(logicalDevice, m_depthImage, sj::g_vkAllocationFns);
+        vkFreeMemory(logicalDevice, m_depthImageMemory, sj::g_vkAllocationFns);
 
         for(VkFramebuffer buffer : m_swapChainBuffers)
         {
-            vkDestroyFramebuffer(logicalDevice, buffer, &sj::g_vkAllocationFns);
+            vkDestroyFramebuffer(logicalDevice, buffer, sj::g_vkAllocationFns);
         }
 
         for(VkImageView view : m_imageViews)
         {
-            vkDestroyImageView(logicalDevice, view, &sj::g_vkAllocationFns);
+            vkDestroyImageView(logicalDevice, view, sj::g_vkAllocationFns);
         }
 
-        vkDestroySwapchainKHR(logicalDevice, m_swapChain, &sj::g_vkAllocationFns);
+        vkDestroySwapchainKHR(logicalDevice, m_swapChain, sj::g_vkAllocationFns);
     }
 
     void VulkanSwapChain::Recreate(VkPhysicalDevice physicalDevice,
