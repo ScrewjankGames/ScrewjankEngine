@@ -215,7 +215,7 @@ namespace sj
 
     VkShaderModule VulkanPipeline::LoadShaderModule(const char* path)
     {
-        MemSpaceScope rendererWorkBuffer(Renderer::WorkBuffer());
+        MemoryResourceScope rendererWorkBuffer(Renderer::WorkBuffer());
 
         File shader;
         bool success = shader.Open(path, File::OpenMode::kReadBinary);

@@ -7,24 +7,19 @@ module;
 #include <cstdint>
 #include <cstddef>
 #include <new>
+#include <memory_resource>
 
 export module sj.engine.system.memory:MemorySystem;
-import :MemSpace;
 import :Literals;
 import sj.engine.system.memory.allocators;
 import sj.shared.containers;
 
 export namespace sj
 {
-    extern thread_local static_stack<IMemSpace*, 64> g_MemSpaceStack;
-
     // Root heap sizes
     constexpr uint64_t kRootHeapSize = 5_MiB;
     constexpr uint64_t kDebugHeapSize = 64_MiB;
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /// Memory Manager
-    ///////////////////////////////////////////////////////////////////////////////////////////////
     class MemorySystem
     {
     public:
@@ -44,135 +39,149 @@ export namespace sj
             return &memSys;
         }
 
-        static void PushMemSpace(IMemSpace* mem_space)
+        static FreeListAllocator* GetRootMemoryResource()
         {
-            g_MemSpaceStack.push(mem_space);
-        }
-        static void PopMemSpace()
-        {
-            g_MemSpaceStack.pop();
+            return &(Get()->m_rootResource);
         }
 
-        static IMemSpace* GetRootMemSpace()
+        static std::pmr::memory_resource* GetUnmanagedMemoryResource()
         {
-            return &(Get()->m_RootMemSpace);
-        }
-
-        static UnmanagedMemSpace* GetUnmanagedMemSpace()
-        {
-            return &(Get()->m_UnmanagedMemSpace);
+            return &(Get()->m_unmanagedResource);
         }
 
 #ifndef SJ_GOLD
-        static IMemSpace* GetDebugMemSpace()
+        static FreeListAllocator* GetDebugMemoryResource()
         {
-            return &(Get()->m_DebugMemSpace);
+            return &(Get()->m_debugResource);
         }
 #endif
 
+        static void TrackMemoryResource(sj::memory_resource* resource)
+        {
+            Get()->s_trackedResources.emplace_back(resource);
+        }
+
+        static void PushMemoryResource(std::pmr::memory_resource* mem_resource)
+        {
+            s_memoryResourceStack.push(mem_resource);
+        }
+
+        static void PopMemoryResource()
+        {
+            s_memoryResourceStack.pop();
+        }
+
         /**
-         * Users can push and pop heap zones off the stack to control allocations for scopes
+         * Users can push and pop memory resources off the stack to control allocations for scopes
          * Allows custom allocators to be used with third party libraries.
          */
         [[nodiscard]]
-        static IMemSpace* GetCurrentMemSpace()
+        static std::pmr::memory_resource* GetCurrentMemoryResource()
         {
             MemorySystem* system = Get();
 
-            if(g_MemSpaceStack.empty())
+            if(s_memoryResourceStack.empty())
             {
-                return GetUnmanagedMemSpace();
+                return GetUnmanagedMemoryResource();
             }
             else
             {
-                return g_MemSpaceStack.top();
+                return s_memoryResourceStack.top();
             }
         }
 
+        [[nodiscard]]
+        static sj::memory_resource* FindOwningResource(void* ptr)
+        {
+            for(sj::memory_resource* resource : s_trackedResources)
+            {
+                if(resource->contains_ptr(ptr))
+                    return resource;
+            }
+
+            return nullptr;
+        }
+
     private:
-        SystemAllocator m_unmanagedResource;
+        FreeListAllocator m_rootResource;
+
 #ifndef SJ_GOLD
         FreeListAllocator m_debugResource;
 #endif
-        FreeListAllocator m_rootResource;
 
-        UnmanagedMemSpace m_UnmanagedMemSpace;
-#ifndef SJ_GOLD
-        MemSpace<FreeListAllocator> m_DebugMemSpace;
-#endif
-        MemSpace<FreeListAllocator> m_RootMemSpace;
+        SystemAllocator m_unmanagedResource;
 
-        MemorySystem()
-
-            : m_RootMemSpace(nullptr, kRootHeapSize, "Root Heap"),
-              m_UnmanagedMemSpace(nullptr, 0, "Unmanaged Allocations")
-#ifndef SJ_GOLD
-              ,
-              m_DebugMemSpace(nullptr, kDebugHeapSize, "Debug Heap")
-#endif // !SJ_GOLD
+        MemorySystem() : m_rootResource(kRootHeapSize, std::pmr::new_delete_resource())
         {
-            // s_trackedResources.emplace_back(&m_rootResource);
+            s_trackedResources.emplace_back(&m_rootResource);
 
-            // #ifndef SJ_GOLD
-            // s_trackedResources.emplace_back(&m_debugResource);
-            // #endif
+#ifndef SJ_GOLD
+            m_rootResource.set_debug_name("Root Heap");
+
+            m_debugResource.init(kDebugHeapSize, std::pmr::new_delete_resource());
+            m_debugResource.set_debug_name("Debug Heap");
+            s_trackedResources.emplace_back(&m_debugResource);
+#endif
         }
 
         ~MemorySystem() = default;
 
-        inline static static_vector<sj::memory_resource*, 64> s_trackedResources = { };
+        inline static thread_local static_stack<std::pmr::memory_resource*, 64>
+            s_memoryResourceStack = {};
 
-        inline static thread_local static_stack<IMemSpace*, 64> g_MemSpaceStack = {};
+        // Can be searched to figure out where a pointer came from
+        inline static static_vector<sj::memory_resource*, 64> s_trackedResources = {};
     };
 
     /**
-     * Helper class that pushes a heap zone onto the stack on create
+     * Helper class that pushes a memory resource onto the stack on create
      * and pops it when it goes out of scope
      */
-    class MemSpaceScope
+    class MemoryResourceScope
     {
     public:
-        MemSpaceScope(IMemSpace* zone)
+        MemoryResourceScope(std::pmr::memory_resource* resource)
         {
-            MemorySystem::PushMemSpace(zone);
+            MemorySystem::PushMemoryResource(resource);
         }
-        MemSpaceScope(const MemSpaceScope& other) = delete;
-        MemSpaceScope(MemSpaceScope&& other) : MemSpaceScope(other.m_Heap)
+        MemoryResourceScope(const MemoryResourceScope& other) = delete;
+        MemoryResourceScope(MemoryResourceScope&& other) : MemoryResourceScope(other.m_resource)
         {
-            other.m_Heap = nullptr;
-        }
-
-        MemSpaceScope& operator=(const MemSpaceScope& other) = delete;
-
-        ~MemSpaceScope()
-        {
-            MemorySystem::PopMemSpace();
+            other.m_resource = nullptr;
         }
 
-        IMemSpace& operator*()
+        MemoryResourceScope& operator=(const MemoryResourceScope& other) = delete;
+
+        ~MemoryResourceScope()
         {
-            return *m_Heap;
-        }
-        IMemSpace* operator->()
-        {
-            return m_Heap;
-        }
-        const IMemSpace& operator*() const
-        {
-            return *m_Heap;
-        }
-        const IMemSpace* operator->() const
-        {
-            return m_Heap;
+            MemorySystem::PopMemoryResource();
         }
 
-        IMemSpace* Get()
+        std::pmr::memory_resource& operator*()
         {
-            return m_Heap;
+            return *m_resource;
+        }
+
+        std::pmr::memory_resource* operator->()
+        {
+            return m_resource;
+        }
+        const std::pmr::memory_resource& operator*() const
+        {
+            return *m_resource;
+        }
+        const std::pmr::memory_resource* operator->() const
+        {
+            return m_resource;
+        }
+
+        std::pmr::memory_resource* Get()
+        {
+            return m_resource;
         }
 
     private:
-        IMemSpace* m_Heap;
+        std::pmr::memory_resource* m_resource;
     };
 
 } // namespace sj

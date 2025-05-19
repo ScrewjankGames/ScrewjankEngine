@@ -1,72 +1,34 @@
 module;
 
+#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
-
-#include <cstdlib>
-#include <cstdint>
-#include <cstddef>
+#include <ScrewjankShared/utils/Log.hpp>
+#include <memory_resource>
 
 export module sj.engine.system.memory.allocators:SystemAllocator;
 import :Allocator;
 
-export namespace sj {
-
-    class SystemAllocator final : public Allocator
+export namespace sj
+{
+    class SystemAllocator final : public std::pmr::memory_resource
     {
     public:
-        /**
-         * Constructor
-         */
-        SystemAllocator() = default;
-
-        /**
-         * Destructor
-         */
-        virtual ~SystemAllocator() = default;
-
-        void Init(size_t bytes = 0, void* start = 0)
+        [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
         {
-            SJ_ASSERT(start == nullptr, "Cannot init system allocator");
+            return &other == this;
         }
 
-        /**
-         * Allocates size bites from the heap
-         * @param size The number of bytes to allocate
-         * @param alignment The alignment requirement for this allocation
-         */
-        [[nodiscard]] 
-        virtual void* allocate(const size_t size, const size_t alignment = alignof(std::max_align_t)) 
+    private:
+        [[nodiscard]]
+        void* do_allocate(const size_t size,
+                          const size_t alignment = alignof(std::max_align_t)) override
         {
             return std::malloc(size);
         }
 
-        /**
-         * Marks memory as free
-         * @param memory Pointer to the memory to free
-         */
-        virtual void deallocate(void* memory)
+        void do_deallocate(void* p, size_t bytes, size_t alignment) override
         {
-            std::free(memory);
-        }
-
-        /**
-         * Allocate enough aligned memory for the provided type
-         * @tparam T the type to allocate memory for
-         */
-        template <class T>
-        [[nodiscard]] void* AllocateType() 
-        {
-            return allocate(sizeof(T), alignof(T));
-        }
-
-        virtual uintptr_t Begin() const
-        {
-            return 0;
-        }
-
-        virtual uintptr_t End() const 
-        {
-            return 0;
+            std::free(p);
         }
     };
 } // namespace sj

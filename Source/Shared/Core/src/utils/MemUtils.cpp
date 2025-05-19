@@ -48,4 +48,11 @@ namespace sj
     {
         return GetAlignmentOffset(align_of, memory_address) == 0;
     }
+
+    [[nodiscard]] bool IsPointerInAddressSpace(const void* pointer, void* space_start, void* space_end)
+    {
+        return uintptr_t(pointer) >= uintptr_t(space_start) &&
+        uintptr_t(pointer) < uintptr_t(space_end);
+    }
+
 }

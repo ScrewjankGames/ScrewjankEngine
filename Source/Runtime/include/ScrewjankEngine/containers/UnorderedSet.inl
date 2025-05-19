@@ -12,7 +12,7 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set()
-        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemSpace())
+        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemoryResource())
     {
     }
 
@@ -36,26 +36,26 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(std::initializer_list<T> list)
-        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemSpace(), list)
+        : dynamic_unordered_set<T>(MemorySystem::GetCurrentMemoryResource(), list)
     {
     }
 
     template <class T>
     template <class InputIterator>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(InputIterator first, InputIterator last)
-        : dynamic_unordered_set(MemorySystem::GetCurrentMemSpace(), first, last)
+        : dynamic_unordered_set(MemorySystem::GetCurrentMemoryResource(), first, last)
     {
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set(IMemSpace* mem_space)
-        : m_Elements(0, mem_space)    
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(sj::memory_resource* mem_resource)
+        : m_Elements(0, mem_resource)    
     {
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set( IMemSpace* mem_space, std::initializer_list<T> list)
-        : dynamic_unordered_set<T>(mem_space)
+    inline dynamic_unordered_set<T>::dynamic_unordered_set( sj::memory_resource* mem_resource, std::initializer_list<T> list)
+        : dynamic_unordered_set<T>(mem_resource)
     {
         for (auto key : list)
         {
@@ -65,10 +65,10 @@ namespace sj
 
     template <class T>
     template <class InputIterator>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set(IMemSpace* mem_space,
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(sj::memory_resource* mem_resource,
                                                  InputIterator first,
                                                  InputIterator last)
-        : dynamic_unordered_set<T>(mem_space)
+        : dynamic_unordered_set<T>(mem_resource)
     {
         this->emplace(first, last);
     }

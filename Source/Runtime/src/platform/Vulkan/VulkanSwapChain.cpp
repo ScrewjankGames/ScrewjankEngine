@@ -290,7 +290,7 @@ namespace sj
                                                   nullptr);
         SJ_ASSERT(present_mode_count != 0, "No present modes found");
 
-        IMemSpace* currMemSpace = Renderer::WorkBuffer();
+        sj::memory_resource* currMemSpace = Renderer::WorkBuffer();
         SwapChainParams params
         {
             capabilities,

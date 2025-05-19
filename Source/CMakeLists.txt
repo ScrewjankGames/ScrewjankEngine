@@ -5,4 +5,3 @@ add_subdirectory(Shared)
 
 # TODO: Make optional
 add_subdirectory(Tests)
-add_subdirectory(Benchmarks)

@@ -27,7 +27,7 @@ namespace sj {
 
     void Game::LoadScene(const char* path)
     {
-        MemSpaceScope _ (MemorySystem::GetRootMemSpace());
+        MemoryResourceScope _ (MemorySystem::GetRootMemoryResource());
         m_scenes.emplace_back(new Scene(path));
     }
 
@@ -42,8 +42,8 @@ namespace sj {
     }
 
     Game::Game() 
-        : m_ecs(100, MemorySystem::GetRootMemSpace()),
-          m_scenes(MemorySystem::GetRootMemSpace())
+        : m_ecs(100, MemorySystem::GetRootMemoryResource()),
+          m_scenes(MemorySystem::GetRootMemoryResource())
     {
         auto registerFn = []<class T>(ECSRegistry& registry)
         {

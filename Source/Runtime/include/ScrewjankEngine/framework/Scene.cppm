@@ -34,6 +34,6 @@ export namespace sj
         
     private:
         SceneChunk m_chunk;
-        MemSpace<sj::FreeListAllocator> m_memSpace;
+        FreeListAllocator m_memoryResource;
     };
 }

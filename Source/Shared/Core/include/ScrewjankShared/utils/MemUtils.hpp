@@ -35,4 +35,8 @@ namespace sj
      */
     bool IsMemoryAligned(const void* const memory_address, const size_t align_of);
 
+    /**
+     * Tests whether or not provided pointer in in the range [space_start, space_end)
+     */
+    [[nodiscard]] bool IsPointerInAddressSpace(const void* pointer, void* space_start, void* space_end);
 }

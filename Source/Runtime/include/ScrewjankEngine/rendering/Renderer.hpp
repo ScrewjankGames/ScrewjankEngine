@@ -33,7 +33,7 @@ namespace sj {
     {
     public:
         /** Allocator used for engine helper allocations to get data over to vulkan */
-        static MemSpace<FreeListAllocator>* WorkBuffer();
+        static FreeListAllocator* WorkBuffer();
 
         static Renderer* GetInstance();
 

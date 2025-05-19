@@ -30,15 +30,16 @@ import sj.shared.containers;
 
 namespace sj
 {
+    FreeListAllocator g_workBufferResource;
+
     static void CheckImguiVulkanResult(VkResult res)
     {
         SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
     }
 
-    MemSpace<FreeListAllocator>* Renderer::WorkBuffer()
+    FreeListAllocator* Renderer::WorkBuffer()
     {
-        static MemSpace zone(MemorySystem::GetRootMemSpace(), 4_MiB, "Renderer Work Buffer");
-        return &zone;
+        return &g_workBufferResource;
     }
 
     Renderer* Renderer::GetInstance()
@@ -147,6 +148,9 @@ namespace sj
 
     void Renderer::Init() 
     {
+        g_workBufferResource.init(4_MiB, MemorySystem::GetRootMemoryResource());
+        MemorySystem::TrackMemoryResource(&g_workBufferResource);
+
         InitializeVulkan();
 
         // Create rendering surface
@@ -323,7 +327,7 @@ namespace sj
 
         #ifndef SJ_GOLD
         {
-            MemSpaceScope _(MemorySystem::GetDebugMemSpace());
+            MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
             ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
             
@@ -394,7 +398,7 @@ namespace sj
         dynamic_vector<const char*> debug_required_extensions(
             std::from_range_t{},
             required_extensions,
-            MemorySystem::GetDebugMemSpace()
+            MemorySystem::GetDebugMemoryResource()
         );
 
         debug_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

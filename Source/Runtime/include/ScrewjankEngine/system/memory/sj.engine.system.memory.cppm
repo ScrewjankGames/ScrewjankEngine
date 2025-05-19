@@ -4,14 +4,13 @@ module;
 #include <cstdint>
 #include <cstddef>
 #include <new>
+#include <memory_resource>
 
 #include <ScrewjankShared/utils/Assert.hpp>
 
 export module sj.engine.system.memory;
 export import :Literals;
-export import :MemSpace;
 export import :MemorySystem;
-
 export import sj.engine.system.memory.allocators;
 
 module :private;
@@ -21,35 +20,18 @@ extern "C++" {
     if(num_bytes == 0)
         num_bytes++;
 
-    return sj::MemorySystem::GetCurrentMemSpace()->allocate(num_bytes);
+    std::pmr::memory_resource* resource = sj::MemorySystem::GetCurrentMemoryResource();
+    return resource->allocate(num_bytes);
 }
 
 void do_deallocate(void* ptr, std::size_t sz) noexcept
 {
-    sj::IMemSpace* currMemSpace = sj::MemorySystem::GetCurrentMemSpace();
-    sj::IMemSpace* unmanagedMemSpace = sj::MemorySystem::GetUnmanagedMemSpace();
 
-    if(currMemSpace && currMemSpace != unmanagedMemSpace && currMemSpace->contains_ptr(ptr))
-    {
-        currMemSpace->deallocate(ptr, sz);
-    }
-    else if(sj::MemorySystem::GetRootMemSpace()->contains_ptr(ptr))
-    {
-        // Search for correct MemSpace for pointer supplied
-        sj::IMemSpace* mem_space = sj::find_mem_space(ptr);
-        SJ_ASSERT(mem_space != nullptr, "Failed to find managed memory region");
-        mem_space->deallocate(ptr, sz);
-    }
-#ifndef GOLD_VERSION
-    else if(sj::MemorySystem::GetDebugMemSpace()->contains_ptr(ptr))
-    {
-        sj::MemorySystem::GetDebugMemSpace()->deallocate(ptr, sz);
-    }
-#endif
+    sj::memory_resource* owning_resource = sj::MemorySystem::FindOwningResource(ptr);
+    if(owning_resource)
+        owning_resource->deallocate(ptr, sz);
     else
-    {
-        sj::MemorySystem::GetUnmanagedMemSpace()->deallocate(ptr, sz);
-    }
+        sj::MemorySystem::GetUnmanagedMemoryResource()->deallocate(ptr, sz);
 }
 
 void operator delete(void* ptr) noexcept

@@ -29,7 +29,7 @@
 //            static GLFW_Window* window = New<GLFW_Window>();
 //
 //            GLFW_Window* window = New<GLFW_Window>();
-//            return UniquePtr<Window>(MemorySystem::GetRootMemSpace(), window);
+//            return UniquePtr<Window>(MemorySystem::GetRootMemoryResource(), window);
 //        }
 //        else if constexpr(g_Platform == Platform::Linux)
 //        {

@@ -12,7 +12,7 @@ import :Allocator;
 
 export namespace sj
 {
-    class FreeListAllocator final : public Allocator
+    class FreeListAllocator final : public sj::memory_resource
     {
     public:
         /**
@@ -25,9 +25,17 @@ export namespace sj
         /**
          * Initializing Constructor
          */
+        FreeListAllocator(size_t numBytes, std::pmr::memory_resource& hostResource) : FreeListAllocator()
+        {
+            sj::memory_resource::init(numBytes, hostResource);
+        }
+
+        /**
+         * Initializing Constructor
+         */
         FreeListAllocator(size_t buffer_size, void* memory) : FreeListAllocator()
         {
-            Init(buffer_size, memory);
+            init(buffer_size, memory);
         }
 
         /**
@@ -55,13 +63,17 @@ export namespace sj
          */
         ~FreeListAllocator() = default;
 
-        /*
-         * @param buffer_size The size (in bytes) of the memory buffer being managed
-         * @param memory The memory this allocator should manage
+        /**
+         * @return whether the allocator is in a valid state
          */
-        void Init(size_t buffer_size, void* memory)
+        [[nodiscard]] bool is_initialized() const
         {
-            SJ_ASSERT(!IsInitialized(), "Double initialization of free list allocator detected");
+            return m_BufferStart != nullptr;
+        }
+
+        void init(size_t buffer_size, void* memory) override
+        {
+            SJ_ASSERT(!is_initialized(), "Double initialization of free list allocator detected");
 
             SJ_ASSERT(buffer_size > sizeof(FreeBlock) && buffer_size > sizeof(AllocationHeader),
                       "FreeListAllocator is not large enough to hold data");
@@ -75,15 +87,21 @@ export namespace sj
             AddFreeBlock(initial_block);
         }
 
+        bool contains_ptr(void* memory) const override
+        {
+            return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
+        }
+        
+private:
         /**
          * Allocates size bites with given alignment in a best-fit manner
          * @param size The number of bytes to allocate
          */
         [[nodiscard]]
-        void* allocate(const size_t size,
+        void* do_allocate(const size_t size,
                        const size_t alignment = alignof(std::max_align_t)) override
         {
-            SJ_ASSERT(IsInitialized(), "Trying to allocate with uninitialized allocator");
+            SJ_ASSERT(is_initialized(), "Trying to allocate with uninitialized allocator");
 
             // Search the free list, and return the most suitable free block and the padding
             // required to use it
@@ -155,11 +173,11 @@ export namespace sj
          * Marks memory as free
          * @param memory Pointer to the memory to free
          */
-        void deallocate(void* memory) override
+        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
         {
-            SJ_ASSERT(IsInitialized(), "Trying to deallocate with uninitialized allocator");
+            SJ_ASSERT(is_initialized(), "Trying to deallocate with uninitialized allocator");
             SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
-            SJ_ASSERT(IsMemoryInRange(memory), "Pointer is not managed by this allocator!");
+            SJ_ASSERT(contains_ptr(memory), "Pointer is not managed by this allocator!");
 
             AllocationHeader* block_header = GetAllocationHeader(memory);
             SJ_ASSERT(block_header->MagicHeader == AllocationHeader::kMagicHeader,
@@ -180,34 +198,6 @@ export namespace sj
             AddFreeBlock(new_block);
         }
 
-        /**
-         * @return whether the allocator is in a valid state
-         */
-        bool IsInitialized() const
-        {
-            return m_BufferStart != nullptr;
-        }
-
-        /**
-         * @return whether memory provided is managed by this allocator
-         */
-        bool IsMemoryInRange(void* memory) const
-        {
-            return uintptr_t(memory) >= uintptr_t(m_BufferStart) &&
-                   uintptr_t(memory) <= uintptr_t(m_BufferEnd);
-        }
-
-        uintptr_t Begin() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferStart);
-        }
-
-        uintptr_t End() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferEnd);
-        }
-
-    private:
         /** Linked list node structure inserted in-place into the allocator's buffer */
         struct FreeBlock
         {

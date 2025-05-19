@@ -16,7 +16,7 @@ export namespace sj
      * @tparam kBlockSize The size of each chunk in the pool
      */
     template <size_t kBlockSize>
-    class PoolAllocator final : public Allocator
+    class PoolAllocator final : public sj::memory_resource
     {
     public:
         /**
@@ -30,7 +30,7 @@ export namespace sj
          */
         PoolAllocator(size_t buffer_size, void* memory)
         {
-            Init(buffer_size, memory);
+            init(buffer_size, memory);
         }
 
         /**
@@ -38,7 +38,7 @@ export namespace sj
          */
         ~PoolAllocator() = default;
 
-        void Init(size_t buffer_size, void* memory)
+        void init(size_t buffer_size, void* memory) override
         {
             m_BufferStart = memory;
             m_BufferEnd =
@@ -71,13 +71,39 @@ export namespace sj
             }
         }
 
+        static constexpr size_t get_block_size()
+        {
+            return kBlockSize;
+        }
+
+        bool contains_ptr(void* memory) const override
+        {
+            return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
+        }
+
+    private:
+        /** Node structure for the for the free block linked list */
+        struct FreeBlock
+        {
+            FreeBlock* Next = nullptr;
+
+            FreeBlock* GetNext()
+            {
+                return Next;
+            }
+            void SetNext(FreeBlock* next)
+            {
+                Next = next;
+            }
+        };
+
         /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
          */
         [[nodiscard]]
-        virtual void* allocate(const size_t size,
-                               const size_t alignment = alignof(std::max_align_t)) override
+        virtual void* do_allocate(const size_t size,
+                                  const size_t alignment = alignof(std::max_align_t)) override
         {
             SJ_ASSERT(size <= kBlockSize,
                       "Pool allocator cannot satisfy allocation of size > block size");
@@ -108,13 +134,10 @@ export namespace sj
          * Marks memory as free
          * @param memory Pointer to the memory to free
          */
-        virtual void deallocate(void* memory = nullptr) override
+        virtual void do_deallocate(void* memory, size_t bytes, size_t alignment) override
         {
             // Ensure memory is in the region managed by this allocator
-            SJ_ASSERT((uintptr_t)memory >= (uintptr_t)m_BufferStart,
-                      "Memory is not managed by this allocator");
-            SJ_ASSERT((uintptr_t)memory <= (uintptr_t)m_BufferStart + (kBlockSize * m_NumBlocks),
-                      "Memory is not managed by this allocator");
+            SJ_ASSERT(contains_ptr(memory), "Memory is not managed by this allocator");
 
             // Place a free-list node into the block and push to head of list
             m_FreeList.push_front(new(memory) FreeBlock());
@@ -122,37 +145,6 @@ export namespace sj
             m_AllocatorStats.ActiveAllocationCount--;
             m_AllocatorStats.ActiveBytesAllocated -= kBlockSize;
         }
-
-        static size_t GetBlockSize()
-        {
-            return kBlockSize;
-        }
-
-        uintptr_t Begin() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferStart);
-        }
-
-        uintptr_t End() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferEnd);
-        }
-
-    private:
-        /** Node structure for the for the free block linked list */
-        struct FreeBlock
-        {
-            FreeBlock* Next = nullptr;
-
-            FreeBlock* GetNext()
-            {
-                return Next;
-            }
-            void SetNext(FreeBlock* next)
-            {
-                Next = next;
-            }
-        };
 
         /** The beginning of this allocator's data buffer */
         void* m_BufferStart;

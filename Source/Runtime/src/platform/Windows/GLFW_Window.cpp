@@ -78,7 +78,7 @@ namespace sj {
         uint32_t extension_count = 0;
         const char** extensions;
         
-        MemSpaceScope _(Renderer::WorkBuffer());
+        MemoryResourceScope _(Renderer::WorkBuffer());
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
         return std::span{extensions, extension_count};

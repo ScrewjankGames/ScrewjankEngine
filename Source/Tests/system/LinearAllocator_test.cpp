@@ -5,15 +5,17 @@
 
 // Void Engine Headers
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <memory_resource>
 
 import sj.engine.system.memory;
 
 using namespace sj;
 
-namespace system_tests {
+namespace system_tests
+{
     class LinearAllocatorDummy
     {
-      public:
+    public:
         LinearAllocatorDummy(int num, double num2)
         {
             m_num = num;
@@ -31,11 +33,12 @@ namespace system_tests {
 
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
-        void* memory = mem_space->allocate(128);
-        LinearAllocator allocator(128, memory);
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        void* memory = mem_resource->allocate(128);
 
-        void* dummy_memory = allocator.AllocateType<LinearAllocatorDummy>();
+        LinearAllocator test_resource(128, memory);
+
+        void* dummy_memory = test_resource.allocate(sizeof(LinearAllocatorDummy), alignof(LinearAllocatorDummy));
         ASSERT_NE(nullptr, dummy_memory);
 
         void* aligned_dummy_memory = dummy_memory;
@@ -47,74 +50,73 @@ namespace system_tests {
 
         ASSERT_EQ(dummy_memory, aligned_dummy_memory);
 
-        allocator.Reset();
+        test_resource.reset();
 
-        mem_space->deallocate(memory, 128);
+        mem_resource->deallocate(memory, 128);
     }
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = mem_space->allocate(mem_size);
+        void* memory = mem_resource->allocate(mem_size);
 
         LinearAllocator packingTest(mem_size, memory);
 
         auto mem = packingTest.allocate(sizeof(SBS) * 10);
-        packingTest.Reset();
+        packingTest.reset();
 
         // You should be able to fit ten individual single byte structures into a linear allocator
         // of buffer size 10
-        for (int i = 0; i < 10; i++) {
-            mem = packingTest.AllocateType<SBS>();
+        for(int i = 0; i < 10; i++)
+        {
+            mem = packingTest.allocate(sizeof(SBS), alignof(SBS));
         }
 
-        mem_space->deallocate(memory, mem_size);
+        mem_resource->deallocate(memory, mem_size);
     }
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = mem_space->allocate(mem_size);
+        void* memory = mem_resource->allocate(mem_size);
 
         LinearAllocator allocator(mem_size, memory);
-        auto mem = allocator.allocate(sizeof(SBS) * 10);
-        ASSERT_EQ(nullptr, allocator.AllocateType<SBS>());
+        auto mem = allocator.allocate(sizeof(SBS) * 10, alignof(SBS));
+        ASSERT_EQ(nullptr, allocator.allocate(1, 1));
 
-        mem_space->deallocate(memory, mem_size);
+        mem_resource->deallocate(memory, mem_size);
     }
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
         size_t mem_size = sizeof(SBS) * 10;
-        void* memory = mem_space->allocate(mem_size);
-        
+        void* memory = mem_resource->allocate(mem_size);
+
         LinearAllocator allocator(mem_size, memory);
 
-        auto mem = allocator.allocate(sizeof(SBS) * 9);
-        ASSERT_EQ(nullptr, allocator.allocate(sizeof(SBS) * 2));
+        auto mem = allocator.allocate(sizeof(SBS) * 9, alignof(SBS));
+        ASSERT_EQ(nullptr, allocator.allocate(sizeof(SBS) * 2, alignof(SBS)));
 
-        mem_space->deallocate(memory, mem_size);
+        mem_resource->deallocate(memory, mem_size);
     }
 
     TEST(LinearAllocatorTests, MemoryStompTest)
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
         size_t mem_size = 256;
-        void* memory = mem_space->allocate(mem_size);
+        void* memory = mem_resource->allocate(mem_size);
 
-        LinearAllocator allocator(mem_size, memory);
+        LinearAllocator test_resource(mem_size, memory);
+        std::pmr::polymorphic_allocator<LinearAllocatorDummy> allocator(&test_resource);
 
-        LinearAllocatorDummy* dummy1 = (LinearAllocatorDummy*)allocator.AllocateType<LinearAllocatorDummy>();
-        new (dummy1) LinearAllocatorDummy( 1, 1.0 );
-        LinearAllocatorDummy* dummy2 = (LinearAllocatorDummy*)allocator.AllocateType<LinearAllocatorDummy>();
-        new (dummy2) LinearAllocatorDummy( 2, 2.0 );
-        LinearAllocatorDummy* dummy3 = (LinearAllocatorDummy*)allocator.AllocateType<LinearAllocatorDummy>();
-        new (dummy3) LinearAllocatorDummy( 3, 3.0 );
+        LinearAllocatorDummy* dummy1 = allocator.new_object<LinearAllocatorDummy>(1, 1.0);
+        LinearAllocatorDummy* dummy2 = allocator.new_object<LinearAllocatorDummy>(2, 2.0);
+        LinearAllocatorDummy* dummy3 = allocator.new_object<LinearAllocatorDummy>(3, 3.0);
 
         ASSERT_EQ(1, dummy1->m_num);
         ASSERT_EQ(1.0, dummy1->m_double);
@@ -123,6 +125,6 @@ namespace system_tests {
         ASSERT_EQ(3, dummy3->m_num);
         ASSERT_EQ(3.0, dummy3->m_double);
 
-        mem_space->deallocate(memory, mem_size);
+        mem_resource->deallocate(memory, mem_size);
     }
 } // namespace system_tests

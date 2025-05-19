@@ -3,7 +3,6 @@ module;
 #include <ScrewjankShared/string/StringHash.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
-#include <any>
 export module sj.engine.framework.ecs:ECSRegistry;
 import :Identifiers;
 
@@ -17,7 +16,8 @@ export namespace sj
     public:
         ECSRegistry(uint32_t initialEntityCount, std::pmr::memory_resource* resource)
             : m_memoryResource(resource), 
-              m_gameObjects(initialEntityCount, resource)
+              m_gameObjects(initialEntityCount, resource),
+              m_componentPools(resource)
         {
 
         }

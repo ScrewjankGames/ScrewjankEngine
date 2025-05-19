@@ -413,18 +413,18 @@ namespace sj {
         /**
          * Default constructor
          */
-        dynamic_unordered_set(IMemSpace* mem_space);
+        dynamic_unordered_set(sj::memory_resource* mem_resource);
 
         /**
          * List Initialization Constructor
          */
-        dynamic_unordered_set(IMemSpace* mem_space, std::initializer_list<T> list);
+        dynamic_unordered_set(sj::memory_resource* mem_resource, std::initializer_list<T> list);
 
         /**
          * Range Constructor
          */
         template <class InputIterator>
-        dynamic_unordered_set(IMemSpace* mem_space, InputIterator first, InputIterator last);
+        dynamic_unordered_set(sj::memory_resource* mem_resource, InputIterator first, InputIterator last);
 
         using Base::operator=;
 

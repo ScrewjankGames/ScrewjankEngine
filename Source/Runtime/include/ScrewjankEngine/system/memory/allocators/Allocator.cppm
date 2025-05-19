@@ -54,67 +54,36 @@ export namespace sj
         }
     };
 
-    class memory_resource : std::pmr::memory_resource
+    class memory_resource : public std::pmr::memory_resource
     {
     public:
+        memory_resource() = default;
+
         // Derived resources may provide constructors similar to these, but all resources should be
         // initializable post-construction
-        virtual void init(std::pmr::memory_resource& hostResource, size_t numBytes) = 0;
-        virtual void init(void* buffer, size_t numBytes) = 0;
+        virtual void init(size_t numBytes, void* buffer) = 0;
 
-        virtual bool contains_ptr(void* ptr) const = 0;
+        void init(size_t numBytes, std::pmr::memory_resource& hostResource)
+        {
+            void* memory = hostResource.allocate(numBytes);
+            init(numBytes, memory);
+        }
+        
+        [[nodiscard]] virtual bool contains_ptr(void* ptr) const = 0;
 
 #ifndef GOLD_VERSION
         void set_debug_name(const char* name)
         {
             strncpy(m_DebugName, name, sizeof(m_DebugName));
         }
+    protected:
+        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+        {
+            return uintptr_t(this) == uintptr_t(&other);
+        }
 
     private:
         char m_DebugName[256];
 #endif
     };
-
-    class Allocator
-    {
-    public:
-        /**
-         * Constructor
-         */
-        Allocator() = default;
-
-        /**
-         * Destructor
-         */
-        virtual ~Allocator() = default;
-
-        /**
-         * Allocates size bites from the heap
-         * @param size The number of bytes to allocate
-         * @param alignment The alignment requirement for this allocation
-         */
-        [[nodiscard]]
-        virtual void* allocate(const size_t size,
-                               const size_t alignment = alignof(std::max_align_t)) = 0;
-
-        /**
-         * Marks memory as free
-         * @param memory Pointer to the memory to free
-         */
-        virtual void deallocate(void* memory) = 0;
-
-        /**
-         * Allocate enough aligned memory for the provided type
-         * @tparam T the type to allocate memory for
-         */
-        template <class T>
-        [[nodiscard]] void* AllocateType()
-        {
-            return allocate(sizeof(T), alignof(T));
-        }
-
-        virtual uintptr_t Begin() const = 0;
-        virtual uintptr_t End() const = 0;
-    };
-
 } // namespace sj

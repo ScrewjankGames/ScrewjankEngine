@@ -12,7 +12,7 @@ import :Allocator;
 export namespace sj
 {
 
-    class StackAllocator final : public Allocator
+    class StackAllocator final : public sj::memory_resource
     {
     public:
         /**
@@ -22,7 +22,7 @@ export namespace sj
          */
         StackAllocator(size_t buffer_size, void* memory)
         {
-            Init(buffer_size, memory);
+            init(buffer_size, memory);
         }
 
         /**
@@ -30,7 +30,7 @@ export namespace sj
          */
         ~StackAllocator() override = default;
 
-        void Init(size_t buffer_size, void* memory)
+        void init(size_t buffer_size, void* memory) override
         {
             m_BufferStart = memory;
             m_Offset = m_BufferStart;
@@ -39,13 +39,42 @@ export namespace sj
         }
 
         /**
+         * Frees most reset allocation
+         */
+        void pop_alloc()
+        {
+            void* currFrameAddr = reinterpret_cast<void*>((uintptr_t)m_CurrentHeader + sizeof(StackAllocatorHeader));
+            deallocate(currFrameAddr, 0, 0);
+            return;
+        }
+
+        bool contains_ptr(void* memory) const override
+        {
+            return IsPointerInAddressSpace(
+                memory,
+                m_BufferStart,
+                reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(m_BufferStart) + m_Capacity));
+        }
+
+    private:
+        /** Data structure used to manage allocations the stack */
+        struct StackAllocatorHeader
+        {
+            /** Pointer to the previous header block for popping */
+            StackAllocatorHeader* PreviousHeader;
+
+            /** Stores how many bytes were used to pad this header in the stack */
+            size_t HeaderOffset;
+        };
+
+        /**
          * Allocates size bites from the heap
          * @param size The number of bytes to allocate
          * @param alignment The alignment requirement for this allocation
          */
         [[nodiscard]]
-        void* allocate(const size_t size,
-                       const size_t alignment = alignof(std::max_align_t)) override
+        void* do_allocate(const size_t size,
+                          const size_t alignment = alignof(std::max_align_t)) override
         {
             SJ_ASSERT(m_BufferStart != nullptr, "Uninitialized allocator use.");
 
@@ -94,7 +123,7 @@ export namespace sj
          * @note memory must point to the head of the most recent allocation, or nullptr to pop off
          * the stack
          */
-        void deallocate(void* memory = nullptr) override
+        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
         {
             SJ_ASSERT(m_CurrentHeader != nullptr, "You cannot free from an empty stack allocator");
 
@@ -118,41 +147,6 @@ export namespace sj
             return;
         }
 
-        /**
-         * See Allocate
-         */
-        [[nodiscard]] void* PushAlloc(size_t size, size_t alignment = alignof(std::max_align_t));
-
-        /**
-         * Frees most reset allocation
-         */
-        void PopAlloc()
-        {
-            deallocate(nullptr);
-            return;
-        }
-
-        uintptr_t Begin() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferStart);
-        }
-
-        uintptr_t End() const override
-        {
-            return reinterpret_cast<uintptr_t>(m_BufferStart) + m_Capacity;
-        }
-
-    private:
-        /** Data structure used to manage allocations the stack */
-        struct StackAllocatorHeader
-        {
-            /** Pointer to the previous header block for popping */
-            StackAllocatorHeader* PreviousHeader;
-
-            /** Stores how many bytes were used to pad this header in the stack */
-            size_t HeaderOffset;
-        };
-
         /** The size in bytes of the allocator's buffer */
         size_t m_Capacity = 0;
 
@@ -164,9 +158,6 @@ export namespace sj
 
         /** Pointer to the first free byte in the stack */
         void* m_Offset = nullptr;
-
-        /** Structure used to track and report the state of this allocator */
-        AllocatorStatus m_AllocatorStats;
     };
 
 } // namespace sj

@@ -20,29 +20,29 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, AllocationTest)
     {
-        IMemSpace* mem_space = MemorySystem::GetCurrentMemSpace();
-        void* memory = mem_space->allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
+        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        void* memory = mem_resource->allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
         PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
-        auto mem_loc1 = allocator.AllocateType<PoolAllocatorDummy>();
+        auto mem_loc1 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc1);
         auto dummy1 = new (mem_loc1) PoolAllocatorDummy {'a', 3.14};
 
-        auto mem_loc2 = allocator.AllocateType<PoolAllocatorDummy>();
+        auto mem_loc2 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc2);
         auto dummy2 = new (mem_loc2) PoolAllocatorDummy {'b', 3.14};
 
-        auto mem_loc3 = allocator.AllocateType<PoolAllocatorDummy>();
+        auto mem_loc3 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc3);
         auto dummy3 = new (mem_loc3) PoolAllocatorDummy {'c', 3.14};
 
-        auto mem_loc4 = allocator.AllocateType<PoolAllocatorDummy>();
+        auto mem_loc4 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc4);
         auto dummy4 = new (mem_loc4) PoolAllocatorDummy {'d', 3.14};
 
         // Should not be able to allocate a 5th block
-        ASSERT_EQ(nullptr, allocator.AllocateType<PoolAllocatorDummy>());
+        ASSERT_EQ(nullptr, allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy)));
 
         // Make sure no memory was corrupted
         ASSERT_EQ('a', dummy1->Label);
@@ -54,9 +54,9 @@ namespace system_tests {
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
-        allocator.deallocate(dummy3);
+        allocator.deallocate(dummy3, sizeof(PoolAllocatorDummy));
 
-        mem_loc3 = allocator.AllocateType<double>();
+        mem_loc3 = allocator.allocate(sizeof(double));
         ASSERT_NE(nullptr, mem_loc3);
 
         auto d = new (mem_loc3) double {1234.56789};
@@ -66,9 +66,9 @@ namespace system_tests {
         ASSERT_EQ(3.14, dummy2->Value);
         ASSERT_EQ(3.14, dummy4->Value);
         ASSERT_EQ('d', dummy4->Label);
-        allocator.deallocate(d);
+        allocator.deallocate(d, sizeof(double));
 
-        mem_loc3 = allocator.AllocateType<PoolAllocatorDummy>();
+        mem_loc3 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc3);
         dummy3 = new (mem_loc3) PoolAllocatorDummy {'c', 3.14};
 
@@ -79,11 +79,11 @@ namespace system_tests {
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
-        allocator.deallocate(mem_loc1);
-        allocator.deallocate(mem_loc2);
-        allocator.deallocate(mem_loc3);
-        allocator.deallocate(mem_loc4);
+        allocator.deallocate(mem_loc1, sizeof(PoolAllocatorDummy));
+        allocator.deallocate(mem_loc2, sizeof(PoolAllocatorDummy));
+        allocator.deallocate(mem_loc3, sizeof(PoolAllocatorDummy));
+        allocator.deallocate(mem_loc4, sizeof(PoolAllocatorDummy));
 
-        mem_space->deallocate(memory, sizeof(PoolAllocatorDummy) * 4);
+        mem_resource->deallocate(memory, sizeof(PoolAllocatorDummy) * 4);
     }
 } // namespace system_tests

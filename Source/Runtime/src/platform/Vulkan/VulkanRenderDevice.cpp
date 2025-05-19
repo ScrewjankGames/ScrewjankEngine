@@ -225,7 +225,7 @@ namespace sj {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
 
-        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count, MemorySystem::GetRootMemSpace());
+        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count, MemorySystem::GetRootMemoryResource());
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
 
         DeviceQueueFamilyIndices indices;
