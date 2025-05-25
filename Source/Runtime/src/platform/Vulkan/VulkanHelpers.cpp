@@ -102,7 +102,7 @@ namespace sj
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        VkImageView imageView;
+        VkImageView imageView {};
         VkResult res = vkCreateImageView(
             device, 
             &viewInfo, 

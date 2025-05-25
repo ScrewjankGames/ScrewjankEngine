@@ -68,12 +68,12 @@ namespace sj
 
     Viewport Window::GetViewportSize() const
     {
-        int width;
-        int height;
+        int width = 0;
+        int height = 0;
 
         glfwGetFramebufferSize(m_NativeWindow, &width, &height);
 
-        Viewport size = {(uint32_t)width, (uint32_t)height};
+        Viewport size = {.Width=(uint32_t)width, .Height=(uint32_t)height};
         return size;
     }
 
@@ -81,7 +81,7 @@ namespace sj
     std::span<const char*> Window::GetRequiredVulkanExtenstions() const
     {
         uint32_t extension_count = 0;
-        const char** extensions;
+        const char** extensions = nullptr;
 
         MemoryResourceScope _(Renderer::WorkBuffer());
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
@@ -91,7 +91,7 @@ namespace sj
 
     VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance) const
     {
-        VkSurfaceKHR surface;
+        VkSurfaceKHR surface {};
         VkResult success =
             glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
         SJ_ASSERT(success == VK_SUCCESS, "Failed to create vulkan window surface");

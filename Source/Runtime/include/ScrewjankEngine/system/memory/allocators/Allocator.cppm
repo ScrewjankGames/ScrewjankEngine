@@ -40,13 +40,13 @@ export namespace sj
         size_t TotalAllocationCount;
         size_t TotalBytesAllocated;
 
-        AllocatorStatus()
+        AllocatorStatus() : Capacity(0), ActiveAllocationCount(0), ActiveBytesAllocated(0), TotalAllocationCount(0), TotalBytesAllocated(0)
         {
-            Capacity = 0;
-            ActiveAllocationCount = 0;
-            ActiveBytesAllocated = 0;
-            TotalAllocationCount = 0;
-            TotalBytesAllocated = 0;
+            
+            
+            
+            
+            
         }
 
         size_t FreeSpace()
@@ -78,7 +78,7 @@ export namespace sj
             snprintf(m_DebugName, 256, "%s", name);
         }
     protected:
-        bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+        [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
         {
             return uintptr_t(this) == uintptr_t(&other);
         }

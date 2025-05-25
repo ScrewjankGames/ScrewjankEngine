@@ -36,7 +36,7 @@ namespace system_tests {
         ASSERT_NE(nullptr, mem_loc1);
         ASSERT_TRUE(IsMemoryAligned(mem_loc1, alignof(FreeListDummy)));
 
-        auto Dummy1 = new (mem_loc1) FreeListDummy {'a', 3.14};
+        auto Dummy1 = new (mem_loc1) FreeListDummy {.Label='a', .Value=3.14};
 
         FreeListDummy* Dummy2 = allocator.new_object<FreeListDummy>('b', 3.14);
         ASSERT_NE(nullptr, Dummy2);
@@ -61,7 +61,7 @@ namespace system_tests {
         // space isn't being leaked to padding)
         ASSERT_EQ(mem_loc1, mem_loc4);
 
-        auto Dummy4 = new (mem_loc4) FreeListDummy {'d', 3.14};
+        auto Dummy4 = new (mem_loc4) FreeListDummy {.Label='d', .Value=3.14};
 
         // Ensure Dummy2's memory was not stomped on
         ASSERT_EQ('b', Dummy2->Label);

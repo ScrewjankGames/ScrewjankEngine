@@ -27,19 +27,19 @@ namespace system_tests {
 
         auto mem_loc1 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc1);
-        auto dummy1 = new (mem_loc1) PoolAllocatorDummy {'a', 3.14};
+        auto dummy1 = new (mem_loc1) PoolAllocatorDummy {.Label='a', .Value=3.14};
 
         auto mem_loc2 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc2);
-        auto dummy2 = new (mem_loc2) PoolAllocatorDummy {'b', 3.14};
+        auto dummy2 = new (mem_loc2) PoolAllocatorDummy {.Label='b', .Value=3.14};
 
         auto mem_loc3 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc3);
-        auto dummy3 = new (mem_loc3) PoolAllocatorDummy {'c', 3.14};
+        auto dummy3 = new (mem_loc3) PoolAllocatorDummy {.Label='c', .Value=3.14};
 
         auto mem_loc4 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc4);
-        auto dummy4 = new (mem_loc4) PoolAllocatorDummy {'d', 3.14};
+        auto dummy4 = new (mem_loc4) PoolAllocatorDummy {.Label='d', .Value=3.14};
 
         // Should not be able to allocate a 5th block
         ASSERT_EQ(nullptr, allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy)));
@@ -70,7 +70,7 @@ namespace system_tests {
 
         mem_loc3 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc3);
-        dummy3 = new (mem_loc3) PoolAllocatorDummy {'c', 3.14};
+        dummy3 = new (mem_loc3) PoolAllocatorDummy {.Label='c', .Value=3.14};
 
         ASSERT_EQ('b', dummy2->Label);
         ASSERT_EQ('c', dummy3->Label);

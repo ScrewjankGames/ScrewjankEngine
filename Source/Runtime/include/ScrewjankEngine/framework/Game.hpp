@@ -57,8 +57,8 @@ namespace sj {
         ECSRegistry m_ecs;
         sj::dynamic_vector<std::unique_ptr<Scene>> m_scenes;
 
-        Window* m_Window;
-        Renderer* m_Renderer;
+        Window* m_Window = nullptr;
+        Renderer* m_Renderer = nullptr;
 
         InputSystem m_InputSystem;
         CameraSystem m_CameraSystem;

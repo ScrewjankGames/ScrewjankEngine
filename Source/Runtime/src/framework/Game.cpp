@@ -52,9 +52,7 @@ namespace sj {
         ComponentTypeRegistry::ForEachComponentType<registerFn>(m_ecs);
     }
 
-    Game::~Game()
-    {
-    }
+    Game::~Game() = default;
 
     void Game::Start()
     {        

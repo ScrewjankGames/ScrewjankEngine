@@ -118,7 +118,7 @@ namespace sj
         SJ_ASSERT(VkResult::VK_SUCCESS == swap_chain_create_success, "Failed to create swapchain");
 
         // Extract swap chain image handles
-        uint32_t real_image_count;
+        uint32_t real_image_count = 0;
         vkGetSwapchainImagesKHR(logicalDevice, m_swapChain, &real_image_count, nullptr);
 
         m_images.resize(real_image_count);
@@ -277,13 +277,13 @@ namespace sj
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
                                                   surface, &capabilities);
 
-        uint32_t format_count;
+        uint32_t format_count = 0;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface,
                                              &format_count,
                                              nullptr);
         SJ_ASSERT(format_count != 0, "No surface formats found");
 
-        uint32_t present_mode_count;
+        uint32_t present_mode_count = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
                                                   surface,
                                                   &present_mode_count,
@@ -293,9 +293,9 @@ namespace sj
         sj::memory_resource* currMemSpace = Renderer::WorkBuffer();
         SwapChainParams params
         {
-            capabilities,
-            dynamic_array<VkSurfaceFormatKHR>(format_count, currMemSpace),
-            dynamic_array<VkPresentModeKHR>(present_mode_count, currMemSpace),
+            .Capabilities=capabilities,
+            .Formats=dynamic_array<VkSurfaceFormatKHR>(format_count, currMemSpace),
+            .PresentModes=dynamic_array<VkPresentModeKHR>(present_mode_count, currMemSpace),
         };
 
         vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,

@@ -95,9 +95,9 @@ namespace sj {
         VkExtent2D m_imageExtent = {};
 
         /** Depth buffer resources */
-        VkImage m_depthImage;
-        VkDeviceMemory m_depthImageMemory;
-        VkImageView m_depthImageView;
+        VkImage m_depthImage{};
+        VkDeviceMemory m_depthImageMemory{};
+        VkImageView m_depthImageView{};
     };
 
 }

@@ -13,8 +13,8 @@ export namespace sj
         SJ_STRUCT_TYPE_ID(CameraComponent);
 
         Mat44 localToGoTransform;
-        float fov;
-        float nearPlane;
-        float farPlane;
+        float fov = 0;
+        float nearPlane = 0;
+        float farPlane = 0;
     };
 }

@@ -68,7 +68,7 @@ namespace sj
                         VK_TRUE,
                         std::numeric_limits<uint64_t>::max());
 
-        uint32_t imageIndex;
+        uint32_t imageIndex = 0;
         VkResult res = vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
                                              m_swapChain.GetSwapChain(),
                                              std::numeric_limits<uint64_t>::max(),
@@ -518,7 +518,7 @@ namespace sj
         allocInfo.commandPool = m_graphicsCommandPool;
         allocInfo.commandBufferCount = 1;
 
-        VkCommandBuffer commandBuffer;
+        VkCommandBuffer commandBuffer {};
         vkAllocateCommandBuffers(m_renderDevice.GetLogicalDevice(), &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo {};
@@ -533,11 +533,11 @@ namespace sj
     void
     Renderer::EnableValidationLayers(std::span<const char*> required_validation_layers)
     {
-        uint32_t layer_count;
+        uint32_t layer_count = 0;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
         SJ_ASSERT(layer_count <= 64, "Overflow");
-        std::array<VkLayerProperties, 64> available_layers;
+        std::array<VkLayerProperties, 64> available_layers{};
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
         // Verify required validation layers are supported
@@ -613,8 +613,8 @@ namespace sj
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
 
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
+        VkPipelineStageFlags sourceStage = 0;
+        VkPipelineStageFlags destinationStage = 0;
         if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
            newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
@@ -670,8 +670,8 @@ namespace sj
         region.imageSubresource.layerCount = 1;
 
         
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {width, height, 1};
+        region.imageOffset = {.x=0, .y=0, .z=0};
+        region.imageExtent = {.width=width, .height=height, .depth=1};
 
         // "Assuming here that the image has already been transitioned to the layout that is optimal for copying pixels to"
         vkCmdCopyBufferToImage(commandBuffer,
@@ -788,8 +788,8 @@ namespace sj
         {
             VkDeviceSize bufferSize = sizeof(Vertex) * header.numVerts;
             // Stage vertex data in host visible buffer
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
+            VkBuffer stagingBuffer {};
+            VkDeviceMemory stagingBufferMemory {};
 
             CreateBuffer(bufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -797,7 +797,7 @@ namespace sj
                     stagingBuffer,
                     stagingBufferMemory);
 
-            void* data;
+            void* data = nullptr;
             vkMapMemory(m_renderDevice.GetLogicalDevice(),
                         stagingBufferMemory,
                         0,
@@ -828,15 +828,15 @@ namespace sj
 
             VkDeviceSize bufferSize = sizeof(uint16_t) * header.numIndices;
 
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
+            VkBuffer stagingBuffer {};
+            VkDeviceMemory stagingBufferMemory {};
             CreateBuffer(bufferSize,
                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                          stagingBuffer,
                          stagingBufferMemory);
 
-            void* data;
+            void* data = nullptr;
             vkMapMemory(m_renderDevice.GetLogicalDevice(),
                         stagingBufferMemory,
                         0,
@@ -871,8 +871,8 @@ namespace sj
         textureFile.Read(&header, sizeof(header));
 
         VkDeviceSize imageSize = header.width * header.height * 4;
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer {};
+        VkDeviceMemory stagingBufferMemory {};
 
         CreateBuffer(imageSize,
                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -880,7 +880,7 @@ namespace sj
                      stagingBuffer,
                      stagingBufferMemory);
 
-        void* data;
+        void* data = nullptr;
         vkMapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
         
         // Read texture data straight into GPU memory
@@ -1019,7 +1019,7 @@ namespace sj
 
     void Renderer::CreateGlobalUBODescriptorSets()
     {
-        std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts;
+        std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts{};
         for(VkDescriptorSetLayout& layout : layouts)
         {
             layout = m_globalUBODescriptorSetLayout;
@@ -1094,12 +1094,12 @@ namespace sj
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_defaultRenderPass;
         renderPassInfo.framebuffer = m_swapChain.GetFrameBuffers()[imageIdx];
-        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.offset = {.x=0, .y=0};
         renderPassInfo.renderArea.extent = m_swapChain.GetExtent();
 
         std::array<VkClearValue, 2> clearValues {};
         clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
+        clearValues[1].depthStencil = {.depth=1.0f, .stencil=0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -1125,7 +1125,7 @@ namespace sj
             vkCmdSetViewport(buffer, 0, 1, &viewport);
 
             VkRect2D scissor {};
-            scissor.offset = {0, 0};
+            scissor.offset = {.x=0, .y=0};
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(buffer, 0, 1, &scissor);
 
