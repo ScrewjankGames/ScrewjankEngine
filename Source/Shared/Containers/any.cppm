@@ -79,19 +79,19 @@ export namespace sj
         {
             if(m_managerFn)
             {
-                priv::ArgType arg;
+                priv::ArgType arg = {};
                 arg.c_arg = other.m_buffer;
                 m_managerFn( priv::Op::kCopy, m_buffer, arg);
             }
         }
 
-        static_any(static_any&& other)
+        static_any(static_any&& other) noexcept
         {
             m_managerFn = std::exchange(other.m_managerFn, nullptr);
             
             if(m_managerFn)
             {
-                priv::ArgType arg;
+                priv::ArgType arg; // NOLINT
                 arg.arg = other.m_buffer;
                 m_managerFn( priv::Op::kMove, m_buffer, arg);
             }
@@ -101,18 +101,18 @@ export namespace sj
         static_any(T&& val) 
             requires (
                 priv::holdable<T, tSize, tAlign> 
-                && !is_instantiation_of_v<typename std::decay<T>::type, static_any>
+                && !is_instantiation_of_v< std::decay_t<T>, static_any>
             )
-            : m_managerFn( priv::ManagerFn<typename std::decay<T>::type> )
+            : m_managerFn( priv::ManagerFn< std::decay_t<T>> )
         {
-            new (m_buffer) typename std::decay<T>::type(std::forward<T>(val));
+            new (m_buffer) std::decay_t<T>(std::forward<T>(val));
         }
 
         ~static_any()
         {
             if(m_managerFn)
             {
-                priv::ArgType arg;
+                priv::ArgType arg; // NOLINT
                 arg.arg = nullptr;
                 m_managerFn(priv::Op::kDestroy, m_buffer, arg);
             }
@@ -124,7 +124,7 @@ export namespace sj
             return *this;
         }
 
-        static_any& operator=(static_any&& other)
+        static_any& operator=(static_any&& other) noexcept
         {
             SJ_ASSERT(this != &other, "Self assignment of static_any not allowed");
             if (!other.has_value())
@@ -133,7 +133,7 @@ export namespace sj
             {
                 reset();
                 m_managerFn = std::exchange(other.m_managerFn, nullptr);
-                priv::ArgType arg;
+                priv::ArgType arg; // NOLINT
                 arg.arg = other.m_buffer;
                 m_managerFn(priv::Op::kMove, m_buffer, arg);
             }
@@ -145,7 +145,7 @@ export namespace sj
         static_any& operator=(T&& rhs)
             requires (
                 priv::holdable<T, tSize, tAlign> 
-                && !is_instantiation_of_v<typename std::decay<T>::type, static_any>
+                && !is_instantiation_of_v< std::decay_t<T>, static_any>
             )
         {
             *this = any(std::forward<T>(rhs));
@@ -153,7 +153,7 @@ export namespace sj
         }
 
 
-        bool has_value() const
+        [[nodiscard]] bool has_value() const
         {
             return m_managerFn != nullptr;
         }
@@ -174,7 +174,7 @@ export namespace sj
         }
 
     private:
-        alignas(tAlign) std::byte m_buffer[tSize];
+        alignas(tAlign) std::byte m_buffer[tSize]{}; // NOLINT
         priv::ManagerFnPtr m_managerFn = nullptr;
     };
 }

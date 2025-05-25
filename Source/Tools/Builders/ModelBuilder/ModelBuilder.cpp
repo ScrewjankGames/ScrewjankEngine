@@ -41,14 +41,14 @@ void ExtractBuffers(const char* inputFilePath,
         {
             Vertex vertex {};
 
-            vertex.pos = {attrib.vertices[3 * index.vertex_index + 0],
-                          attrib.vertices[3 * index.vertex_index + 1],
-                          attrib.vertices[3 * index.vertex_index + 2]};
+            vertex.pos = {.x=attrib.vertices[3 * index.vertex_index + 0],
+                          .y=attrib.vertices[3 * index.vertex_index + 1],
+                          .z=attrib.vertices[3 * index.vertex_index + 2]};
 
             vertex.uv = {attrib.texcoords[2 * index.texcoord_index + 0],
                          1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
 
-            vertex.color = {1.0f, 1.0f, 1.0f};
+            vertex.color = {.x=1.0f, .y=1.0f, .z=1.0f};
 
             if(uniqueVertices.count(vertex) == 0)
             {
@@ -71,34 +71,28 @@ bool ModelBuilder::BuildItem(const std::filesystem::path& item, const std::files
 
     const size_t vertexMemSize = (sizeof(Vertex) * verts.size());
     const size_t indexMemSize = (sizeof(uint16_t) * indices.size());
-
-    void* modelMem = malloc(
-        sizeof(Model) + 
-        vertexMemSize + indexMemSize
-    );
-
-    Model* model = new(modelMem) Model {};
-    model->type = AssetType::kModel;
+    
+    Model model{};
+    model.type = AssetType::kModel;
 
     SJ_ASSERT(verts.size() <= std::numeric_limits<decltype(Model::numVerts)>::max(),
               "Too many vertices to fit in Model::NumVerts");
-    model->numVerts = static_cast<decltype(Model::numVerts)>(verts.size());
+    model.numVerts = static_cast<decltype(Model::numVerts)>(verts.size());
 
     SJ_ASSERT(indices.size() <= std::numeric_limits<decltype(Model::numIndices)>::max(),
             "Too many vertices to fit in Model::NumVerts");
-    model->numIndices = static_cast<decltype(Model::numIndices)>(indices.size());
+    model.numIndices = static_cast<decltype(Model::numIndices)>(indices.size());
 
     File outputFile;
     outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
 
-    outputFile.Write(model, sizeof(Model));
+    outputFile.WriteStruct(model);
 
     outputFile.Write(verts.data(), vertexMemSize);
     outputFile.Write(indices.data(), indexMemSize);
 
     outputFile.Close();
 
-    free(modelMem);
     return true;
 }
 

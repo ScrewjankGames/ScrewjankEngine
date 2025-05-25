@@ -20,20 +20,15 @@ export namespace sj
     public:
         Scene(const char* path)
         {
-            glz::error_ctx errorCtx = glz::read_file_beve(m_chunk, path, sj::dynamic_vector<std::byte>{});
+            glz::error_ctx errorCtx =
+                glz::read_file_beve(m_chunk, path, sj::dynamic_vector<std::byte> {});
             SJ_ASSERT(errorCtx.ec == glz::error_code::none, "Failed to load scene {}", path);
-
-
         }
 
-        ~Scene()
-        {
+        ~Scene() = default;
 
-        }
-
-        
     private:
         SceneChunk m_chunk;
         FreeListAllocator m_memoryResource;
     };
-}
+} // namespace sj

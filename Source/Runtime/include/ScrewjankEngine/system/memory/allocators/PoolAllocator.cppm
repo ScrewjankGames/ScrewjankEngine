@@ -1,12 +1,12 @@
 module;
 #include <ScrewjankEngine/containers/UnmanagedList.hpp>
 
-#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 
 export module sj.engine.system.memory.allocators:PoolAllocator;
 import :Allocator;
+import sj.engine.system.memory.utils;
 
 export namespace sj
 {
@@ -36,7 +36,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~PoolAllocator() = default;
+        ~PoolAllocator() final = default;
 
         void init(size_t buffer_size, void* memory) override
         {
@@ -55,7 +55,7 @@ export namespace sj
             // Create first free block at start of buffer
             m_FreeList.push_front(new(m_BufferStart) FreeBlock());
             FreeBlock* curr_block = &m_FreeList.front();
-            uintptr_t curr_block_address = (uintptr_t)m_BufferStart;
+            auto curr_block_address = uintptr_t(m_BufferStart);
 
             // Build free list in the buffer
             for(size_t i = 1; i < m_NumBlocks; i++)
@@ -64,7 +64,7 @@ export namespace sj
                 curr_block_address += kBlockSize;
 
                 // Create new free-list block
-                m_FreeList.insert_after(curr_block, new((void*)curr_block_address) FreeBlock());
+                m_FreeList.insert_after(curr_block, new(reinterpret_cast<void*>(curr_block_address)) FreeBlock());
 
                 // Move the curr block forward
                 curr_block = curr_block->Next;
@@ -102,7 +102,7 @@ export namespace sj
          * @param size The number of bytes to allocate
          */
         [[nodiscard]]
-        virtual void* do_allocate(const size_t size,
+        void* do_allocate(const size_t size,
                                   const size_t alignment = alignof(std::max_align_t)) override
         {
             SJ_ASSERT(size <= kBlockSize,
@@ -127,14 +127,14 @@ export namespace sj
             m_AllocatorStats.ActiveAllocationCount++;
             m_AllocatorStats.ActiveBytesAllocated += kBlockSize;
 
-            return (void*)(free_block);
+            return reinterpret_cast<void*>(free_block);
         }
 
         /**
          * Marks memory as free
          * @param memory Pointer to the memory to free
          */
-        virtual void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        void do_deallocate(void* memory, [[maybe_unused]] size_t bytes, [[maybe_unused]] size_t alignment) override
         {
             // Ensure memory is in the region managed by this allocator
             SJ_ASSERT(contains_ptr(memory), "Memory is not managed by this allocator");
@@ -147,16 +147,16 @@ export namespace sj
         }
 
         /** The beginning of this allocator's data buffer */
-        void* m_BufferStart;
+        void* m_BufferStart = nullptr;
 
         /** The end of this allocator's data buffer */
-        void* m_BufferEnd;
+        void* m_BufferEnd = nullptr;
 
         /** Pointer head of singly linked list of free blocks */
         unmanaged_list<FreeBlock> m_FreeList;
 
         /** Number of blocks managed by this allocator */
-        size_t m_NumBlocks;
+        size_t m_NumBlocks = 0;
 
         /** Structure used to track and report the state of this allocator */
         AllocatorStatus m_AllocatorStats;

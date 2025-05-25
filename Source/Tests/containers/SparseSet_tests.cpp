@@ -68,9 +68,9 @@ namespace container_tests
         {
             TestSetId id = idSet.create();
             if(i % 2 == 0)
-                componentASet.create(id, TestComponentA{id, id.sparseIndex % 2 == 0});
+                componentASet.create(id, TestComponentA{.ownerId=id, .ownerEven=id.sparseIndex % 2 == 0});
             if(i % 3 == 0)
-                componentBSet.create(id, TestComponentB{id, id.sparseIndex % 2 != 0});
+                componentBSet.create(id, TestComponentB{.ownerId=id, .ownerOdd=id.sparseIndex % 2 != 0});
         }
 
         for(const TestSetId& id : idSet.get_set<TestSetId>())

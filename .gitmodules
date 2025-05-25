@@ -4,9 +4,6 @@
 [submodule "Dependencies/spdlog"]
 	path = Dependencies/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "Dependencies/benchmark"]
-	path = Dependencies/benchmark
-	url = https://github.com/google/benchmark.git
 [submodule "Dependencies/imgui"]
 	path = Dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
@@ -19,9 +16,6 @@
 [submodule "Dependencies/json"]
 	path = Dependencies/json
 	url = https://github.com/nlohmann/json.git
-[submodule "Dependencies/SG14"]
-	path = Dependencies/SG14
-	url = https://github.com/WG21-SG14/SG14.git
 [submodule "Dependencies/glaze"]
 	path = Dependencies/glaze
 	url = https://github.com/stephenberry/glaze.git

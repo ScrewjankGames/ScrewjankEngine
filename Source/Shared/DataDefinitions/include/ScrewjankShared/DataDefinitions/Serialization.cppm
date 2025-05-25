@@ -2,12 +2,13 @@ module;
 
 // Shared Includes
 #include <ScrewjankShared/string/StringHash.hpp>
-#include <ScrewjankShared/Math/Mat44.hpp>
 
 // Library Headers
 #include <glaze/glaze.hpp>
 
 export module sj.shared.datadefs:Serialization;
+import sj.shared.math;
+
 export namespace glz
 {
     template <>
@@ -39,7 +40,7 @@ export namespace glz
         template <auto Opts>
         static void op(sj::StringHash& strHash, auto&&... args)
         {
-            uint32_t hashVal;
+            uint32_t hashVal = 0;
             glz::parse<BEVE>::op<Opts>(hashVal, args...);
 
             strHash = sj::StringHash(hashVal);
@@ -55,7 +56,7 @@ export namespace glz
             std::array<float, 3> data;
             glz::parse<JSON>::op<Opts>(data, args...);
 
-            vec = {data[0], data[1], data[2]};
+            vec = {.x=data[0], .y=data[1], .z=data[2]};
         }
     };
 

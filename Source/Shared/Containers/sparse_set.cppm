@@ -124,7 +124,10 @@ export namespace sj
                 );
 
             if(self.m_sparse[id.sparseIndex].dense == kInvalidIndex)
-                return (DenseElement*)nullptr;
+            {
+                DenseElement* ret = nullptr;
+                return ret;
+            }
             else
                 return &std::get<DenseContainer<DenseElement>>(self.m_denseElements)[denseIndex];
         }

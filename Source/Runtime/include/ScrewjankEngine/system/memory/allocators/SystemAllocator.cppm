@@ -1,6 +1,5 @@
 module;
 
-#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 #include <memory_resource>
@@ -21,14 +20,14 @@ export namespace sj
     private:
         [[nodiscard]]
         void* do_allocate(const size_t size,
-                          const size_t alignment = alignof(std::max_align_t)) override
+                          [[maybe_unused]] const size_t alignment = alignof(std::max_align_t)) override
         {
-            return std::malloc(size);
+            return std::malloc(size); // NOLINT
         }
 
-        void do_deallocate(void* p, size_t bytes, size_t alignment) override
+        void do_deallocate(void* p, [[maybe_unused]] size_t bytes, [[maybe_unused]] size_t alignment) override
         {
-            std::free(p);
+            std::free(p); // NOLINT
         }
     };
 } // namespace sj

@@ -1,6 +1,6 @@
 // STD Headers
 #include <array>
-#include <ranges>
+
 // Library Headers
 #include "gtest/gtest.h"
 
@@ -18,9 +18,9 @@ namespace container_tests
             return next;
         }
 
-        void SetNext(FwdListDummy* next)
+        void SetNext(FwdListDummy* nextNode)
         {
-            this->next = next;
+            this->next = nextNode;
         }
 
         int val;
@@ -34,9 +34,9 @@ namespace container_tests
             return next;
         }
 
-        void SetNext(BiDiDummy* next)
+        void SetNext(BiDiDummy* nextNode)
         {
-            this->next = next;
+            this->next = nextNode;
         }
 
         BiDiDummy* GetPrev()
@@ -57,10 +57,10 @@ namespace container_tests
     TEST(UnmanagedListTests, IterationTest)
     {
         constexpr int kCount = 5;
-        std::array<BiDiDummy, kCount> dummiesStorage;
-        for(int i = 0; i < kCount; i++)
+        std::array<BiDiDummy, kCount> dummiesStorage = {};
+        for(unsigned i = 0; i < kCount; i++)
         {
-            dummiesStorage[i].val = i;
+            dummiesStorage.at(i).val = static_cast<int>(i);
         }
 
         sj::unmanaged_list<BiDiDummy> dummies;
@@ -86,7 +86,7 @@ namespace container_tests
 
             for(int i = 0; i < 10000; i++)
             {
-                fwdList.push_front(new FwdListDummy {i});
+                fwdList.push_front(new FwdListDummy {.val=i, .next=nullptr});
             }
 
             for(int i = 10000; i > 0; i--)
@@ -103,7 +103,7 @@ namespace container_tests
         // Random push pop
         {
             unmanaged_list<FwdListDummy> fwdList;
-            int seed = 123456;
+            unsigned int seed = 123456;
             srand(seed);
         
             int pushed = 0;
@@ -123,7 +123,7 @@ namespace container_tests
                 else
                 {
                     pushed += i;
-                    fwdList.push_front(new FwdListDummy {i});
+                    fwdList.push_front(new FwdListDummy {.val=i, .next=nullptr});
                 }
             }
 

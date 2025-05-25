@@ -13,7 +13,7 @@ namespace sj
     {
         for(char c : str)
         {
-            seed = seed ^ c;
+            seed = seed ^ uint32_t(c);
             seed = seed * 0x01000193;
         }
 
@@ -58,7 +58,7 @@ namespace sj
 }
 
 #define SJ_STRUCT_TYPE_ID(type)                                                                    \
-    static constexpr sj::TypeId kTypeId = sj::StringHash(#type).AsInt();
+    static constexpr sj::TypeId kTypeId = sj::StringHash(#type).AsInt()
 
 namespace std
 {

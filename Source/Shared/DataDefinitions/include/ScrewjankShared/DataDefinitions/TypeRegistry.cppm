@@ -40,7 +40,7 @@ export namespace sj
         struct SerializationFuncs
         {
             glz::error_ctx (*toBeveFn)(const glz::json_t& data, sj::dynamic_vector<std::byte>& buffer);
-        } m_serializationFuncs;
+        } m_serializationFuncs{};
     };
 
     template<class T>
@@ -65,7 +65,7 @@ export namespace sj
         };
     }
 
-    inline type_list<
+    inline constexpr type_list<
         TransformComponent, 
         CameraComponent
     > g_engineComponentTypes;
@@ -92,7 +92,7 @@ export namespace sj
                 size_t i = 0;
                 auto helper = []<class T>(size_t& i, ComponentInfoLookupList& list)
                 {
-                    list[i++] = std::pair{T::kTypeId, GetComponentMetaInfo<T>()};
+                    list.at(i++) = std::pair{T::kTypeId, GetComponentMetaInfo<T>()};
                 };
                 
     

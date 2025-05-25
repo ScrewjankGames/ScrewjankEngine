@@ -11,7 +11,9 @@ export module sj.shared.containers:array;
 
 export namespace sj
 {
-    template <class T, class size_type=uint32_t, class Allocator = std::pmr::polymorphic_allocator<T>>
+    template <class T,
+              class size_type = uint32_t,
+              class Allocator = std::pmr::polymorphic_allocator<T>>
     class dynamic_array
     {
     public:
@@ -26,19 +28,18 @@ export namespace sj
 
         dynamic_array() = default;
 
-        dynamic_array(const Allocator& alloc)
-            : m_allocator(alloc)
+        dynamic_array(const Allocator& alloc) : m_allocator(alloc)
         {
-
         }
 
-        dynamic_array(size_type capacity, const Allocator& alloc = Allocator())
-            : m_allocator(alloc)
+        dynamic_array(size_type capacity, const Allocator& alloc = Allocator()) : m_allocator(alloc)
         {
             resize(capacity);
         }
 
-        dynamic_array(size_type capacity, const value_type& defaultValue, const Allocator& alloc = Allocator())
+        dynamic_array(size_type capacity,
+                      const value_type& defaultValue,
+                      const Allocator& alloc = Allocator())
             : m_allocator(alloc)
         {
             resize(capacity);
@@ -48,9 +49,8 @@ export namespace sj
             }
         }
 
-        dynamic_array(std::initializer_list<T> elems) 
-            : m_allocator(Allocator()),
-              m_capacity(elems.size())
+        dynamic_array(std::initializer_list<T> elems)
+            : m_allocator(Allocator()), m_capacity(elems.size())
         {
             m_array = m_allocator.allocate(m_capacity);
 
@@ -62,15 +62,14 @@ export namespace sj
         }
 
         /**
-         * Copy Constructor 
+         * Copy Constructor
          */
         dynamic_array(const dynamic_array& other)
-            : dynamic_array(
-                other.m_capacity, 
-                std::allocator_traits<Allocator>::select_on_container_copy_construction(other.m_allocator)
-            )
+            : dynamic_array(other.m_capacity,
+                            std::allocator_traits<Allocator>::select_on_container_copy_construction(
+                                other.m_allocator))
         {
-            if constexpr (std::is_trivially_copy_constructible_v<T>)
+            if constexpr(std::is_trivially_copy_constructible_v<T>)
             {
                 std::memcpy(m_array, other.m_array, sizeof(T) * m_capacity);
             }
@@ -86,21 +85,22 @@ export namespace sj
         }
 
         /**
-         * Move Constructor 
+         * Move Constructor
          */
-        dynamic_array(dynamic_array&& other)
-            : m_allocator(std::move(other.m_allocator)), m_array(other.m_array), m_capacity(other.m_capacity)
+        dynamic_array(dynamic_array&& other) noexcept
+            : m_allocator(std::move(other.m_allocator)), m_array(other.m_array),
+              m_capacity(other.m_capacity)
         {
             other.m_array = nullptr;
             other.m_capacity = 0;
         }
 
         /**
-         * Destructor 
+         * Destructor
          */
         ~dynamic_array()
         {
-            if constexpr (!std::is_trivially_destructible_v<T>)
+            if constexpr(!std::is_trivially_destructible_v<T>)
             {
                 for(auto& it : *this)
                 {
@@ -125,8 +125,7 @@ export namespace sj
         /**
          * Inequality comparison operator
          */
-        friend bool operator==(const dynamic_array& lhs,
-                               const dynamic_array& rhs)
+        friend bool operator==(const dynamic_array& lhs, const dynamic_array& rhs)
         {
             if(lhs.m_capacity != rhs.m_capacity)
             {
@@ -145,7 +144,7 @@ export namespace sj
         }
 
         friend bool operator!=(const dynamic_array<T, size_type>& lhs,
-                                      const dynamic_array<T, size_type>& rhs)
+                               const dynamic_array<T, size_type>& rhs)
         {
             return !(lhs == rhs);
         }
@@ -210,18 +209,18 @@ export namespace sj
             if(newCapacity > 0)
             {
                 newArray = m_allocator.allocate(newCapacity);
-                
+
                 // Move over everything that will fit
                 const size_type numRetainedElements = std::min(m_capacity, newCapacity);
-                for(int i = 0; i < numRetainedElements; i++)
+                for(size_type i = 0; i < numRetainedElements; i++)
                 {
-                    new (std::addressof(newArray[i])) T(std::move(m_array[i]));
+                    new(std::addressof(newArray[i])) T(std::move(m_array[i]));
                 }
 
                 if(newCapacity > m_capacity)
                 {
-                    for(int i = m_capacity; i < newCapacity; i++)
-                        new (std::addressof(newArray[i])) T();
+                    for(size_type i = m_capacity; i < newCapacity; i++)
+                        new(std::addressof(newArray[i])) T();
                 }
             }
 
@@ -249,4 +248,4 @@ export namespace sj
         T* m_array = nullptr;
         size_type m_capacity = 0;
     };
-}
+} // namespace sj

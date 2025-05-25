@@ -39,7 +39,8 @@ target_link_libraries(${PROJECT_NAME}
 # Configure include directories
 ################################################################################
 target_include_directories(${PROJECT_NAME} 
+    SYSTEM PUBLIC
+        ${ENGINE_DEPENDENCIES_DIR}/spdlog/include
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${ENGINE_DEPENDENCIES_DIR}/spdlog/include
     )

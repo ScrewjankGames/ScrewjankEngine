@@ -8,7 +8,6 @@
 #include <ScrewjankShared/utils/Log.hpp>
 
 // Shared Headers
-#include <ScrewjankShared/Math/Helpers.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankShared/io/File.hpp>
@@ -27,6 +26,7 @@
 
 import sj.engine.system.memory;
 import sj.shared.containers;
+import sj.shared.math;
 
 namespace sj
 {
@@ -340,9 +340,9 @@ namespace sj
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::VulkanDebugLogCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-        VkDebugUtilsMessageTypeFlagsEXT message_type,
+        [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
         const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-        void* user_data)
+        [[maybe_unused]] void* user_data)
     {
         if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
@@ -635,6 +635,8 @@ namespace sj
         }
         else 
         {
+            sourceStage = VK_IMAGE_LAYOUT_UNDEFINED;
+            destinationStage = VK_IMAGE_LAYOUT_UNDEFINED;
             SJ_ASSERT(false, "unsupported layout transition!");
         }
 
@@ -1186,7 +1188,7 @@ namespace sj
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-            for(int i = 0; i < kMaxFramesInFlight; i++)
+            for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
             {
                 VkResult res = vkCreateSemaphore(device,
                                                  &semaphoreInfo,
@@ -1211,7 +1213,7 @@ namespace sj
         // NOTE: Command buffers are freed for us when we free the command pool.
         //       We only need to clean up sync primitives
 
-        for(int i = 0; i < kMaxFramesInFlight; i++)
+        for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
         {
             vkDestroySemaphore(device, imageAvailableSemaphores[i], sj::g_vkAllocationFns);
             vkDestroySemaphore(device, renderFinishedSemaphores[i], sj::g_vkAllocationFns);

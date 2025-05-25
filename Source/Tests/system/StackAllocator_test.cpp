@@ -28,13 +28,13 @@ namespace system_tests
 
         // Assign memory and construct test data in the addresses
         auto mem1 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
-        auto sd1 = new(mem1) StackAllocatorDummy {1, 1, 1};
+        auto sd1 = new(mem1) StackAllocatorDummy {.a=1, .b=1, .c=1};
 
         auto mem2 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
-        auto sd2 = new(mem2) StackAllocatorDummy {2, 2, 2};
+        auto sd2 = new(mem2) StackAllocatorDummy {.a=2, .b=2, .c=2};
 
         auto mem3 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
-        auto sd3 = new(mem3) StackAllocatorDummy {3, 3, 3};
+        auto sd3 = new(mem3) StackAllocatorDummy {.a=3, .b=3, .c=3};
 
         // Make sure no data got stomped on or corrupted
         EXPECT_EQ(1, sd1->a);
@@ -53,7 +53,7 @@ namespace system_tests
         allocator.pop_alloc();
 
         auto mem4 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
-        auto sd4 = new(mem4) StackAllocatorDummy {4, 4, 4};
+        auto sd4 = new(mem4) StackAllocatorDummy {.a=4, .b=4, .c=4};
 
         // mem4 should re-use mem3's space
         EXPECT_EQ(mem3, mem4);
@@ -85,7 +85,7 @@ namespace system_tests
         auto sd6 = new(mem6) double(6.0f);
 
         auto mem7 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
-        auto sd7 = new StackAllocatorDummy {7, 7, 7};
+        auto sd7 = new (mem7) StackAllocatorDummy {.a = 7, .b = 7, .c = 7};
 
         EXPECT_EQ(6.0, *sd6);
 

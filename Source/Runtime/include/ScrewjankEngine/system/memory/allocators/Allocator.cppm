@@ -4,6 +4,7 @@ module;
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
 #include <memory_resource>
 #include <utility>
 
@@ -74,7 +75,7 @@ export namespace sj
 #ifndef GOLD_VERSION
         void set_debug_name(const char* name)
         {
-            strncpy(m_DebugName, name, sizeof(m_DebugName));
+            snprintf(m_DebugName, 256, "%s", name);
         }
     protected:
         bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override

@@ -1,6 +1,7 @@
 #pragma once
 
 // STD Headers
+#include <cstddef>
 #include <cstdio>
 #include <stdint.h>
 
@@ -36,13 +37,13 @@ namespace sj
         template<class T>
         size_t WriteStruct(const T& elem) { return Write(&elem, sizeof(T)); }
 
-        uint64_t Size();
+        [[nodiscard]] size_t Size();
 
-        bool IsOpen() const;
+        [[nodiscard]] bool IsOpen() const;
 
-        size_t CursorPos() const;
+        [[nodiscard]] long CursorPos() const;
 
     private:
-        FILE* m_File = NULL;
+        FILE* m_File = nullptr;
     };
 }

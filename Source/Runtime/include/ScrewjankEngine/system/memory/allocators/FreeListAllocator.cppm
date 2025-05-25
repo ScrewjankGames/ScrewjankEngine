@@ -1,7 +1,6 @@
 module;
 
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/MemUtils.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -9,6 +8,7 @@ module;
 
 export module sj.engine.system.memory.allocators:FreeListAllocator;
 import :Allocator;
+import sj.engine.system.memory.utils;
 
 export namespace sj
 {
@@ -25,7 +25,8 @@ export namespace sj
         /**
          * Initializing Constructor
          */
-        FreeListAllocator(size_t numBytes, std::pmr::memory_resource& hostResource) : FreeListAllocator()
+        FreeListAllocator(size_t numBytes, std::pmr::memory_resource& hostResource)
+            : FreeListAllocator()
         {
             sj::memory_resource::init(numBytes, hostResource);
         }
@@ -47,12 +48,9 @@ export namespace sj
          * Move Constructor
          */
         FreeListAllocator(FreeListAllocator&& other) noexcept
+            : m_FreeBlocks(other.m_FreeBlocks), m_BufferStart(other.m_BufferStart),
+              m_BufferEnd(other.m_BufferEnd), m_AllocatorStats(other.m_AllocatorStats)
         {
-            m_FreeBlocks = other.m_FreeBlocks;
-            m_BufferStart = other.m_BufferStart;
-            m_BufferEnd = other.m_BufferEnd;
-            m_AllocatorStats = other.m_AllocatorStats;
-
             other.m_FreeBlocks = nullptr;
             other.m_BufferStart = nullptr;
             other.m_AllocatorStats = {};
@@ -61,7 +59,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~FreeListAllocator() = default;
+        ~FreeListAllocator() final = default;
 
         /**
          * @return whether the allocator is in a valid state
@@ -80,10 +78,10 @@ export namespace sj
 
             // Allocate memory from backing allocator
             m_BufferStart = memory;
-            m_BufferEnd = (void*)(uintptr_t(memory) + buffer_size);
+            m_BufferEnd = reinterpret_cast<void*>((uintptr_t(memory) + buffer_size));
 
             // Initialize free list to be a single block of buffer_size situated at start of buffer
-            FreeBlock* initial_block = new(m_BufferStart) FreeBlock(buffer_size);
+            auto* initial_block = new(m_BufferStart) FreeBlock(buffer_size);
             AddFreeBlock(initial_block);
         }
 
@@ -91,24 +89,24 @@ export namespace sj
         {
             return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
         }
-        
-private:
+
+    private:
         /**
          * Allocates size bites with given alignment in a best-fit manner
          * @param size The number of bytes to allocate
          */
         [[nodiscard]]
         void* do_allocate(const size_t size,
-                       const size_t alignment = alignof(std::max_align_t)) override
+                          const size_t alignment = alignof(std::max_align_t)) override
         {
             SJ_ASSERT(is_initialized(), "Trying to allocate with uninitialized allocator");
 
             // Search the free list, and return the most suitable free block and the padding
             // required to use it
-            std::pair<FreeBlock*, size_t> free_list_search_result = FindFreeBlock(size, alignment);
+            std::pair<FreeBlock*, uint32_t> free_list_search_result = FindFreeBlock(size, alignment);
 
             FreeBlock* const best_fit_block = free_list_search_result.first;
-            const size_t header_padding = free_list_search_result.second;
+            const uint32_t header_padding = free_list_search_result.second;
 
             // If no best fit block was found, halt program
             SJ_ASSERT(best_fit_block != nullptr, "Free list allocator is out of memory.");
@@ -120,9 +118,10 @@ private:
             FreeBlock old_block_info = *best_fit_block;
 
             // Calculate allocation information
-            void* const header_address = (void*)((uintptr_t)best_fit_block + header_padding);
+            void* const header_address =
+                reinterpret_cast<void*>(uintptr_t(best_fit_block) + header_padding);
             void* const payload_address =
-                (void*)((uintptr_t)header_address + sizeof(AllocationHeader));
+                reinterpret_cast<void*>(uintptr_t(header_address) + sizeof(AllocationHeader));
 
             // Amount of space left in the block for the payload
             // !!!This operation overwrites the data pointed to by best_fit_block!!!
@@ -138,12 +137,12 @@ private:
             auto header = new(header_address) AllocationHeader(header_padding, payload_space);
 
             // Calculate unused space and attempt to make a new free block
-            uintptr_t payload_end = (uintptr_t)payload_address + size;
+            uintptr_t payload_end = uintptr_t(payload_address) + size;
             uintptr_t block_end = uintptr_t(payload_address) + payload_space;
 
             // Padding required to align a new free block after the end of the user payload
             auto new_block_adjustment =
-                GetAlignmentAdjustment(alignof(FreeBlock), (void*)payload_end);
+                GetAlignmentAdjustment(alignof(FreeBlock), reinterpret_cast<void*>(payload_end));
 
             // Padding bytes for the new block would be left at the end of the current block
             auto unused_space = block_end - (payload_end + new_block_adjustment);
@@ -154,7 +153,8 @@ private:
                 header->Size -= unused_space;
                 SJ_ASSERT(header->Size > 0, "Shit");
                 // Place a FreeBlock into the buffer after the user's payload
-                void* new_block_address = (void*)(payload_end + new_block_adjustment);
+                void* new_block_address =
+                    reinterpret_cast<void*>(payload_end + new_block_adjustment);
                 FreeBlock* new_block = new(new_block_address) FreeBlock(unused_space);
 
                 // Insert the new block into the free list
@@ -173,7 +173,9 @@ private:
          * Marks memory as free
          * @param memory Pointer to the memory to free
          */
-        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        void do_deallocate(void* memory,
+                           [[maybe_unused]] size_t bytes,
+                           [[maybe_unused]] size_t alignment) override
         {
             SJ_ASSERT(is_initialized(), "Trying to deallocate with uninitialized allocator");
             SJ_ASSERT(memory != nullptr, "Cannot free nullptr");
@@ -185,7 +187,8 @@ private:
 
             // Extract header info
             auto block_size = block_header->Padding + block_header->Size + sizeof(AllocationHeader);
-            void* block_start = (void*)((uintptr_t)block_header - block_header->Padding);
+            void* block_start =
+                reinterpret_cast<void*>(uintptr_t(block_header) - block_header->Padding);
 
             SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)),
                       "Free block is mis-aligned");
@@ -227,7 +230,7 @@ private:
             size_t Size;
 
             /** Constructor */
-            AllocationHeader(size_t padding = 0, size_t size = 0) : Padding(padding), Size(size)
+            AllocationHeader(uint32_t padding = 0, size_t size = 0) : Padding(padding), Size(size)
             {
             }
         };
@@ -249,7 +252,7 @@ private:
          * @return The most suitable free block, along with the amount of padding that needs to be
          * placed before the allocation header to satisfy the allocation in that block
          */
-        [[nodiscard]] std::pair<FreeBlock*, size_t> FindFreeBlock(const size_t size,
+        [[nodiscard]] std::pair<FreeBlock*, uint32_t> FindFreeBlock(const size_t size,
                                                                   const size_t alignment)
         {
             // TODO (MrLever): Replace linear search with a Red-Black tree
@@ -271,7 +274,7 @@ private:
                 // When allocating, we must calculate alignment from this address to leave room for
                 // the allocation header
                 void* fist_possible_payload_address =
-                    (void*)((uintptr_t)curr_block + sizeof(AllocationHeader));
+                    reinterpret_cast<void*>(uintptr_t(curr_block) + sizeof(AllocationHeader));
 
                 // Get the padding needed to align payload from first possible playload addresss
                 size_t required_padding =
@@ -303,7 +306,7 @@ private:
             }
 
             // New block needs to be inserted to the front of the free list
-            if((uintptr_t)new_block < (uintptr_t)m_FreeBlocks)
+            if(uintptr_t(new_block) < uintptr_t(m_FreeBlocks))
             {
                 new_block->Next = m_FreeBlocks;
                 m_FreeBlocks->Previous = new_block;
@@ -319,8 +322,8 @@ private:
             // performance
             while(curr_block->Next != nullptr)
             {
-                if((uintptr_t)new_block > (uintptr_t)curr_block &&
-                   (uintptr_t)new_block < (uintptr_t)(curr_block->Next))
+                if(reinterpret_cast<uintptr_t>(new_block) > reinterpret_cast<uintptr_t>(curr_block) &&
+                   reinterpret_cast<uintptr_t>(new_block) < reinterpret_cast<uintptr_t>(curr_block) )
                 {
 
                     new_block->Next = curr_block->Next;
@@ -376,10 +379,10 @@ private:
             // Attempt to coalesce with left neighbor, moving block pointer back if necessary
             if(block->Previous != nullptr)
             {
-                uintptr_t left_end = (uintptr_t)block->Previous + block->Previous->Size;
+                uintptr_t left_end = uintptr_t(block->Previous) + block->Previous->Size;
 
                 // If this block starts exactly where the previous block ends, coalesce
-                if((uintptr_t)block == left_end)
+                if(uintptr_t(block) == left_end)
                 {
                     block->Previous->Next = block->Next;
                     if(block->Next != nullptr)
@@ -395,10 +398,10 @@ private:
             // Attempt to coalesce with right neighbor
             if(block->Next != nullptr)
             {
-                uintptr_t block_end = (uintptr_t)block + block->Size;
+                uintptr_t block_end = uintptr_t(block) + block->Size;
 
                 // If the end of this block is the start of the next block, coalesce
-                if(block_end == (uintptr_t)block->Next)
+                if(block_end == uintptr_t(block->Next))
                 {
                     block->Size += block->Next->Size;
                     block->Next = block->Next->Next;
@@ -413,7 +416,7 @@ private:
         inline AllocationHeader* GetAllocationHeader(void* ptr)
         {
             AllocationHeader* blockHeader =
-                (AllocationHeader*)((uintptr_t)ptr - sizeof(AllocationHeader));
+                reinterpret_cast<AllocationHeader*>(uintptr_t(ptr) - sizeof(AllocationHeader));
 
             return blockHeader;
         }

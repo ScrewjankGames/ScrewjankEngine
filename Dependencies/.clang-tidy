@@ -1,0 +1,6 @@
+---
+InheritParentConfig: false
+HeaderFilterRegex: ".*"
+ExcludeHeaderFilterRegex: '.*'
+Checks:
+  - 'cppcoreguidelines-avoid-goto'

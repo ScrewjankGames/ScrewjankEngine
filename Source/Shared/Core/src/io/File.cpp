@@ -64,20 +64,20 @@ namespace sj
 
     uint64_t File::Size()
     {
-        if (!m_File)
+        if (m_File == nullptr)
         {
             return 0;
         }
 
         // Save off cursor position
-        uint64_t cursorPos = ftell(m_File);
+        long cursorPos = ftell(m_File);
 
         // Seek to end of file
         fseek(m_File, 0, SEEK_END);
         uint64_t size = ftell(m_File);
 
         // Restore cursor position
-        fseek(m_File, 0, (int)cursorPos);
+        fseek(m_File, cursorPos, SEEK_SET);
 
         return size;
     }
@@ -87,7 +87,7 @@ namespace sj
         return m_File != nullptr;
     }
 
-    size_t File::CursorPos() const
+    long File::CursorPos() const
     {
         return ftell(m_File);
     }

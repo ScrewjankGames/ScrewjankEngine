@@ -11,33 +11,30 @@ import sj.shared.containers;
 
 using namespace sj;
 
-namespace container_tests {
+namespace container_tests
+{
 
     class VectorTestDummy
     {
-      public:
-        VectorTestDummy()
+    public:
+        VectorTestDummy() : m_Data(-1)
         {
             SJ_ENGINE_LOG_INFO("Default constructed");
-            m_Data = -1;
         }
 
-        VectorTestDummy(int val)
+        VectorTestDummy(int val) : m_Data(val)
         {
             SJ_ENGINE_LOG_INFO("parameter constructed");
-            m_Data = val;
         }
 
-        VectorTestDummy(const VectorTestDummy& other)
+        VectorTestDummy(const VectorTestDummy& other) : m_Data(other.m_Data)
         {
             SJ_ENGINE_LOG_INFO("copy constructed");
-            m_Data = other.m_Data;
         }
 
-        VectorTestDummy(const VectorTestDummy&& other) noexcept
+        VectorTestDummy(const VectorTestDummy&& other) noexcept : m_Data(other.m_Data)
         {
             SJ_ENGINE_LOG_INFO("move constructed");
-            m_Data = other.m_Data;
         }
 
         VectorTestDummy& operator=(const VectorTestDummy& other)
@@ -48,7 +45,7 @@ namespace container_tests {
             return *this;
         }
 
-        VectorTestDummy& operator=(const VectorTestDummy&& other)
+        VectorTestDummy& operator=(VectorTestDummy&& other) noexcept
         {
             SJ_ENGINE_LOG_INFO("move assignment operator");
             m_Data = other.m_Data;
@@ -66,7 +63,7 @@ namespace container_tests {
             return m_Data == other.m_Data;
         }
 
-      private:
+    private:
         int m_Data;
     };
 
@@ -90,7 +87,7 @@ namespace container_tests {
 
         vec.erase(vec.begin());
         ASSERT_NE(1, vec[0]);
-        
+
         vec.erase(vec.begin());
         ASSERT_TRUE(vec.empty());
     }
@@ -102,19 +99,21 @@ namespace container_tests {
 
         ;
 
-        static_assert(std::is_swappable<decltype(a)>::value, "Not swappable?");
-        static_assert(noexcept(swap(a, b)), "");
-        static_assert(std::is_nothrow_swappable<decltype(a)>::value, "Not nothrow swappable?");
+        static_assert(std::is_swappable_v<decltype(a)>, "Not swappable?");
+        static_assert(noexcept(swap(a, b)));
+        static_assert(std::is_nothrow_swappable_v<decltype(a)>, "Not nothrow swappable?");
     }
 
     TEST(StaticVectorTests, EmplaceTests)
     {
         static_vector<int, 4> testVec = {0, 2, 3};
-        static_vector<int, 4, VectorOptions {.preserveRelativeOrderings = false}> testVec2 = {0, 2, 3};
+        static_vector<int, 4, VectorOptions {.preserveRelativeOrderings = false}> testVec2 = {0,
+                                                                                              2,
+                                                                                              3};
 
         testVec.emplace(&testVec[1], 1);
         ASSERT_EQ(testVec.size(), 4);
-        for(int i = 0; i < testVec.size(); i++)
+        for(size_t i = 0; i < testVec.size(); i++)
         {
             ASSERT_EQ(i, testVec[i]);
         }
@@ -134,7 +133,8 @@ namespace container_tests {
         ASSERT_EQ(5, vec1.size());
         ASSERT_EQ(5, vec1.capacity());
 
-        for (size_t i = 0; i < vec1.size(); i++) {
+        for(size_t i = 0; i < vec1.size(); i++)
+        {
             ASSERT_EQ(i + 1, vec1[i]);
         }
 
@@ -177,9 +177,10 @@ namespace container_tests {
     TEST(VectorTests, IterationTest)
     {
         dynamic_vector<int> vec;
-        int i = 0;
+        size_t i = 0;
 
-        for (auto& element : vec) {
+        for(auto& _ : vec)
+        {
             i++;
         }
         ASSERT_EQ(0, i);
@@ -192,22 +193,26 @@ namespace container_tests {
         vec.emplace_back(6);
 
         // Iterate through all the odd elements
-        for (auto it = vec.begin(); it < vec.end(); it = it + 2) {
+        for(auto it = vec.begin(); it < vec.end(); it = it + 2)
+        {
             ASSERT_NE(0, *it % 2);
         }
 
         // Iterate through all the even elements
-        for (auto it = vec.begin() + 1; it < vec.end(); it += 2) {
+        for(auto it = vec.begin() + 1; it < vec.end(); it += 2)
+        {
             ASSERT_EQ(0, *it % 2);
         }
 
         // Iterate through all the odd elements backwards
-        for (auto it = vec.end() - 2; it > vec.begin(); it -= 2) {
+        for(auto it = vec.end() - 2; it > vec.begin(); it -= 2)
+        {
             ASSERT_NE(0, *it % 2);
         }
 
         // Iterate through all the even elements backwards
-        for (auto it = vec.end() - 1; it > vec.begin(); it -= 2) {
+        for(auto it = vec.end() - 1; it > vec.begin(); it -= 2)
+        {
             ASSERT_EQ(0, *it % 2);
         }
     }
@@ -227,14 +232,14 @@ namespace container_tests {
         ASSERT_EQ(2, vec.size());
         ASSERT_EQ(2, vec.capacity());
 
-        vec.emplace(vec.begin() + 1, VectorTestDummy(2));
+        vec.emplace(vec.begin() + 1, VectorTestDummy(2)); // NOLINT
         ASSERT_EQ(0, vec[0].Value());
         ASSERT_EQ(2, vec[1].Value());
         ASSERT_EQ(3, vec[2].Value());
         ASSERT_EQ(3, vec.size());
         ASSERT_EQ(4, vec.capacity());
 
-        vec.emplace(vec.begin() + 1, VectorTestDummy(1));
+        vec.emplace(vec.begin() + 1, VectorTestDummy(1)); // NOLINT
         ASSERT_EQ(0, vec[0].Value());
         ASSERT_EQ(1, vec[1].Value());
         ASSERT_EQ(2, vec[2].Value());
@@ -300,7 +305,8 @@ namespace container_tests {
 
         // Iterate
         size_t sum = 0;
-        for (auto& element : vec) {
+        for(auto& element : vec)
+        {
             sum += element;
         }
         ASSERT_EQ(11, sum);
@@ -318,7 +324,8 @@ namespace container_tests {
         ASSERT_EQ(4, vec.size());
         ASSERT_EQ(4, vec.capacity());
 
-        for (size_t i = 0; i < vec.size(); i++) {
+        for(size_t i = 0; i < vec.size(); i++)
+        {
             ASSERT_EQ(i, vec[i].Value());
         }
     }
@@ -328,9 +335,8 @@ namespace container_tests {
         int destroyed = 0;
         struct DtorDummy
         {
-            DtorDummy(int* counter)
+            DtorDummy(int* counter) : m_Counter(counter)
             {
-                m_Counter = counter;
             }
 
             ~DtorDummy()
@@ -343,7 +349,8 @@ namespace container_tests {
 
         dynamic_vector<DtorDummy>* vec = new dynamic_vector<DtorDummy>;
 
-        for (int i = 0; i < 10; i++) {
+        for(size_t i = 0; i < 10; i++)
+        {
             vec->emplace_back(&destroyed);
         }
 
@@ -357,16 +364,11 @@ namespace container_tests {
         dynamic_vector<std::string> vec1({"Foo", "Bar"});
         dynamic_vector<std::string> vec2({"Biz", "Baz"});
 
-        std::pmr::vector<int> a;
-        std::pmr::vector<int> b;
-        b = a;
-
-
-
         // Copy Assignment
         vec1 = vec2;
 
-        for (auto i = 0; i < vec1.size(); i++) {
+        for(size_t i = 0; i < vec1.size(); i++)
+        {
             ASSERT_EQ(vec1[i], vec2[i]);
         }
     }
@@ -395,8 +397,8 @@ namespace container_tests {
     {
         dynamic_vector<std::string> vec1({"Foo", "Bar"});
         dynamic_vector<std::string> vec2(std::move(vec1));
-        
-        ASSERT_EQ(0, vec1.size());
+
+        ASSERT_EQ(0, vec1.size()); // NOLINT(clang-analyzer-cplusplus.Move)
 
         ASSERT_EQ("Foo", vec2[0]);
         ASSERT_EQ("Bar", vec2[1]);
@@ -404,8 +406,7 @@ namespace container_tests {
         vec1.emplace_back("Buzz");
         ASSERT_EQ(1, vec1.size());
 
-        dynamic_vector<std::string> vec3(
-            dynamic_vector<std::string>({"Biz", "Baz"}));
+        dynamic_vector<std::string> vec3(dynamic_vector<std::string>({"Biz", "Baz"}));
         ASSERT_EQ("Biz", vec3[0]);
         ASSERT_EQ("Baz", vec3[1]);
     }
@@ -416,7 +417,8 @@ namespace container_tests {
         ASSERT_EQ(10, vec.capacity());
         ASSERT_EQ(10, vec.size());
 
-        for (auto element : vec) {
+        for(auto element : vec)
+        {
             ASSERT_EQ(0, element);
         }
 
@@ -425,7 +427,8 @@ namespace container_tests {
         ASSERT_EQ(20, vec.size());
 
         auto sum = 0;
-        for (auto element : vec) {
+        for(auto element : vec)
+        {
             sum += element;
         }
         ASSERT_EQ(sum, 10);
@@ -434,7 +437,8 @@ namespace container_tests {
         vec.resize(10);
 
         sum = 0;
-        for (auto element : vec) {
+        for(auto element : vec)
+        {
             sum += element;
         }
         ASSERT_EQ(sum, 0);
@@ -458,7 +462,8 @@ namespace container_tests {
     {
         dynamic_vector<std::string> vec1(10, "Foo");
 
-        for (size_t i = 0; i < vec1.size(); i++) {
+        for(size_t i = 0; i < vec1.size(); i++)
+        {
             ASSERT_EQ("Foo", vec1[i]);
         }
     }
@@ -474,6 +479,5 @@ namespace container_tests {
             ASSERT_EQ(testSpan[i], vec1[i]);
         }
     }
-
 
 } // namespace container_tests

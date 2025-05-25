@@ -74,7 +74,7 @@ namespace sj {
 
         // Check extension support
         {
-            uint32_t extension_count;
+            uint32_t extension_count = 0;
             vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
             
             dynamic_array<VkExtensionProperties> extension_props(extension_count, Renderer::WorkBuffer());
@@ -164,7 +164,6 @@ namespace sj {
 
     void VulkanRenderDevice::CreateLogicalDevice(VkSurfaceKHR renderSurface)
     {
-        Renderer* vulkanAPI = Renderer::GetInstance();
         SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "CreateLogicalDevice requires a selected physical device");
         SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
     

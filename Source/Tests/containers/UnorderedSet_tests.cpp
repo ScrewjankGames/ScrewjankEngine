@@ -8,6 +8,7 @@
 // Void Engine Headers
 #include <ScrewjankEngine/containers/UnorderedSet.hpp>
 
+import sj.engine.system.memory;
 import sj.shared.containers;
 
 using namespace sj;
@@ -21,15 +22,15 @@ struct DummyStruct
         return value == other.value;
     }
 
-    DummyStruct()
+    DummyStruct() : value(0)
     {
-        value = 0;
+        
         CtorCount++;
     }
 
-    DummyStruct(int v)
+    DummyStruct(int v) : value(v)
     {
-        value = v;
+        
         CtorCount++;
     }
 
@@ -175,7 +176,7 @@ namespace container_tests {
         auto set2 = std::move(set1);
         ASSERT_EQ(4, set2.count());
 
-        auto foo1 = set1.find("Foo");
+        auto foo1 = set1.find("Foo"); // NOLINT(clang-analyzer-cplusplus.Move)
         ASSERT_EQ(set1.end(), foo1);
 
         ASSERT_TRUE(set2.contains("Foo"));
@@ -341,16 +342,15 @@ namespace container_tests {
         std::vector<std::string> goodvec;
 
 
-        char buff[256];
         for(int i = 0; i < 25; i++)
         {
             bool insert = std::rand() % 2 || testset.count() == 0;
             if(insert)
             {
-                snprintf(buff, sizeof(buff), "%d", rand());
-                stableset.insert(buff);
-                testset.insert(buff);
-                goodvec.push_back(buff);
+                std::string str = std::format("{}", rand());
+                stableset.insert(str);
+                testset.insert(str);
+                goodvec.push_back(str);
             }
             else
             {
@@ -377,11 +377,10 @@ namespace container_tests {
         int seed = 1324890;
         std::srand(seed);
 
-        char buff[256];
         for(int i = 0; i < 50; i++)
         {
-            snprintf(buff, sizeof(buff), "%d", rand());
-            set.insert(buff);
+            std::string str = std::format("{}", rand());
+            set.insert(str);
         }
 
         ASSERT_TRUE(set.contains("Foo"));

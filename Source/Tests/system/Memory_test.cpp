@@ -3,22 +3,18 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Shared Headers
-#include <ScrewjankShared/utils/MemUtils.hpp>
-
 import sj.engine.system.memory;
 
 using namespace sj;
 
-namespace system_tests {
-    bool dummy_dtor_called = false;
+namespace system_tests
+{
+    bool dummy_dtor_called = false; // NOLINT
     class DummyClass
     {
-      public:
-        DummyClass(int num, double num2)
+    public:
+        DummyClass(int num, double num2) : m_num(num), m_double(num2)
         {
-            m_num = num;
-            m_double = num2;
         }
 
         ~DummyClass()
@@ -52,7 +48,7 @@ namespace system_tests {
 
     TEST(MemoryTests, AlignTest)
     {
-        auto memory = malloc(sizeof(DummyClass) * 2);
+        auto memory = malloc(sizeof(DummyClass) * 2); // NOLINT
         void* unaligned = (void*)((uintptr_t)memory + 1);
 
         auto space = (sizeof(DummyClass) * 2) - 1;
@@ -67,6 +63,7 @@ namespace system_tests {
                                  sj_aligned,
                                  (sizeof(DummyClass) * 2) - 1);
 
+        free(memory); // NOLINT
         ASSERT_NE(unaligned, sj_aligned);
         ASSERT_EQ(std_aligned, sj_aligned);
     }

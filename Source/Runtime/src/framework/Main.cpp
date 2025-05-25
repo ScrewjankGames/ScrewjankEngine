@@ -17,7 +17,7 @@ void InitEngineStatics()
     sj::MemorySystem::Init();
 }
 
-int main(int arc, char** argv)
+int main([[maybe_unused]] int arc, [[maybe_unused]] char** argv)
 {
     InitEngineStatics();
 

@@ -1,9 +1,8 @@
 #pragma once
 
 // Shared Includes
-#include <ScrewjankShared/Math/Vec2.hpp>
 
-// Library Includes
+import sj.shared.math;
 
 namespace sj
 {

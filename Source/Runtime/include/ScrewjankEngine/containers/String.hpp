@@ -12,7 +12,7 @@ namespace sj {
     // Jesus fuck why is strncpy's default behavior not to null terminate on overrun
     inline char* sj_strncpy(char* destination, const char* source, size_t count)
     {
-        for (int i = 0; i < count; i++)
+        for (size_t i = 0; i < count; i++)
         {
             if (source[i] == '\0')
             {

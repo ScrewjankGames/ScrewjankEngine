@@ -75,13 +75,13 @@ namespace container_tests
 
         // Make sure original vector intact
         ASSERT_EQ(4, testVec.size());
-        for(int i = 0; i < testVec.size(); i++)
+        for(size_t i = 0; i < testVec.size(); i++)
             ASSERT_EQ(i+1, testVec[i]);
 
         // Make sure copied vector matches
         std::vector<int>& extractedTestVec1 = containerCopyTest.get<std::vector<int>>(); 
         ASSERT_EQ(4, extractedTestVec1.size());
-        for(int i = 0; i < extractedTestVec1.size(); i++)
+        for(size_t i = 0; i < extractedTestVec1.size(); i++)
             ASSERT_EQ(i+1, extractedTestVec1[i]);
 
         // Make sure our reference really updates what's in the any
@@ -97,11 +97,11 @@ namespace container_tests
 
         std::vector<int> testVec = {1, 2, 3, 4};
         container_any containerMoveTest(std::move(testVec));
-        ASSERT_EQ(0, testVec.size());
+        ASSERT_EQ(0, testVec.size()); //NOLINT(clang-analyzer-cplusplus.Move)
 
         std::vector<int>& extractedTestVec1 = containerMoveTest.get<std::vector<int>>(); 
         ASSERT_EQ(4, extractedTestVec1.size());
-        for(int i = 0; i < extractedTestVec1.size(); i++)
+        for(size_t i = 0; i < extractedTestVec1.size(); i++)
             ASSERT_EQ(i+1, extractedTestVec1[i]);
 
         // Make sure our reference really updates what's in the any
@@ -116,7 +116,7 @@ namespace container_tests
         using container_any = sj::static_any<sizeof(std::vector<int>), alignof(std::vector<int>)>;
         container_any original(std::vector<int>{1,2,3,4,5});
 
-        static_assert(is_instantiation_of_v<typename std::decay<container_any>::type, static_any>);
+        static_assert(is_instantiation_of_v< std::decay_t<container_any>, static_any>);
 
         // Copy from any -> any
         container_any anyToAnyCopyTest(original);
@@ -125,7 +125,7 @@ namespace container_tests
 
         std::vector<int> copiedVec = anyToAnyCopyTest.get<std::vector<int>>();
         ASSERT_EQ(5, copiedVec.size());
-        for(int i = 0; i < copiedVec.size(); i++)
+        for(size_t i = 0; i < copiedVec.size(); i++)
         {
             ASSERT_EQ(i+1, originalVec[i]);
             ASSERT_EQ(i+1, copiedVec[i]);
@@ -144,7 +144,7 @@ namespace container_tests
 
         std::vector<int>& movedVec = anyToAnyCopyTest.get<std::vector<int>>();
         ASSERT_EQ(5, movedVec.size());
-        for(int i = 0; i < movedVec.size(); i++)
+        for(size_t i = 0; i < movedVec.size(); i++)
         {
             ASSERT_EQ(i+1, movedVec[i]);
         }

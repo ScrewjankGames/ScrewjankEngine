@@ -1,6 +1,5 @@
 module;
 
-#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
 
 #include <memory>
@@ -11,7 +10,9 @@ module;
 
 export module sj.engine.system.memory:MemorySystem;
 import :Literals;
+
 import sj.engine.system.memory.allocators;
+import sj.engine.system.memory.utils;
 import sj.shared.containers;
 
 export namespace sj
@@ -78,8 +79,6 @@ export namespace sj
         [[nodiscard]]
         static std::pmr::memory_resource* GetCurrentMemoryResource()
         {
-            MemorySystem* system = Get();
-
             if(s_memoryResourceStack.empty())
             {
                 return GetUnmanagedMemoryResource();
@@ -141,11 +140,12 @@ export namespace sj
     {
     public:
         MemoryResourceScope(std::pmr::memory_resource* resource)
+            : m_resource(resource)
         {
             MemorySystem::PushMemoryResource(resource);
         }
         MemoryResourceScope(const MemoryResourceScope& other) = delete;
-        MemoryResourceScope(MemoryResourceScope&& other) : MemoryResourceScope(other.m_resource)
+        MemoryResourceScope(MemoryResourceScope&& other) noexcept : MemoryResourceScope(other.m_resource)
         {
             other.m_resource = nullptr;
         }

@@ -2,11 +2,12 @@
 # Include and configure dependencies
 ################################################################################
 
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY SYSTEM 1)
+
 set(${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_PREFIX}/ScrewjankEngine-${ScrewjankEngine_VERSION}/lib)
 
 ## GLFW
 option(GLFW_INSTALL "Build the GLFW example programs" OFF)
-
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
@@ -16,7 +17,6 @@ option(GLFW_BUILD_X11 OFF)
 option(GLFW_BUILD_WAYLAND ON)
 endif(UNIX)
 find_package(glfw3 REQUIRED)
-
 
 ## Spdlog
 option(SPDLOG_USE_STD_FORMAT ON)
@@ -40,38 +40,19 @@ set_target_properties(gtest_main
         FOLDER Engine/Dependencies/GoogleTest
 )
 
-## GoogleBenchmark
-option(BENCHMARK_ENABLE_TESTING "Enable testing of the benchmark library." OFF)
-option(BENCHMARK_ENABLE_INSTALL "Enable installation of benchmark. (Projects embedding benchmark may want to turn this OFF.)" OFF)
-option(BENCHMARK_ENABLE_GTEST_TESTS "Enable building the unit tests which depend on gtest" OFF)
-add_subdirectory(benchmark)
-set_target_properties(benchmark 
-    PROPERTIES 
-        FOLDER Engine/Dependencies/GoogleBenchmark
-)
-set_target_properties(benchmark_main     
-    PROPERTIES 
-        FOLDER Engine/Dependencies/GoogleBenchmark
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Dependencies/"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Dependencies/"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Dependencies/"
-)
-
 ## ImGui
 set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp) 
 
 set(IMGUI_BACKENDS 
-    ${IMGUI_PATH}/backends/imgui_impl_vulkan.h
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
-    ${IMGUI_PATH}/backends/imgui_impl_glfw.h
     ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp
 )
 
-
-add_library("imgui" STATIC ${IMGUI_SOURCES}  ${IMGUI_BACKENDS})
-target_compile_definitions("imgui" PUBLIC GLFW_INCLUDE_VULKAN)
-target_include_directories("imgui" 
+add_library(imgui STATIC ${IMGUI_SOURCES} ${IMGUI_BACKENDS})
+set_target_properties(imgui PROPERTIES CXX_CLANG_TIDY "")
+target_compile_definitions(imgui PUBLIC GLFW_INCLUDE_VULKAN)
+target_include_directories(imgui 
     PUBLIC 
     ${IMGUI_PATH}
     ${IMGUI_PATH}/backends

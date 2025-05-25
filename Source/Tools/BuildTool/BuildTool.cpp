@@ -8,7 +8,7 @@
 #include <print>
 #include <filesystem>
 
-int main(int argc, const char** argv)
+int main()
 {
 	for (const char* path : sj::build::config::RequiredDirs) 
 	{

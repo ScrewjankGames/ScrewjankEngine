@@ -6,11 +6,6 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
 
-// Shared Headers
-#include <ScrewjankShared/Math/Vec2.hpp>
-#include <ScrewjankShared/Math/Vec3.hpp>
-#include <ScrewjankShared/Math/Mat44.hpp>
-
 // Library Headers
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -20,6 +15,7 @@
 
 import sj.engine.system;
 import sj.shared.containers;
+import sj.shared.math;
 
 namespace sj {
     // Forward declarations

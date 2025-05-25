@@ -1,0 +1,20 @@
+---
+Checks: 
+ - 'clang-diagnostic-*'
+ - 'clang-analyzer-*'
+ - 'cppcoreguidelines-*'
+ - '-cppcoreguidelines-avoid-magic-numbers'
+ - '-cppcoreguidelines-non-private-member-variables-in-classes'
+ - '-cppcoreguidelines-owning-memory'
+ - '-cppcoreguidelines-special-member-functions'
+ - '-cppcoreguidelines-pro-bounds-pointer-arithmetic'
+ - '-cppcoreguidelines-pro-type-union-access'
+ - '-cppcoreguidelines-pro-type-reinterpret-cast'
+ - 'modernize-*'
+ - '-modernize-use-auto'
+ - '-modernize-use-trailing-return-type'
+ - '-modernize-return-braced-init-list'
+CheckOptions:
+    - key: cppcoreguidelines-pro-type-member-init.IgnoreArrays
+      value: true
+WarningsAsErrors: true

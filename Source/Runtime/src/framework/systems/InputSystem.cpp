@@ -43,7 +43,7 @@ namespace sj
             float stickMagnitudeSqr = MagnitudeSqr(stick);
             if(stickMagnitudeSqr < kDeadZoneSqr)
             {
-                return Vec2::Zero;
+                return Vec2_Zero;
             }
             else
             {

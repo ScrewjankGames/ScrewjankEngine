@@ -2,13 +2,12 @@
 
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/AssetType.hpp>
-#include <ScrewjankShared/Math/Vec2.hpp>
-#include <ScrewjankShared/Math/Vec3.hpp>
-#include <ScrewjankShared/Math/VecHash.hpp>
 
 // STD Includes
 #include <cstdint>
 #include <functional>
+
+import sj.shared.math;
 
 namespace sj
 {

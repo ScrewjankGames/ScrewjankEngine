@@ -1,6 +1,6 @@
-#pragma once
+export module sj.shared.math:Tags;
 
-namespace sj
+export namespace sj
 {
     struct IdentityTagT
     {

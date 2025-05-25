@@ -7,7 +7,6 @@
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
-#include "ScrewjankShared/Math/Mat44.hpp"
 #include "ScrewjankShared/string/StringHash.hpp"
 #include "ScrewjankShared/utils/Log.hpp"
 
@@ -26,14 +25,12 @@
 
 // STD Includes
 #include <filesystem>
-#include <cstdio>
-#include <ranges>
 #include <string>
-#include <string_view>
 #include <vector>
 
 import sj.shared.containers;
 import sj.shared.datadefs;
+import sj.shared.math;
 
 struct ComponentSchema
 {
@@ -72,7 +69,7 @@ struct GameObjectSchema
 struct SceneSchema
 {
     sj::StringHash scene_name; 
-    uint32_t memory; // Free ram allocated to this scene
+    uint32_t memory = 0; // Free ram allocated to this scene
     std::vector<GameObjectSchema> game_objects;
 };
 

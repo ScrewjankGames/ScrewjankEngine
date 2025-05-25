@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 
 // Shared Headers
-#include <ScrewjankShared/utils/MemUtils.hpp>
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 #include <memory_resource>
 
@@ -113,7 +112,7 @@ namespace system_tests {
 
         // Allocator should be able to handle an allocation larger than the original allocation.
         // This implies that the memory blocks of the free list were coalesced correctly.
-        mem_loc1 = (FreeListDummy*)allocator.allocate_bytes(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
+        mem_loc1 = allocator.allocate_bytes(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
         ASSERT_NE(nullptr, mem_loc1);
 
         // The allocator should be empty again

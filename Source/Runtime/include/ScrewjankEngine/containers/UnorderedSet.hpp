@@ -3,7 +3,6 @@
 // STD Headers
 #include <type_traits>
 #include <utility>
-#include <cmath>
 
 // Library Headers
 
@@ -13,23 +12,24 @@
 import sj.engine.system.memory;
 import sj.shared.containers;
 
-namespace sj {
+namespace sj
+{
 
     constexpr float kDefaultMaxLoadFactor = 0.9f;
     constexpr size_t CalculateOptimalSize(size_t requestedSize,
                                           float loadFactor = kDefaultMaxLoadFactor)
     {
-        const float size = requestedSize / loadFactor;
+        const float size = static_cast<float>(requestedSize) / loadFactor;
         const size_t intSize = static_cast<size_t>(size);
 
         return size == (float)intSize ? intSize : intSize + 1;
     }
 
-    template<class T>
+    template <class T>
     struct Element
     {
         using offset_t = int8_t;
-        
+
         /** Offset that indicates an element is empty */
         static constexpr offset_t kEmptyOffset = -1;
 
@@ -73,16 +73,17 @@ namespace sj {
          * Destructor
          */
 
-        ~Element() requires std::is_trivially_destructible_v<T> = default;
         ~Element()
-            requires (!std::is_trivially_destructible_v<T>)
+            requires std::is_trivially_destructible_v<T>
+        = default;
+        ~Element()
+            requires(!std::is_trivially_destructible_v<T>)
         {
             if(!IsEmpty())
             {
                 Value.~T();
             }
         }
-
 
         /**
          * Copy assignment operator
@@ -92,7 +93,7 @@ namespace sj {
         /**
          * Move assignment operator
          */
-        Element& operator=(Element&& other);
+        Element& operator=(Element&& other) noexcept;
 
         /**
          * @return true if Element has never contained a value, else false
@@ -103,7 +104,6 @@ namespace sj {
          * @return True if the element does not currently contain a record
          */
         bool IsEmpty() const;
-
 
         /**
          * @return True if the element currently contains a record
@@ -127,7 +127,7 @@ namespace sj {
     template <class Set_t>
     class SetIterator_t
     {
-      public:
+    public:
         using iterator_category = std::forward_iterator_tag;
 
         using value_type = const Set_t::value_type;
@@ -139,7 +139,7 @@ namespace sj {
         using const_reference = typename Set_t::const_reference;
         using difference_type = typename Set_t::difference_type;
 
-      public:
+    public:
         /**
          * Constructor
          */
@@ -175,10 +175,10 @@ namespace sj {
          */
         SetIterator_t operator++(int);
 
-      private:
+    private:
         /** The element currently pointer at by this iterator */
         element_pointer m_currElement;
-        
+
         const Set_t* m_set;
     };
 
@@ -188,7 +188,7 @@ namespace sj {
     template <class T, class IMPL, class Hasher = std::hash<T>>
     class unordered_set_base
     {
-      public:
+    public:
         // Type aliases
         using key_type = T;
         using value_type = T;
@@ -206,8 +206,7 @@ namespace sj {
 
         using offset_t = element_type::offset_t;
 
-      public:
-
+    public:
         /**
          * Default Constructor
          */
@@ -231,7 +230,7 @@ namespace sj {
         /**
          * Move Assignment operator
          */
-        unordered_set_base <T, IMPL, Hasher>& operator=(unordered_set_base&& other) = default;
+        unordered_set_base<T, IMPL, Hasher>& operator=(unordered_set_base&& other) = default;
 
         /**
          * Assignment from initializer list
@@ -268,13 +267,13 @@ namespace sj {
         std::pair<iterator, bool> insert(const T& key);
 
         /**
-         * Range-based insert  
+         * Range-based insert
          */
         template <class InputIterator>
         void insert(InputIterator first, InputIterator last);
 
         /**
-         * Range-based emplace 
+         * Range-based emplace
          */
         template <class InputIterator>
         void emplace(InputIterator first, InputIterator last);
@@ -321,12 +320,11 @@ namespace sj {
          */
         const_iterator end() const;
 
-      protected:
-
+    protected:
         /** Global maximum for how far an element can be from it's desired position */
         static constexpr offset_t kProbeLimit = std::numeric_limits<offset_t>::max();
 
-      private:
+    private:
         /**
          * Insert the value with the current offset at rick_index, and re-insert the rich element
          * @param poor_record The element that will be replacing the element at rich_index
@@ -361,7 +359,6 @@ namespace sj {
 
         /** The maximum load factor of the set */
         static constexpr float s_MaxLoadFactor = kDefaultMaxLoadFactor;
-
     };
 
     template <class T,
@@ -378,9 +375,9 @@ namespace sj {
 
         template <class InputIterator>
         static_unordered_set(InputIterator first, InputIterator last);
-        
+
         using Base::operator=;
-        
+
     private:
         friend Base;
         static constexpr bool kIsGrowable = false;
@@ -390,11 +387,12 @@ namespace sj {
         std::array<Element<T>, tRealSize> m_Elements;
     };
 
-    template<class T>
+    template <class T>
     class dynamic_unordered_set : public unordered_set_base<T, dynamic_unordered_set<T>>
     {
         using Base = unordered_set_base<T, dynamic_unordered_set<T>>;
         friend Base;
+
     public:
         /**
          * Implicit MemSpace Constructors
@@ -403,13 +401,13 @@ namespace sj {
         dynamic_unordered_set();
 
         dynamic_unordered_set(const dynamic_unordered_set<T>& other);
-        dynamic_unordered_set(dynamic_unordered_set<T>&& other);
+        dynamic_unordered_set(dynamic_unordered_set<T>&& other) noexcept;
 
         dynamic_unordered_set(std::initializer_list<T> list);
 
         template <class InputIterator>
         dynamic_unordered_set(InputIterator first, InputIterator last);
-     
+
         /**
          * Default constructor
          */
@@ -424,14 +422,16 @@ namespace sj {
          * Range Constructor
          */
         template <class InputIterator>
-        dynamic_unordered_set(sj::memory_resource* mem_resource, InputIterator first, InputIterator last);
+        dynamic_unordered_set(sj::memory_resource* mem_resource,
+                              InputIterator first,
+                              InputIterator last);
 
         using Base::operator=;
 
     private:
         friend Base;
         static constexpr bool kIsGrowable = true;
-        
+
         /** Number of elements in the set */
         size_t m_Count = 0;
 

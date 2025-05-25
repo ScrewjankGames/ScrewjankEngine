@@ -4,11 +4,11 @@ namespace sj
 {
     template <class T, size_t tRequestedSize, size_t tRealSize>
     template <class InputIterator>
-    inline static_unordered_set<T, tRequestedSize, tRealSize>::static_unordered_set(InputIterator first, InputIterator last)
+    inline static_unordered_set<T, tRequestedSize, tRealSize>::static_unordered_set(
+        InputIterator first, InputIterator last)
     {
         this->emplace(first, last);
     }
-
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set()
@@ -18,18 +18,13 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(const dynamic_unordered_set<T>& other)
-        : Base(other),
-          m_Elements(other.m_Elements), 
-          m_Count(other.m_Count)
+        : Base(other), m_Count(other.m_Count), m_Elements(other.m_Elements)
     {
-
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set(dynamic_unordered_set<T>&& other)
-        : Base(other),
-          m_Elements(std::move(other.m_Elements)), 
-          m_Count(other.m_Count)
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(dynamic_unordered_set<T>&& other) noexcept
+        : Base(other), m_Count(other.m_Count), m_Elements(std::move(other.m_Elements))
     {
         other.m_Count = 0;
     }
@@ -49,15 +44,16 @@ namespace sj
 
     template <class T>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(sj::memory_resource* mem_resource)
-        : m_Elements(0, mem_resource)    
+        : m_Elements(0, mem_resource)
     {
     }
 
     template <class T>
-    inline dynamic_unordered_set<T>::dynamic_unordered_set( sj::memory_resource* mem_resource, std::initializer_list<T> list)
+    inline dynamic_unordered_set<T>::dynamic_unordered_set(sj::memory_resource* mem_resource,
+                                                           std::initializer_list<T> list)
         : dynamic_unordered_set<T>(mem_resource)
     {
-        for (auto key : list)
+        for(auto key : list)
         {
             this->insert(key);
         }
@@ -66,8 +62,8 @@ namespace sj
     template <class T>
     template <class InputIterator>
     inline dynamic_unordered_set<T>::dynamic_unordered_set(sj::memory_resource* mem_resource,
-                                                 InputIterator first,
-                                                 InputIterator last)
+                                                           InputIterator first,
+                                                           InputIterator last)
         : dynamic_unordered_set<T>(mem_resource)
     {
         this->emplace(first, last);
@@ -78,7 +74,7 @@ namespace sj
     unordered_set_base<T, IMPL, Hasher>::operator=(std::initializer_list<T> list)
     {
         clear();
-        for (auto& key : list)
+        for(auto& key : list)
         {
             insert(key);
         }
@@ -96,9 +92,9 @@ namespace sj
         }
 
         // Look up each element in this set in the other set
-        for (auto& element : *this)
+        for(auto& element : *this)
         {
-            if (!other.contains(element))
+            if(!other.contains(element))
             {
                 return false;
             }
@@ -157,7 +153,7 @@ namespace sj
     template <class InputIterator>
     inline void unordered_set_base<T, IMPL, Hasher>::insert(InputIterator first, InputIterator last)
     {
-        for (auto it = first; it != last; it++)
+        for(auto it = first; it != last; it++)
         {
             insert(*it);
         }
@@ -165,9 +161,10 @@ namespace sj
 
     template <class T, class IMPL, class Hasher>
     template <class InputIterator>
-    inline void unordered_set_base<T, IMPL, Hasher>::emplace(InputIterator first, InputIterator last)
+    inline void unordered_set_base<T, IMPL, Hasher>::emplace(InputIterator first,
+                                                             InputIterator last)
     {
-        for (auto it = first; it != last; it++)
+        for(auto it = first; it != last; it++)
         {
             emplace(*it);
         }
@@ -191,36 +188,35 @@ namespace sj
 
         // The new key is unique, try to insert it
         size_type new_count = GetCount() + 1;
-        
+
         // If there's not enough space, rehash
         if(new_count > capacity() || (new_count / capacity()) > s_MaxLoadFactor)
         {
             if constexpr(IMPL::kIsGrowable)
             {
                 rehash(capacity() == 0 ? 2 : capacity() * 2);
-
             }
             else
             {
                 SJ_ASSERT(false, "Unordered set out of space!");
             }
         }
-        
+
         size_type desired_index = hash % capacity();
 
         // Perform the robin hood insertion, with a maximum probe count of kProbeLimit
-        for (size_type index = desired_index; new_record.Offset < kProbeLimit;
-             index = ((index + 1) % capacity()), new_record.Offset++)
+        for(size_type index = desired_index; new_record.Offset < kProbeLimit;
+            index = ((index + 1) % capacity()), new_record.Offset++)
         {
 
             // If we've found an open entry, take it
-            if (GetElements()[index].IsEmpty())
+            if(GetElements()[index].IsEmpty())
             {
                 GetElements()[index] = std::move(new_record);
                 GetCount()++;
                 return {const_iterator(this, &GetElements()[index]), true};
             }
-            else if (GetElements()[index].Offset < new_record.Offset)
+            else if(GetElements()[index].Offset < new_record.Offset)
             {
                 RobinHoodInsert(std::move(new_record), index);
                 GetCount()++;
@@ -233,7 +229,7 @@ namespace sj
                   "Check your hash function.",
                   kProbeLimit);
 
-        return { const_iterator (this, nullptr), false };
+        return {const_iterator(this, nullptr), false};
     }
 
     template <class T, class IMPL, class Hasher>
@@ -254,7 +250,7 @@ namespace sj
                 {
                     element.~element_type();
                 }
-                
+
                 Backshift(index);
 
                 return true;
@@ -273,7 +269,7 @@ namespace sj
             {
                 element.~element_type();
             }
-           
+
             element.Offset = element_type::kEmptyOffset;
         }
 
@@ -283,7 +279,7 @@ namespace sj
     template <class T, class IMPL, class Hasher>
     inline void unordered_set_base<T, IMPL, Hasher>::rehash(size_t new_capacity)
     {
-        if (new_capacity <= capacity())
+        if(new_capacity <= capacity())
         {
             return;
         }
@@ -296,9 +292,9 @@ namespace sj
 
         // Reset count and re-insert all the old data back into the set
         GetCount() = 0;
-        for (auto& element : old_set)
+        for(auto& element : old_set)
         {
-            if (element.HasValue())
+            if(element.HasValue())
             {
                 emplace(std::move(element.Value));
             }
@@ -318,24 +314,24 @@ namespace sj
     }
 
     template <class T, class IMPL, class Hasher>
-    inline void unordered_set_base<T, IMPL, Hasher>::RobinHoodInsert(unordered_set_base<T, IMPL, Hasher>::element_type&& poor_record,
-                                                         size_t rich_index)
+    inline void unordered_set_base<T, IMPL, Hasher>::RobinHoodInsert(
+        unordered_set_base<T, IMPL, Hasher>::element_type&& poor_record, size_t rich_index)
     {
         // Swap the rich and poor entries
         Element rich_record(std::move(GetElements()[rich_index]));
 
         GetElements()[rich_index] = std::move(poor_record);
 
-        for (size_t index = rich_index; rich_record.Offset < kProbeLimit;
-             index = ((index + 1) % capacity()), rich_record.Offset++)
+        for(size_t index = rich_index; rich_record.Offset < kProbeLimit;
+            index = ((index + 1) % capacity()), rich_record.Offset++)
         {
             // If we've found an open entry, take it
-            if (GetElements()[index].IsEmpty())
+            if(GetElements()[index].IsEmpty())
             {
                 GetElements()[index] = std::move(rich_record);
                 return;
             }
-            else if (GetElements()[index].Offset < rich_record.Offset)
+            else if(GetElements()[index].Offset < rich_record.Offset)
             {
                 // We found a richer record. Recursively call this robin hood function to again
                 // steal from the rich
@@ -364,16 +360,16 @@ namespace sj
 
             currIndex = nextIndex;
         } while(currIndex != erasedIndex);
-
     }
 
     template <class T, class IMPL, class Hasher>
-    inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::begin() const
+    inline typename unordered_set_base<T, IMPL, Hasher>::iterator
+    unordered_set_base<T, IMPL, Hasher>::begin() const
     {
         // Return the first non-empty element
-        for (auto elementIt = GetElements().begin(); elementIt != GetElements().end(); elementIt++)
+        for(auto elementIt = GetElements().begin(); elementIt != GetElements().end(); elementIt++)
         {
-            if (!elementIt->IsEmpty())
+            if(!elementIt->IsEmpty())
             {
                 return iterator(this, &(*elementIt));
             }
@@ -383,7 +379,8 @@ namespace sj
     }
 
     template <class T, class IMPL, class Hasher>
-    inline typename unordered_set_base<T, IMPL, Hasher>::iterator unordered_set_base<T, IMPL, Hasher>::end() const
+    inline typename unordered_set_base<T, IMPL, Hasher>::iterator
+    unordered_set_base<T, IMPL, Hasher>::end() const
     {
         return iterator(this, std::to_address(GetElements().end()));
     }
@@ -408,23 +405,23 @@ namespace sj
     inline Element<T>::Element(offset_t offset, T& value) noexcept
     {
         Offset = offset;
-        new (std::addressof(Value)) T(value);
+        new(std::addressof(Value)) T(value);
     }
 
     template <class T>
     inline Element<T>::Element(offset_t offset, T&& value) noexcept
     {
         Offset = offset;
-        new (std::addressof(Value)) T(std::move(value));
+        new(std::addressof(Value)) T(std::move(value));
     }
 
     template <class T>
     inline Element<T>::Element(const Element& other)
     {
         Offset = other.Offset;
-        if (!IsEmpty())
+        if(!IsEmpty())
         {
-            new (std::addressof(Value)) T(other.Value);
+            new(std::addressof(Value)) T(other.Value);
         }
     }
 
@@ -432,45 +429,43 @@ namespace sj
     inline Element<T>::Element(Element&& other) noexcept
     {
         Offset = other.Offset;
-        if (!IsEmpty())
+        if(!IsEmpty())
         {
-            new (std::addressof(Value)) T(std::move(other.Value));
+            new(std::addressof(Value)) T(std::move(other.Value));
         }
 
         other.Offset = kEmptyOffset;
     }
 
     template <class T>
-    inline Element<T>&
-    Element<T>::operator=(const Element& other)
+    inline Element<T>& Element<T>::operator=(const Element& other)
     {
-        if (!IsEmpty())
+        if(!IsEmpty())
         {
             Value.~T();
         }
 
         Offset = other.Offset;
-        if (!other.IsEmpty())
+        if(!other.IsEmpty())
         {
-            new (std::addressof(Value)) T(other.Value);
+            new(std::addressof(Value)) T(other.Value);
         }
 
         return *this;
     }
 
     template <class T>
-    inline Element<T>&
-    Element<T>::operator=(Element&& other)
+    inline Element<T>& Element<T>::operator=(Element&& other) noexcept
     {
-        if (!IsEmpty())
+        if(!IsEmpty())
         {
             Value.~T();
         }
 
         Offset = other.Offset;
-        if (!other.IsEmpty())
+        if(!other.IsEmpty())
         {
-            new (std::addressof(Value)) T(std::move(other.Value));
+            new(std::addressof(Value)) T(std::move(other.Value));
         }
 
         other.Offset = kEmptyOffset;
@@ -501,7 +496,7 @@ namespace sj
 
     template <class Set_t>
     inline SetIterator_t<Set_t>::SetIterator_t(const Set_t* set, element_pointer element)
-        : m_set(set), m_currElement(element)
+        : m_currElement(element), m_set(set)
     {
     }
 
@@ -535,7 +530,7 @@ namespace sj
         do
         {
             m_currElement++;
-        } while (m_currElement->IsEmpty() && (*this != m_set->end() ));
+        } while(m_currElement->IsEmpty() && (*this != m_set->end()));
 
         return *this;
     }

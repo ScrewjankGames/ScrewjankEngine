@@ -1,10 +1,10 @@
 module;
 #include <ScrewjankShared/utils/Log.hpp>
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/MemUtils.hpp>
 
 export module sj.engine.system.memory.allocators:LinearAllocator;
 import :Allocator;
+import sj.engine.system.memory.utils;
 
 export namespace sj
 {
@@ -36,7 +36,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~LinearAllocator() = default;
+        ~LinearAllocator() final = default;
 
         /**
          * Marks all allocations for this allocator as invalid and frees the buffer for more
@@ -50,7 +50,7 @@ export namespace sj
         /**
          * @return whether the allocator is in a valid state
          */
-        bool is_initialized() const
+        [[nodiscard]] bool is_initialized() const
         {
             return m_BufferStart != nullptr;
         }
@@ -82,7 +82,8 @@ export namespace sj
             SJ_ASSERT(num_bytes_allocated <= free_space, "Linear Allocator is out of memory!");
 
             // Bump allocation pointer to the first free byte after the current allocation
-            m_CurrFrameStart = (void*)((uintptr_t)allocated_memory + size);
+            m_CurrFrameStart =
+                reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(allocated_memory) + size);
 
             return allocated_memory;
         }
@@ -92,19 +93,21 @@ export namespace sj
          * @note Linear Allocators don't support the free operation, expected to just call reset
          * eventually
          */
-        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        void do_deallocate([[maybe_unused]] void* memory,
+                           [[maybe_unused]] size_t bytes,
+                           [[maybe_unused]] size_t alignment) override
         {
             ;
         }
 
         /** Pointer to the start of the allocator's managed memory */
-        void* m_BufferStart;
+        void* m_BufferStart = nullptr;
 
         /** Pointer to the end of the allocator's managed memory */
-        void* m_BufferEnd;
+        void* m_BufferEnd = nullptr;
 
         /** Pointer to the first free byte in the linear allocator */
-        void* m_CurrFrameStart;
+        void* m_CurrFrameStart = nullptr;
     };
 
 } // namespace sj

@@ -1,10 +1,10 @@
 module;
 
 // Shared Includes
-#include <ScrewjankShared/Math/Mat44.hpp>
 #include <ScrewjankShared/string/StringHash.hpp>
 
 export module sj.shared.datadefs:TransformComponent;
+import sj.shared.math;
 
 export namespace sj
 {

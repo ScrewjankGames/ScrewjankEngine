@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <ScrewjankShared/Math/Helpers.hpp>
+import sj.shared.math;
 
 using namespace sj;
 

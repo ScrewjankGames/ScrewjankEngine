@@ -68,7 +68,7 @@ namespace sj
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor {};
-        scissor.offset = {0, 0};
+        scissor.offset = {.x=0, .y=0};
         scissor.extent = imageExtent;
 
         std::array<VkDynamicState, 2> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
@@ -230,7 +230,7 @@ namespace sj
         createInfo.codeSize = shaderBufferSize;
         createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
 
-        VkShaderModule shaderModule;
+        VkShaderModule shaderModule = {};
         VkResult res = vkCreateShaderModule(m_Device, &createInfo, sj::g_vkAllocationFns, &shaderModule);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");

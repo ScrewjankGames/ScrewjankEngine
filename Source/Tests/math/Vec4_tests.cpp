@@ -3,9 +3,7 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Engine Headers
-#include <ScrewjankShared/Math/Vec4.hpp>
-
+import sj.shared.math;
 
 using namespace sj;
 
@@ -24,13 +22,13 @@ namespace math_tests {
 
     TEST(Vec4Tests, CrossProductTest)
     {
-        Vec4 z = Vec4::UnitX.Cross(Vec4::UnitY); 
-        Vec4 y = Vec4::UnitZ.Cross(Vec4::UnitX);
-        Vec4 x = Vec4::UnitY.Cross(Vec4::UnitZ);
+        Vec4 z = Vec4_UnitX.Cross(Vec4_UnitY); 
+        Vec4 y = Vec4_UnitZ.Cross(Vec4_UnitX);
+        Vec4 x = Vec4_UnitY.Cross(Vec4_UnitZ);
 
-        ASSERT_EQ(Vec4::UnitZ, z);
-        ASSERT_EQ(Vec4::UnitY, y);
-        ASSERT_EQ(Vec4::UnitX, x);
+        ASSERT_EQ(Vec4_UnitZ, z);
+        ASSERT_EQ(Vec4_UnitY, y);
+        ASSERT_EQ(Vec4_UnitX, x);
     }
 
 } // namespace math_tests

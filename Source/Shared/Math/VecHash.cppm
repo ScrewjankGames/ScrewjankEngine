@@ -1,15 +1,13 @@
-#pragma once
+module;
 // Adapted from https://github.com/g-truc/glm/blob/master/glm/gtx/hash.inl
-
-// Screwjank Headers
-#include <ScrewjankShared/Math/Vec2.hpp>
-#include <ScrewjankShared/Math/Vec3.hpp>
-
-
 // STD Headers
 #include <functional>
 
-namespace sj
+export module sj.shared.math:VecHash;
+import :Vec2;
+import :Vec3;
+
+export namespace sj
 {
     inline void HashCombine(size_t& seed, size_t hash)
     {
@@ -18,7 +16,7 @@ namespace sj
     }
 }
 
-namespace std
+export namespace std
 {
     template <>
     struct hash<sj::Vec2>

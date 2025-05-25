@@ -12,8 +12,10 @@ export module sj.engine.system.memory;
 export import :Literals;
 export import :MemorySystem;
 export import sj.engine.system.memory.allocators;
+export import sj.engine.system.memory.utils;
 
 module :private;
+
 extern "C++" {
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)
 {

@@ -1,13 +1,14 @@
 module;
 
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/MemUtils.hpp>
 
 #include <cstddef>
 #include <cstdint>
 
 export module sj.engine.system.memory.allocators:StackAllocator;
 import :Allocator;
+import sj.engine.system.memory.utils;
+
 
 export namespace sj
 {
@@ -43,7 +44,8 @@ export namespace sj
          */
         void pop_alloc()
         {
-            void* currFrameAddr = reinterpret_cast<void*>((uintptr_t)m_CurrentHeader + sizeof(StackAllocatorHeader));
+            void* currFrameAddr = reinterpret_cast<void*>(
+                (reinterpret_cast<uintptr_t>(m_CurrentHeader) + sizeof(StackAllocatorHeader)));
             deallocate(currFrameAddr, 0, 0);
             return;
         }
@@ -81,9 +83,10 @@ export namespace sj
             // Calculate padding needed to align header and payload
             size_t alignment_requirement = std::max(alignment, alignof(StackAllocatorHeader));
 
+            const uintptr_t currOffset = uintptr_t(m_Offset);
             // Get the padding required to align the header and payload in memory
             void* fist_possible_payload_address =
-                (void*)((uintptr_t)m_Offset + sizeof(StackAllocatorHeader));
+                reinterpret_cast<void*>(currOffset + sizeof(StackAllocatorHeader));
 
             size_t required_padding =
                 GetAlignmentAdjustment(alignment_requirement, fist_possible_payload_address);
@@ -91,7 +94,7 @@ export namespace sj
             size_t total_allocation_size = required_padding + sizeof(StackAllocatorHeader) + size;
 
             // Ensure the allocator has enough memory to satisfy the allocation
-            auto free_space = m_Capacity - (uintptr_t(m_Offset) - uintptr_t(m_BufferStart));
+            auto free_space = m_Capacity - (currOffset - uintptr_t(m_BufferStart));
             if(free_space < total_allocation_size)
             {
                 SJ_ENGINE_LOG_ERROR(
@@ -100,7 +103,7 @@ export namespace sj
             }
 
             // Allocate the header
-            void* header_memory = (void*)((uintptr_t)m_Offset + required_padding);
+            void* header_memory = reinterpret_cast<void*>(currOffset + required_padding);
 
             SJ_ASSERT(IsMemoryAligned(header_memory, alignof(StackAllocatorHeader)),
                       "Attempting to place allocation header at unaligned address!");
@@ -108,13 +111,14 @@ export namespace sj
             auto old_header = m_CurrentHeader;
 
             m_CurrentHeader =
-                new((void*)header_memory) StackAllocatorHeader {old_header, required_padding};
+                new(header_memory) StackAllocatorHeader {.PreviousHeader = old_header,
+                                                         .HeaderOffset = required_padding};
 
             // Update m_offset
-            m_Offset = (void*)(uintptr_t(m_Offset) + total_allocation_size);
+            m_Offset = reinterpret_cast<void*>(currOffset + total_allocation_size);
 
             // Return pointer to the start of the allocation
-            return (void*)((uintptr_t)header_memory + sizeof(StackAllocatorHeader));
+            return reinterpret_cast<void*>(uintptr_t(header_memory) + sizeof(StackAllocatorHeader));
         }
 
         /**
@@ -123,23 +127,27 @@ export namespace sj
          * @note memory must point to the head of the most recent allocation, or nullptr to pop off
          * the stack
          */
-        void do_deallocate(void* memory, size_t bytes, size_t alignment) override
+        void do_deallocate(void* memory,
+                           [[maybe_unused]] size_t bytes,
+                           [[maybe_unused]] size_t alignment) override
         {
             SJ_ASSERT(m_CurrentHeader != nullptr, "You cannot free from an empty stack allocator");
+
+            const uintptr_t headerLoc = reinterpret_cast<uintptr_t>(m_CurrentHeader);
 
             // The memory argument is ignored unless it is a specific value
             if(memory != nullptr)
             {
-                SJ_ASSERT((uintptr_t)memory ==
-                              (uintptr_t)m_CurrentHeader + sizeof(StackAllocatorHeader),
+                SJ_ASSERT(reinterpret_cast<uintptr_t>(memory) ==
+                              headerLoc + sizeof(StackAllocatorHeader),
                           "Stack allocator cannot free memory that is not on top of the stack.");
             }
 
             // Get beginning of "top" allocation frame
-            auto current_frame_start = (uintptr_t)m_CurrentHeader - m_CurrentHeader->HeaderOffset;
+            auto current_frame_start = headerLoc - m_CurrentHeader->HeaderOffset;
 
             // Roll free memory pointer back to start of current frame
-            m_Offset = (void*)current_frame_start;
+            m_Offset = reinterpret_cast<void*>(current_frame_start);
 
             // Roll header back to previous header
             m_CurrentHeader = m_CurrentHeader->PreviousHeader;

@@ -6,19 +6,17 @@
 
 // Shared Includes
 #include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/Math/Vec2.hpp>
-#include <ScrewjankShared/Math/Helpers.hpp>
-
-// STD Includes
-#include <cmath>
-#include <span>
 
 import sj.shared.datadefs;
+import sj.shared.math;
+import sj.engine.framework;
 
 namespace sj
 {
-    void CameraSystem::Process(Scene* scene, float deltaTime)
+    void CameraSystem::Process(Scene* scene, float _)
     {
+        (void)scene;
+
         // std::span<CameraComponent> components = scene->GetCameraComponents();
         // SJ_ASSERT(components.size() > 0, "Scene has no camera component");
 

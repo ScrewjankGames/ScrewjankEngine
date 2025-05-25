@@ -4,6 +4,7 @@
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/io/File.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 
 // Library Includes
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,18 +18,20 @@ namespace sj::build
 
 bool TextureBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const
 {
-    int texWidth, texHeight, texChannels;
+    int texWidth = 0;
+    int texHeight = 0;
+    int texChannels = 0;
     stbi_uc* pixels = stbi_load(item.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-    size_t imageBytes = texWidth * texHeight * 4; // 4 bytes per pixel with STBI_rgb_alpha
-
-    TextureHeader texture {AssetType::kTexture, texWidth, texHeight};
+    int64_t imageBytes = texWidth * texHeight * 4; // 4 bytes per pixel with STBI_rgb_alpha
+    SJ_ASSERT(imageBytes > 0, "invalid image size");
+    TextureHeader texture {.type=AssetType::kTexture, .width=texWidth, .height=texHeight};
 
     File outputFile;
     outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
 
     outputFile.WriteStruct(texture);
-    outputFile.Write(pixels, imageBytes);
+    outputFile.Write(pixels, static_cast<size_t>(imageBytes));
     outputFile.Close();
 
     stbi_image_free(pixels);

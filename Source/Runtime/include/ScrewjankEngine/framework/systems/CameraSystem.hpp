@@ -1,10 +1,7 @@
 #pragma once
 
-// Shared Includes
-#include <ScrewjankShared/Math/Mat44.hpp>
-#include <ScrewjankShared/Math/Vec3.hpp>
-
 import sj.engine.framework;
+import sj.shared.math;
 
 namespace sj
 {

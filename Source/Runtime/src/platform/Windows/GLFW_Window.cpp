@@ -1,25 +1,30 @@
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
-// Library Headers
-#include <GLFW/glfw3.h>
-#include <imgui_impl_glfw.h>
+    // Library Headers
+    #include <GLFW/glfw3.h>
+    #include <imgui_impl_glfw.h>
 
-// Engine Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+    // Engine Headers
+    #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+    #include <ScrewjankEngine/rendering/Renderer.hpp>
+    #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
+    #include <ScrewjankShared/utils/Log.hpp>
+    #include <ScrewjankShared/utils/Assert.hpp>
 
-namespace sj {
+namespace sj
+{
     Window* Window::GetInstance()
     {
         static Window window;
         return &window;
     }
 
-    static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    static void KeyCallback([[maybe_unused]] GLFWwindow* window,
+                            [[maybe_unused]] int key,
+                            [[maybe_unused]] int scancode,
+                            [[maybe_unused]] int action,
+                            [[maybe_unused]] int mods)
     {
         const char* actionStr = (action == GLFW_PRESS)     ? "Pressed"
                                 : (action == GLFW_RELEASE) ? "Released"
@@ -67,31 +72,32 @@ namespace sj {
         int height;
 
         glfwGetFramebufferSize(m_NativeWindow, &width, &height);
-        
+
         Viewport size = {(uint32_t)width, (uint32_t)height};
         return size;
     }
 
-#ifdef SJ_VULKAN_SUPPORT
+    #ifdef SJ_VULKAN_SUPPORT
     std::span<const char*> Window::GetRequiredVulkanExtenstions() const
     {
         uint32_t extension_count = 0;
         const char** extensions;
-        
+
         MemoryResourceScope _(Renderer::WorkBuffer());
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-        return std::span{extensions, extension_count};
+        return std::span {extensions, extension_count};
     }
 
     VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance) const
     {
         VkSurfaceKHR surface;
-        VkResult success = glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
+        VkResult success =
+            glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
         SJ_ASSERT(success == VK_SUCCESS, "Failed to create vulkan window surface");
 
         return surface;
     }
-#endif
+    #endif
 } // namespace sj
 #endif
