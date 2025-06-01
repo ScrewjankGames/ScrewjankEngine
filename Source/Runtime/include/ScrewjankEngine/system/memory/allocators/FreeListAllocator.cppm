@@ -1,6 +1,6 @@
 module;
 
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 #include <algorithm>
 #include <utility>

@@ -1,4 +1,4 @@
-export module sj.shared.containers;
+export module sj.std.containers;
 export import :any;
 export import :array;
 export import :vector;

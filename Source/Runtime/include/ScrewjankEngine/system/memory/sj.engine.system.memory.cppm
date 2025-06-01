@@ -6,7 +6,7 @@ module;
 #include <new>
 #include <memory_resource>
 
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.system.memory;
 export import :Literals;

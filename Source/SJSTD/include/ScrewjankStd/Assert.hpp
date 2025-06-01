@@ -1,7 +1,7 @@
 #pragma once
 // Screwjank Headers
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 #if defined(SJ_PLATFORM_LINUX) && !defined(SJ_GOLD)
     #include <signal.h>

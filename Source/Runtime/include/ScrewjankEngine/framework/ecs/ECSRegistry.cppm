@@ -1,12 +1,12 @@
 module;
 #include <memory_resource>
 #include <ScrewjankShared/string/StringHash.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.framework.ecs:ECSRegistry;
 import :Identifiers;
 
-import sj.shared.containers;
+import sj.std.containers;
 import sj.shared.datadefs;
 
 export namespace sj

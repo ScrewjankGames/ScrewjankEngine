@@ -4,7 +4,7 @@ module;
 #include <numbers>
 #include <array>
 
-export module sj.shared.math:Mat44;
+export module sj.std.math:Mat44;
 import :Vec3;
 import :Vec4;
 import :Tags;

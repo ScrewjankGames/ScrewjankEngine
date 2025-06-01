@@ -2,11 +2,11 @@ module;
 #include <memory_resource>
 #include <utility>
 #include <span>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 #include <tuple>
 
 // End global module fragment
-export module sj.shared.containers:sparse_set;
+export module sj.std.containers:sparse_set;
 import :array;
 import :vector;
 

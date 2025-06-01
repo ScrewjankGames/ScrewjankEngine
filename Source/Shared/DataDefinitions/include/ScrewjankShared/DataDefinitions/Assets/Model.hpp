@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <functional>
 
-import sj.shared.math;
+import sj.std.math;
 
 namespace sj
 {

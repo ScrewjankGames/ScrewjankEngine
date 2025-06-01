@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 #include <memory_resource>
 
 import sj.engine.system.memory;

@@ -48,9 +48,8 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         ${Vulkan_LIBRARIES}
     PUBLIC
-        ScrewjankMath
+        ScrewjankStd
         ScrewjankSharedCore
-        ScrewjankSharedContainers
         ScrewjankDataDefs
         imgui
         glaze::glaze

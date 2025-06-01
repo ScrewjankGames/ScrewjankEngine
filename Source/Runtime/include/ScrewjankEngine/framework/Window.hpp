@@ -6,7 +6,7 @@
 // Library Headers
 
 // Screwjank Headers
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 
 namespace sj
 {

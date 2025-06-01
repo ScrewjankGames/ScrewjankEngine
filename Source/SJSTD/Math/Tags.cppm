@@ -1,4 +1,4 @@
-export module sj.shared.math:Tags;
+export module sj.std.math:Tags;
 
 export namespace sj
 {

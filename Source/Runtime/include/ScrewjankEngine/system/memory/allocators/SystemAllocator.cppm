@@ -1,7 +1,7 @@
 module;
 
-#include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankStd/Log.hpp>
 #include <memory_resource>
 
 export module sj.engine.system.memory.allocators:SystemAllocator;

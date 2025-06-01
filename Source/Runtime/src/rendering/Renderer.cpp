@@ -4,8 +4,8 @@
 // Screwjank Headers
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 // Shared Headers
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
@@ -25,8 +25,8 @@
 #include <array>
 
 import sj.engine.system.memory;
-import sj.shared.containers;
-import sj.shared.math;
+import sj.std.containers;
+import sj.std.math;
 
 namespace sj
 {

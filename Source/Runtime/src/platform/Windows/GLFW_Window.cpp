@@ -1,4 +1,4 @@
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
     // Library Headers
@@ -9,8 +9,8 @@
     #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
     #include <ScrewjankEngine/rendering/Renderer.hpp>
     #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
-    #include <ScrewjankShared/utils/Log.hpp>
-    #include <ScrewjankShared/utils/Assert.hpp>
+    #include <ScrewjankStd/Log.hpp>
+    #include <ScrewjankStd/Assert.hpp>
 
 namespace sj
 {

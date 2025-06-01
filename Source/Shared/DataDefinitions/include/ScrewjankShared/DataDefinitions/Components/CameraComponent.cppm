@@ -4,7 +4,7 @@ module;
 #include <ScrewjankShared/string/StringHash.hpp>
 
 export module sj.shared.datadefs:CameraComponent;
-import sj.shared.math;
+import sj.std.math;
 
 export namespace sj
 {

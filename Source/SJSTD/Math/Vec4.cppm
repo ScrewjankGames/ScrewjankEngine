@@ -3,7 +3,7 @@ module;
 #include <cmath>
 #include <array>
 
-export module sj.shared.math:Vec4;
+export module sj.std.math:Vec4;
 import :Vec2;
 import :Vec3;
 

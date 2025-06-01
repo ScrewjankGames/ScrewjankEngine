@@ -4,7 +4,7 @@ module;
 #include <functional>
 
 export module sj.engine.framework.ecs:Identifiers;
-import sj.shared.containers;
+import sj.std.containers;
 
 export namespace sj
 {

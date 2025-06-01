@@ -11,7 +11,7 @@
 
 // Shared Headers
 #include <ScrewjankShared/io/File.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 import sj.engine.system.memory;
 

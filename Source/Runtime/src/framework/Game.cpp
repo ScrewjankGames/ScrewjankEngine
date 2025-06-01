@@ -10,7 +10,7 @@
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 // Dependencies
 #include <imgui.h>

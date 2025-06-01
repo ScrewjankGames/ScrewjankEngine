@@ -2,7 +2,7 @@
 #include "ModelBuilder.hpp"
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // Library Includes
 #include <tiny_obj_loader.h>

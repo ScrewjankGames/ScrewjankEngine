@@ -3,7 +3,7 @@ module;
 #include <utility>
 #include <cstddef>
 
-export module sj.shared.containers:type_list;
+export module sj.std.containers:type_list;
 
 export namespace sj
 {

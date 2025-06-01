@@ -4,9 +4,9 @@ module;
 #include <concepts>
 
 // Screwjank Headers
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
-export module sj.shared.containers:unmanaged_list;
+export module sj.std.containers:unmanaged_list;
 
 export namespace sj
 {

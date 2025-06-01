@@ -2,7 +2,7 @@ module;
 
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // Library Includes
 #include <glaze/beve/read.hpp>
@@ -10,7 +10,7 @@ module;
 export module sj.engine.framework:Scene;
 import sj.engine.framework.ecs;
 import sj.engine.system.memory;
-import sj.shared.containers;
+import sj.std.containers;
 import sj.shared.datadefs;
 
 export namespace sj

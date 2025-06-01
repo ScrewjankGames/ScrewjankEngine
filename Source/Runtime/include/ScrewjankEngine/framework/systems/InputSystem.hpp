@@ -2,7 +2,7 @@
 
 // Shared Includes
 
-import sj.shared.math;
+import sj.std.math;
 
 namespace sj
 {

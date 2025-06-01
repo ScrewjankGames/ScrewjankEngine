@@ -2,7 +2,7 @@ module;
 #include <cmath>
 #include <array>
 
-export module sj.shared.math:Vec2;
+export module sj.std.math:Vec2;
 
 export namespace sj
 {

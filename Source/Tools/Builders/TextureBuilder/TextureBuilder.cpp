@@ -4,7 +4,7 @@
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/io/File.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // Library Includes
 #define STB_IMAGE_IMPLEMENTATION

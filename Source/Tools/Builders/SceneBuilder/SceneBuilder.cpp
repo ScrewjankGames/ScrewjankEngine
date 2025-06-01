@@ -6,7 +6,7 @@
 
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 #include "ScrewjankShared/string/StringHash.hpp"
 #include "ScrewjankShared/utils/Log.hpp"
 
@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-import sj.shared.containers;
+import sj.std.containers;
 import sj.shared.datadefs;
-import sj.shared.math;
+import sj.std.math;
 
 struct ComponentSchema
 {

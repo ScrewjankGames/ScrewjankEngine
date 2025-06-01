@@ -1,5 +1,5 @@
 #pragma once
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
@@ -14,7 +14,7 @@
 // STD Headers
 #include<span>
 
-import sj.shared.containers;
+import sj.std.containers;
 
 struct GLFWwindow;
 

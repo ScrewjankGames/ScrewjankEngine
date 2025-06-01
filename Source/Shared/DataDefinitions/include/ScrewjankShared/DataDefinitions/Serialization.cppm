@@ -7,7 +7,7 @@ module;
 #include <glaze/glaze.hpp>
 
 export module sj.shared.datadefs:Serialization;
-import sj.shared.math;
+import sj.std.math;
 
 export namespace glz
 {

@@ -1,13 +1,13 @@
 module;
 // Shared Includes
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // STD Includes
 #include <cstddef>
 #include <iterator>
 #include <memory>
 
-export module sj.shared.containers:array;
+export module sj.std.containers:array;
 
 export namespace sj
 {

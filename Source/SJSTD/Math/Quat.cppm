@@ -2,7 +2,7 @@ module;
 
 #include <array>
 
-export module sj.shared.math:Quat;
+export module sj.std.math:Quat;
 import :Vec4;
 import :Tags;
 

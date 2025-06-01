@@ -4,7 +4,7 @@ module;
 #include <flat_set>
 #include <functional>
 
-export module sj.shared.containers:set;
+export module sj.std.containers:set;
 import :vector;
 
 export namespace sj

@@ -2,7 +2,7 @@ module;
 
 #include <stack>
 
-export module sj.shared.containers:stack;
+export module sj.std.containers:stack;
 import :vector;
 
 export namespace sj

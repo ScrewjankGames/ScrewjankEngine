@@ -13,8 +13,8 @@
 #include <span>
 
 import sj.engine.system;
-import sj.shared.containers;
-import sj.shared.math;
+import sj.std.containers;
+import sj.std.math;
 
 namespace sj {
     // Forward declarations

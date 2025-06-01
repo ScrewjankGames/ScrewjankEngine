@@ -2,7 +2,7 @@
 #include <ScrewjankShared/io/File.hpp>
 
 // Screwjank Headers
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // STD Headers
 #include <cstdio>

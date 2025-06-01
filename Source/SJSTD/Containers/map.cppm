@@ -2,7 +2,7 @@ module;
 
 #include <flat_map>
 
-export module sj.shared.containers:map;
+export module sj.std.containers:map;
 import :vector;
 
 export namespace sj 

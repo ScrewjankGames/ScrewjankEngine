@@ -3,8 +3,8 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Screwjank Headers
-#include <ScrewjankShared/utils/Log.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 //STD Includes
 #include <array>

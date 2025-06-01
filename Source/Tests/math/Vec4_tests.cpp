@@ -3,7 +3,7 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-import sj.shared.math;
+import sj.std.math;
 
 using namespace sj;
 

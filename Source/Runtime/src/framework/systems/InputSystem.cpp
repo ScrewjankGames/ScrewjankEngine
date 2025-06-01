@@ -2,8 +2,8 @@
 #include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 
 // Engine Includes
-#include <ScrewjankShared/utils/Log.hpp>
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/Log.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 
 // Library Includes
 #include <GLFW/glfw3.h>
@@ -16,7 +16,7 @@
 #include <cmath>
 #include <algorithm>
 
-import sj.shared.math;
+import sj.std.math;
 
 namespace sj
 {

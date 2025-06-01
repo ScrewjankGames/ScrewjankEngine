@@ -1,6 +1,6 @@
 module;
-#include <ScrewjankShared/utils/Log.hpp>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.system.memory.allocators:LinearAllocator;
 import :Allocator;

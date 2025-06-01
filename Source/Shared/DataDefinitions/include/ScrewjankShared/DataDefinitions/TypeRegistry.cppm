@@ -1,7 +1,7 @@
 module;
 
 // SJ Headers
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankShared/string/StringHash.hpp>
 
 // Library Headers
@@ -21,7 +21,7 @@ module;
 
 export module sj.shared.datadefs:TypeRegistry;
 import game.datadefs;
-import sj.shared.containers;
+import sj.std.containers;
 import :CameraComponent;
 import :TransformComponent;
 import :Serialization;

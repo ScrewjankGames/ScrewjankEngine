@@ -1,4 +1,4 @@
-export module sj.shared.math:Vec3;
+export module sj.std.math:Vec3;
 
 export namespace sj
 {

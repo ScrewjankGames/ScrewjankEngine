@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Void Engine Headers
-import sj.shared.math;
+import sj.std.math;
 
 using namespace sj;
 

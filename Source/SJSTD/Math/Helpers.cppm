@@ -2,7 +2,7 @@ module;
 #include <numbers>
 #include <cmath>
 
-export module sj.shared.math:Helpers;
+export module sj.std.math:Helpers;
 import :Vec4;
 import :Mat44;
 import :Quat;

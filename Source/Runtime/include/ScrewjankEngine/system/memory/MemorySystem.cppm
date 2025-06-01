@@ -1,6 +1,6 @@
 module;
 
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 #include <cstdint>
 #include <memory_resource>
@@ -10,7 +10,7 @@ import :Literals;
 
 import sj.engine.system.memory.allocators;
 import sj.engine.system.memory.utils;
-import sj.shared.containers;
+import sj.std.containers;
 
 export namespace sj
 {

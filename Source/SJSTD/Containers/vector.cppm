@@ -9,10 +9,10 @@ module;
 #include <cmath>
 #include <memory_resource>
 #include <ranges>
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // End global module fragment
-export module sj.shared.containers:vector;
+export module sj.std.containers:vector;
 
 export namespace sj
 {

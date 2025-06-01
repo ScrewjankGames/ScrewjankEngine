@@ -1,6 +1,6 @@
 module;
 
-export module sj.shared.math;
+export module sj.std.math;
 export import :Vec2;
 export import :Vec3;
 export import :Vec4;

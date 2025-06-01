@@ -1,7 +1,7 @@
 #pragma once
 
 import sj.engine.framework;
-import sj.shared.math;
+import sj.std.math;
 
 namespace sj
 {

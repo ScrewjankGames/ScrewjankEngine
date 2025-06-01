@@ -6,11 +6,11 @@
 // Engine Headers
 #include <ScrewjankEngine/framework/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/framework/systems/InputSystem.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 import sj.engine.framework;
 import sj.engine.system.memory;
-import sj.shared.containers;
+import sj.std.containers;
 
 namespace sj {
     // Forward declarations

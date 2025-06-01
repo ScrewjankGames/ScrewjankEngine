@@ -1,35 +1,37 @@
-################################################################################
-# Define project: Math Library
-################################################################################
-project(ScrewjankMath)
+cmake_minimum_required(VERSION 3.28)
 
-file(GLOB_RECURSE MATH_SOURCE CONFIGURE_DEPENDS "*.cpp")
-file(GLOB_RECURSE MATH_MODULES CONFIGURE_DEPENDS "*.cppm")
+################################################################################
+# Define project: Containers Library
+################################################################################
+project(ScrewjankStd CXX)
+file(GLOB_RECURSE SJ_STD_MODULES CONFIGURE_DEPENDS "*.cppm")
+file(GLOB_RECURSE SJ_STD_HEADERS CONFIGURE_DEPENDS "*.hpp")
 
-add_library(${PROJECT_NAME} ${MATH_SOURCE})
+add_library(${PROJECT_NAME} ${SJ_STD_HEADERS})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${CONFIGURE_DEPENDS})
+
 target_sources(${PROJECT_NAME}
-    PUBLIC
-      FILE_SET CXX_MODULES FILES
-        ${MATH_MODULES}
+  PUBLIC
+    FILE_SET CXX_MODULES FILES
+      ${SJ_STD_MODULES}
 )
-
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MATH_HEADERS})
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MATH_INLINES})
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MATH_SOURCE})
 
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 
-        FOLDER Shared/
+        FOLDER SJSTD/
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Shared/"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Shared/"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Shared/"
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/SJSTD/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/SJSTD/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/SJSTD/"
 )
-
 ################################################################################
 # Link dependencies
 ################################################################################
+target_link_libraries(${PROJECT_NAME} 
+    PUBLIC
+        spdlog::spdlog
+)
 
 ################################################################################
 # Configure include directories

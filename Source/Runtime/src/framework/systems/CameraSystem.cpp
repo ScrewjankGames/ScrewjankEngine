@@ -5,10 +5,10 @@
 #include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 
 // Shared Includes
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 import sj.shared.datadefs;
-import sj.shared.math;
+import sj.std.math;
 import sj.engine.framework;
 
 namespace sj

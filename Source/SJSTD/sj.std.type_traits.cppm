@@ -1,7 +1,7 @@
 module;
 #include <type_traits>
 
-export module sj.shared.core:TypeTraits;
+export module sj.std.type_traits;
 
 export namespace sj 
 {

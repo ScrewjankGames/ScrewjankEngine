@@ -1,12 +1,12 @@
 module;
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 #include <type_traits>
-export module sj.shared.containers:any;
-import sj.shared.core;
+export module sj.std.containers:any;
+import sj.std.type_traits;
 
 export namespace sj {
     template<size_t tSize, size_t tAlign>

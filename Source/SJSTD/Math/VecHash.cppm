@@ -3,7 +3,7 @@ module;
 // STD Headers
 #include <functional>
 
-export module sj.shared.math:VecHash;
+export module sj.std.math:VecHash;
 import :Vec2;
 import :Vec3;
 

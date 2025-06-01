@@ -7,12 +7,12 @@
 #include <vulkan/vulkan_core.h>
 
 // Screwjank Headers
-#include <ScrewjankShared/utils/Assert.hpp>
+#include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankShared/utils/PlatformDetection.hpp>
+#include <ScrewjankStd/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
-import sj.shared.containers;
+import sj.std.containers;
 import sj.engine.system.memory;
 
 namespace sj {

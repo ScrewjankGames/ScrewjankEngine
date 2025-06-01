@@ -1,11 +1,11 @@
 module;
-#include <ScrewjankShared/utils/Assert.hpp>
-#include <ScrewjankShared/utils/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 export module sj.engine.system.memory.allocators:PoolAllocator;
 import :Allocator;
 import sj.engine.system.memory.utils;
-import sj.shared.containers;
+import sj.std.containers;
 
 export namespace sj
 {
