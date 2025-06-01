@@ -4,8 +4,8 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
-#include <ScrewjankEngine/containers/UnmanagedList.hpp>
+// SJ Headers
+import sj.shared.containers;
 
 using namespace sj;
 
@@ -13,12 +13,12 @@ namespace container_tests
 {
     struct FwdListDummy
     {
-        FwdListDummy* GetNext()
+        FwdListDummy* get_next()
         {
             return next;
         }
 
-        void SetNext(FwdListDummy* nextNode)
+        void set_next(FwdListDummy* nextNode)
         {
             this->next = nextNode;
         }
@@ -29,22 +29,22 @@ namespace container_tests
 
     struct BiDiDummy
     {
-        BiDiDummy* GetNext()
+        BiDiDummy* get_next()
         {
             return next;
         }
 
-        void SetNext(BiDiDummy* nextNode)
+        void set_next(BiDiDummy* nextNode)
         {
             this->next = nextNode;
         }
 
-        BiDiDummy* GetPrev()
+        BiDiDummy* get_prev()
         {
             return prev;
         }
 
-        void SetPrev(BiDiDummy* newPrev)
+        void set_prev(BiDiDummy* newPrev)
         {
             prev = newPrev;
         }

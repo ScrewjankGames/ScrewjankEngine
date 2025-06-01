@@ -95,7 +95,7 @@ export namespace sj
             // Fill gaps in dense arrays
             std::apply(
                 [releasedDenseIndex](auto&&... containers) {
-                    (containers.erase(containers.begin() + releasedDenseIndex), ...);
+                    (containers.erase_unordered(containers.begin() + releasedDenseIndex), ...);
                 }, 
                 m_denseElements
             );
@@ -204,9 +204,8 @@ export namespace sj
         IndexType m_freeListHeadIndex;
         dynamic_array<InternalIdType, IndexType, AllocatorType<InternalIdType>> m_sparse;
 
-        static constexpr VectorOptions kDenseContainerOptions = {.preserveRelativeOrderings = false};
         template<class T>
-        using DenseContainer = dynamic_vector<T, kDenseContainerOptions, AllocatorType<T>>;
+        using DenseContainer = dynamic_vector<T, {}, AllocatorType<T>>;
 
         std::tuple<
             DenseContainer<IdType>,

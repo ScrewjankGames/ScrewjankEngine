@@ -49,11 +49,10 @@ export namespace sj
          */
         FreeListAllocator(FreeListAllocator&& other) noexcept
             : m_FreeBlocks(other.m_FreeBlocks), m_BufferStart(other.m_BufferStart),
-              m_BufferEnd(other.m_BufferEnd), m_AllocatorStats(other.m_AllocatorStats)
+              m_BufferEnd(other.m_BufferEnd)
         {
             other.m_FreeBlocks = nullptr;
             other.m_BufferStart = nullptr;
-            other.m_AllocatorStats = {};
         }
 
         /**
@@ -161,11 +160,6 @@ export namespace sj
                 AddFreeBlock(new_block);
             }
 
-            m_AllocatorStats.TotalAllocationCount++;
-            m_AllocatorStats.TotalBytesAllocated += header->Size;
-            m_AllocatorStats.ActiveAllocationCount++;
-            m_AllocatorStats.ActiveBytesAllocated += header->Size;
-
             return payload_address;
         }
 
@@ -192,9 +186,6 @@ export namespace sj
 
             SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)),
                       "Free block is mis-aligned");
-
-            m_AllocatorStats.ActiveAllocationCount--;
-            m_AllocatorStats.ActiveBytesAllocated -= block_header->Size;
 
             FreeBlock* new_block = new(block_start) FreeBlock(block_size);
 
@@ -429,8 +420,5 @@ export namespace sj
 
         /** Pointer to the end of the allocator's memory block */
         void* m_BufferEnd;
-
-        /** Structure used to track and report the state of this allocator */
-        AllocatorStatus m_AllocatorStats;
     };
 } // namespace sj

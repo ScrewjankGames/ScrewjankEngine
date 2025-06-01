@@ -1,5 +1,6 @@
 module;
 #include <cmath>
+#include <array>
 
 export module sj.shared.math:Vec2;
 
@@ -14,11 +15,6 @@ export namespace sj
         {
         }
 
-        constexpr auto&& operator[](this auto&& self, int idx) // -> float& or const float&
-        {
-            return self.m_elements[idx];
-        }
-
         [[nodiscard]] constexpr float GetX() const
         {
             return m_elements[0];
@@ -27,6 +23,18 @@ export namespace sj
         [[nodiscard]] constexpr float GetY() const
         {
             return m_elements[1];
+        }
+
+        constexpr Vec2& SetX(float x) 
+        {
+            m_elements[0] = x;
+            return *this;
+        }
+
+        constexpr Vec2& SetY(float y) 
+        {
+            m_elements[1] = y;
+            return *this;
         }
 
         [[nodiscard]] constexpr Vec2 operator*(float s) const
@@ -45,7 +53,7 @@ export namespace sj
         }
 
     private:
-        float m_elements[2];
+        std::array<float, 2> m_elements;
     };
 
     inline constexpr Vec2 Vec2_Zero = Vec2(0.0f, 0.0f);

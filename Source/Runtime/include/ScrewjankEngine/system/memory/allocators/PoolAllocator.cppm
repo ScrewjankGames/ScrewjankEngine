@@ -1,12 +1,11 @@
 module;
-#include <ScrewjankEngine/containers/UnmanagedList.hpp>
-
 #include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankShared/utils/Log.hpp>
 
 export module sj.engine.system.memory.allocators:PoolAllocator;
 import :Allocator;
 import sj.engine.system.memory.utils;
+import sj.shared.containers;
 
 export namespace sj
 {
@@ -87,11 +86,12 @@ export namespace sj
         {
             FreeBlock* Next = nullptr;
 
-            FreeBlock* GetNext()
+            FreeBlock* get_next()
             {
                 return Next;
             }
-            void SetNext(FreeBlock* next)
+            
+            void set_next(FreeBlock* next)
             {
                 Next = next;
             }
@@ -122,11 +122,6 @@ export namespace sj
             // Remove the free block from the free list
             m_FreeList.pop_front();
 
-            m_AllocatorStats.TotalAllocationCount++;
-            m_AllocatorStats.TotalBytesAllocated += kBlockSize;
-            m_AllocatorStats.ActiveAllocationCount++;
-            m_AllocatorStats.ActiveBytesAllocated += kBlockSize;
-
             return reinterpret_cast<void*>(free_block);
         }
 
@@ -141,9 +136,6 @@ export namespace sj
 
             // Place a free-list node into the block and push to head of list
             m_FreeList.push_front(new(memory) FreeBlock());
-
-            m_AllocatorStats.ActiveAllocationCount--;
-            m_AllocatorStats.ActiveBytesAllocated -= kBlockSize;
         }
 
         /** The beginning of this allocator's data buffer */
@@ -157,9 +149,6 @@ export namespace sj
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks = 0;
-
-        /** Structure used to track and report the state of this allocator */
-        AllocatorStatus m_AllocatorStats;
     };
 
     template <class T>

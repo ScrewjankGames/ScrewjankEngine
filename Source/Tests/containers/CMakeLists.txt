@@ -19,7 +19,6 @@ set_target_properties(ContainerTestSuite
 target_link_libraries(ContainerTestSuite
 	PRIVATE  
 		gtest
-		ScrewjankEngine
 		ScrewjankSharedCore
 		ScrewjankSharedContainers
 )

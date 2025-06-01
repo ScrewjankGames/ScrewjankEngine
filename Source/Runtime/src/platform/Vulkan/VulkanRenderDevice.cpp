@@ -4,15 +4,16 @@
 // STD Headers
 
 // Library Headers
+#include <vulkan/vulkan_core.h>
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/UnorderedSet.hpp>
+#include <ScrewjankShared/utils/Assert.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankShared/utils/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <vulkan/vulkan_core.h>
 
 import sj.shared.containers;
+import sj.engine.system.memory;
 
 namespace sj {
     
@@ -67,7 +68,7 @@ namespace sj {
         bool indicies_complete =
             indices.graphicsFamilyIndex.has_value() && indices.presentationFamilyIndex.has_value();
 
-        static_unordered_set<std::string_view, kRequiredDeviceExtensions.size()> missing_extensions(
+        static_set<std::string_view, kRequiredDeviceExtensions.size()> missing_extensions(
             kRequiredDeviceExtensions.begin(),
             kRequiredDeviceExtensions.end()
         );
@@ -99,7 +100,7 @@ namespace sj {
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
         
-        return indicies_complete && missing_extensions.count() == 0 && swap_chain_supported &&
+        return indicies_complete && missing_extensions.size() == 0 && swap_chain_supported &&
                supportedFeatures.samplerAnisotropy;
     }
 
@@ -171,7 +172,7 @@ namespace sj {
             GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
 
         constexpr int kMaxUniqueQueues = 2;
-        static_unordered_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
+        static_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
         unique_queue_families = 
         {
             indices.graphicsFamilyIndex.value(),

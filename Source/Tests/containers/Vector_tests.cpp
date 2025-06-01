@@ -107,9 +107,6 @@ namespace container_tests
     TEST(StaticVectorTests, EmplaceTests)
     {
         static_vector<int, 4> testVec = {0, 2, 3};
-        static_vector<int, 4, VectorOptions {.preserveRelativeOrderings = false}> testVec2 = {0,
-                                                                                              2,
-                                                                                              3};
 
         testVec.emplace(&testVec[1], 1);
         ASSERT_EQ(testVec.size(), 4);
@@ -117,14 +114,6 @@ namespace container_tests
         {
             ASSERT_EQ(i, testVec[i]);
         }
-
-        testVec2.emplace(&testVec2[1], 1);
-
-        ASSERT_EQ(testVec2.size(), 4);
-        ASSERT_EQ(testVec2[0], 0);
-        ASSERT_EQ(testVec2[1], 1);
-        ASSERT_EQ(testVec2[2], 3);
-        ASSERT_EQ(testVec2[3], 2);
     }
 
     TEST(VectorTests, ListInitializationTest)
@@ -261,7 +250,7 @@ namespace container_tests
         ASSERT_EQ(6, vec1[1]);
         ASSERT_EQ(vec1.size(), 2);
 
-        vec1.insert(vec1.begin() + 1, vec3, std::from_range_t {});
+        vec1.insert(vec1.begin() + 1, vec3.begin(), vec3.end());
         ASSERT_EQ(1, vec1[0]);
         ASSERT_EQ(2, vec1[1]);
         ASSERT_EQ(5, vec1[2]);
@@ -269,7 +258,7 @@ namespace container_tests
         ASSERT_EQ(vec1.size(), 4);
 
         // push_back forwards to insert(vec1.size(), vec4)
-        vec1.insert(vec1.end(), vec4, std::from_range_t {});
+        vec1.insert(vec1.end(), vec4.begin(), vec4.end());
         ASSERT_EQ(1, vec1[0]);
         ASSERT_EQ(2, vec1[1]);
         ASSERT_EQ(5, vec1[2]);
@@ -310,6 +299,20 @@ namespace container_tests
             sum += element;
         }
         ASSERT_EQ(11, sum);
+    }
+
+    TEST(VectorTests, RangeEraseTest)
+    {
+        dynamic_vector<int> test1 = {0,1,2,3,4,5,6};
+
+        auto res = test1.erase(test1.begin() + 2, test1.begin() + 4); // erase 2,3
+        ASSERT_EQ(5, test1.size());
+        ASSERT_EQ(*res, 4);
+        
+        dynamic_vector<int> test2 = {0,1,2,3,4,5,6};
+        auto res2 = test2.erase(test2.begin() + 1, test2.end());
+        ASSERT_EQ(1, test2.size());
+        ASSERT_EQ(res2, test2.end());
     }
 
     TEST(VectorTests, EmplaceTest)

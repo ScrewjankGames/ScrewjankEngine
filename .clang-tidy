@@ -7,14 +7,14 @@ Checks:
  - '-cppcoreguidelines-non-private-member-variables-in-classes'
  - '-cppcoreguidelines-owning-memory'
  - '-cppcoreguidelines-special-member-functions'
+ - '-cppcoreguidelines-pro-bounds-array-to-pointer-decay'
+ - '-cppcoreguidelines-pro-bounds-constant-array-index'
  - '-cppcoreguidelines-pro-bounds-pointer-arithmetic'
  - '-cppcoreguidelines-pro-type-union-access'
  - '-cppcoreguidelines-pro-type-reinterpret-cast'
+ - '-cppcoreguidelines-pro-type-vararg'
  - 'modernize-*'
  - '-modernize-use-auto'
  - '-modernize-use-trailing-return-type'
  - '-modernize-return-braced-init-list'
-CheckOptions:
-    - key: cppcoreguidelines-pro-type-member-init.IgnoreArrays
-      value: true
 WarningsAsErrors: true

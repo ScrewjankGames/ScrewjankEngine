@@ -15,7 +15,7 @@ export namespace sj
         constexpr T pi_over_2 = std::numbers::pi_v<T> / 2;
     }
 
-    template<class FloatType>
+    template <class FloatType>
     inline constexpr FloatType ToRadians(FloatType degrees)
     {
         return degrees * std::numbers::pi_v<FloatType> / FloatType(180.0);
@@ -65,11 +65,11 @@ export namespace sj
         const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
 
         Mat44 res;
-        res[0][0] = invTanHalfvFov / aspectRatio;
-        res[1][1] = -invTanHalfvFov;
-        res[2][2] = far / (near - far);
-        res[2][3] = -1.0f;
-        res[3][2] = -(near * far) / (far - near);
+        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
+        res.Set<1, 1>(-invTanHalfvFov);
+        res.Set<2, 2>(far / (near - far));
+        res.Set<2, 3>(-1.0f);
+        res.Set<3, 2>(-(near * far) / (far - near));
 
         return res;
     }
@@ -84,7 +84,7 @@ export namespace sj
      * https://thenumb.at/Exponential-Rotations/
      * http://pajarito.materials.cmu.edu/documents/Exp_map_rotations.pdf
      */
-    inline const/*expr*/ float small_theta_epsilon =
+    inline const /*expr*/ float small_theta_epsilon =
         std::pow(std::numeric_limits<float>::epsilon(), 0.5f);
 
     Quat Exp_Q(const Vec4& v)
@@ -95,13 +95,13 @@ export namespace sj
         if(theta <= small_theta_epsilon)
         {
             Vec4 asVec = (0.5f + ((theta * theta) / 48)) * v;
-            asVec[3] = std::cosf(halfTheta);
+            asVec.Set<3>(std::cosf(halfTheta));
             return Quat(asVec);
         }
         else
         {
             Vec4 asVec = (std::sinf(halfTheta) / theta) * v;
-            asVec[3] = std::cosf(halfTheta);
+            asVec.Set<3>(std::cosf(halfTheta));
             return Quat(asVec);
         }
     }
@@ -118,9 +118,9 @@ export namespace sj
         {
             const Vec4 omega = v / theta;
 
-            Mat44 tensor {{0.0f, omega[2], -omega[1], 0.0f},
-                          {-omega[2], 0.0f, omega[0], 0.0f},
-                          {omega[1], -omega[0], 0.0f, 0.0f},
+            Mat44 tensor {{0.0f, omega.Get<2>(), -omega.Get<1>(), 0.0f},
+                          {-omega.Get<2>(), 0.0f, omega.Get<0>(), 0.0f},
+                          {omega.Get<1>(), -omega.Get<0>(), 0.0f, 0.0f},
                           {0.0f, 0.0f, 0.0f, 0.0f}};
 
             Mat44 tensorSqr = tensor * tensor;

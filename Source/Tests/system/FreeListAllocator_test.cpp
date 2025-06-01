@@ -33,17 +33,17 @@ namespace system_tests {
         // Allocate and construct three dummies sequentially
         auto mem_loc1 = allocator.allocate(1);
 
-        ASSERT_NE(nullptr, mem_loc1);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         ASSERT_TRUE(IsMemoryAligned(mem_loc1, alignof(FreeListDummy)));
 
         auto Dummy1 = new (mem_loc1) FreeListDummy {.Label='a', .Value=3.14};
 
         FreeListDummy* Dummy2 = allocator.new_object<FreeListDummy>('b', 3.14);
-        ASSERT_NE(nullptr, Dummy2);
+        ASSERT_NE(nullptr, Dummy2); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         ASSERT_TRUE(IsMemoryAligned(Dummy2, alignof(FreeListDummy)));
 
         FreeListDummy* Dummy3 = allocator.new_object<FreeListDummy>('c', 3.14);
-        ASSERT_NE(nullptr, Dummy3);
+        ASSERT_NE(nullptr, Dummy3); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         ASSERT_TRUE(IsMemoryAligned(Dummy3, alignof(FreeListDummy)));
 
         // Make sure no memory was stomped by the subsequent allocations
@@ -92,18 +92,18 @@ namespace system_tests {
 
         auto mem_loc1 = allocator.allocate(1);
         auto mem_loc2 = allocator.allocate(1);
-        ASSERT_NE(nullptr, mem_loc1);
-        ASSERT_NE(nullptr, mem_loc2);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+        ASSERT_NE(nullptr, mem_loc2); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         // Assert that capacity is not lost when resolving allocation headers
         allocator.deallocate(mem_loc1, sizeof(FreeListDummy));
         mem_loc1 = allocator.allocate(1);
-        ASSERT_NE(nullptr, mem_loc1);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         // Free the first block, and try to allocate again from head
         allocator.deallocate(mem_loc1, sizeof(FreeListDummy));
         mem_loc1 = allocator.allocate(1);
-        ASSERT_NE(nullptr, mem_loc1);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         allocator.deallocate(mem_loc1, sizeof(FreeListDummy));
 
         // Free the second block, the two blocks in the allocator should coaselce and allow for a
@@ -112,8 +112,8 @@ namespace system_tests {
 
         // Allocator should be able to handle an allocation larger than the original allocation.
         // This implies that the memory blocks of the free list were coalesced correctly.
-        mem_loc1 = allocator.allocate_bytes(sizeof(FreeListDummy) + 4, alignof(FreeListDummy));
-        ASSERT_NE(nullptr, mem_loc1);
+        mem_loc1 = reinterpret_cast<FreeListDummy*>(allocator.allocate_bytes(sizeof(FreeListDummy) + 4, alignof(FreeListDummy)));
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         // The allocator should be empty again
         allocator.deallocate(mem_loc1, sizeof(FreeListDummy) + 4);
@@ -121,8 +121,8 @@ namespace system_tests {
         // Make sure we can still make the original two allocations
         mem_loc1 = allocator.allocate(1);
         mem_loc2 = allocator.allocate(1);
-        ASSERT_NE(nullptr, mem_loc1);
-        ASSERT_NE(nullptr, mem_loc2);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+        ASSERT_NE(nullptr, mem_loc2); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         allocator.deallocate(mem_loc1, sizeof(FreeListDummy));
         allocator.deallocate(mem_loc2, sizeof(FreeListDummy));

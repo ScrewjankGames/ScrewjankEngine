@@ -17,8 +17,8 @@
 
 // Library Headers
 #ifndef SJ_GOLD
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
+    #include <imgui_impl_glfw.h>
+    #include <imgui_impl_vulkan.h>
 #endif
 
 // STD Headers
@@ -30,15 +30,14 @@ import sj.shared.math;
 
 namespace sj
 {
-    FreeListAllocator g_workBufferResource;
-
     static void CheckImguiVulkanResult(VkResult res)
     {
         SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
     }
-
+    
     FreeListAllocator* Renderer::WorkBuffer()
     {
+        static FreeListAllocator g_workBufferResource;
         return &g_workBufferResource;
     }
 
@@ -50,10 +49,9 @@ namespace sj
 
     void Renderer::Render(const Mat44& cameraMatrix)
     {
-        #ifndef SJ_GOLD
+#ifndef SJ_GOLD
         ImGui::Render();
-        #endif // !SJ_GOLD
-
+#endif // !SJ_GOLD
 
         const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
 
@@ -102,18 +100,19 @@ namespace sj
         VkSubmitInfo submitInfo {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {currImageAvailableSemaphore};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        std::array<VkSemaphore, 1> waitSemaphores = {currImageAvailableSemaphore};
+        std::array<VkPipelineStageFlags, 1> waitStages = {
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.pWaitSemaphores = waitSemaphores.data();
+        submitInfo.pWaitDstStageMask = waitStages.data();
 
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &currCommandBuffer;
 
-        VkSemaphore signalSemaphores[] = {currRenderFinishedSemaphore};
+        std::array<VkSemaphore, 1> signalSemaphores = {currRenderFinishedSemaphore};
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores = signalSemaphores.data();
 
         res = vkQueueSubmit(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFence);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
@@ -121,11 +120,11 @@ namespace sj
         VkPresentInfoKHR presentInfo {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = signalSemaphores.data();
 
-        VkSwapchainKHR swapChains[] = {m_swapChain.GetSwapChain()};
+        std::array<VkSwapchainKHR, 1> swapChains = {m_swapChain.GetSwapChain()};
         presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
+        presentInfo.pSwapchains = swapChains.data();
         presentInfo.pImageIndices = &imageIndex;
 
         res = vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
@@ -146,10 +145,11 @@ namespace sj
         m_frameCount++;
     }
 
-    void Renderer::Init() 
+    void Renderer::Init()
     {
-        g_workBufferResource.init(4_MiB, MemorySystem::GetRootMemoryResource());
-        MemorySystem::TrackMemoryResource(&g_workBufferResource);
+        FreeListAllocator* workBuffer = WorkBuffer();
+        workBuffer->init(4_MiB, MemorySystem::GetRootMemoryResource());
+        MemorySystem::TrackMemoryResource(workBuffer);
 
         InitializeVulkan();
 
@@ -178,7 +178,7 @@ namespace sj
         m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
         CreateCommandPools();
-        
+
         LoadDummyModel();
         CreateDummyTextureImage();
 
@@ -192,10 +192,10 @@ namespace sj
         CreateGlobalUniformBuffers();
 
         CreateGlobalUBODescriptorPool();
-        
-        #ifndef SJ_GOLD
+
+#ifndef SJ_GOLD
         CreateImGuiDescriptorPool();
-        #endif // !SJ_GOLD
+#endif // !SJ_GOLD
 
         CreateGlobalUBODescriptorSets();
 
@@ -204,7 +204,7 @@ namespace sj
         DeviceQueueFamilyIndices indices =
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
-        #ifndef SJ_GOLD
+#ifndef SJ_GOLD
         // Init ImGui
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance = m_vkInstance;
@@ -222,7 +222,7 @@ namespace sj
         init_info.RenderPass = m_defaultRenderPass;
 
         ImGui_ImplVulkan_Init(&init_info);
-        #endif
+#endif
     }
 
     void Renderer::CreateGlobalDescriptorSetlayout()
@@ -256,23 +256,21 @@ namespace sj
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor set layout");
     }
 
-
     void Renderer::DeInit()
     {
         VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
         vkDeviceWaitIdle(logicalDevice);
 
-        #ifndef SJ_GOLD
+#ifndef SJ_GOLD
         ImGui_ImplVulkan_Shutdown();
-        #endif // !SJ_GOLD
-
+#endif // !SJ_GOLD
 
         m_frameData.DeInit(logicalDevice);
 
         vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
 
         m_swapChain.DeInit(logicalDevice);
-        
+
         vkDestroySampler(logicalDevice, m_dummyTextureSampler, sj::g_vkAllocationFns);
         vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
         vkDestroyImage(logicalDevice, m_dummyTextureImage, sj::g_vkAllocationFns);
@@ -285,7 +283,9 @@ namespace sj
             vkDestroyDescriptorPool(logicalDevice, m_imguiDescriptorPool, sj::g_vkAllocationFns);
         }
 
-        vkDestroyDescriptorSetLayout(logicalDevice, m_globalUBODescriptorSetLayout, sj::g_vkAllocationFns);
+        vkDestroyDescriptorSetLayout(logicalDevice,
+                                     m_globalUBODescriptorSetLayout,
+                                     sj::g_vkAllocationFns);
 
         m_defaultPipeline.DeInit();
 
@@ -304,8 +304,8 @@ namespace sj
 
         if constexpr(g_IsDebugBuild)
         {
-            auto messenger_destroy_func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
+            auto messenger_destroy_func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT"));
 
             SJ_ASSERT(messenger_destroy_func != nullptr,
                       "Failed to load Vulkan Debug messenger destroy function");
@@ -325,24 +325,24 @@ namespace sj
     {
         Viewport viewport = Window::GetInstance()->GetViewportSize();
 
-        #ifndef SJ_GOLD
+#ifndef SJ_GOLD
         {
             MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
             ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
-            
+
             // Start the Dear ImGui frame
             ImGui_ImplVulkan_NewFrame();
             ImGui::NewFrame();
         }
-        #endif // !SJ_GOLD
+#endif // !SJ_GOLD
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::VulkanDebugLogCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-        [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
-        const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-        [[maybe_unused]] void* user_data)
+    VKAPI_ATTR VkBool32 VKAPI_CALL
+    Renderer::VulkanDebugLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                     [[maybe_unused]] void* user_data)
     {
         if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
@@ -389,25 +389,22 @@ namespace sj
         create_info.ppEnabledLayerNames = nullptr;
 
         // Get extension count and names
-        std::span<const char*> required_extensions = Window::GetInstance()->GetRequiredVulkanExtenstions();
+        std::span<const char*> required_extensions =
+            Window::GetInstance()->GetRequiredVulkanExtenstions();
         create_info.ppEnabledExtensionNames = required_extensions.data();
         create_info.enabledExtensionCount = required_extensions.size();
 
 #ifndef SJ_GOLD
         create_info.enabledExtensionCount++;
         dynamic_vector<const char*> debug_required_extensions(
-            std::from_range_t{},
+            std::from_range_t {},
             required_extensions,
-            MemorySystem::GetDebugMemoryResource()
-        );
+            MemorySystem::GetDebugMemoryResource());
 
         debug_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         create_info.ppEnabledExtensionNames = debug_required_extensions.data();
 
-        static std::array layers 
-        {
-            "VK_LAYER_KHRONOS_validation"
-        };
+        static std::array layers {"VK_LAYER_KHRONOS_validation"};
 
         EnableValidationLayers(layers);
 
@@ -417,15 +414,11 @@ namespace sj
 
         // Create the vulkan instance
         {
-            VkResult result = vkCreateInstance(
-                &create_info, 
-                sj::g_vkAllocationFns,
-                &m_vkInstance
-            );
+            VkResult result = vkCreateInstance(&create_info, sj::g_vkAllocationFns, &m_vkInstance);
 
             SJ_ASSERT(result == VK_SUCCESS,
-                    "Vulkan instance creation failed with error code {}",
-                    (int)result);
+                      "Vulkan instance creation failed with error code {}",
+                      (int)result);
         }
 
         // Compile-time check to enable debug messaging
@@ -489,8 +482,8 @@ namespace sj
         dependency.srcAccessMask = 0;
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
                                   VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | 
-                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency.dstAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         std::array attachments = {colorAttachment, depthAttachment};
         VkRenderPassCreateInfo renderPassInfo {};
@@ -530,14 +523,13 @@ namespace sj
         return commandBuffer;
     }
 
-    void
-    Renderer::EnableValidationLayers(std::span<const char*> required_validation_layers)
+    void Renderer::EnableValidationLayers(std::span<const char*> required_validation_layers)
     {
         uint32_t layer_count = 0;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
         SJ_ASSERT(layer_count <= 64, "Overflow");
-        std::array<VkLayerProperties, 64> available_layers{};
+        std::array<VkLayerProperties, 64> available_layers {};
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
         // Verify required validation layers are supported
@@ -579,23 +571,20 @@ namespace sj
         messenger_create_info.pUserData = nullptr;
 
         // Get extension function pointer
-        auto create_function = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-            m_vkInstance,
-            "vkCreateDebugUtilsMessengerEXT");
+        auto create_function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            vkGetInstanceProcAddr(m_vkInstance, "vkCreateDebugUtilsMessengerEXT"));
 
         SJ_ASSERT(create_function != nullptr,
                   "Failed to load vulkan extension function vkCreateDebugUtilsMessengerEXT");
 
-        create_function(
-            m_vkInstance, 
-            &messenger_create_info, 
-            sj::g_vkAllocationFns, 
-            &m_vkDebugMessenger );
+        create_function(m_vkInstance,
+                        &messenger_create_info,
+                        sj::g_vkAllocationFns,
+                        &m_vkDebugMessenger);
     }
 
-    void Renderer::TransitionImageLayout(VkImage image,
-                                         VkImageLayout oldLayout,
-                                         VkImageLayout newLayout)
+    void
+    Renderer::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -633,7 +622,7 @@ namespace sj
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
-        else 
+        else
         {
             sourceStage = VK_IMAGE_LAYOUT_UNDEFINED;
             destinationStage = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -669,11 +658,11 @@ namespace sj
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        
-        region.imageOffset = {.x=0, .y=0, .z=0};
-        region.imageExtent = {.width=width, .height=height, .depth=1};
+        region.imageOffset = {.x = 0, .y = 0, .z = 0};
+        region.imageExtent = {.width = width, .height = height, .depth = 1};
 
-        // "Assuming here that the image has already been transitioned to the layout that is optimal for copying pixels to"
+        // "Assuming here that the image has already been transitioned to the layout that is optimal
+        // for copying pixels to"
         vkCmdCopyBufferToImage(commandBuffer,
                                buffer,
                                image,
@@ -717,7 +706,6 @@ namespace sj
             VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
         std::array<uint32_t, 1> queueFamilyIndices {*indices.graphicsFamilyIndex};
-        
 
         VkBufferCreateInfo bufferInfo {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -727,7 +715,8 @@ namespace sj
         bufferInfo.queueFamilyIndexCount = 1;
         bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 
-        VkResult res = vkCreateBuffer(logicalDevice, &bufferInfo, sj::g_vkAllocationFns, &out_buffer);
+        VkResult res =
+            vkCreateBuffer(logicalDevice, &bufferInfo, sj::g_vkAllocationFns, &out_buffer);
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create vulkan buffer");
 
@@ -792,10 +781,10 @@ namespace sj
             VkDeviceMemory stagingBufferMemory {};
 
             CreateBuffer(bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer,
-                    stagingBufferMemory);
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer,
+                         stagingBufferMemory);
 
             void* data = nullptr;
             vkMapMemory(m_renderDevice.GetLogicalDevice(),
@@ -818,8 +807,12 @@ namespace sj
 
             CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
 
-            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, sj::g_vkAllocationFns);
-            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, sj::g_vkAllocationFns);
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
+                            stagingBuffer,
+                            sj::g_vkAllocationFns);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(),
+                         stagingBufferMemory,
+                         sj::g_vkAllocationFns);
         }
 
         // Read Indices into GPU memory
@@ -856,8 +849,12 @@ namespace sj
 
             CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
 
-            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(), stagingBuffer, sj::g_vkAllocationFns);
-            vkFreeMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, sj::g_vkAllocationFns);
+            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
+                            stagingBuffer,
+                            sj::g_vkAllocationFns);
+            vkFreeMemory(m_renderDevice.GetLogicalDevice(),
+                         stagingBufferMemory,
+                         sj::g_vkAllocationFns);
         }
 
         modelFile.Close();
@@ -882,14 +879,14 @@ namespace sj
 
         void* data = nullptr;
         vkMapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
-        
+
         // Read texture data straight into GPU memory
         textureFile.Read(data, imageSize);
         vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
-      
+
         textureFile.Close();
-        CreateImage(m_renderDevice.GetLogicalDevice(), 
-                    m_renderDevice.GetPhysicalDevice(), 
+        CreateImage(m_renderDevice.GetLogicalDevice(),
+                    m_renderDevice.GetPhysicalDevice(),
                     header.width,
                     header.height,
                     VK_FORMAT_R8G8B8A8_SRGB,
@@ -898,13 +895,13 @@ namespace sj
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     m_dummyTextureImage,
                     m_dummyTextureImageMemory);
-        
+
         TransitionImageLayout(m_dummyTextureImage,
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         CopyBufferToImage(stagingBuffer, m_dummyTextureImage, header.width, header.height);
-        
+
         TransitionImageLayout(m_dummyTextureImage,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -985,28 +982,29 @@ namespace sj
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
     }
-    
-    #ifndef SJ_GOLD
+
+#ifndef SJ_GOLD
     void Renderer::CreateImGuiDescriptorPool()
     {
-        VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
-                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
-                                             {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
-                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-                                             {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+        std::array<VkDescriptorPoolSize, 11> pool_sizes = {
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+            VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
         VkDescriptorPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         poolInfo.maxSets = 1;
-        poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-        poolInfo.pPoolSizes = pool_sizes;
+        poolInfo.poolSizeCount = pool_sizes.size();
+        poolInfo.pPoolSizes = pool_sizes.data();
 
         VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
                                               &poolInfo,
@@ -1015,11 +1013,11 @@ namespace sj
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
     }
-    #endif
+#endif
 
     void Renderer::CreateGlobalUBODescriptorSets()
     {
-        std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts{};
+        std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts {};
         for(VkDescriptorSetLayout& layout : layouts)
         {
             layout = m_globalUBODescriptorSetLayout;
@@ -1076,9 +1074,7 @@ namespace sj
         }
     }
 
-    void Renderer::RecordCommandBuffer(VkCommandBuffer buffer,
-                                                uint32_t frameIdx,
-                                                uint32_t imageIdx)
+    void Renderer::RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx)
     {
         VkCommandBufferBeginInfo beginInfo {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1094,12 +1090,12 @@ namespace sj
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_defaultRenderPass;
         renderPassInfo.framebuffer = m_swapChain.GetFrameBuffers()[imageIdx];
-        renderPassInfo.renderArea.offset = {.x=0, .y=0};
+        renderPassInfo.renderArea.offset = {.x = 0, .y = 0};
         renderPassInfo.renderArea.extent = m_swapChain.GetExtent();
 
         std::array<VkClearValue, 2> clearValues {};
         clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {.depth=1.0f, .stencil=0};
+        clearValues[1].depthStencil = {.depth = 1.0f, .stencil = 0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -1110,9 +1106,9 @@ namespace sj
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
                               m_defaultPipeline.GetPipeline());
 
-            VkBuffer vertexBuffers[] = {m_dummyVertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(buffer, 0, 1, vertexBuffers, offsets);
+            std::array<VkBuffer, 1> vertexBuffers = {m_dummyVertexBuffer};
+            std::array<VkDeviceSize, 1> offsets = {0};
+            vkCmdBindVertexBuffers(buffer, 0, 1, vertexBuffers.data(), offsets.data());
             vkCmdBindIndexBuffer(buffer, m_dummyIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
             VkViewport viewport {};
@@ -1125,7 +1121,7 @@ namespace sj
             vkCmdSetViewport(buffer, 0, 1, &viewport);
 
             VkRect2D scissor {};
-            scissor.offset = {.x=0, .y=0};
+            scissor.offset = {.x = 0, .y = 0};
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(buffer, 0, 1, &scissor);
 
@@ -1138,11 +1134,16 @@ namespace sj
                                     0,
                                     nullptr);
 
-            vkCmdDrawIndexed(buffer, static_cast<uint32_t>(m_dummyIndexBufferIndexCount), 1, 0, 0, 0);
+            vkCmdDrawIndexed(buffer,
+                             static_cast<uint32_t>(m_dummyIndexBufferIndexCount),
+                             1,
+                             0,
+                             0,
+                             0);
 
-            #ifndef SJ_GOLD
+#ifndef SJ_GOLD
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
-            #endif
+#endif
         }
         vkCmdEndRenderPass(buffer);
 
@@ -1156,10 +1157,11 @@ namespace sj
     {
         GlobalUniformBufferObject ubo {};
         ubo.model = Mat44(kIdentityTag);
-        ubo.view = Mat44::AffineInverse(cameraMatrix); 
+        ubo.view = Mat44::AffineInverse(cameraMatrix);
 
         VkExtent2D extent = m_swapChain.GetExtent();
-        const float aspectRatio = static_cast<float>(extent.width) / extent.height;
+        const float aspectRatio =
+            static_cast<float>(extent.width) / static_cast<float>(extent.height);
         ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 0.1f, 100.0f);
         memcpy(bufferMem, &ubo, sizeof(ubo));
     }
@@ -1223,6 +1225,5 @@ namespace sj
             vkFreeMemory(device, globalUniformBuffersMemory[i], sj::g_vkAllocationFns);
         }
     }
-
 
 } // namespace sj

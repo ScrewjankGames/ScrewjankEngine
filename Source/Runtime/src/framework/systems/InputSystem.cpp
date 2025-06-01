@@ -16,6 +16,8 @@
 #include <cmath>
 #include <algorithm>
 
+import sj.shared.math;
+
 namespace sj
 {
     Vec2 InputSystem::s_publishedLeftStick = {};
@@ -50,8 +52,8 @@ namespace sj
                 const float magnitude = std::sqrtf(stickMagnitudeSqr);
                 Vec2 res = (stick / magnitude) * (magnitude - kDeadZone) / (1.0f - kDeadZone);
 
-                res[0] = std::clamp<float>(res[0], -1, 1);
-                res[1] = std::clamp<float>(res[1], -1, 1);
+                res.SetX( std::clamp<float>(res.GetX(), -1, 1) );
+                res.SetY( std::clamp<float>(res.GetY(), -1, 1) );
                 
                 return res;
             }
@@ -64,12 +66,12 @@ namespace sj
         if(ImGui::Begin("Input") && connected == GLFW_TRUE)
         {
             ImGui::Text("Raw %s:", glfwGetGamepadName(GLFW_JOYSTICK_1));
-            ImGui::Text("Left:  [%f, %f]", rawLeftStick[0], rawLeftStick[1]);
-            ImGui::Text("Right: [%f, %f]", rawRightStick[0], rawRightStick[1]);
+            ImGui::Text("Left:  [%f, %f]", rawLeftStick.GetX(), rawLeftStick.GetY());
+            ImGui::Text("Right: [%f, %f]", rawRightStick.GetX(), rawRightStick.GetY());
 
             ImGui::Text("Published %s: ", glfwGetGamepadName(GLFW_JOYSTICK_1));
-            ImGui::Text("Left:  [%f, %f]", s_publishedLeftStick[0], s_publishedLeftStick[1]);
-            ImGui::Text("Right: [%f, %f]", s_publishedRightStick[0], s_publishedRightStick[1]);
+            ImGui::Text("Left:  [%f, %f]", s_publishedLeftStick.GetX(), s_publishedLeftStick.GetY());
+            ImGui::Text("Right: [%f, %f]", s_publishedRightStick.GetX(), s_publishedRightStick.GetY());
         }
         ImGui::End();
         #endif // !SJ_GOLD

@@ -2,10 +2,7 @@ module;
 
 #include <ScrewjankShared/utils/Assert.hpp>
 
-#include <memory>
 #include <cstdint>
-#include <cstddef>
-#include <new>
 #include <memory_resource>
 
 export module sj.engine.system.memory:MemorySystem;

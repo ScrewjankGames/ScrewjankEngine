@@ -61,7 +61,7 @@ namespace system_tests
         // Make sure 2nd allocation isn't disturbed
         EXPECT_EQ(2, sd2->a);
         EXPECT_EQ(2, sd2->b);
-        EXPECT_EQ(2, sd2->c);
+        EXPECT_EQ(2, sd2->c); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         // Make sure 4th allocation worked
         EXPECT_EQ(4, sd4->a);
@@ -87,11 +87,11 @@ namespace system_tests
         auto mem7 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));
         auto sd7 = new (mem7) StackAllocatorDummy {.a = 7, .b = 7, .c = 7};
 
-        EXPECT_EQ(6.0, *sd6);
+        EXPECT_EQ(6.0, *sd6); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         EXPECT_EQ(7, sd7->a);
         EXPECT_EQ(7, sd7->b);
-        EXPECT_EQ(7, sd7->c);
+        EXPECT_EQ(7, sd7->c); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         allocator.pop_alloc();
         allocator.pop_alloc();

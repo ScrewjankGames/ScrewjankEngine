@@ -3,6 +3,8 @@ export import :any;
 export import :array;
 export import :vector;
 export import :map;
+export import :set;
 export import :sparse_set;
 export import :stack;
 export import :type_list;
+export import :unmanaged_list;

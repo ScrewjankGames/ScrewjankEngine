@@ -9,7 +9,6 @@ module;
 #include <cmath>
 #include <memory_resource>
 #include <ranges>
-
 #include <ScrewjankShared/utils/Assert.hpp>
 
 // End global module fragment
@@ -19,7 +18,6 @@ export namespace sj
 {
     struct VectorOptions
     {
-        bool preserveRelativeOrderings = true;
         float growFactor = 2.0;
     };
 
@@ -69,11 +67,11 @@ export namespace sj
                       other.allocator))
 
         {
-            std::span<T> newBuffer(allocator.allocate(other.capacity), other.capacity);
+            buffer = allocator.allocate(other.capacity);
 
             for(int i = 0; const auto& entry : other)
             {
-                new(&newBuffer[i]) T(entry);
+                new(&buffer[i]) T(entry);
                 i++;
             }
         }
@@ -195,38 +193,52 @@ export namespace sj
         }
 
         constexpr vector_interface(std::initializer_list<T> vals) noexcept
-            : vector_interface(std::from_range_t {}, vals)
+            : vector_interface(std::from_range_t {}, vals )
         {
         }
 
         template <std::ranges::range R>
-        constexpr vector_interface(std::from_range_t, R&& rg)
+        constexpr vector_interface(std::from_range_t, R&& rg) // NOLINT(cppcoreguidelines-missing-std-forward)
         {
-            if constexpr(growable_vector_storage<StorageType>)
+            if constexpr (std::ranges::forward_range<R> || std::ranges::sized_range<R>)
             {
                 resize(rg.size());
+                std::move(rg.begin(), rg.end(), begin());
+                m_count = rg.size();
             }
-
-            std::move(rg.begin(), rg.end(), begin());
-
-            m_count = rg.size();
+            else
+            {
+                auto it = std::ranges::begin(rg);
+                auto end = std::ranges::end(rg);
+                for(; it != end; ++it)
+                {
+                    emplace_back(*it);
+                }
+            }
         }
 
         template <std::ranges::range R, class Allocator>
             requires growable_vector_storage<StorageType>
-        constexpr vector_interface(std::from_range_t, R&& rg, Allocator&& alloc)
+        constexpr vector_interface(std::from_range_t, R&& rg, Allocator&& alloc = Allocator()) // NOLINT(cppcoreguidelines-missing-std-forward)
             : StorageType(std::forward<Allocator>(alloc))
         {
             static_assert(std::is_convertible_v<Allocator, typename StorageType::allocator_type>);
 
-            if constexpr(growable_vector_storage<StorageType>)
+            if constexpr (std::ranges::forward_range<R> || std::ranges::sized_range<R>)
             {
                 resize(rg.size());
+                std::move(rg.begin(), rg.end(), begin());
+                m_count = rg.size();
             }
-
-            std::move(rg.begin(), rg.end(), begin());
-
-            m_count = rg.size();
+            else
+            {
+                auto it = std::ranges::begin(rg);
+                auto end = std::ranges::end(rg);
+                for(; it != end; ++it)
+                {
+                    emplace_back(*it);
+                }
+            }
         }
 
         constexpr ~vector_interface()
@@ -283,25 +295,31 @@ export namespace sj
             return self.StorageType::operator[](index);
         }
 
-        template <class InputRange>
-        constexpr iterator insert(const_iterator pos, InputRange&& r, std::from_range_t _)
+        template <class tIterator>
+        constexpr iterator insert(const_iterator pos, tIterator first, tIterator last)
         {
-            return insert(pos, r.begin(), r.end());
-        }
+            if constexpr (std::contiguous_iterator<tIterator>)
+            {
+                size_t offset = pos - begin();
+                size_t numNewElements = last - first;
+                reserve(size() + (last - first));
+                
+                std::move_backward(begin() + offset, end(), end() + numNewElements);
+                std::move(first, last, begin() + offset);
+                
+                m_count += numNewElements;
+                
+                return begin() + offset;
+            }
+            else
+            {
+                size_t offset = pos - begin();
 
-        template <class InputIterator>
-        constexpr iterator insert(const_iterator pos, InputIterator first, InputIterator last)
-        {
-            size_t offset = pos - begin();
-            size_t numNewElements = last - first;
-            this->reserve(size() + (last - first));
-
-            std::move_backward(begin() + offset, end(), end() + numNewElements);
-            std::move(first, last, begin() + offset);
-
-            m_count += numNewElements;
-
-            return begin() + offset;
+                for(; first != last; ++first)
+                {
+                    emplace(begin() + offset, *first);
+                }   
+            }
         }
 
         constexpr iterator insert(const_iterator pos, T&& elem)
@@ -330,22 +348,15 @@ export namespace sj
                 }
             }
 
-            if constexpr(tOpts.preserveRelativeOrderings)
+            if(m_count > 0)
             {
-                if(m_count > 0)
+                for(auto it = end(); it > output_pos; it--)
                 {
-                    for(auto it = end(); it > output_pos; it--)
-                    {
-                        new(std::to_address(it)) T(std::move(*(it - 1)));
-                    }
+                    new(std::to_address(it)) T(std::move(*(it - 1)));
                 }
+            }
 
-                m_count++;
-            }
-            else
-            {
-                emplace_back(std::move(*output_pos));
-            }
+            m_count++;
 
             new(std::to_address(output_pos)) T(std::forward<Args>(args)...);
 
@@ -403,6 +414,41 @@ export namespace sj
         }
 
         constexpr iterator erase(const_iterator pos) noexcept
+        {
+            SJ_ASSERT(pos >= begin() && pos < end(), "Erase index out of bounds")
+            pos->~T();
+
+            size_t offset = pos - begin();
+            iterator output_pos = begin() + offset;
+
+            if(m_count > 0)
+            {
+                for(auto it = output_pos + 1; it != end(); ++it)
+                {
+                    new(std::to_address(it - 1)) T(std::move(*it));
+                }
+            }
+
+            m_count--;
+            return output_pos;
+        }
+
+        constexpr iterator erase(const_iterator first, const_iterator last) noexcept
+        {
+            if(first == last)
+                return iterator(last);
+
+            for(auto it = first; it != last; ++it)
+            {
+                it->~T();
+            }
+
+            std::move(iterator(last), iterator(end()), iterator(first));
+            m_count -= (last - first);
+            return iterator(first);
+        }
+
+        constexpr iterator erase_unordered(const_iterator pos) noexcept
             requires std::contiguous_iterator<const_iterator>
         {
             SJ_ASSERT(pos >= begin() && pos < end(), "Erase index out of bounds")
@@ -413,17 +459,7 @@ export namespace sj
 
             if(m_count > 0)
             {
-                if constexpr(tOpts.preserveRelativeOrderings)
-                {
-                    for(auto it = output_pos + 1; it != end(); ++it)
-                    {
-                        new(std::to_address(it - 1)) T(std::move(*it));
-                    }
-                }
-                else
-                {
-                    new(std::to_address(output_pos)) T(std::move(*(end() - 1)));
-                }
+                new(std::to_address(output_pos)) T(std::move(*(end() - 1)));
             }
 
             m_count--;
@@ -435,22 +471,27 @@ export namespace sj
             return m_count;
         }
 
-        constexpr void resize(size_type new_size, T&& value = T()) noexcept
+        constexpr void reserve(size_type new_capacity) noexcept
         {
             if constexpr(growable_vector_storage<StorageType>)
             {
-                this->reserve(new_size);
+                StorageType::reserve(new_capacity);
             }
             else
             {
-                SJ_ASSERT(new_size < capacity(), "cannot grow statically sized vector");
+                SJ_ASSERT(new_capacity <= capacity(), "Static container cannot expand to requested capacity");
             }
+        }
+
+        constexpr void resize(size_type new_size, T&& value = T()) noexcept
+        {
+            reserve(new_size);
 
             if(new_size > m_count)
             {
                 for(auto i = m_count; i < new_size; i++)
                 {
-                    new(&(*this)[i]) T(std::move(value));
+                    new(&(*this)[i]) T(value);
                 }
             }
             else

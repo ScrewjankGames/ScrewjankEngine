@@ -67,9 +67,9 @@ namespace system_tests
 
         // You should be able to fit ten individual single byte structures into a linear allocator
         // of buffer size 10
-        for(int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++) // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         {
-            mem = packingTest.allocate(sizeof(SBS), alignof(SBS));
+            mem = packingTest.allocate(sizeof(SBS), alignof(SBS)); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         }
 
         mem_resource->deallocate(memory, mem_size);
@@ -97,7 +97,7 @@ namespace system_tests
         LinearAllocator allocator(mem_size, memory);
 
         [[maybe_unused]] auto mem = allocator.allocate(sizeof(SBS) * 9, alignof(SBS));
-        ASSERT_EQ(nullptr, allocator.allocate(sizeof(SBS) * 2, alignof(SBS)));
+        ASSERT_EQ(nullptr, allocator.allocate(sizeof(SBS) * 2, alignof(SBS))); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mem_resource->deallocate(memory, mem_size);
     }

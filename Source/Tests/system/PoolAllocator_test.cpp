@@ -26,19 +26,19 @@ namespace system_tests {
         PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
         auto mem_loc1 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
-        ASSERT_NE(nullptr, mem_loc1);
+        ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         auto dummy1 = new (mem_loc1) PoolAllocatorDummy {.Label='a', .Value=3.14};
 
         auto mem_loc2 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
-        ASSERT_NE(nullptr, mem_loc2);
+        ASSERT_NE(nullptr, mem_loc2); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         auto dummy2 = new (mem_loc2) PoolAllocatorDummy {.Label='b', .Value=3.14};
 
         auto mem_loc3 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
-        ASSERT_NE(nullptr, mem_loc3);
+        ASSERT_NE(nullptr, mem_loc3); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         auto dummy3 = new (mem_loc3) PoolAllocatorDummy {.Label='c', .Value=3.14};
 
         auto mem_loc4 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
-        ASSERT_NE(nullptr, mem_loc4);
+        ASSERT_NE(nullptr, mem_loc4); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
         auto dummy4 = new (mem_loc4) PoolAllocatorDummy {.Label='d', .Value=3.14};
 
         // Should not be able to allocate a 5th block

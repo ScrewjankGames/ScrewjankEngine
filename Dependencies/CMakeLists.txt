@@ -6,21 +6,25 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY SYSTEM 1)
 
 set(${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_PREFIX}/ScrewjankEngine-${ScrewjankEngine_VERSION}/lib)
 
+## Vulkan
+find_package(Vulkan REQUIRED)
+
 ## GLFW
 option(GLFW_INSTALL "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
-
 if(UNIX)
-option(GLFW_BUILD_X11 OFF) 
-option(GLFW_BUILD_WAYLAND ON)
+    option(GLFW_BUILD_X11 OFF) 
+    option(GLFW_BUILD_WAYLAND ON)
 endif(UNIX)
+
 find_package(glfw3 REQUIRED)
 
 ## Spdlog
 option(SPDLOG_USE_STD_FORMAT ON)
 add_subdirectory(spdlog)
+set_target_properties(spdlog PROPERTIES CXX_CLANG_TIDY "")
 
 ## GoogleTest
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -57,8 +61,6 @@ target_include_directories(imgui
     ${IMGUI_PATH}
     ${IMGUI_PATH}/backends
 )
-
-find_package(Vulkan REQUIRED)
 
 target_link_libraries(imgui
     PRIVATE 

@@ -1,3 +1,7 @@
+module;
+
+#include <array>
+
 export module sj.shared.math:Quat;
 import :Vec4;
 import :Tags;
@@ -14,7 +18,7 @@ export namespace sj
         Quat(float x, float y, float z, float w) : m_elements {x, y, z, w}
         {
         }
-        Quat(const Vec4& v) : m_elements {v[0], v[1], v[2], v[3]}
+        Quat(const Vec4& v) : m_elements( v.Data() )
         {
         }
 
@@ -24,6 +28,6 @@ export namespace sj
         }
 
     private:
-        float m_elements[4] = {};
+        std::array<float, 4> m_elements;
     };
 } // namespace sj

@@ -1,7 +1,6 @@
 #pragma once
 
 // Screwjank Headers
-#include <ScrewjankEngine/containers/String.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>

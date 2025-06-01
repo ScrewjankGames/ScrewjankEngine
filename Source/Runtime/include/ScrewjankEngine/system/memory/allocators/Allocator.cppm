@@ -1,12 +1,13 @@
 module;
 
 // STD Headers
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
+#include <format>
 #include <memory_resource>
-#include <utility>
 
 export module sj.engine.system.memory.allocators:Allocator;
 
@@ -32,29 +33,6 @@ export namespace sj
         { obj->deallocate(nullptr) };
     };
 
-    struct AllocatorStatus
-    {
-        size_t Capacity;
-        size_t ActiveAllocationCount;
-        size_t ActiveBytesAllocated;
-        size_t TotalAllocationCount;
-        size_t TotalBytesAllocated;
-
-        AllocatorStatus() : Capacity(0), ActiveAllocationCount(0), ActiveBytesAllocated(0), TotalAllocationCount(0), TotalBytesAllocated(0)
-        {
-            
-            
-            
-            
-            
-        }
-
-        size_t FreeSpace()
-        {
-            return Capacity - ActiveBytesAllocated;
-        }
-    };
-
     class memory_resource : public std::pmr::memory_resource
     {
     public:
@@ -75,7 +53,7 @@ export namespace sj
 #ifndef GOLD_VERSION
         void set_debug_name(const char* name)
         {
-            snprintf(m_DebugName, 256, "%s", name);
+            std::format_to_n(m_DebugName.data(), 256, "{}", name);
         }
     protected:
         [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
@@ -84,7 +62,7 @@ export namespace sj
         }
 
     private:
-        char m_DebugName[256];
+        std::array<char, 256> m_DebugName = {};
 #endif
     };
 } // namespace sj
