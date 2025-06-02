@@ -15,7 +15,7 @@
 import sj.engine.system;
 import sj.std.containers;
 import sj.std.math;
-import sj.std.memory.allocators;
+import sj.std.memory.resources;
 
 namespace sj {
     // Forward declarations
@@ -29,7 +29,7 @@ namespace sj {
     {
     public:
         /** Allocator used for engine helper allocations to get data over to vulkan */
-        static FreeListAllocator* WorkBuffer();
+        static free_list_allocator* WorkBuffer();
 
         static Renderer* GetInstance();
 

@@ -20,12 +20,12 @@ namespace system_tests {
         double Value;
     };
 
-    TEST(PoolAllocatorTests, AllocationTest)
+    TEST(PoolAllocatorTest , AllocationTest)
     {
         std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
-        PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
+        pool_allocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
 
         auto mem_loc1 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)

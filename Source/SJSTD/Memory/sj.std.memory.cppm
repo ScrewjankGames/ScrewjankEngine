@@ -9,6 +9,6 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 export module sj.std.memory;
-export import sj.std.memory.allocators;
+export import sj.std.memory.resources;
 export import sj.std.memory.literals;
 export import sj.std.memory.utils;

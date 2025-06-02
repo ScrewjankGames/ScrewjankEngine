@@ -6,27 +6,27 @@ module;
 #include <utility>
 #include <cstdint>
 
-export module sj.std.memory.allocators:FreeListAllocator;
-import :Allocator;
+export module sj.std.memory.resources.free_list_allocator;
+import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
 
 export namespace sj
 {
-    class FreeListAllocator final : public sj::memory_resource
+    class free_list_allocator final : public sj::memory_resource
     {
     public:
         /**
          * Constructor
          */
-        FreeListAllocator() : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
+        free_list_allocator() : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
         {
         }
 
         /**
          * Initializing Constructor
          */
-        FreeListAllocator(size_t numBytes, std::pmr::memory_resource& hostResource)
-            : FreeListAllocator()
+        free_list_allocator(size_t numBytes, std::pmr::memory_resource& hostResource)
+            : free_list_allocator()
         {
             sj::memory_resource::init(numBytes, hostResource);
         }
@@ -34,7 +34,7 @@ export namespace sj
         /**
          * Initializing Constructor
          */
-        FreeListAllocator(size_t buffer_size, void* memory) : FreeListAllocator()
+        free_list_allocator(size_t buffer_size, void* memory) : free_list_allocator()
         {
             init(buffer_size, memory);
         }
@@ -42,12 +42,12 @@ export namespace sj
         /**
          * Copy Constructor
          */
-        FreeListAllocator(const FreeListAllocator& other) = delete;
+        free_list_allocator(const free_list_allocator& other) = delete;
 
         /**
          * Move Constructor
          */
-        FreeListAllocator(FreeListAllocator&& other) noexcept
+        free_list_allocator(free_list_allocator&& other) noexcept
             : m_FreeBlocks(other.m_FreeBlocks), m_BufferStart(other.m_BufferStart),
               m_BufferEnd(other.m_BufferEnd)
         {
@@ -58,7 +58,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~FreeListAllocator() final = default;
+        ~free_list_allocator() final = default;
 
         /**
          * @return whether the allocator is in a valid state
@@ -73,7 +73,7 @@ export namespace sj
             SJ_ASSERT(!is_initialized(), "Double initialization of free list allocator detected");
 
             SJ_ASSERT(buffer_size > sizeof(FreeBlock) && buffer_size > sizeof(AllocationHeader),
-                      "FreeListAllocator is not large enough to hold data");
+                      "free_list_allocator is not large enough to hold data");
 
             // Allocate memory from backing allocator
             m_BufferStart = memory;

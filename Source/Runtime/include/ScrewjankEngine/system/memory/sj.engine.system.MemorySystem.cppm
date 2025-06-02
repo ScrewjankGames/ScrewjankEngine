@@ -7,7 +7,7 @@ module;
 
 export module sj.engine.system.memory.MemorySystem;
 
-import sj.std.memory.allocators;
+import sj.std.memory.resources;
 import sj.std.memory.literals;
 import sj.std.memory.utils;
 import sj.std.containers;
@@ -37,7 +37,7 @@ export namespace sj
             return &memSys;
         }
 
-        static FreeListAllocator* GetRootMemoryResource()
+        static free_list_allocator* GetRootMemoryResource()
         {
             return &(Get()->m_rootResource);
         }
@@ -48,7 +48,7 @@ export namespace sj
         }
 
 #ifndef SJ_GOLD
-        static FreeListAllocator* GetDebugMemoryResource()
+        static free_list_allocator* GetDebugMemoryResource()
         {
             return &(Get()->m_debugResource);
         }
@@ -99,13 +99,13 @@ export namespace sj
         }
 
     private:
-        FreeListAllocator m_rootResource;
+        free_list_allocator m_rootResource;
 
 #ifndef SJ_GOLD
-        FreeListAllocator m_debugResource;
+        free_list_allocator m_debugResource;
 #endif
 
-        SystemAllocator m_unmanagedResource;
+        system_allocator m_unmanagedResource;
 
         MemorySystem() : m_rootResource(kRootHeapSize, std::pmr::new_delete_resource())
         {

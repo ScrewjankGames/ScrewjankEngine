@@ -4,7 +4,7 @@ module;
 
 export module sj.engine.system.memory.NewDelete;
 import sj.engine.system.memory.MemorySystem;
-import sj.std.memory.allocators;
+import sj.std.memory.resources;
 
 extern "C++" {
 [[nodiscard]] void* operator new(size_t num_bytes) noexcept(false)

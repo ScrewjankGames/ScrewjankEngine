@@ -9,7 +9,7 @@ module;
 #include <format>
 #include <memory_resource>
 
-export module sj.std.memory.allocators:Allocator;
+export module sj.std.memory.resources.memory_resource;
 
 export namespace sj
 {

@@ -7,7 +7,8 @@
 #include <ScrewjankStd/PlatformDetection.hpp>
 #include <memory_resource>
 
-import sj.std.memory;
+import sj.std.memory.resources.free_list_allocator;
+import sj.std.memory.utils;
 
 using namespace sj;
 
@@ -19,14 +20,14 @@ namespace system_tests {
         double Value;
     };
 
-    TEST(FreeListAllocatorTests, BasicAllocationTest)
+    TEST(FreeListAllocatorTests , BasicAllocationTest)
     {
         // Test basic allocations and frees that shouldn't hit many edge cases
         std::pmr::memory_resource* heap = std::pmr::get_default_resource();
         size_t alloc_size = sizeof(FreeListDummy) * 16;
         void* test_memory = heap->allocate(alloc_size);
 
-        FreeListAllocator resource;
+        free_list_allocator resource;
         resource.init(alloc_size, test_memory);
         std::pmr::polymorphic_allocator<FreeListDummy> allocator(&resource);
 
@@ -74,7 +75,7 @@ namespace system_tests {
         heap->deallocate(test_memory, alloc_size);
     }
 
-    TEST(FreeListAllocatorTests, AdvancedAllocationTest)
+    TEST(FreeListAllocatorTests , AdvancedAllocationTest)
     {
         // This test attempts to test block coalescing behaviors, but is sensitive to
         // implementation details of the Allocator (such as allocation header size)
@@ -86,7 +87,7 @@ namespace system_tests {
         size_t alloc_size = sizeof(FreeListDummy) * 4;
         void* test_memory = heap->allocate(alloc_size);
 
-        FreeListAllocator resource;
+        free_list_allocator resource;
         resource.init(alloc_size, test_memory);
         std::pmr::polymorphic_allocator<FreeListDummy> allocator(&resource);
 
@@ -130,13 +131,13 @@ namespace system_tests {
         heap->deallocate(test_memory, alloc_size);
     }
 
-    TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
+    TEST(FreeListAllocatorTests , MixedTypeAllocationTest)
     {
         std::pmr::memory_resource* heap = std::pmr::get_default_resource();
         size_t alloc_size = 128;
         void* test_memory = heap->allocate(alloc_size);
 
-        FreeListAllocator resource;
+        free_list_allocator resource;
         resource.init(alloc_size, test_memory);
         std::pmr::polymorphic_allocator allocator(&resource);
 

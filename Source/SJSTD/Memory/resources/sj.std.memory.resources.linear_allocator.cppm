@@ -2,24 +2,24 @@ module;
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
-export module sj.std.memory.allocators:LinearAllocator;
-import :Allocator;
+export module sj.std.memory.resources.linear_allocator;
+import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
 
 export namespace sj
 {
-    class LinearAllocator final : public sj::memory_resource
+    class linear_allocator final : public sj::memory_resource
     {
     public:
         /**
          * Default constructor
          */
-        LinearAllocator() = default;
+        linear_allocator() = default;
 
         /**
          * Initializing Constructor
          */
-        explicit LinearAllocator(size_t buffer_size, void* memory)
+        explicit linear_allocator(size_t buffer_size, void* memory)
         {
             init(buffer_size, memory);
         }
@@ -36,7 +36,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~LinearAllocator() final = default;
+        ~linear_allocator() final = default;
 
         /**
          * Marks all allocations for this allocator as invalid and frees the buffer for more

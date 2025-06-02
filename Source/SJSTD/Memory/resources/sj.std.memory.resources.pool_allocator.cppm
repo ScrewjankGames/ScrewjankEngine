@@ -2,32 +2,31 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankStd/Log.hpp>
 
-export module sj.std.memory.allocators:PoolAllocator;
-import :Allocator;
+export module sj.std.memory.resources.pool_allocator;
+import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
 import sj.std.containers;
 
 export namespace sj
 {
-
     /**
      * Allocates memory in fixed size chunks
      * @tparam kBlockSize The size of each chunk in the pool
      */
     template <size_t kBlockSize>
-    class PoolAllocator final : public sj::memory_resource
+    class pool_allocator final : public sj::memory_resource
     {
     public:
         /**
          * Default constructor
          */
-        PoolAllocator() = default;
+        pool_allocator() = default;
 
         /**
          * Constructor
          * @param block_count The number of blocks of size kBlockSize
          */
-        PoolAllocator(size_t buffer_size, void* memory)
+        pool_allocator(size_t buffer_size, void* memory)
         {
             init(buffer_size, memory);
         }
@@ -35,7 +34,7 @@ export namespace sj
         /**
          * Destructor
          */
-        ~PoolAllocator() final = default;
+        ~pool_allocator() final = default;
 
         void init(size_t buffer_size, void* memory) override
         {
@@ -117,7 +116,7 @@ export namespace sj
             // Take the first available free block
             FreeBlock* free_block = &(m_FreeList.front());
             SJ_ASSERT(IsMemoryAligned(free_block, alignment),
-                      "PoolAllocator does not support over-aligned types");
+                      "pool_allocator does not support over-aligned types");
 
             // Remove the free block from the free list
             m_FreeList.pop_front();
@@ -145,13 +144,13 @@ export namespace sj
         void* m_BufferEnd = nullptr;
 
         /** Pointer head of singly linked list of free blocks */
-        unmanaged_list<FreeBlock> m_FreeList;
+        unmanaged_list<FreeBlock> m_FreeList {};
 
         /** Number of blocks managed by this allocator */
         size_t m_NumBlocks = 0;
     };
 
     template <class T>
-    using ObjectPoolAllocator = PoolAllocator<sizeof(T)>;
+    using Objectpool_allocator = pool_allocator<sizeof(T)>;
 
 } // namespace sj

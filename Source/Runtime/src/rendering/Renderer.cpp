@@ -35,9 +35,9 @@ namespace sj
         SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
     }
     
-    FreeListAllocator* Renderer::WorkBuffer()
+    free_list_allocator* Renderer::WorkBuffer()
     {
-        static FreeListAllocator g_workBufferResource;
+        static free_list_allocator g_workBufferResource;
         return &g_workBufferResource;
     }
 
@@ -147,7 +147,7 @@ namespace sj
 
     void Renderer::Init()
     {
-        FreeListAllocator* workBuffer = WorkBuffer();
+        free_list_allocator* workBuffer = WorkBuffer();
         workBuffer->init(4_MiB, MemorySystem::GetRootMemoryResource());
         MemorySystem::TrackMemoryResource(workBuffer);
 

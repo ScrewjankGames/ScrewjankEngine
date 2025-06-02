@@ -29,6 +29,6 @@ export namespace sj
 
     private:
         SceneChunk m_chunk;
-        FreeListAllocator m_memoryResource;
+        free_list_allocator m_memoryResource;
     };
 } // namespace sj

@@ -4,12 +4,12 @@ module;
 #include <ScrewjankStd/Log.hpp>
 #include <memory_resource>
 
-export module sj.std.memory.allocators:SystemAllocator;
-import :Allocator;
+export module sj.std.memory.resources.system_allocator;
+import sj.std.memory.resources.memory_resource;
 
 export namespace sj
 {
-    class SystemAllocator final : public std::pmr::memory_resource
+    class system_allocator final : public std::pmr::memory_resource
     {
     public:
         [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
