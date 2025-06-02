@@ -13,7 +13,7 @@
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 namespace sj
 {

@@ -30,7 +30,7 @@ target_link_libraries(${PROJECT_NAME}
         tinyobjloader
         ScrewjankDataDefs
         ScrewjankSharedCore
-        ScrewjankMath
+        ScrewjankStd
         BuildersShared
 )
 

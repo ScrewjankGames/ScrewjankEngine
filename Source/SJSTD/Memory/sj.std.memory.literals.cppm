@@ -1,7 +1,7 @@
 module;
 #include <cstdint>
 
-export module sj.engine.system.memory:Literals;
+export module sj.std.memory.literals;
 
 export {
     inline constexpr uint64_t operator""_KiB(unsigned long long val)

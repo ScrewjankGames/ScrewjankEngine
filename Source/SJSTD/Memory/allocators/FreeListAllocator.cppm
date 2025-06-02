@@ -6,9 +6,9 @@ module;
 #include <utility>
 #include <cstdint>
 
-export module sj.engine.system.memory.allocators:FreeListAllocator;
+export module sj.std.memory.allocators:FreeListAllocator;
 import :Allocator;
-import sj.engine.system.memory.utils;
+import sj.std.memory.utils;
 
 export namespace sj
 {

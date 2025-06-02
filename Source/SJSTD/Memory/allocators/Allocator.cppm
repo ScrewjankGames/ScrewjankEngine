@@ -9,7 +9,7 @@ module;
 #include <format>
 #include <memory_resource>
 
-export module sj.engine.system.memory.allocators:Allocator;
+export module sj.std.memory.allocators:Allocator;
 
 export namespace sj
 {
@@ -50,7 +50,7 @@ export namespace sj
         
         [[nodiscard]] virtual bool contains_ptr(void* ptr) const = 0;
 
-#ifndef GOLD_VERSION
+#ifndef SJ_GOLD
         void set_debug_name(const char* name)
         {
             std::format_to_n(m_DebugName.data(), 256, "{}", name);

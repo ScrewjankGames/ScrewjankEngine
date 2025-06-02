@@ -3,7 +3,7 @@
 // Library Headers
 #include "gtest/gtest.h"
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 using namespace sj;
 

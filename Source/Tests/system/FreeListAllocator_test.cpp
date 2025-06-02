@@ -7,7 +7,7 @@
 #include <ScrewjankStd/PlatformDetection.hpp>
 #include <memory_resource>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 using namespace sj;
 
@@ -22,7 +22,7 @@ namespace system_tests {
     TEST(FreeListAllocatorTests, BasicAllocationTest)
     {
         // Test basic allocations and frees that shouldn't hit many edge cases
-        std::pmr::memory_resource* heap = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* heap = std::pmr::get_default_resource();
         size_t alloc_size = sizeof(FreeListDummy) * 16;
         void* test_memory = heap->allocate(alloc_size);
 
@@ -82,7 +82,7 @@ namespace system_tests {
         // This allocator should have enough room for exactly two individual allocations of size
         // sizeof(FreeListDummy)
 
-        std::pmr::memory_resource* heap = MemorySystem::Get()->GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* heap = std::pmr::get_default_resource();
         size_t alloc_size = sizeof(FreeListDummy) * 4;
         void* test_memory = heap->allocate(alloc_size);
 
@@ -132,7 +132,7 @@ namespace system_tests {
 
     TEST(FreeListAllocatorTests, MixedTypeAllocationTest)
     {
-        std::pmr::memory_resource* heap = MemorySystem::Get()->GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* heap = std::pmr::get_default_resource();
         size_t alloc_size = 128;
         void* test_memory = heap->allocate(alloc_size);
 

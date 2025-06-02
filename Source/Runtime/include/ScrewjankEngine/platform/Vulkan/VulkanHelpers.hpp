@@ -10,7 +10,7 @@
 #include <span>
 #include <array>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 namespace sj
 {

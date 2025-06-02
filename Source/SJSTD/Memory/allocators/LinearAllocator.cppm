@@ -2,9 +2,9 @@ module;
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
-export module sj.engine.system.memory.allocators:LinearAllocator;
+export module sj.std.memory.allocators:LinearAllocator;
 import :Allocator;
-import sj.engine.system.memory.utils;
+import sj.std.memory.utils;
 
 export namespace sj
 {

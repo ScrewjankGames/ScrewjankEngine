@@ -5,7 +5,7 @@
 #include <print>
 
 // Screwjank Headers
-import sj.engine.system.memory;
+import sj.std.memory;
 
 int main(int argc, char** argv)
 {

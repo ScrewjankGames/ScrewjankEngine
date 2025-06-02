@@ -9,7 +9,7 @@
 #include <ScrewjankStd/Log.hpp>
 
 import sj.engine.framework;
-import sj.engine.system.memory;
+import sj.std.memory;
 import sj.std.containers;
 
 namespace sj {

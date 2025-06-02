@@ -24,7 +24,7 @@
 // STD Headers
 #include <array>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 import sj.std.containers;
 import sj.std.math;
 

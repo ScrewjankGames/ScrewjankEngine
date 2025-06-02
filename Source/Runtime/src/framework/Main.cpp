@@ -4,7 +4,7 @@
 // Shared Headers
 #include <ScrewjankStd/Log.hpp>
 
-import sj.engine.system.memory;
+import sj.engine.system.memory.MemorySystem;
 
 // Initialize engine global static objects so they are 
 // destroyed in the correct order during shutdown

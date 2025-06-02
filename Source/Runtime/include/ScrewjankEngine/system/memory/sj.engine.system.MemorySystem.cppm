@@ -5,11 +5,11 @@ module;
 #include <cstdint>
 #include <memory_resource>
 
-export module sj.engine.system.memory:MemorySystem;
-import :Literals;
+export module sj.engine.system.memory.MemorySystem;
 
-import sj.engine.system.memory.allocators;
-import sj.engine.system.memory.utils;
+import sj.std.memory.allocators;
+import sj.std.memory.literals;
+import sj.std.memory.utils;
 import sj.std.containers;
 
 export namespace sj

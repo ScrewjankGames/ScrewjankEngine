@@ -7,8 +7,8 @@
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
-#include "ScrewjankShared/string/StringHash.hpp"
-#include "ScrewjankShared/utils/Log.hpp"
+#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/Log.hpp>
 
 // Library Includes
 #include <glaze/beve/read.hpp>

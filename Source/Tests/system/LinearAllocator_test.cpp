@@ -7,7 +7,7 @@
 #include <ScrewjankStd/PlatformDetection.hpp>
 #include <memory_resource>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 using namespace sj;
 
@@ -31,9 +31,8 @@ namespace system_tests
 
     TEST(LinearAllocatorTests, MemoryAlignmentTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(128);
-
         LinearAllocator test_resource(128, memory);
 
         void* dummy_memory =
@@ -56,7 +55,7 @@ namespace system_tests
 
     TEST(LinearAllocatorTests, ValidAllocationTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = mem_resource->allocate(mem_size);
 
@@ -77,7 +76,7 @@ namespace system_tests
 
     TEST(LinearAllocatorTests, OutOfMemoryTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = mem_resource->allocate(mem_size);
 
@@ -90,7 +89,7 @@ namespace system_tests
 
     TEST(LinearAllocatorTests, InsufficientMemoryTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = mem_resource->allocate(mem_size);
 
@@ -106,7 +105,7 @@ namespace system_tests
     {
         // Ensure allocations don't stomp each other's memory
         // Reserve 256 bytes
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         size_t mem_size = 256;
         void* memory = mem_resource->allocate(mem_size);
 

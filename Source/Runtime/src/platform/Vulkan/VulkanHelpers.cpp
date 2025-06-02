@@ -9,7 +9,7 @@
 //STD Includes
 #include <array>
 
-import sj.engine.system.memory;
+import sj.std.memory;
 
 namespace sj
 {

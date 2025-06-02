@@ -1,12 +1,14 @@
-// STD Headers
-
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
+// Screwjank Headers
 #include <ScrewjankStd/PlatformDetection.hpp>
 
-import sj.engine.system.memory;
+// STD Headers
+#include <memory_resource>
+
+// Modules
+import sj.std.memory;
 
 using namespace sj;
 
@@ -20,7 +22,7 @@ namespace system_tests {
 
     TEST(PoolAllocatorTests, AllocationTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
         PoolAllocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);

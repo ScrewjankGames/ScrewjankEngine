@@ -1,12 +1,14 @@
-// STD Headers
+// Screwjank Headers
+#include <ScrewjankStd/PlatformDetection.hpp>
 
 // Library Headers
 #include "gtest/gtest.h"
 
-// Void Engine Headers
-#include <ScrewjankStd/PlatformDetection.hpp>
+// STD Headers
+#include <memory_resource>
 
-import sj.engine.system.memory;
+// Modules
+import sj.std.memory;
 
 using namespace sj;
 
@@ -22,7 +24,7 @@ namespace system_tests
 
     TEST(StackAllocatorTests, PushPopTest)
     {
-        std::pmr::memory_resource* mem_resource = MemorySystem::GetUnmanagedMemoryResource();
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(128);
         StackAllocator allocator(128, memory);
 

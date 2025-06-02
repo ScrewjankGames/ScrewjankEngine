@@ -5,9 +5,9 @@ module;
 #include <cstddef>
 #include <cstdint>
 
-export module sj.engine.system.memory.allocators:StackAllocator;
+export module sj.std.memory.allocators:StackAllocator;
 import :Allocator;
-import sj.engine.system.memory.utils;
+import sj.std.memory.utils;
 
 
 export namespace sj

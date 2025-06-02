@@ -7,7 +7,7 @@ module;
 #include <cstddef>
 #include <cstdint>
 
-export module sj.engine.system.memory.utils;;
+export module sj.std.memory.utils;
 
 export namespace sj
 {

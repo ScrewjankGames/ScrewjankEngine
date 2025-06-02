@@ -13,7 +13,7 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 import sj.std.containers;
-import sj.engine.system.memory;
+import sj.std.memory;
 
 namespace sj {
     

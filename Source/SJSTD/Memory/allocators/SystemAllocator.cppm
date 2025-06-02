@@ -4,7 +4,7 @@ module;
 #include <ScrewjankStd/Log.hpp>
 #include <memory_resource>
 
-export module sj.engine.system.memory.allocators:SystemAllocator;
+export module sj.std.memory.allocators:SystemAllocator;
 import :Allocator;
 
 export namespace sj

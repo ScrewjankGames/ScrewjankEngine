@@ -1,4 +1,4 @@
-export module sj.engine.system.memory.allocators;
+export module sj.std.memory.allocators;
 export import :Allocator;
 export import :FreeListAllocator;
 export import :LinearAllocator;
