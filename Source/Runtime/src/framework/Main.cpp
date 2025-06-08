@@ -10,11 +10,11 @@ import sj.engine.system.memory.MemorySystem;
 // destroyed in the correct order during shutdown
 void InitEngineStatics()
 {
+    sj::MemorySystem::Init();
+
     #ifndef SJ_GOLD
     SJ_ENGINE_LOG_INFO("Initializing...");
     #endif
-
-    sj::MemorySystem::Init();
 }
 
 int main([[maybe_unused]] int arc, [[maybe_unused]] char** argv)

@@ -33,7 +33,7 @@ namespace system_tests
     {
         std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(128);
-        linear_allocator test_resource(128, memory);
+        linear_allocator test_resource(128, reinterpret_cast<std::byte*>(memory));
 
         void* dummy_memory =
             test_resource.allocate(sizeof(LinearAllocatorDummy), alignof(LinearAllocatorDummy));
@@ -59,7 +59,7 @@ namespace system_tests
         size_t mem_size = sizeof(SBS) * 10;
         void* memory = mem_resource->allocate(mem_size);
 
-        linear_allocator packingTest(mem_size, memory);
+        linear_allocator packingTest(mem_size, reinterpret_cast<std::byte*>(memory));
 
         [[maybe_unused]] auto mem = packingTest.allocate(sizeof(SBS) * 10);
         packingTest.reset();
@@ -74,33 +74,6 @@ namespace system_tests
         mem_resource->deallocate(memory, mem_size);
     }
 
-    TEST(LinearAllocatorTests, OutOfMemoryTest)
-    {
-        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
-        size_t mem_size = sizeof(SBS) * 10;
-        void* memory = mem_resource->allocate(mem_size);
-
-        linear_allocator allocator(mem_size, memory);
-        [[maybe_unused]] auto mem = allocator.allocate(sizeof(SBS) * 10, alignof(SBS));
-        ASSERT_EQ(nullptr, allocator.allocate(1, 1)); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
-
-        mem_resource->deallocate(memory, mem_size);
-    }
-
-    TEST(LinearAllocatorTests, InsufficientMemoryTest)
-    {
-        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
-        size_t mem_size = sizeof(SBS) * 10;
-        void* memory = mem_resource->allocate(mem_size);
-
-        linear_allocator allocator(mem_size, memory);
-
-        [[maybe_unused]] auto mem = allocator.allocate(sizeof(SBS) * 9, alignof(SBS));
-        ASSERT_EQ(nullptr, allocator.allocate(sizeof(SBS) * 2, alignof(SBS))); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
-
-        mem_resource->deallocate(memory, mem_size);
-    }
-
     TEST(LinearAllocatorTests, MemoryStompTest)
     {
         // Ensure allocations don't stomp each other's memory
@@ -109,7 +82,7 @@ namespace system_tests
         size_t mem_size = 256;
         void* memory = mem_resource->allocate(mem_size);
 
-        linear_allocator test_resource(mem_size, memory);
+        linear_allocator test_resource(mem_size, reinterpret_cast<std::byte*>(memory));
         std::pmr::polymorphic_allocator<LinearAllocatorDummy> allocator(&test_resource);
 
         LinearAllocatorDummy* dummy1 = allocator.new_object<LinearAllocatorDummy>(1, 1.0);

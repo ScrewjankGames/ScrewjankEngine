@@ -25,7 +25,7 @@ namespace system_tests {
         std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
 
-        pool_allocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), memory);
+        pool_allocator<sizeof(PoolAllocatorDummy)> allocator(4 * sizeof(PoolAllocatorDummy), reinterpret_cast<std::byte*>(memory));
 
         auto mem_loc1 = allocator.allocate(sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
         ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -56,7 +56,7 @@ namespace system_tests {
         ASSERT_EQ(dummy2->Value, dummy3->Value);
         ASSERT_EQ(dummy3->Value, dummy4->Value);
 
-        allocator.deallocate(dummy3, sizeof(PoolAllocatorDummy));
+        allocator.deallocate(dummy3, sizeof(PoolAllocatorDummy), alignof(PoolAllocatorDummy));
 
         mem_loc3 = allocator.allocate(sizeof(double));
         ASSERT_NE(nullptr, mem_loc3);
@@ -86,6 +86,6 @@ namespace system_tests {
         allocator.deallocate(mem_loc3, sizeof(PoolAllocatorDummy));
         allocator.deallocate(mem_loc4, sizeof(PoolAllocatorDummy));
 
-        mem_resource->deallocate(memory, sizeof(PoolAllocatorDummy) * 4);
+        mem_resource->deallocate(memory, sizeof(PoolAllocatorDummy) * 4, alignof(PoolAllocatorDummy));
     }
 } // namespace system_tests

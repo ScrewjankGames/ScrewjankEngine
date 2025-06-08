@@ -20,7 +20,7 @@ export namespace sj
          * @param buffer_size The size of this allocator's buffer in bytes
          * @param memory The memory managed by this allocator
          */
-        stack_allocator(size_t buffer_size, void* memory)
+        stack_allocator(size_t buffer_size, std::byte* memory)
         {
             init(buffer_size, memory);
         }
@@ -30,7 +30,7 @@ export namespace sj
          */
         ~stack_allocator() override = default;
 
-        void init(size_t buffer_size, void* memory) override
+        void init(size_t buffer_size, std::byte* memory) override
         {
             m_BufferStart = memory;
             m_Offset = m_BufferStart;

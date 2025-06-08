@@ -19,12 +19,12 @@ export namespace sj
         /**
          * Initializing Constructor
          */
-        explicit linear_allocator(size_t buffer_size, void* memory)
+        explicit linear_allocator(size_t buffer_size, std::byte* memory)
         {
             init(buffer_size, memory);
         }
 
-        void init(size_t buffer_size, void* memory) override
+        void init(size_t buffer_size, std::byte* memory) override
         {
             m_BufferStart = memory;
             m_BufferEnd =

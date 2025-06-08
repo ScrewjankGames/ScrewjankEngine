@@ -483,7 +483,7 @@ export namespace sj
             }
         }
 
-        constexpr void resize(size_type new_size, T&& value = T()) noexcept
+        constexpr void resize(size_type new_size, const T& value = T()) noexcept
         {
             reserve(new_size);
 

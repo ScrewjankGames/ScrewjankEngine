@@ -42,11 +42,7 @@ export namespace sj
                       const Allocator& alloc = Allocator())
             : m_allocator(alloc)
         {
-            resize(capacity);
-            for(value_type& value : *this)
-            {
-                value = defaultValue;
-            }
+            resize(capacity, defaultValue);
         }
 
         dynamic_array(std::initializer_list<T> elems)
@@ -203,7 +199,7 @@ export namespace sj
             return self.m_array + self.m_capacity;
         }
 
-        void resize(size_type newCapacity)
+        void resize(size_type newCapacity, const T& defaultValue = T())
         {
             T* newArray = nullptr;
             if(newCapacity > 0)
@@ -220,7 +216,7 @@ export namespace sj
                 if(newCapacity > m_capacity)
                 {
                     for(size_type i = m_capacity; i < newCapacity; i++)
-                        new(std::addressof(newArray[i])) T();
+                        new(std::addressof(newArray[i])) T(defaultValue);
                 }
             }
 

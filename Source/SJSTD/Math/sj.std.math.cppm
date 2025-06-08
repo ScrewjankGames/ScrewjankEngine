@@ -8,3 +8,4 @@ export import :Mat44;
 export import :Tags;
 export import :VecHash;
 export import :Helpers;
+export import :Quat;

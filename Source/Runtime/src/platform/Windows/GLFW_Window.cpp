@@ -1,16 +1,18 @@
 #include <ScrewjankStd/PlatformDetection.hpp>
 #if defined(SJ_PLATFORM_WINDOWS) || defined(SJ_PLATFORM_LINUX)
 
-    // Library Headers
-    #include <GLFW/glfw3.h>
-    #include <imgui_impl_glfw.h>
+// Library Headers
+#include <GLFW/glfw3.h>
+#include <imgui_impl_glfw.h>
 
-    // Engine Headers
-    #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-    #include <ScrewjankEngine/rendering/Renderer.hpp>
-    #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
-    #include <ScrewjankStd/Log.hpp>
-    #include <ScrewjankStd/Assert.hpp>
+// Engine Headers
+#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+#include <ScrewjankEngine/rendering/Renderer.hpp>
+#include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
+#include <ScrewjankStd/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
+
+import sj.engine.system.memory.MemorySystem;
 
 namespace sj
 {
@@ -83,8 +85,10 @@ namespace sj
         uint32_t extension_count = 0;
         const char** extensions = nullptr;
 
-        MemoryResourceScope _(Renderer::WorkBuffer());
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+
+        const char** error = nullptr;
+        glfwGetError(error);
 
         return std::span {extensions, extension_count};
     }

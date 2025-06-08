@@ -9,6 +9,7 @@ module;
 export module sj.std.memory.resources.free_list_allocator;
 import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
+import sj.std.containers.unmanaged_list;
 
 export namespace sj
 {
@@ -18,7 +19,7 @@ export namespace sj
         /**
          * Constructor
          */
-        free_list_allocator() : m_FreeBlocks(nullptr), m_BufferStart(nullptr), m_BufferEnd(nullptr)
+        free_list_allocator() : m_bufferStart(nullptr), m_bufferEnd(nullptr)
         {
         }
 
@@ -34,7 +35,7 @@ export namespace sj
         /**
          * Initializing Constructor
          */
-        free_list_allocator(size_t buffer_size, void* memory) : free_list_allocator()
+        free_list_allocator(size_t buffer_size, std::byte* memory) : free_list_allocator()
         {
             init(buffer_size, memory);
         }
@@ -47,13 +48,7 @@ export namespace sj
         /**
          * Move Constructor
          */
-        free_list_allocator(free_list_allocator&& other) noexcept
-            : m_FreeBlocks(other.m_FreeBlocks), m_BufferStart(other.m_BufferStart),
-              m_BufferEnd(other.m_BufferEnd)
-        {
-            other.m_FreeBlocks = nullptr;
-            other.m_BufferStart = nullptr;
-        }
+        free_list_allocator(free_list_allocator&& other) = delete;
 
         /**
          * Destructor
@@ -65,10 +60,12 @@ export namespace sj
          */
         [[nodiscard]] bool is_initialized() const
         {
-            return m_BufferStart != nullptr;
+            return m_bufferStart != nullptr;
         }
 
-        void init(size_t buffer_size, void* memory) override
+        using sj::memory_resource::init;
+
+        void init(size_t buffer_size, std::byte* memory) override
         {
             SJ_ASSERT(!is_initialized(), "Double initialization of free list allocator detected");
 
@@ -76,17 +73,17 @@ export namespace sj
                       "free_list_allocator is not large enough to hold data");
 
             // Allocate memory from backing allocator
-            m_BufferStart = memory;
-            m_BufferEnd = reinterpret_cast<void*>((uintptr_t(memory) + buffer_size));
+            m_bufferStart = memory;
+            m_bufferEnd = reinterpret_cast<void*>((uintptr_t(memory) + buffer_size));
 
             // Initialize free list to be a single block of buffer_size situated at start of buffer
-            auto* initial_block = new(m_BufferStart) FreeBlock(buffer_size);
+            auto* initial_block = new(m_bufferStart) FreeBlock(buffer_size);
             AddFreeBlock(initial_block);
         }
 
         bool contains_ptr(void* memory) const override
         {
-            return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
+            return IsPointerInAddressSpace(memory, m_bufferStart, m_bufferEnd);
         }
 
     private:
@@ -98,11 +95,14 @@ export namespace sj
         void* do_allocate(const size_t size,
                           const size_t alignment = alignof(std::max_align_t)) override
         {
+            SJ_ASSERT(m_freeBlocks.back().next == nullptr, "what");
+
             SJ_ASSERT(is_initialized(), "Trying to allocate with uninitialized allocator");
 
             // Search the free list, and return the most suitable free block and the padding
             // required to use it
-            std::pair<FreeBlock*, uint32_t> free_list_search_result = FindFreeBlock(size, alignment);
+            std::pair<FreeBlock*, uint32_t> free_list_search_result =
+                FindFreeBlock(size, alignment);
 
             FreeBlock* const best_fit_block = free_list_search_result.first;
             const uint32_t header_padding = free_list_search_result.second;
@@ -111,7 +111,9 @@ export namespace sj
             SJ_ASSERT(best_fit_block != nullptr, "Free list allocator is out of memory.");
 
             // Remove block from the free list
-            RemoveFreeBlock(best_fit_block);
+            m_freeBlocks.erase(best_fit_block);
+            if(!m_freeBlocks.empty())
+                SJ_ASSERT(m_freeBlocks.back().next == nullptr, "what");
 
             // Get a copy of the current block's info before it is overwritten
             FreeBlock old_block_info = *best_fit_block;
@@ -124,7 +126,7 @@ export namespace sj
 
             // Amount of space left in the block for the payload
             // !!!This operation overwrites the data pointed to by best_fit_block!!!
-            auto payload_space = old_block_info.Size - sizeof(AllocationHeader) - header_padding;
+            auto payload_space = old_block_info.size - sizeof(AllocationHeader) - header_padding;
 
             SJ_ASSERT(IsMemoryAligned(header_address, alignof(AllocationHeader)),
                       "Allocation header memory is misaligned");
@@ -149,8 +151,8 @@ export namespace sj
             if(unused_space >= kMinBlockSize)
             {
                 // Remove unused_space from the allocation header's representation of the block
-                header->Size -= unused_space;
-                SJ_ASSERT(header->Size > 0, "Shit");
+                header->size -= unused_space;
+                SJ_ASSERT(header->size > 0, "Shit");
                 // Place a FreeBlock into the buffer after the user's payload
                 void* new_block_address =
                     reinterpret_cast<void*>(payload_end + new_block_adjustment);
@@ -159,6 +161,7 @@ export namespace sj
                 // Insert the new block into the free list
                 AddFreeBlock(new_block);
             }
+
 
             return payload_address;
         }
@@ -176,13 +179,11 @@ export namespace sj
             SJ_ASSERT(contains_ptr(memory), "Pointer is not managed by this allocator!");
 
             AllocationHeader* block_header = GetAllocationHeader(memory);
-            SJ_ASSERT(block_header->MagicHeader == AllocationHeader::kMagicHeader,
-                      "Free list allocator corruption detected");
 
             // Extract header info
-            auto block_size = block_header->Padding + block_header->Size + sizeof(AllocationHeader);
+            auto block_size = block_header->padding + block_header->size + sizeof(AllocationHeader);
             void* block_start =
-                reinterpret_cast<void*>(uintptr_t(block_header) - block_header->Padding);
+                reinterpret_cast<void*>(uintptr_t(block_header) - block_header->padding);
 
             SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)),
                       "Free block is mis-aligned");
@@ -190,40 +191,43 @@ export namespace sj
             FreeBlock* new_block = new(block_start) FreeBlock(block_size);
 
             AddFreeBlock(new_block);
+            SJ_ASSERT(m_freeBlocks.back().next == nullptr, "what");
         }
 
         /** Linked list node structure inserted in-place into the allocator's buffer */
         struct FreeBlock
         {
-            size_t Size;
-            FreeBlock* Previous;
-            FreeBlock* Next;
+            size_t size = 0;
+            FreeBlock* prev = nullptr;
+            FreeBlock* next = nullptr;
 
-            /** Constructor */
-            FreeBlock(size_t block_size = 0, FreeBlock* prev = nullptr, FreeBlock* next = nullptr)
-                : Size(block_size), Previous(prev), Next(next)
+            [[nodiscard]] FreeBlock* get_next() const
             {
+                return next;
+            }
+
+            void set_next(FreeBlock* block)
+            {
+                next = block;
+            }
+
+            [[nodiscard]] FreeBlock* get_prev() const
+            {
+                return prev;
+            }
+
+            void set_prev(FreeBlock* block)
+            {
+                prev = block;
             }
         };
 
         /** Book-keeping structure to correctly de-allocate memory */
         struct AllocationHeader
         {
-            static constexpr uint32_t kMagicHeader = 0x50501312;
-
-            /** Magic number- if this value changes it's explicitly a memory stomp */
-            uint32_t MagicHeader = kMagicHeader;
-
             /** The padding placed before this header in the free block during allocation */
-            uint32_t Padding;
-
-            /** Number of bytes remaining in the current allocation */
-            size_t Size;
-
-            /** Constructor */
-            AllocationHeader(uint32_t padding = 0, size_t size = 0) : Padding(padding), Size(size)
-            {
-            }
+            uint8_t padding;
+            size_t size;
         };
 
         /** Constant value to determine the minimum size of a block */
@@ -244,7 +248,7 @@ export namespace sj
          * placed before the allocation header to satisfy the allocation in that block
          */
         [[nodiscard]] std::pair<FreeBlock*, uint32_t> FindFreeBlock(const size_t size,
-                                                                  const size_t alignment)
+                                                                    const size_t alignment)
         {
             // TODO (MrLever): Replace linear search with a Red-Black tree
 
@@ -255,17 +259,12 @@ export namespace sj
             // them, only padding in the allocation is placed before the header.
             const size_t alignment_requirement = std::max(alignof(AllocationHeader), alignment);
 
-            // Iterator for free list
-            FreeBlock* curr_block = m_FreeBlocks;
-
-            // Search the free list for a best-fit block
-            while(curr_block != nullptr)
+            for(FreeBlock& curr_block : m_freeBlocks)
             {
-
                 // When allocating, we must calculate alignment from this address to leave room for
                 // the allocation header
                 void* fist_possible_payload_address =
-                    reinterpret_cast<void*>(uintptr_t(curr_block) + sizeof(AllocationHeader));
+                    reinterpret_cast<void*>(uintptr_t(&curr_block) + sizeof(AllocationHeader));
 
                 // Get the padding needed to align payload from first possible playload addresss
                 size_t required_padding =
@@ -273,12 +272,10 @@ export namespace sj
                 size_t total_allocation_size = header_and_payload_size + required_padding;
 
                 // If the current free block is large enough to support allocation
-                if(total_allocation_size <= curr_block->Size)
+                if(total_allocation_size <= curr_block.size)
                 {
-                    return {curr_block, required_padding};
+                    return {&curr_block, required_padding};
                 }
-
-                curr_block = curr_block->Next;
             }
 
             return {nullptr, 0};
@@ -289,117 +286,55 @@ export namespace sj
          */
         void AddFreeBlock(FreeBlock* new_block)
         {
-            // If there no free list, new_block becomes the new head
-            if(m_FreeBlocks == nullptr)
+            auto freeListSearchPred = [new_block]( const FreeBlock& block ) -> bool
             {
-                m_FreeBlocks = new_block;
-                return;
-            }
+                return reinterpret_cast<uintptr_t>(new_block) < reinterpret_cast<uintptr_t>(&block);
+            };
 
-            // New block needs to be inserted to the front of the free list
-            if(uintptr_t(new_block) < uintptr_t(m_FreeBlocks))
-            {
-                new_block->Next = m_FreeBlocks;
-                m_FreeBlocks->Previous = new_block;
-                m_FreeBlocks = new_block;
-                AttemptCoalesceBlock(new_block);
-                return;
-            }
-
-            // Otherwise, iterate the list and find a place to add the free block
-            auto curr_block = m_FreeBlocks;
-
-            // Insert the free block into the free list sorted by memory address to avoid poor cache
-            // performance
-            while(curr_block->Next != nullptr)
-            {
-                if(reinterpret_cast<uintptr_t>(new_block) > reinterpret_cast<uintptr_t>(curr_block) &&
-                   reinterpret_cast<uintptr_t>(new_block) < reinterpret_cast<uintptr_t>(curr_block) )
-                {
-
-                    new_block->Next = curr_block->Next;
-                    curr_block->Next->Previous = new_block;
-                    new_block->Previous = curr_block;
-                    curr_block->Next = new_block;
-                    AttemptCoalesceBlock(new_block);
-                    return;
-                }
-
-                curr_block = curr_block->Next;
-            }
-
-            // If no suitable place between two blocks was found, tack the block onto the end of the
-            // free list
-            curr_block->Next = new_block;
-            new_block->Previous = curr_block;
+            auto insert_pos = std::ranges::find_if(m_freeBlocks, freeListSearchPred);
+            m_freeBlocks.insert(insert_pos, new_block);
+            
             AttemptCoalesceBlock(new_block);
-        }
-
-        /**
-         * Removes a free block from the free list
-         */
-        void RemoveFreeBlock(FreeBlock* block)
-        {
-            SJ_ASSERT(block != nullptr, "Cannot free null block");
-
-            // If the block being removed is the head of the list
-            if(block == m_FreeBlocks)
-            {
-                // Rewire the head of the list
-                m_FreeBlocks = block->Next;
-                return;
-            }
-
-            // Rewire linked list links to no longer visit block
-            if(block->Previous != nullptr)
-            {
-                block->Previous->Next = block->Next;
-            }
-
-            if(block->Next != nullptr)
-            {
-                block->Next->Previous = block->Previous;
-            }
         }
 
         /**
          * Given a block in the free list, attempt to merge it with it's neighbors
          */
-        void AttemptCoalesceBlock(FreeBlock* block)
+        void AttemptCoalesceBlock(FreeBlock* curr_block)
         {
+            size_t block_size = curr_block->size;
+
             // Attempt to coalesce with left neighbor, moving block pointer back if necessary
-            if(block->Previous != nullptr)
+            FreeBlock* prev = curr_block->prev;
+            if(prev != nullptr)
             {
-                uintptr_t left_end = uintptr_t(block->Previous) + block->Previous->Size;
+                uintptr_t left_end = uintptr_t(prev) + prev->size;
 
                 // If this block starts exactly where the previous block ends, coalesce
-                if(uintptr_t(block) == left_end)
+                if(uintptr_t(curr_block) == left_end)
                 {
-                    block->Previous->Next = block->Next;
-                    if(block->Next != nullptr)
-                    {
-                        block->Next->Previous = block->Previous;
-                    }
-
-                    block->Previous->Size += block->Size;
-                    block = block->Previous;
+                    m_freeBlocks.erase(curr_block);
+                    prev->size += block_size;
+                    
+                    // update curr_block so we can potentially merge again, as a treat
+                    curr_block = prev;
+                    block_size = prev->size;
                 }
             }
 
+
             // Attempt to coalesce with right neighbor
-            if(block->Next != nullptr)
+            FreeBlock* next = curr_block->next;
+            if(next != nullptr)
             {
-                uintptr_t block_end = uintptr_t(block) + block->Size;
+                uintptr_t block_end = uintptr_t(curr_block) + block_size;
 
                 // If the end of this block is the start of the next block, coalesce
-                if(block_end == uintptr_t(block->Next))
+                if(block_end == uintptr_t(next))
                 {
-                    block->Size += block->Next->Size;
-                    block->Next = block->Next->Next;
-                    if(block->Next != nullptr)
-                    {
-                        block->Next->Previous = block;
-                    }
+                    size_t next_size = next->size;
+                    m_freeBlocks.erase(next);
+                    curr_block->size += next_size;
                 }
             }
         }
@@ -413,12 +348,12 @@ export namespace sj
         }
 
         /** The free list of allocation blocks */
-        FreeBlock* m_FreeBlocks;
+        unmanaged_list<FreeBlock> m_freeBlocks;
 
         /** Pointer to the start of the allocator's memory block */
-        void* m_BufferStart;
+        void* m_bufferStart;
 
         /** Pointer to the end of the allocator's memory block */
-        void* m_BufferEnd;
+        void* m_bufferEnd;
     };
 } // namespace sj

@@ -40,12 +40,12 @@ export namespace sj
 
         // Derived resources may provide constructors similar to these, but all resources should be
         // initializable post-construction
-        virtual void init(size_t numBytes, void* buffer) = 0;
+        virtual void init(size_t numBytes, std::byte* buffer) = 0;
 
         void init(size_t numBytes, std::pmr::memory_resource& hostResource)
         {
             void* memory = hostResource.allocate(numBytes);
-            init(numBytes, memory);
+            init(numBytes, reinterpret_cast<std::byte*>(memory));
         }
         
         [[nodiscard]] virtual bool contains_ptr(void* ptr) const = 0;

@@ -26,7 +26,7 @@ namespace system_tests
     {
         std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
         void* memory = mem_resource->allocate(128);
-        stack_allocator allocator(128, memory);
+        stack_allocator allocator(128, reinterpret_cast<std::byte*>(memory));
 
         // Assign memory and construct test data in the addresses
         auto mem1 = allocator.allocate(sizeof(StackAllocatorDummy), alignof(StackAllocatorDummy));

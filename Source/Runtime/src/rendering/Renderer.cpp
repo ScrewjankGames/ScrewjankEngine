@@ -148,7 +148,7 @@ namespace sj
     void Renderer::Init()
     {
         free_list_allocator* workBuffer = WorkBuffer();
-        workBuffer->init(4_MiB, MemorySystem::GetRootMemoryResource());
+        workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
         MemorySystem::TrackMemoryResource(workBuffer);
 
         InitializeVulkan();

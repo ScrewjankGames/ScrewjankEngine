@@ -89,15 +89,24 @@ namespace container_tests
                 fwdList.push_front(new FwdListDummy {.val=i, .next=nullptr});
             }
 
+            int count = 0;
+            for(FwdListDummy& _ : fwdList){}
+                count++;
+
+            ASSERT_EQ(count, 10000);
+
+            
             for(int i = 10000; i > 0; i--)
             {
-                ASSERT_EQ(i, fwdList.size());
                 ASSERT_EQ(i-1, fwdList.front().val);
                 FwdListDummy& dummy = fwdList.front();
                 fwdList.pop_front();
 
                 delete &(dummy);
             }
+
+            ASSERT_TRUE(fwdList.empty());
+
         }
 
         // Random push pop
@@ -113,7 +122,7 @@ namespace container_tests
             {
                 int pop = rand() % 2;
 
-                if( pop && fwdList.size() > 0 )
+                if( pop && !fwdList.empty() )
                 {
                     FwdListDummy& dummy = fwdList.front();
                     popped += dummy.val;
@@ -127,7 +136,7 @@ namespace container_tests
                 }
             }
 
-            while(fwdList.size() > 0)
+            while(!fwdList.empty())
             {
                 popped += fwdList.front().val;
                 delete &(fwdList.front());

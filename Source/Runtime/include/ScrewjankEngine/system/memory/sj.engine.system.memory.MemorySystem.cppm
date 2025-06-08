@@ -99,22 +99,15 @@ export namespace sj
         }
 
     private:
-        free_list_allocator m_rootResource;
-
-#ifndef SJ_GOLD
-        free_list_allocator m_debugResource;
-#endif
-
-        system_allocator m_unmanagedResource;
-
-        MemorySystem() : m_rootResource(kRootHeapSize, std::pmr::new_delete_resource())
+        MemorySystem()
         {
+            m_rootResource.init(kRootHeapSize, m_unmanagedResource);
             s_trackedResources.emplace_back(&m_rootResource);
 
 #ifndef SJ_GOLD
             m_rootResource.set_debug_name("Root Heap");
 
-            m_debugResource.init(kDebugHeapSize, std::pmr::new_delete_resource());
+            m_debugResource.init(kDebugHeapSize, m_unmanagedResource);
             m_debugResource.set_debug_name("Debug Heap");
             s_trackedResources.emplace_back(&m_debugResource);
 #endif
@@ -127,6 +120,15 @@ export namespace sj
 
         // Can be searched to figure out where a pointer came from
         inline static static_vector<sj::memory_resource*, 64> s_trackedResources = {};
+
+        system_allocator m_unmanagedResource;
+        
+        free_list_allocator m_rootResource;
+
+#ifndef SJ_GOLD
+        free_list_allocator m_debugResource;
+#endif
+
     };
 
     /**
@@ -136,13 +138,13 @@ export namespace sj
     class MemoryResourceScope
     {
     public:
-        MemoryResourceScope(std::pmr::memory_resource* resource)
-            : m_resource(resource)
+        MemoryResourceScope(std::pmr::memory_resource* resource) : m_resource(resource)
         {
             MemorySystem::PushMemoryResource(resource);
         }
         MemoryResourceScope(const MemoryResourceScope& other) = delete;
-        MemoryResourceScope(MemoryResourceScope&& other) noexcept : MemoryResourceScope(other.m_resource)
+        MemoryResourceScope(MemoryResourceScope&& other) noexcept
+            : MemoryResourceScope(other.m_resource)
         {
             other.m_resource = nullptr;
         }

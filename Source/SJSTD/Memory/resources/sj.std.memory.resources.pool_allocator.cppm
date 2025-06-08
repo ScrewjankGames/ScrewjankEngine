@@ -26,7 +26,7 @@ export namespace sj
          * Constructor
          * @param block_count The number of blocks of size kBlockSize
          */
-        pool_allocator(size_t buffer_size, void* memory)
+        pool_allocator(size_t buffer_size, std::byte* memory)
         {
             init(buffer_size, memory);
         }
@@ -36,7 +36,7 @@ export namespace sj
          */
         ~pool_allocator() final = default;
 
-        void init(size_t buffer_size, void* memory) override
+        void init(size_t buffer_size, std::byte* memory) override
         {
             m_BufferStart = memory;
             m_BufferEnd =
@@ -107,7 +107,7 @@ export namespace sj
             SJ_ASSERT(size <= kBlockSize,
                       "Pool allocator cannot satisfy allocation of size > block size");
 
-            if(m_FreeList.size() == 0)
+            if(m_FreeList.empty())
             {
                 SJ_ENGINE_LOG_ERROR("Pool allocator has run out of blocks");
                 return nullptr;

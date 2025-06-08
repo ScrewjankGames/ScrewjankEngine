@@ -28,7 +28,7 @@ namespace system_tests {
         void* test_memory = heap->allocate(alloc_size);
 
         free_list_allocator resource;
-        resource.init(alloc_size, test_memory);
+        resource.init(alloc_size, reinterpret_cast<std::byte*>(test_memory));
         std::pmr::polymorphic_allocator<FreeListDummy> allocator(&resource);
 
         // Allocate and construct three dummies sequentially
@@ -88,7 +88,7 @@ namespace system_tests {
         void* test_memory = heap->allocate(alloc_size);
 
         free_list_allocator resource;
-        resource.init(alloc_size, test_memory);
+        resource.init(alloc_size, reinterpret_cast<std::byte*>(test_memory));
         std::pmr::polymorphic_allocator<FreeListDummy> allocator(&resource);
 
         auto mem_loc1 = allocator.allocate(1);
@@ -138,7 +138,7 @@ namespace system_tests {
         void* test_memory = heap->allocate(alloc_size);
 
         free_list_allocator resource;
-        resource.init(alloc_size, test_memory);
+        resource.init(alloc_size, reinterpret_cast<std::byte*>(test_memory));
         std::pmr::polymorphic_allocator allocator(&resource);
 
         auto mem_loc1 = allocator.allocate_bytes(sizeof(int), alignof(int));
