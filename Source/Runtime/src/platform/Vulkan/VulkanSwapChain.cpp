@@ -9,6 +9,7 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 #include <ScrewjankStd/Assert.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace sj
 {
@@ -68,6 +69,18 @@ namespace sj
         if(params.Capabilities.maxImageCount > 0 && image_count > params.Capabilities.maxImageCount)
         {
             image_count = params.Capabilities.maxImageCount;
+        }
+        
+        VkSemaphoreCreateInfo semaphoreInfo {};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        m_renderFinishedSemaphores.resize(image_count);
+        for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
+        {
+            VkResult res = vkCreateSemaphore(logicalDevice,
+                        &semaphoreInfo,
+                        sj::g_vkAllocationFns,
+                        &semaphore);
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
         }
 
         // Fill out swap chain create info
@@ -179,6 +192,11 @@ namespace sj
 
     void VulkanSwapChain::DeInit(VkDevice logicalDevice)
     {
+        for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
+        {
+            vkDestroySemaphore(logicalDevice, semaphore, sj::g_vkAllocationFns);
+        }
+
         vkDestroyImageView(logicalDevice, m_depthImageView, sj::g_vkAllocationFns);
         vkDestroyImage(logicalDevice, m_depthImage, sj::g_vkAllocationFns);
         vkFreeMemory(logicalDevice, m_depthImageMemory, sj::g_vkAllocationFns);
@@ -320,4 +338,10 @@ namespace sj
     {
         return std::span<VkFramebuffer>(m_swapChainBuffers.data(), m_imageViews.size());
     }
+
+    VkSemaphore VulkanSwapChain::GetImageRenderCompleteSemaphore(uint32_t imageIdx)
+    {
+        return m_renderFinishedSemaphores.at(imageIdx);
+    }
+
 } // namespace sj

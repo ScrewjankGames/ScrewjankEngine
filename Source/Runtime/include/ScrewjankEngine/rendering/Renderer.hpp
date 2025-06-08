@@ -173,7 +173,6 @@ namespace sj {
             std::array<VkCommandBuffer, kMaxFramesInFlight> commandBuffers;
 
             std::array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
-            std::array<VkSemaphore, kMaxFramesInFlight> renderFinishedSemaphores;
             std::array<VkFence, kMaxFramesInFlight> inFlightFences;
 
             std::array<VkBuffer, kMaxFramesInFlight> globalUniformBuffers;

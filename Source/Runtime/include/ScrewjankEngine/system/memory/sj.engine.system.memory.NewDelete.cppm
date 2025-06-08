@@ -63,6 +63,9 @@ void do_deallocate(void* ptr,
                    std::size_t sz,
                    [[maybe_unused]] std::size_t align = alignof(std::max_align_t)) noexcept
 {
+    if(ptr == nullptr)
+        return;
+
     sj::memory_resource* owning_resource = sj::MemorySystem::FindOwningResource(ptr);
     if(owning_resource)
         owning_resource->deallocate(ptr, sz);

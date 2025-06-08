@@ -24,7 +24,7 @@
 // STD Headers
 #include <array>
 
-import sj.std.memory;
+import sj.engine.system.memory;
 import sj.std.containers;
 import sj.std.math;
 
@@ -58,7 +58,6 @@ namespace sj
         VkCommandBuffer currCommandBuffer = m_frameData.commandBuffers[frameIdx];
         VkFence currFence = m_frameData.inFlightFences[frameIdx];
         VkSemaphore currImageAvailableSemaphore = m_frameData.imageAvailableSemaphores[frameIdx];
-        VkSemaphore currRenderFinishedSemaphore = m_frameData.renderFinishedSemaphores[frameIdx];
 
         vkWaitForFences(m_renderDevice.GetLogicalDevice(),
                         1,
@@ -73,6 +72,7 @@ namespace sj
                                              currImageAvailableSemaphore,
                                              VK_NULL_HANDLE,
                                              &imageIndex);
+        VkSemaphore currRenderFinishedSemaphore = m_swapChain.GetImageRenderCompleteSemaphore(imageIndex);
 
         if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
@@ -128,21 +128,19 @@ namespace sj
         presentInfo.pImageIndices = &imageIndex;
 
         res = vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
+        m_frameCount++;
         if(res == VK_ERROR_OUT_OF_DATE_KHR)
         {
             m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
                                  m_renderDevice.GetLogicalDevice(),
                                  m_renderingSurface,
                                  m_defaultRenderPass);
-
             return;
         }
         else if(res != VK_SUCCESS)
         {
             SJ_ASSERT(false, "Failed to acquire swap chain image.");
         }
-
-        m_frameCount++;
     }
 
     void Renderer::Init()
@@ -1198,12 +1196,6 @@ namespace sj
                                                  &imageAvailableSemaphores[i]);
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
 
-                res = vkCreateSemaphore(device,
-                                        &semaphoreInfo,
-                                        sj::g_vkAllocationFns,
-                                        &renderFinishedSemaphores[i]);
-                SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-
                 res = vkCreateFence(device, &fenceInfo, sj::g_vkAllocationFns, &inFlightFences[i]);
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
             }
@@ -1218,7 +1210,6 @@ namespace sj
         for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
         {
             vkDestroySemaphore(device, imageAvailableSemaphores[i], sj::g_vkAllocationFns);
-            vkDestroySemaphore(device, renderFinishedSemaphores[i], sj::g_vkAllocationFns);
             vkDestroyFence(device, inFlightFences[i], sj::g_vkAllocationFns);
 
             vkDestroyBuffer(device, globalUniformBuffers[i], sj::g_vkAllocationFns);

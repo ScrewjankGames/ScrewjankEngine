@@ -117,8 +117,8 @@ namespace sj {
     
     void Game::ShutDown()
     {
-        m_Window->DeInit();
         m_Renderer->DeInit();
+        m_Window->DeInit();
     }
 
 } // namespace sj

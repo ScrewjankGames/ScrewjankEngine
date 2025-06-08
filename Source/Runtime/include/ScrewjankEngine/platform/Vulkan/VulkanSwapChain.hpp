@@ -5,6 +5,7 @@
 
 // Library Headers
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 // Screwjank Headers
 
@@ -47,11 +48,11 @@ namespace sj {
                       VkSurfaceKHR renderingSurface,
                       VkRenderPass pass);
 
-        VkExtent2D GetExtent() const;
+        [[nodiscard]] VkExtent2D GetExtent() const;
         
-        VkFormat GetImageFormat() const;
+        [[nodiscard]] VkFormat GetImageFormat() const;
 
-        VkSwapchainKHR GetSwapChain() const;
+        [[nodiscard]] VkSwapchainKHR GetSwapChain() const;
 
         /**
          * Query swap chain support parameters
@@ -59,9 +60,11 @@ namespace sj {
         static SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, 
                                                     VkSurfaceKHR surface);
 
-        std::span<VkImageView> GetImageViews() const;
+        [[nodiscard]] std::span<VkImageView> GetImageViews() const;
 
-        std::span<VkFramebuffer> GetFrameBuffers() const;
+        [[nodiscard]] std::span<VkFramebuffer> GetFrameBuffers() const;
+
+        [[nodiscard]] VkSemaphore GetImageRenderCompleteSemaphore(uint32_t imageIdx);
 
       private:
         /**
@@ -78,6 +81,9 @@ namespace sj {
 
         /** Pointer to the swap chain that controls image presenation */
         VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
+
+        /** Semaphors to track when each image is presented  */
+        dynamic_array<VkSemaphore> m_renderFinishedSemaphores;
 
         /** List of handles to images in the swap chain */
         dynamic_vector<VkImage> m_images;
