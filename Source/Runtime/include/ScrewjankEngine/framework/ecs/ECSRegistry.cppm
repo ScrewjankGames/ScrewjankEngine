@@ -15,11 +15,9 @@ export namespace sj
     {
     public:
         ECSRegistry(uint32_t initialEntityCount, std::pmr::memory_resource* resource)
-            : m_memoryResource(resource), 
-              m_gameObjects(initialEntityCount, resource),
+            : m_memoryResource(resource), m_gameObjects(initialEntityCount, resource),
               m_componentPools(resource)
         {
-
         }
 
         GameObjectId CreateGameObject()
@@ -27,7 +25,14 @@ export namespace sj
             return m_gameObjects.create();
         }
 
-        template<ComponentType T>
+        template <ComponentType T, class... Args>
+        void CreateComponent(GameObjectId goId, Args&&... args)
+        {
+            ComponentPool<T>& pool = GetComponentPool<T>();
+            pool.create(goId, T {std::forward<Args>(args)...});
+        }
+
+        template <ComponentType T>
         T* GetComponent(GameObjectId goId)
         {
             ComponentPool<T>& pool = GetComponentPool<T>();
@@ -39,41 +44,47 @@ export namespace sj
             m_gameObjects.release(go);
         }
 
-        template<ComponentType T>
+        template <ComponentType T>
         void RegisterComponentType()
         {
             m_componentPools.emplace(
-                    T::kTypeId, 
-                    ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource)
-            );
+                T::kTypeId,
+                ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
         }
-        
-        template<ComponentType T, class ... Args>
-        void RegisterComponent(GameObjectId goId, Args&& ... args)
+
+        template <ComponentType T>
+        std::span<T> GetComponents()
         {
-            ComponentPool<T>& pool = GetComponentPool<T>();
-            pool.create(goId, T{std::forward<Args>(args)...});
+            auto& pool = GetComponentPool<T>();
+            return pool.template get_set<T>();
         }
 
     private:
-        template<class T>
+        template <class T>
         using ComponentPool = sparse_set<GameObjectId, T>;
         using ComponentPoolHandle = sj::static_any<sizeof(ComponentPool<int>)>;
-        
-        template<ComponentType T>
+
+        template <ComponentType T>
         ComponentPool<T>& GetComponentPool()
         {
-            const auto& componentPoolIt = m_componentPools.find(T::kTypeId);
-            SJ_ASSERT(componentPoolIt != m_componentPools.end(), "Failed to find pool for component. Please call RegisterComponentType() first");
+            ComponentPoolHandle* handle = FindComponentPool(T::kTypeId);
+            SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
+
+            return handle->get<ComponentPool<T>>();
+        }
+
+        auto FindComponentPool(TypeId typeId) -> ComponentPoolHandle*
+        {
+            const auto& componentPoolIt = m_componentPools.find(typeId);
+            if(componentPoolIt == m_componentPools.end())
+                return nullptr;
 
             ComponentPoolHandle& handle = componentPoolIt->second;
-            auto& pool = handle.get<ComponentPool<T>>();
-            return pool;
+            return &handle;
         }
 
         std::pmr::memory_resource* m_memoryResource = nullptr;
         sparse_set<GameObjectId> m_gameObjects;
         dynamic_flat_map<TypeId, ComponentPoolHandle> m_componentPools;
     };
-}
-
+} // namespace sj

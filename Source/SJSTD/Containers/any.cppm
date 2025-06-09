@@ -105,6 +105,7 @@ export namespace sj
             )
             : m_managerFn( priv::ManagerFn< std::decay_t<T>> )
         {
+            static_assert(sizeof(T) <= tSize, "Type too large to store in this static any");
             new (m_buffer) std::decay_t<T>(std::forward<T>(val));
         }
 
@@ -163,6 +164,13 @@ export namespace sj
         {
             SJ_ASSERT(priv::ManagerFn<T> == m_managerFn, "bad any cast" );
             return *reinterpret_cast<T*>(m_buffer);
+        }
+
+        template<class T>
+        const T& get() const
+        {
+            SJ_ASSERT(priv::ManagerFn<T> == m_managerFn, "bad any cast" );
+            return *reinterpret_cast<const T*>(m_buffer);
         }
 
         void reset()

@@ -27,7 +27,7 @@ namespace sj {
     void Game::LoadScene(const char* path)
     {
         MemoryResourceScope _ (MemorySystem::GetRootMemoryResource());
-        m_scenes.emplace_back(new Scene(path));
+        m_scenes.emplace_back(new Scene(m_ecs, path));
     }
 
     uint64_t Game::GetFrameCount()
@@ -96,7 +96,7 @@ namespace sj {
             m_Renderer->StartRenderFrame();
             m_Window->ProcessEvents();
             m_InputSystem.Process();
-            //m_CameraSystem.Process(m_Scene.get(), s_DeltaTime);
+            m_CameraSystem.Process(m_ecs, s_DeltaTime);
 
             if constexpr(g_IsDebugBuild)
             {

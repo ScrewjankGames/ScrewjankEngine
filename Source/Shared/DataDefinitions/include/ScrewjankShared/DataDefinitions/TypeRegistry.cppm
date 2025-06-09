@@ -18,6 +18,7 @@ module;
 #include <span>
 #include <vector>
 #include <flat_map>
+#include <expected>
 
 export module sj.shared.datadefs:TypeRegistry;
 import game.datadefs;
@@ -26,28 +27,31 @@ import :CameraComponent;
 import :TransformComponent;
 import :Serialization;
 
-export namespace sj 
+export namespace sj
 {
     template <class T>
-    concept ComponentType = requires(T obj)
-    {
-        { T::kTypeId } -> std::convertible_to<sj::TypeId>; 
+    concept ComponentType = requires(T obj) {
+        { T::kTypeId } -> std::convertible_to<sj::TypeId>;
     };
+
+    using AnyComponent = sj::static_any<128, alignof(std::max_align_t)>;
 
     struct ComponentMetaInfo
     {
         std::string_view m_typeName;
         struct SerializationFuncs
         {
-            glz::error_ctx (*toBeveFn)(const glz::json_t& data, sj::dynamic_vector<std::byte>& buffer);
-        } m_serializationFuncs{};
+            glz::error_ctx (*toBeveFn)(const glz::json_t& data,
+                                       sj::dynamic_vector<std::byte>& buffer);
+            std::expected<AnyComponent, glz::error_ctx> (*fromBeveFn)(std::span<std::byte> buffer);
+        } m_serializationFuncs {};
     };
 
-    template<class T>
+    template <class T>
     constexpr ComponentMetaInfo GetComponentMetaInfo()
     {
-        auto toBeveFn = [](const glz::json_t& data, sj::dynamic_vector<std::byte>& buffer) -> glz::error_ctx
-        {
+        auto toBeveFn = [](const glz::json_t& data,
+                           sj::dynamic_vector<std::byte>& buffer) -> glz::error_ctx {
             T val;
             glz::error_ctx err = glz::read_json<T>(val, data);
             SJ_ASSERT(err.ec == glz::error_code::none, "Failed to parse component JSON!");
@@ -55,26 +59,31 @@ export namespace sj
             return glz::write_beve<T>(std::move(val), buffer);
         };
 
-        return ComponentMetaInfo 
-        {
-            .m_typeName = glz::name_v<T>,
-            
-            .m_serializationFuncs = {
-                 .toBeveFn = toBeveFn
-            }
+        auto fromBeveFn =
+            [](std::span<std::byte> buffer) -> std::expected<AnyComponent, glz::error_ctx> {
+            T component;
+
+            glz::error_ctx err = glz::read_beve(component, buffer);
+            if(err != glz::error_code::none)
+                return std::unexpected(err);
+
+            return component;
         };
+
+        return ComponentMetaInfo {
+            .m_typeName = glz::name_v<T>,
+
+            .m_serializationFuncs = {.toBeveFn = toBeveFn, .fromBeveFn = fromBeveFn}};
     }
 
-    inline constexpr type_list<
-        TransformComponent, 
-        CameraComponent
-    > g_engineComponentTypes;
+    inline constexpr type_list<TransformComponent, CameraComponent> g_engineComponentTypes;
 
     class ComponentTypeRegistry
     {
     public:
+        static constexpr size_t kNumComponentTypes = g_engineComponentTypes.size() + g_gameComponentTypes.size();
 
-        template<auto F, class ... Args>
+        template <auto F, class... Args>
         static constexpr void ForEachComponentType(Args&&... args)
         {
             g_engineComponentTypes.for_each<F>(std::forward<Args>(args)...);
@@ -82,31 +91,31 @@ export namespace sj
         }
 
         using ComponentLookupEntry = std::pair<TypeId, ComponentMetaInfo>;
-        using ComponentInfoLookupList = std::array<ComponentLookupEntry, g_engineComponentTypes.size() + g_gameComponentTypes.size()>;
-        static constexpr ComponentInfoLookupList GetMetaInfoTable() 
+        using ComponentInfoLookupList =
+            std::array<ComponentLookupEntry,
+                       g_engineComponentTypes.size() + g_gameComponentTypes.size()>;
+        static constexpr ComponentInfoLookupList GetMetaInfoTable()
         {
-            static constexpr ComponentInfoLookupList kLookupList = []()
-            {
+            static constexpr ComponentInfoLookupList kLookupList = []() {
                 ComponentInfoLookupList list;
 
                 size_t i = 0;
-                auto helper = []<class T>(size_t& i, ComponentInfoLookupList& list)
-                {
-                    list.at(i++) = std::pair{T::kTypeId, GetComponentMetaInfo<T>()};
+                auto helper = []<class T>(size_t& i, ComponentInfoLookupList& list) {
+                    list.at(i++) = std::pair {T::kTypeId, GetComponentMetaInfo<T>()};
                 };
-                
-    
+
                 ForEachComponentType<helper>(i, list);
-    
+
                 return list;
             }();
 
             return kLookupList;
         }
 
+
         static constexpr const ComponentMetaInfo* FindComponentMetaInfo(TypeId typeId)
         {
-            constexpr ComponentInfoLookupList metaInfoTable = GetMetaInfoTable();
+            static constexpr ComponentInfoLookupList metaInfoTable = GetMetaInfoTable();
 
             const auto& it = std::ranges::find(metaInfoTable, typeId, &ComponentLookupEntry::first);
 
@@ -114,10 +123,10 @@ export namespace sj
             {
                 return nullptr;
             }
-            else 
+            else
             {
                 return &(it->second);
             }
-        }      
+        }
     };
-}
+} // namespace sj

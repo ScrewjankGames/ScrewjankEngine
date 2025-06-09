@@ -4,7 +4,6 @@
 // Library Headers
 
 // Engine Headers
-#include <ScrewjankEngine/framework/systems/CameraSystem.hpp>
 #include <ScrewjankEngine/framework/systems/InputSystem.hpp>
 #include <ScrewjankStd/Log.hpp>
 
@@ -50,6 +49,8 @@ namespace sj {
          * Main game loop
          */
         void Run();
+
+        virtual void UpdateGameLogic(float deltaTime) = 0;
 
         void ShutDown();
 

@@ -74,7 +74,7 @@ export namespace glz
     struct to<BEVE, sj::Vec4>
     {
         template <auto Opts>
-        static void op(sj::Vec4& vec, auto&&... args)
+        static void op(const sj::Vec4& vec, auto&&... args)
         {
             std::array<float, 4> data = vec.Data();
             glz::serialize<BEVE>::op<Opts>(data, args...);
@@ -106,7 +106,7 @@ export namespace glz
 
             glz::parse<JSON>::op<Opts>(layout, args...);
 
-            transform = sj::BuildTransform(layout.scale, layout.rotation, layout.translation);
+            transform = sj::BuildTransform(layout.scale, layout.rotation, sj::Vec4(layout.translation, 1));
         }
     };
 
@@ -114,16 +114,8 @@ export namespace glz
     struct to<BEVE, sj::Mat44>
     {
         template <auto Opts>
-        static void op(sj::Mat44& m, auto&&... args)
+        static void op(const sj::Mat44& m, auto&&... args)
         {
-            // std::array<float, 16> data = 
-            // {
-            //     m[0][0], m[0][1], m[0][2], m[0][3],
-            //     m[1][0], m[1][1], m[1][2], m[1][3],
-            //     m[2][0], m[2][1], m[2][2], m[2][3],
-            //     m[3][0], m[3][1], m[3][2], m[3][3]
-            // };
-
             glz::serialize<BEVE>::op<Opts>(m.Data(), args...);
         }
     };
@@ -135,14 +127,6 @@ export namespace glz
         static void op(sj::Mat44& m, auto&&... args)
         {
             glz::parse<BEVE>::op<Opts>(m.Data(), args...);
-            // std::array<float, 16> data;
-
-            // sj::Vec4 x (data[0], data[1], data[2], data[3]);
-            // sj::Vec4 y (data[4], data[5], data[6], data[7]);
-            // sj::Vec4 z (data[8], data[9], data[10], data[11]);
-            // sj::Vec4 w (data[12], data[13], data[14], data[15]);
-
-            // m = {x, y, z, w};
         }
     };
 }

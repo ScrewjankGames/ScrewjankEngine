@@ -50,6 +50,13 @@ export namespace sj
                     m_rows[3].Get<tCol>()};
         }
 
+        template<int tRow>
+        Mat44& SetRow(Vec4 v)
+        {
+            m_rows[tRow] = v;
+            return *this;
+        }
+
         template <int tRow, int tCol>
         [[nodiscard]] constexpr auto Get() const -> float
         {
