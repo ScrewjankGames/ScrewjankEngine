@@ -11,7 +11,6 @@ export namespace sj
     struct TransformComponent
     {
         SJ_STRUCT_TYPE_ID(TransformComponent);
-
         Mat44 localToParent;
     };
 }

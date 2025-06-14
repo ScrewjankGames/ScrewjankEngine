@@ -1,7 +1,9 @@
 module;
-#include <memory_resource>
-#include <ScrewjankShared/string/StringHash.hpp>
 #include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankShared/string/StringHash.hpp>
+
+#include <memory_resource>
+#include <ranges>
 
 export module sj.engine.framework.ecs:ECSRegistry;
 import :Identifiers;
@@ -53,10 +55,10 @@ export namespace sj
         }
 
         template <ComponentType T>
-        std::span<T> GetComponents()
+        auto GetComponents()
         {
             auto& pool = GetComponentPool<T>();
-            return pool.template get_set<T>();
+            return pool.get_all();
         }
 
     private:

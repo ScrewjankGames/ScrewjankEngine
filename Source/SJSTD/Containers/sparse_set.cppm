@@ -4,6 +4,7 @@ module;
 #include <span>
 #include <ScrewjankStd/Assert.hpp>
 #include <tuple>
+#include <ranges>
 
 // End global module fragment
 export module sj.std.containers:sparse_set;
@@ -136,6 +137,11 @@ export namespace sj
         decltype(auto) get_set(this auto&& self) // -> std::span<const? DenseElement>
         {
             return std::span(std::get<DenseContainer<DenseElement>>(self.m_denseElements));
+        }
+
+        auto get_all()
+        {
+            return std::apply(std::views::zip, m_denseElements);
         }
 
     private:

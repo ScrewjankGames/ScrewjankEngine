@@ -96,10 +96,16 @@ namespace sj
     VkSurfaceKHR Window::CreateWindowSurface(VkInstance instance) const
     {
         VkSurfaceKHR surface {};
-        VkResult success =
+        [[maybe_unused]] VkResult success =
             glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
-        SJ_ASSERT(success == VK_SUCCESS, "Failed to create vulkan window surface");
-
+#ifndef SJ_GOLD
+        if(success != VK_SUCCESS)
+        {
+            const char* error = nullptr;
+            glfwGetError(&error);
+            SJ_ASSERT(false, "Failed to create vulkan window surface. Error: {}", error);
+        }
+#endif
         return surface;
     }
     #endif
