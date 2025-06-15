@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <print>
 #include <vector>
+#include <format>
 
 namespace sj::build
 {

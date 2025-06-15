@@ -19,7 +19,7 @@ if(UNIX)
     option(GLFW_BUILD_WAYLAND ON)
 endif(UNIX)
 
-find_package(glfw3 REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 
 ## Spdlog
 option(SPDLOG_USE_STD_FORMAT ON)

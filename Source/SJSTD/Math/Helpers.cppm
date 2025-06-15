@@ -1,7 +1,7 @@
 module;
 #include <numbers>
 #include <cmath>
-
+#include <limits>
 export module sj.std.math:Helpers;
 import :Vec4;
 import :Mat44;

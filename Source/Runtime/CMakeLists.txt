@@ -46,7 +46,7 @@ add_compile_definitions(SJ_VULKAN_SUPPORT)
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         glfw
-        ${Vulkan_LIBRARIES}
+        Vulkan::Vulkan
     PUBLIC
         ScrewjankStd
         ScrewjankSharedCore
@@ -62,6 +62,11 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${ENGINE_DEPENDENCIES_DIR}/imgui/
-        ${Vulkan_INCLUDE_DIRS}
     )
 
+if(WIN32)
+# the GLFW vcpkg doesn't correctly bring in include directories when linked against? I hate windows.
+target_include_directories(
+    ${PROJECT_NAME} PRIVATE $ENV{VCPKG_ROOT}/installed/x64-windows/include
+)
+endif()

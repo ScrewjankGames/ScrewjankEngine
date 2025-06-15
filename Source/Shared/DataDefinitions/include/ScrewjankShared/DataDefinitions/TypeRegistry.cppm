@@ -17,7 +17,6 @@ module;
 #include <ranges>
 #include <span>
 #include <vector>
-#include <flat_map>
 #include <expected>
 
 export module sj.shared.datadefs:TypeRegistry;

@@ -3,7 +3,6 @@
     "configurePresets": [
         {
             "name": "base",
-            "generator": "Ninja",
             "hidden": true,
             "binaryDir": "build/${presetName}",
             "cacheVariables": {
@@ -15,10 +14,11 @@
             }
         },
         {
+            "inherits": "base",
             "name": "ClangAsan",
             "displayName": "ASAN - Clang",
             "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
-            "inherits": "base",
+            "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain_asan.cmake",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
@@ -26,10 +26,11 @@
             }
         },
         {
+            "inherits": "base",
             "name": "ClangDebug",
             "displayName": "Debug - Clang",
             "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
-            "inherits": "base",
+            "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
@@ -37,10 +38,11 @@
             }
         },
         {
+            "inherits": "base",
             "name": "ClangRelease",
             "displayName": "Release - Clang",
             "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
-            "inherits": "base",
+            "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
@@ -48,10 +50,11 @@
             }
         },
         {
+            "inherits": "base",
             "name": "GccDebug",
             "displayName": "Debug - GCC",
             "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
-            "inherits": "base",
+            "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
@@ -59,16 +62,31 @@
             }
         },
         {
+            "inherits": "base",
             "name": "GccRelease",
             "displayName": "Release - GCC",
             "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
-            "inherits": "base",
+            "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+      {
+        "name": "msvc-debug",
+        "inherits": "base",
+        "displayName": "Debug (MSVC)",
+        "toolchainFile": "${fileDir}/CMake/msvc_toolchain.cmake",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        },
+        "condition": {
+          "type": "equals",
+          "lhs": "${hostSystemName}",
+          "rhs": "Windows"
         }
+      }
     ],
     "buildPresets": [
         {
@@ -113,6 +131,11 @@
             "name":"GccRelease",
             "configurePreset": "GccRelease",
             "displayName": "Release"
+        },
+        {
+            "name":"MSVCDebug",
+            "configurePreset": "msvc-debug",
+            "displayName": "MSVC-Debug"
         }
     ]
 }
