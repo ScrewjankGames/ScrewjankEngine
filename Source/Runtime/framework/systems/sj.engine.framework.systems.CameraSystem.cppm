@@ -34,7 +34,9 @@ export namespace sj
                 Mat44 outputTransform = localToGoTransform;// * goWorldSpaceTransform;
                 
                 m_outputCameraMatrix = outputTransform;
-                m_outputCameraMatrix.SetRow<3>(Vec4(-1, 1, 5, 1));
+                m_outputCameraMatrix.SetRow<3>(Vec4(0, 0, 0, 1));
+
+                m_outputCameraMatrix = Mat44(kIdentityTag);
                 break;
             }
         }
