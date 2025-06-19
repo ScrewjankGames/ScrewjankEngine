@@ -8,7 +8,7 @@ module;
 // Library Includes
 #include <glaze/beve/read.hpp>
 
-export module sj.engine.framework:Scene;
+export module sj.engine.framework.Scene;
 import sj.engine.framework.ecs;
 import sj.std.memory;
 import sj.std.containers;

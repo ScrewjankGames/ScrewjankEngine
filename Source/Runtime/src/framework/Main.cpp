@@ -1,10 +1,8 @@
-// Engine Headers
-#include <ScrewjankEngine/framework/Game.hpp>
-
-// Shared Headers
+// Screwjank Headers
 #include <ScrewjankStd/Log.hpp>
 
 import sj.engine.system.memory.MemorySystem;
+import sj.engine.framework.Game;
 
 // Initialize engine global static objects so they are 
 // destroyed in the correct order during shutdown
@@ -17,7 +15,7 @@ void InitEngineStatics()
     #endif
 }
 
-int main([[maybe_unused]] int arc, [[maybe_unused]] char** argv)
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
     InitEngineStatics();
 
