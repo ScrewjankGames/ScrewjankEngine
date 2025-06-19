@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.30.0 FATAL_ERROR)
 # Project Settings
 ################################################################################
 project(ScrewjankEngine C CXX)
-include(find_dependencies.cmake)
+include(CMake/find_dependencies.cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(ScrewjankEngine_VERSION_MAJOR 0 CACHE STRING "major version" FORCE)
