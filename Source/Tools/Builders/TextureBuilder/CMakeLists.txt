@@ -27,8 +27,7 @@ get_target_property(TextureBuilderExe ${PROJECT_NAME} OUTPUT_NAME)
 # Link dependencies
 ################################################################################
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC 
-        STB 
+    PUBLIC
         ScrewjankDataDefs
         ScrewjankSharedCore
         BuildersShared
@@ -37,7 +36,10 @@ target_link_libraries(${PROJECT_NAME}
 ################################################################################
 # Configure include directories
 ################################################################################
+
 target_include_directories(${PROJECT_NAME} 
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE
+        ${Stb_INCLUDE_DIR}
 )

@@ -51,7 +51,7 @@ export namespace sj
         {
             glz::error_ctx errorCtx =
                 glz::read_file_beve(m_chunk, path, sj::dynamic_vector<std::byte> {});
-            SJ_ASSERT(errorCtx.ec == glz::error_code::none, "Failed to load scene {}", path);
+            SJ_ASSERT(errorCtx.ec == glz::error_code::none, "Failed to load scene {0}", path);
 
             const ReificationFnLookup& reificationFunctions = GetReificationFunctions();
             for(const GameObjectChunk& goChunk : m_chunk.gameObjects)

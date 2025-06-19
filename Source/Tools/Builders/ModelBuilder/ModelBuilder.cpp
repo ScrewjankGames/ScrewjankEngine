@@ -24,11 +24,12 @@ void ExtractBuffers(const char* inputFilePath,
     std::string warn, err;
 
     bool success = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, inputFilePath);
-    SJ_ASSERT(success,
-              "Failed to load model %s.\n warn: %s\n err: %s",
-              inputFilePath,
-              warn.c_str(),
-              err.c_str());
+    (void)success;
+    // SJ_ASSERT(success,
+    //           "Failed to load model {}.\n warn: {}\n err: {}",
+    //           inputFilePath,
+    //           warn.c_str(),
+    //           err.c_str());
 
     out_verts.reserve(attrib.vertices.size() / 3);
     out_indices.reserve(out_verts.capacity());

@@ -40,9 +40,3 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
-
-## Windows only- include SG14 for flat_* containers
-if(WIN32)
-    find_path(WG21_SG14_INCLUDE_DIRS "SG14/algorithm_ext.h")
-    target_include_directories(${PROJECT_NAME} PRIVATE ${WG21_SG14_INCLUDE_DIRS})
-endif()

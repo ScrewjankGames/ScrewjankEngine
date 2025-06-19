@@ -18,6 +18,6 @@ set_target_properties(SharedTestSuite
 ################################################################################
 target_link_libraries(SharedTestSuite
 	PRIVATE 
-		gtest 
+		GTest::gtest 
 		ScrewjankSharedCore
 )

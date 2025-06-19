@@ -18,6 +18,6 @@ set_target_properties(SystemTestSuite
 ################################################################################
 target_link_libraries(SystemTestSuite
 	PRIVATE 
-		gtest 
+		GTest::gtest 
 		ScrewjankEngine
 )

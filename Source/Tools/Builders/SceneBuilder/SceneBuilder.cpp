@@ -85,7 +85,7 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
     if(errorCtx.ec != glz::error_code::none)
     {
         std::string descriptive_error = glz::format_error(errorCtx, buffer);
-        SJ_ENGINE_LOG_ERROR("Failed to parse scene {}. Error: {}", item.c_str(), descriptive_error);
+        //SJ_ENGINE_LOG_ERROR("Failed to parse scene {}. Error: {}", item.c_str(), descriptive_error);
         return false;
     }
 

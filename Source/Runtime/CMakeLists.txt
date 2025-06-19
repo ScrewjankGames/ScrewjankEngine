@@ -51,7 +51,8 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankStd
         ScrewjankSharedCore
         ScrewjankDataDefs
-        imgui
+        spdlog::spdlog
+        imgui::imgui
         glaze::glaze
 )
 
@@ -63,10 +64,3 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${ENGINE_DEPENDENCIES_DIR}/imgui/
     )
-
-if(WIN32)
-# the GLFW vcpkg doesn't correctly bring in include directories when linked against? I hate windows.
-target_include_directories(
-    ${PROJECT_NAME} PRIVATE $ENV{VCPKG_ROOT}/installed/x64-windows/include
-)
-endif()

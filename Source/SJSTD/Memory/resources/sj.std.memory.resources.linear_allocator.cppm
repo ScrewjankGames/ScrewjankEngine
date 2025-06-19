@@ -76,10 +76,9 @@ export namespace sj
                 return nullptr;
             }
 
-            auto num_bytes_allocated = size + GetAlignmentOffset(alignment, m_CurrFrameStart);
             auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, free_space);
 
-            SJ_ASSERT(num_bytes_allocated <= free_space, "Linear Allocator is out of memory!");
+            SJ_ASSERT(uintptr_t(allocated_memory) + size <= free_space, "Linear Allocator is out of memory!");
 
             // Bump allocation pointer to the first free byte after the current allocation
             m_CurrFrameStart =

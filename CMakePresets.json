@@ -4,9 +4,10 @@
         {
             "name": "base",
             "hidden": true,
-            "binaryDir": "build/${presetName}",
+            "binaryDir": "out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "SJ_ARCHIVE_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
                 "SJ_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
                 "SJ_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/",
@@ -21,7 +22,6 @@
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain_asan.cmake",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
@@ -33,7 +33,6 @@
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
@@ -45,7 +44,6 @@
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/clang_toolchain.cmake",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
@@ -57,7 +55,6 @@
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
@@ -69,24 +66,23 @@
             "generator": "Ninja",
             "toolchainFile": "${fileDir}/CMake/gcc_toolchain.cmake",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
-      {
-        "name": "msvc-debug",
-        "inherits": "base",
-        "displayName": "Debug (MSVC)",
-        "toolchainFile": "${fileDir}/CMake/msvc_toolchain.cmake",
-        "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Debug"
-        },
-        "condition": {
-          "type": "equals",
-          "lhs": "${hostSystemName}",
-          "rhs": "Windows"
+        {
+            "name": "msvc-debug",
+            "inherits": "base",
+            "displayName": "Debug (MSVC)",
+            "toolchainFile": "${fileDir}/CMake/msvc_toolchain.cmake",
+            "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+            }
         }
-      }
     ],
     "buildPresets": [
         {

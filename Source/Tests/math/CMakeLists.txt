@@ -18,6 +18,6 @@ set_target_properties(MathTestSuite
 ################################################################################
 target_link_libraries(MathTestSuite
 	PRIVATE 
-		gtest 
+		GTest::gtest 
 		ScrewjankStd
 )

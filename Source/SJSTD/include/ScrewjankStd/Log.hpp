@@ -6,7 +6,7 @@
 // Library Headers
 #include <spdlog/spdlog.h>
 
-#ifdef SJ_GOLD
+#if 1 // TODO: Turn back on when logging library compiles on latest clang
     #define SJ_ENGINE_LOG_TRACE(...)
     #define SJ_ENGINE_LOG_DEBUG(...)
     #define SJ_ENGINE_LOG_INFO(...)
