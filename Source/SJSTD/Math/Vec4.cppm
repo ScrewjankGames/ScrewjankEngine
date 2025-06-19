@@ -145,7 +145,7 @@ export namespace sj
             return *this;
         }
 
-        constexpr Vec4 SetW(float w)
+        constexpr Vec4& SetW(float w)
         {
             m_elements[3] = w;
             return *this;
@@ -159,6 +159,28 @@ export namespace sj
         [[nodiscard]] auto Data() const -> const std::array<float, 4>&
         {
             return m_elements;
+        }
+
+        [[nodiscard]] constexpr auto MagnitudeSqr() const -> float
+        {
+            return this->Dot(*this);
+        }
+
+        [[nodiscard]] auto Magnitude() const -> float
+        {
+            return std::sqrtf(this->MagnitudeSqr());
+        }
+
+        [[nodiscard]] auto Normalize() const -> Vec4 // Not reference!
+        {
+            return *this / Magnitude();
+        }
+
+        [[nodiscard]] auto Normalize3_W0() const -> Vec4 // Not reference!
+        {
+            Vec4 tmp = *this;
+            tmp.SetW(0);
+            return tmp.Normalize();
         }
 
     private:
@@ -186,28 +208,6 @@ export namespace sj
     [[nodiscard]] constexpr Vec4 operator+(const Vec4& a, const Vec4& b)
     {
         return {a.GetX() + b.GetX(), a.GetY() + b.GetY(), a.GetZ() + b.GetZ(), a.GetW() + b.GetW()};
-    }
-
-    [[nodiscard]] constexpr float MagnitudeSqr(const Vec4& v)
-    {
-        return v.Dot(v);
-    }
-
-    [[nodiscard]] float Magnitude(const Vec4& v)
-    {
-        return std::sqrtf(MagnitudeSqr(v));
-    }
-
-    [[nodiscard]] Vec4 Normalize(const Vec4& v)
-    {
-        return v / Magnitude(v);
-    }
-
-    [[nodiscard]] Vec4 Normalize3_W0(const Vec4& v)
-    {
-        Vec4 ret = Normalize(v);
-        ret.SetW(0);
-        return ret;
     }
 
 } // namespace sj

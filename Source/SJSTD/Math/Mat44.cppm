@@ -114,15 +114,15 @@ export namespace sj
             return *this;
         }
 
-        [[nodiscard]] static Mat44 AffineInverse(const Mat44& m)
+        [[nodiscard]] auto AffineInverse() const -> Mat44
         {
-            const float invScaleX = 1.0f / Magnitude(m.GetX());
-            const float invScaleY = 1.0f / Magnitude(m.GetY());
-            const float invScaleZ = 1.0f / Magnitude(m.GetZ());
+            const float invScaleX = 1.0f / GetX().Magnitude();
+            const float invScaleY = 1.0f / GetY().Magnitude();
+            const float invScaleZ = 1.0f / GetZ().Magnitude();
 
-            const Vec4 unitX = m.GetX() * invScaleX;
-            const Vec4 unitY = m.GetY() * invScaleY;
-            const Vec4 unitZ = m.GetZ() * invScaleZ;
+            const Vec4 unitX = GetX() * invScaleX;
+            const Vec4 unitY = GetY() * invScaleY;
+            const Vec4 unitZ = GetZ() * invScaleZ;
 
             Mat44 inverseRot {
                 {unitX.GetX() * invScaleX, unitY.GetX() * invScaleX, unitZ.GetX() * invScaleX, 0},
@@ -130,13 +130,13 @@ export namespace sj
                 {unitX.GetZ() * invScaleZ, unitY.GetZ() * invScaleZ, unitZ.GetZ() * invScaleZ, 0},
                 {0.0f, 0.0f, 0.0f, 1}};
 
-            Vec4 inverseT = (-m.GetW()) * inverseRot;
+            Vec4 inverseT = (-GetW()) * inverseRot;
             inverseT.SetW(1.0f);
 
             return {inverseRot.GetX(), inverseRot.GetY(), inverseRot.GetZ(), inverseT};
         }
 
-        [[nodiscard]] static Mat44 FromEulerXYZ(const Vec3& eulers)
+        [[nodiscard]] static auto FromEulerXYZ(const Vec3& eulers) -> Mat44
         {
             Mat44 x {
                 {1.0f, 0.0f, 0.0f, 0.0f},
@@ -162,18 +162,18 @@ export namespace sj
             return x * y * z;
         }
 
-        [[nodiscard]] static Mat44 FromEulerXYZ(const Vec3& eulers, const Vec4& translation)
+        [[nodiscard]] static auto FromEulerXYZ(const Vec3& eulers, const Vec4& translation) -> Mat44
         {
             Mat44 output = FromEulerXYZ(eulers);
             output.SetW(translation);
             return output;
         }
 
-        [[nodiscard]] constexpr Vec3 GetEulerAngles() const
+        [[nodiscard]] constexpr auto GetEulerAngles() const -> Vec3
         {
-            Vec4 xAxis = Normalize3_W0(m_rows[0]);
-            Vec4 yAxis = Normalize3_W0(m_rows[1]);
-            Vec4 zAxis = Normalize3_W0(m_rows[2]);
+            Vec4 xAxis = m_rows[0].Normalize3_W0();
+            Vec4 yAxis = m_rows[1].Normalize3_W0();
+            Vec4 zAxis = m_rows[2].Normalize3_W0();
 
             if(!(xAxis.Get<2>() == 1 || xAxis.Get<2>() == -1))
             {

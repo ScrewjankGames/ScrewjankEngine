@@ -1155,7 +1155,7 @@ namespace sj
     {
         GlobalUniformBufferObject ubo {};
         ubo.model = Mat44(kIdentityTag);
-        ubo.view = Mat44::AffineInverse(cameraMatrix);
+        ubo.view = cameraMatrix.AffineInverse();
 
         VkExtent2D extent = m_swapChain.GetExtent();
         const float aspectRatio =

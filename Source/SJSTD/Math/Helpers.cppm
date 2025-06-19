@@ -35,8 +35,8 @@ export namespace sj
     [[nodiscard]] Mat44 LookAt(const Vec4& eye, const Vec4& target, const Vec4& up)
     {
         // Get components of camera rotation matrix
-        const Vec4 z = Normalize(eye - target);
-        const Vec4 x = Normalize(up.Cross(z));
+        const Vec4 z = (eye - target).Normalize();
+        const Vec4 x = up.Cross(z).Normalize();
         const Vec4 y = z.Cross(x);
 
         // Calculate inverse of camera matrix for camera to world matrix
@@ -90,7 +90,7 @@ export namespace sj
     Quat Exp_Q(const Vec4& v)
     {
 
-        float theta = Magnitude(v);
+        float theta = v.Magnitude();
         float halfTheta = theta / 2.0f;
         if(theta <= small_theta_epsilon)
         {
@@ -108,7 +108,7 @@ export namespace sj
 
     Mat44 Exp_M(const Vec4& v)
     {
-        float theta = Magnitude(v);
+        float theta = v.Magnitude();
 
         if(theta < small_theta_epsilon)
         {
