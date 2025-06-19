@@ -66,7 +66,7 @@ export namespace sj
         template <int tRow, int tCol>
         constexpr auto Set(float value) -> Mat44&
         {
-            m_rows[tRow].Set<tRow>(value);
+            m_rows[tRow].Set<tCol>(value);
             return *this;
         }
 
