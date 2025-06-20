@@ -7,7 +7,7 @@
 // Shared Includes
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Log.hpp>
 
 // Library Includes
@@ -62,13 +62,13 @@ struct glz::meta<ComponentSchema> {
 
 struct GameObjectSchema
 {
-    sj::StringHash id;
+    sj::string_hash id;
     std::vector<ComponentSchema> components;
 };
 
 struct SceneSchema
 {
-    sj::StringHash scene_name; 
+    sj::string_hash scene_name; 
     uint32_t memory = 0; // Free ram allocated to this scene
     std::vector<GameObjectSchema> game_objects;
 };
@@ -103,7 +103,7 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
         for(const ComponentSchema& component : go.components)
         {
             AnyChunk componentChunk;
-            StringHash typeHash(component.type);
+            string_hash typeHash(component.type);
             TypeId typeId = typeHash.AsInt();
             componentChunk.type = typeId;
 

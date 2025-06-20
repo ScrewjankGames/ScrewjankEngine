@@ -1,7 +1,7 @@
 module;
 
 // Shared Includes
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 // Library Headers
 #include <glaze/glaze.hpp>
@@ -12,38 +12,38 @@ import sj.std.math;
 export namespace glz
 {
     template <>
-    struct from<JSON, sj::StringHash>
+    struct from<JSON, sj::string_hash>
     {
         template <auto Opts>
-        static void op(sj::StringHash& strHash, auto&&... args)
+        static void op(sj::string_hash& strHash, auto&&... args)
         {
             std::string str;
             glz::parse<JSON>::op<Opts>(str, args...);
 
-            strHash = sj::StringHash(str);
+            strHash = sj::string_hash(str);
         }
     };
 
     template <>
-    struct to<BEVE, sj::StringHash>
+    struct to<BEVE, sj::string_hash>
     {
         template <auto Opts>
-        static void op(sj::StringHash& hash, auto&&... args)
+        static void op(sj::string_hash& hash, auto&&... args)
         {
             glz::serialize<BEVE>::op<Opts>(hash.AsInt(), args...);
         }
     };
     
     template <>
-    struct from<BEVE, sj::StringHash>
+    struct from<BEVE, sj::string_hash>
     {
         template <auto Opts>
-        static void op(sj::StringHash& strHash, auto&&... args)
+        static void op(sj::string_hash& strHash, auto&&... args)
         {
             uint32_t hashVal = 0;
             glz::parse<BEVE>::op<Opts>(hashVal, args...);
 
-            strHash = sj::StringHash(hashVal);
+            strHash = sj::string_hash(hashVal);
         }
     };
 
@@ -105,6 +105,10 @@ export namespace glz
             } layout;
 
             glz::parse<JSON>::op<Opts>(layout, args...);
+
+            layout.rotation.x = sj::ToRadians(layout.rotation.x);
+            layout.rotation.y = sj::ToRadians(layout.rotation.y);
+            layout.rotation.z = sj::ToRadians(layout.rotation.z);
 
             transform = sj::BuildTransform(layout.scale, layout.rotation, sj::Vec4(layout.translation, 1));
         }

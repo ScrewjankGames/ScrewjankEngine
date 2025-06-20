@@ -1,6 +1,6 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 #include <memory_resource>
 #include <ranges>

@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 // Engine Headers
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 using namespace sj;
 
@@ -13,7 +13,7 @@ namespace string_tests
 
     TEST(StringTests, ComparisonTest)
     {
-        StringHash str("TEST");
+        string_hash str("TEST");
         ASSERT_EQ(str, "TEST"_strhash);
     }
 

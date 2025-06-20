@@ -21,20 +21,13 @@ export namespace sj
             for(const auto& [goId, cameraComponent] : components )
             {
                 // TODO: What if there's multiple
-                //GameObject* parentGo = scene->GetGameObject(component.ownerGameobjectId);
-                //SJ_ASSERT(parentGo, "Failed to find parent game object!");
-
                 Mat44 localToGoTransform = cameraComponent.localToGoTransform;
-              
-                const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);
-                (void)goTransform;
-
-                //const Mat44& goWorldSpaceTransform = parentGo->GetWorldSpaceTransform();
+                const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);              
+                const Mat44& goWorldSpaceTransform = goTransform->GetWorldSpaceTransform();
                 
-                Mat44 outputTransform = localToGoTransform;// * goWorldSpaceTransform;
+                Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
                 
                 m_outputCameraMatrix = outputTransform;
-                m_outputCameraMatrix.SetRow<3>(Vec4(0, 0, 5, 1));
 
                 break;
             }

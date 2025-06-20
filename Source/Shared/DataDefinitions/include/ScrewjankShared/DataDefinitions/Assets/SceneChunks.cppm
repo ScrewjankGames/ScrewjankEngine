@@ -1,6 +1,6 @@
 module;
 
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 // STD Includes
 #include <cstdint>
@@ -20,13 +20,13 @@ export namespace sj
 
     struct GameObjectChunk
     {
-        StringHash id;
+        string_hash id;
         sj::dynamic_vector<AnyChunk> components;
     };
 
     struct SceneChunk
     {
-        StringHash name;
+        string_hash name;
         uint32_t memory; // Free ram allocated to this scene
 
         sj::dynamic_vector<GameObjectChunk> gameObjects;

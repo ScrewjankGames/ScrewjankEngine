@@ -2,7 +2,7 @@ module;
 
 // SJ Headers
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 // Library Headers
 #include <glaze/glaze.hpp>

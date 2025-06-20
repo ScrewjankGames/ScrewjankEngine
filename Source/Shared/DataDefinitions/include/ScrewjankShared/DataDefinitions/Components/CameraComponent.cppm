@@ -1,7 +1,7 @@
 module;
 
 // Shared Includes
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 
 export module sj.shared.datadefs:CameraComponent;
 import sj.std.math;

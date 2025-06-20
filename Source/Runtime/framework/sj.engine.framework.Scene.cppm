@@ -1,7 +1,7 @@
 module;
 
 // Shared Includes
-#include <ScrewjankShared/string/StringHash.hpp>
+#include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
