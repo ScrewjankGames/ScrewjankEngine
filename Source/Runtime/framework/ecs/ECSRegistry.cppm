@@ -27,6 +27,11 @@ export namespace sj
             return m_gameObjects.create();
         }
 
+        void ReleaseGameObject(GameObjectId go)
+        {
+            m_gameObjects.release(go);
+        }
+
         template <ComponentType T, class... Args>
         void CreateComponent(GameObjectId goId, Args&&... args)
         {
@@ -39,11 +44,6 @@ export namespace sj
         {
             ComponentPool<T>& pool = GetComponentPool<T>();
             return pool.template get<T>(goId);
-        }
-
-        void ReleaseGameObject(GameObjectId go)
-        {
-            m_gameObjects.release(go);
         }
 
         template <ComponentType T>
