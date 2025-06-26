@@ -29,7 +29,7 @@
 #include <vector>
 
 import sj.std.containers;
-import sj.shared.datadefs;
+import sj.datadefs;
 import sj.std.math;
 
 struct ComponentSchema

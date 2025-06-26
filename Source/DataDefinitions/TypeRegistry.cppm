@@ -19,7 +19,7 @@ module;
 #include <vector>
 #include <expected>
 
-export module sj.shared.datadefs:TypeRegistry;
+export module sj.datadefs:TypeRegistry;
 import game.datadefs;
 import sj.std.containers;
 import :CameraComponent;

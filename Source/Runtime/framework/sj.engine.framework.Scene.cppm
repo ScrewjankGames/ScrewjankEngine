@@ -12,7 +12,7 @@ export module sj.engine.framework.Scene;
 import sj.engine.framework.ecs;
 import sj.std.memory;
 import sj.std.containers;
-import sj.shared.datadefs;
+import sj.datadefs;
 
 export namespace sj
 {

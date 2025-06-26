@@ -3,7 +3,7 @@ module;
 // Shared Includes
 #include <ScrewjankStd/TypeMacros.hpp>
 
-export module sj.shared.datadefs:TextureComponent;
+export module sj.datadefs:TextureComponent;
 import sj.std.math;
 
 export namespace sj

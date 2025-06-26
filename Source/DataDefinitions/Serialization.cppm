@@ -6,7 +6,7 @@ module;
 // Library Headers
 #include <glaze/glaze.hpp>
 
-export module sj.shared.datadefs:Serialization;
+export module sj.datadefs:Serialization;
 import sj.std.math;
 
 export namespace glz

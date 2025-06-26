@@ -3,7 +3,7 @@ module;
 
 export module sj.engine.components.TransformComponent;
 import sj.engine.framework.ecs;
-import sj.shared.datadefs;
+import sj.datadefs;
 import sj.std.math;
 
 export namespace sj

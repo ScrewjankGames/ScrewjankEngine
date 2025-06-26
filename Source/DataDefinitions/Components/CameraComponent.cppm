@@ -3,7 +3,7 @@ module;
 // Shared Includes
 #include <ScrewjankStd/TypeMacros.hpp>
 
-export module sj.shared.datadefs:CameraComponent;
+export module sj.datadefs:CameraComponent;
 import sj.std.math;
 
 export namespace sj

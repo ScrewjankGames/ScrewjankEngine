@@ -3,7 +3,7 @@ module;
 // Shared Includes
 #include <ScrewjankStd/TypeMacros.hpp>
 
-export module sj.shared.datadefs:TransformComponent;
+export module sj.datadefs:TransformComponent;
 import sj.std.math;
 import sj.std.string_hash;
 

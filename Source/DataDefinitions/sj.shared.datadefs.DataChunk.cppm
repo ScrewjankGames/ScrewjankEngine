@@ -7,7 +7,7 @@ module;
 // Library Headers
 #include <glaze/glaze.hpp>
 
-export module sj.shared.datadefs.DataChunk;
+export module sj.datadefs.DataChunk;
 import sj.std.containers;
 import sj.std.math;
 

@@ -1,6 +1,6 @@
-export module sj.shared.datadefs;
+export module sj.datadefs;
 export import game.datadefs;
-export import sj.shared.datadefs.DataChunk;
+export import sj.datadefs.DataChunk;
 export import :TypeRegistry;
 export import :CameraComponent;
 export import :TransformComponent;

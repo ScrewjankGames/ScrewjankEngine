@@ -9,7 +9,7 @@ export module sj.engine.framework.ecs:ECSRegistry;
 import :Identifiers;
 
 import sj.std.containers;
-import sj.shared.datadefs;
+import sj.datadefs;
 
 export namespace sj
 {

@@ -3,7 +3,7 @@ module;
 
 export module sj.engine.framework.systems.CameraSystem;
 import sj.std.math;
-import sj.shared.datadefs;
+import sj.datadefs;
 import sj.engine.framework.ecs;
 
 export namespace sj

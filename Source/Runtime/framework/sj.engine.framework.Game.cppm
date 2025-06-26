@@ -17,7 +17,7 @@ export module sj.engine.framework.Game;
 import sj.std.memory;
 import sj.std.containers;
 
-import sj.shared.datadefs;
+import sj.datadefs;
 
 import sj.engine.framework.ecs;
 import sj.engine.framework.Scene;

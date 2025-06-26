@@ -6,7 +6,7 @@ module;
 #include <cstdint>
 #include <cstddef>
 
-export module sj.shared.datadefs:SceneChunks;
+export module sj.datadefs:SceneChunks;
 import sj.std.containers;
 
 export namespace sj

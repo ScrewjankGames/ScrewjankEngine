@@ -24,12 +24,12 @@ target_sources(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 
-        FOLDER Shared/
+        FOLDER DataDefinitions/
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Shared/"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Shared/"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Shared/"
+        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/DataDefinitions/"
+        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/DataDefinitions/"
+        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/DataDefinitions/"
 )
 
 ################################################################################
@@ -38,7 +38,6 @@ set_target_properties(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
         ScrewjankStd
-        ScrewjankSharedCore
         glaze::glaze
 )
 
