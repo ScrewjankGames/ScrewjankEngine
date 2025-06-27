@@ -29,7 +29,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
         tinyobjloader::tinyobjloader
         ScrewjankDataDefs
-        ScrewjankSharedCore
         ScrewjankStd
         BuildersShared
 )

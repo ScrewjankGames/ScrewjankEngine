@@ -29,7 +29,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
         ScrewjankStd
         ScrewjankDataDefs
-        ScrewjankSharedCore
         BuildersShared
         glaze::glaze
 )

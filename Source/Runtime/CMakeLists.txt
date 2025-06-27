@@ -49,7 +49,6 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
     PUBLIC
         ScrewjankStd
-        ScrewjankSharedCore
         ScrewjankDataDefs
         spdlog::spdlog
         imgui::imgui

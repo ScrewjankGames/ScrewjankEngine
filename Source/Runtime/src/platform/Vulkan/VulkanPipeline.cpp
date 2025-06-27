@@ -10,8 +10,10 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Shared Headers
-#include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
+
+// STD Includes
+#include <fstream>
 
 import sj.std.memory;
 
@@ -217,13 +219,14 @@ namespace sj
     {
         MemoryResourceScope rendererWorkBuffer(Renderer::WorkBuffer());
 
-        File shader;
-        bool success = shader.Open(path, File::OpenMode::kReadBinary);
-        SJ_ASSERT(success, "Failed to open compiled shader %s", path);
+        std::ifstream shader;
+        shader.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+        SJ_ASSERT(shader.is_open(), "Failed to open compiled shader {}", path);
+        size_t shaderBufferSize = shader.tellg();
+        shader.seekg(0);
 
-        uint64_t shaderBufferSize = shader.Size();
-        void* shaderBuffer = rendererWorkBuffer->allocate(shaderBufferSize);
-        shader.Read(shaderBuffer, shaderBufferSize);
+        char* shaderBuffer = reinterpret_cast<char*>(rendererWorkBuffer->allocate(shaderBufferSize));
+        shader.read(shaderBuffer, shaderBufferSize);
 
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -235,7 +238,7 @@ namespace sj
 
         SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");
 
-        shader.Close();
+        shader.close();
         rendererWorkBuffer->deallocate(shaderBuffer, shaderBufferSize);
 
         return shaderModule;

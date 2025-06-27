@@ -3,7 +3,6 @@
 
 // Shared Includes
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
-#include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
 // Library Includes
@@ -12,6 +11,7 @@
 
 // STD Includes
 #include <cstdio>
+#include <fstream>
 
 namespace sj::build 
 {
@@ -27,12 +27,13 @@ bool TextureBuilder::BuildItem(const std::filesystem::path& item, const std::fil
     SJ_ASSERT(imageBytes > 0, "invalid image size");
     TextureHeader texture {.type=AssetType::kTexture, .width=texWidth, .height=texHeight};
 
-    File outputFile;
-    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
+    std::ofstream outputFile;
+    outputFile.open(output_path, std::ios::out | std::ios::binary);
+    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", output_path.c_str());
 
-    outputFile.WriteStruct(texture);
-    outputFile.Write(pixels, static_cast<size_t>(imageBytes));
-    outputFile.Close();
+    outputFile.write(reinterpret_cast<char*>(&texture), sizeof(texture));
+    outputFile.write(reinterpret_cast<char*>(pixels), static_cast<size_t>(imageBytes));
+    outputFile.close();
 
     stbi_image_free(pixels);
 

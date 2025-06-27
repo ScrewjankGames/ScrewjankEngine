@@ -5,7 +5,6 @@
 #include <Utils.hpp>
 
 // Shared Includes
-#include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Log.hpp>

@@ -20,5 +20,4 @@ target_link_libraries(ContainerTestSuite
 	PRIVATE  
 		GTest::gtest
 		ScrewjankStd
-		ScrewjankSharedCore
 )

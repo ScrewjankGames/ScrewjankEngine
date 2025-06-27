@@ -29,7 +29,6 @@ get_target_property(TextureBuilderExe ${PROJECT_NAME} OUTPUT_NAME)
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC
         ScrewjankDataDefs
-        ScrewjankSharedCore
         BuildersShared
 )
 

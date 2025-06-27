@@ -1,6 +1,5 @@
 // Shared Includes
 #include "ModelBuilder.hpp"
-#include <ScrewjankShared/io/File.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
@@ -11,6 +10,7 @@
 #include <cstdio>
 #include <unordered_map>
 #include <limits>
+#include <fstream>
 
 namespace sj::build
 {
@@ -84,15 +84,15 @@ bool ModelBuilder::BuildItem(const std::filesystem::path& item, const std::files
             "Too many vertices to fit in Model::NumVerts");
     model.numIndices = static_cast<decltype(Model::numIndices)>(indices.size());
 
-    File outputFile;
-    outputFile.Open(output_path.c_str(), File::OpenMode::kWriteBinary);
+    std::ofstream outputFile;
+    outputFile.open(output_path, std::ios::out | std::ios::binary);
+    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", output_path.c_str());
+    outputFile.write(reinterpret_cast<char*>(&model), sizeof(model));
 
-    outputFile.WriteStruct(model);
+    outputFile.write(reinterpret_cast<char*>(verts.data()), vertexMemSize);
+    outputFile.write(reinterpret_cast<char*>(indices.data()), indexMemSize);
 
-    outputFile.Write(verts.data(), vertexMemSize);
-    outputFile.Write(indices.data(), indexMemSize);
-
-    outputFile.Close();
+    outputFile.close();
 
     return true;
 }

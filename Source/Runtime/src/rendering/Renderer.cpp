@@ -10,7 +10,6 @@
 // Shared Headers
 #include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
-#include <ScrewjankShared/io/File.hpp>
 #include <cstddef>
 #include <cstring>
 #include <vulkan/vulkan_core.h>
@@ -23,6 +22,7 @@
 
 // STD Headers
 #include <array>
+#include <fstream>
 
 import sj.engine.system.memory;
 import sj.std.containers;
@@ -766,10 +766,12 @@ namespace sj
 
     void Renderer::LoadDummyModel()
     {
-        File modelFile;
-        modelFile.Open("Data/Engine/viking_room.sj_mesh", sj::File::OpenMode::kReadBinary);
+        std::ifstream modelFile;
+        modelFile.open("Data/Engine/viking_room.sj_mesh", std::ios::in | std::ios::binary);
+        SJ_ASSERT(modelFile.is_open(), "Failed to load model file!");
+
         Model header;
-        modelFile.Read(&header, sizeof(header));
+        modelFile.read(reinterpret_cast<char*>(&header), sizeof(header));
 
         // Read verts into GPU memory
         {
@@ -793,7 +795,7 @@ namespace sj
                         &data);
 
             // Copy data from file to GPU
-            modelFile.Read(data, bufferSize);
+            modelFile.read(reinterpret_cast<char*>(data), bufferSize);
 
             vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
@@ -835,7 +837,7 @@ namespace sj
                         0,
                         &data);
             // Copy data from file to GPU
-            modelFile.Read(data, bufferSize);
+            modelFile.read(reinterpret_cast<char*>(data), bufferSize);
 
             vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
@@ -855,15 +857,15 @@ namespace sj
                          sj::g_vkAllocationFns);
         }
 
-        modelFile.Close();
+        modelFile.close();
     }
 
     void Renderer::CreateDummyTextureImage()
     {
-        File textureFile;
-        textureFile.Open("Data/Engine/viking_room.sj_tex", sj::File::OpenMode::kReadBinary);
+        std::ifstream textureFile;
+        textureFile.open("Data/Engine/viking_room.sj_tex", std::ios::in | std::ios::binary);
         TextureHeader header;
-        textureFile.Read(&header, sizeof(header));
+        textureFile.read(reinterpret_cast<char*>(&header), sizeof(header));
 
         VkDeviceSize imageSize = header.width * header.height * 4;
         VkBuffer stagingBuffer {};
@@ -879,10 +881,10 @@ namespace sj
         vkMapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
 
         // Read texture data straight into GPU memory
-        textureFile.Read(data, imageSize);
+        textureFile.read(reinterpret_cast<char*>(data), imageSize);
         vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-        textureFile.Close();
+        textureFile.close();
         CreateImage(m_renderDevice.GetLogicalDevice(),
                     m_renderDevice.GetPhysicalDevice(),
                     header.width,
