@@ -9,7 +9,7 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
-// Shared Headers
+// ScrewjankStd Headers
 #include <ScrewjankStd/Assert.hpp>
 
 // STD Includes

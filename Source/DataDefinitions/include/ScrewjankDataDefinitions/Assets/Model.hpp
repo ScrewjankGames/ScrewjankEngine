@@ -1,7 +1,7 @@
 #pragma once
 
-// Shared Includes
-#include <ScrewjankShared/DataDefinitions/Assets/AssetType.hpp>
+// SJ Includes
+#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // STD Includes
 #include <cstdint>

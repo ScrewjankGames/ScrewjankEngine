@@ -4,24 +4,26 @@
 // Screwjank Headers
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
-#include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankStd/Log.hpp>
 
-// Shared Headers
-#include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
-#include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
-#include <cstddef>
-#include <cstring>
-#include <vulkan/vulkan_core.h>
+// Datadefs
+#include <ScrewjankDataDefinitions/Assets/Texture.hpp>
+#include <ScrewjankDataDefinitions/Assets/Model.hpp>
+
+// Screwjank STD Headers
+#include <ScrewjankStd/Log.hpp>
+#include <ScrewjankStd/Assert.hpp>
 
 // Library Headers
+#include <vulkan/vulkan_core.h>
 #ifndef SJ_GOLD
-    #include <imgui_impl_glfw.h>
-    #include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
 #endif
 
 // STD Headers
 #include <array>
+#include <cstring>
+#include <cstddef>
 #include <fstream>
 
 import sj.engine.system.memory;

@@ -1,10 +1,8 @@
-// STD Headers
 
 // Library Headers
 #include "gtest/gtest.h"
 
-// Shared Headers
-#include <ScrewjankStd/PlatformDetection.hpp>
+// STD Headers
 #include <memory_resource>
 
 import sj.std.memory.resources.free_list_allocator;

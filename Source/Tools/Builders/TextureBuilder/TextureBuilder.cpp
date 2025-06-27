@@ -1,8 +1,10 @@
 // Parent Include
 #include "TextureBuilder.hpp"
 
-// Shared Includes
-#include <ScrewjankShared/DataDefinitions/Assets/Texture.hpp>
+// Datadefs
+#include <ScrewjankDataDefinitions/Assets/Texture.hpp>
+
+// SJSTD
 #include <ScrewjankStd/Assert.hpp>
 
 // Library Includes

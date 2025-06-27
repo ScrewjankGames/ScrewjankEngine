@@ -1,6 +1,5 @@
 module;
 
-// Shared Includes
 #include <ScrewjankStd/TypeMacros.hpp>
 
 export module sj.datadefs:TextureComponent;

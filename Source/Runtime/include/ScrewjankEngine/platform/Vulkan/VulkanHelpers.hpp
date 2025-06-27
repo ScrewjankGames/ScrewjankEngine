@@ -1,7 +1,7 @@
 #pragma once
 
 // Screwjank Headers
-#include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
+#include <ScrewjankDataDefinitions/Assets/Model.hpp>
 
 // Library Headers
 #include <vulkan/vulkan.h>

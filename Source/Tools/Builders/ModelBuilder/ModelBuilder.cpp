@@ -1,6 +1,8 @@
-// Shared Includes
+// Parent Include
 #include "ModelBuilder.hpp"
-#include <ScrewjankShared/DataDefinitions/Assets/Model.hpp>
+
+// SJ Includes
+#include <ScrewjankDataDefinitions/Assets/Model.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
 // Library Includes

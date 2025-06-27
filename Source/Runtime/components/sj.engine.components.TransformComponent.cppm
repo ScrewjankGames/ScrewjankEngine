@@ -1,5 +1,5 @@
 module;
-#include <ScrewjankShared/DataDefinitions/ComponentMacros.hpp>
+#include <ScrewjankDataDefinitions/ComponentMacros.hpp>
 
 export module sj.engine.components.TransformComponent;
 import sj.engine.framework.ecs;

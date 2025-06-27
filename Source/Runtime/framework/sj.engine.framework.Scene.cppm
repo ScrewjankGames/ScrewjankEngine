@@ -1,6 +1,6 @@
 module;
 
-// Shared Includes
+// SJ Includes
 #include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Assert.hpp>
 

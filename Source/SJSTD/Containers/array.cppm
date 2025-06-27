@@ -1,5 +1,5 @@
 module;
-// Shared Includes
+// SJ Includes
 #include <ScrewjankStd/Assert.hpp>
 
 // STD Includes

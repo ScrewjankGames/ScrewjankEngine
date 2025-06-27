@@ -1,7 +1,6 @@
 module;
-// Shared Includes
+
 #include <ScrewjankStd/Assert.hpp>
-#include <cstdint>
 
 // STD Headers
 #include <cstddef>

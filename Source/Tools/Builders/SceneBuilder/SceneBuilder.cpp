@@ -4,7 +4,7 @@
 // Builder Includes
 #include <Utils.hpp>
 
-// Shared Includes
+// SJSTD Includes
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Log.hpp>

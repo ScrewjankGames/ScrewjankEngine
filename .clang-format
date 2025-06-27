@@ -45,7 +45,7 @@ IncludeBlocks: Regroup
 IncludeCategories: 
   - Regex: '^ScrewjankEngine/'
     Priority: 1
-  - Regex: '^ScrewjankShared/'
+  - Regex: '^ScrewjankStd/'
     Priority: 2
   - Regex: '^<[^.]+' #STL Includes (no "." in path)
     Priority: 3
