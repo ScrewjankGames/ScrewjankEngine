@@ -6,5 +6,6 @@ export import :map;
 export import :set;
 export import :sparse_set;
 export import :stack;
-export import :type_list;
 export import sj.std.containers.unmanaged_list;
+export import sj.std.containers.type_list;
+

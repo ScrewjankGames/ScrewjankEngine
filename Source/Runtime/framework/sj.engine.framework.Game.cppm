@@ -40,7 +40,7 @@ export namespace sj
                 registry.RegisterComponentType<T>();
             };
 
-            ComponentTypeRegistry::ForEachComponentType<registerFn>(m_ecs);
+            g_componentTypes.for_each<registerFn>(m_ecs);
         }
 
         /**

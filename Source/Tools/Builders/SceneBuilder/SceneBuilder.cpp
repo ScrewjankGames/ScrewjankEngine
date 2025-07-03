@@ -101,12 +101,12 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
 
         for(const ComponentSchema& component : go.components)
         {
-            AnyChunk componentChunk;
+            DataChunk componentChunk;
             string_hash typeHash(component.type);
             TypeId typeId = typeHash.AsInt();
             componentChunk.type = typeId;
 
-            const ComponentMetaInfo* info = ComponentTypeRegistry::FindComponentMetaInfo(typeId); 
+            const ComponentMetaInfo* info = g_componentSerializationFuncs.find(typeId); 
             info->m_serializationFuncs.toBeveFn(component.componentJson, componentChunk.data);
 
             goChunk.components.emplace_back(std::move(componentChunk));

@@ -28,6 +28,10 @@ import :Serialization;
 
 export namespace sj
 {
+    using EngineComponentTypes = type_list<TransformComponent, CameraComponent>;
+    using ComponentTypeList = concat_type_lists<EngineComponentTypes, GameComponentTypes>::list;
+    constexpr ComponentTypeList g_componentTypes;
+
     template <class T>
     concept ComponentType = requires(T obj) {
         { T::kTypeId } -> std::convertible_to<sj::TypeId>;
@@ -40,14 +44,13 @@ export namespace sj
         std::string_view m_typeName;
         struct SerializationFuncs
         {
-            glz::error_ctx (*toBeveFn)(const glz::json_t& data,
-                                       sj::dynamic_vector<std::byte>& buffer);
+            glz::error_ctx (*toBeveFn)(const glz::json_t& data, sj::dynamic_vector<std::byte>& buffer);
             std::expected<AnyComponent, glz::error_ctx> (*fromBeveFn)(std::span<std::byte> buffer);
         } m_serializationFuncs {};
     };
 
     template <class T>
-    constexpr ComponentMetaInfo GetComponentMetaInfo()
+    constexpr auto GetComponentMetaInfo() -> ComponentMetaInfo
     {
         auto toBeveFn = [](const glz::json_t& data,
                            sj::dynamic_vector<std::byte>& buffer) -> glz::error_ctx {
@@ -75,57 +78,12 @@ export namespace sj
             .m_serializationFuncs = {.toBeveFn = toBeveFn, .fromBeveFn = fromBeveFn}};
     }
 
-    inline constexpr type_list<TransformComponent, CameraComponent> g_engineComponentTypes;
+    constexpr type_map<
+        g_componentTypes,
+        TypeId,
+        ComponentMetaInfo,
+        []<class T>() -> TypeId { return T::kTypeId; },
+        []<class T>() -> ComponentMetaInfo { return GetComponentMetaInfo<T>(); }>
+    g_componentSerializationFuncs;
 
-    class ComponentTypeRegistry
-    {
-    public:
-        static constexpr size_t kNumComponentTypes = g_engineComponentTypes.size() + g_gameComponentTypes.size();
-
-        template <auto F, class... Args>
-        static constexpr void ForEachComponentType(Args&&... args)
-        {
-            g_engineComponentTypes.for_each<F>(std::forward<Args>(args)...);
-            g_gameComponentTypes.for_each<F>(std::forward<Args>(args)...);
-        }
-
-        using ComponentLookupEntry = std::pair<TypeId, ComponentMetaInfo>;
-        using ComponentInfoLookupList =
-            std::array<ComponentLookupEntry,
-                       g_engineComponentTypes.size() + g_gameComponentTypes.size()>;
-        static constexpr ComponentInfoLookupList GetMetaInfoTable()
-        {
-            static constexpr ComponentInfoLookupList kLookupList = []() {
-                ComponentInfoLookupList list;
-
-                size_t i = 0;
-                auto helper = []<class T>(size_t& i, ComponentInfoLookupList& list) {
-                    list.at(i++) = std::pair {T::kTypeId, GetComponentMetaInfo<T>()};
-                };
-
-                ForEachComponentType<helper>(i, list);
-
-                return list;
-            }();
-
-            return kLookupList;
-        }
-
-
-        static constexpr const ComponentMetaInfo* FindComponentMetaInfo(TypeId typeId)
-        {
-            static constexpr ComponentInfoLookupList metaInfoTable = GetMetaInfoTable();
-
-            const auto& it = std::ranges::find(metaInfoTable, typeId, &ComponentLookupEntry::first);
-
-            if(it == metaInfoTable.end())
-            {
-                return nullptr;
-            }
-            else
-            {
-                return &(it->second);
-            }
-        }
-    };
 } // namespace sj

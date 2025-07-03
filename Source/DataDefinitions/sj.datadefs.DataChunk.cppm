@@ -7,6 +7,8 @@ module;
 // Library Headers
 #include <glaze/glaze.hpp>
 
+// STD Headers
+
 export module sj.datadefs.DataChunk;
 import sj.std.containers;
 import sj.std.math;
@@ -25,7 +27,7 @@ export namespace sj
             T val;
 
             glz::error_ctx err = glz::read_beve(val, data);
-            SJ_ASSERT(err == glz::error_code::none, "Failed to load data chunk");
+            SJ_ASSERT(err == glz::error_code::none, "Failed to load data chunk!");
 
             return val;
         }

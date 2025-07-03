@@ -8,20 +8,14 @@ module;
 
 export module sj.datadefs:SceneChunks;
 import sj.std.containers;
+import sj.datadefs.DataChunk;
 
 export namespace sj
 {
-    // Chunk as in "chunk of data"
-    struct AnyChunk
-    {
-        sj::TypeId type;
-        sj::dynamic_vector<std::byte> data;
-    };
-
     struct GameObjectChunk
     {
         string_hash id;
-        sj::dynamic_vector<AnyChunk> components;
+        sj::dynamic_vector<DataChunk> components;
     };
 
     struct SceneChunk
