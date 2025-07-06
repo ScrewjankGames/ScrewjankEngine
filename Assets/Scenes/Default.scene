@@ -6,7 +6,7 @@
             "id": "Player",
             "components": [
                 {
-                    "type": "TransformComponent",
+                    "type": "TransformChunk",
                     "localToParent" :{
                         "translation": [1, 1, 3],
                         "rotation": [-10, 30, 0],
@@ -14,7 +14,7 @@
                     }
                 },
                 {
-                    "type": "CameraComponent",
+                    "type": "CameraChunk",
                     "localToGoTransform": {
                         "translation": [0, 0, 0],
                         "rotation": [0, 0, 0],
@@ -30,7 +30,7 @@
             "id": "TestRoom",
             "components": [
                 {
-                    "type": "TransformComponent",
+                    "type": "TransformChunk",
                     "localToParent" :{
                         "translation": [0, 0, 0],
                         "rotation": [0, 0, 0],

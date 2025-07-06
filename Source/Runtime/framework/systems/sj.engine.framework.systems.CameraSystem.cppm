@@ -2,8 +2,9 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.framework.systems.CameraSystem;
+import sj.engine.components.TransformComponent;
+import sj.engine.components.CameraComponent;
 import sj.std.math;
-import sj.datadefs;
 import sj.engine.framework.ecs;
 
 export namespace sj
@@ -23,7 +24,7 @@ export namespace sj
                 // TODO: What if there's multiple
                 Mat44 localToGoTransform = cameraComponent.localToGoTransform;
                 const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);              
-                const Mat44& goWorldSpaceTransform = goTransform->GetWorldSpaceTransform();
+                const Mat44& goWorldSpaceTransform = goTransform->m_localToParentTransform;
                 
                 Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
                 

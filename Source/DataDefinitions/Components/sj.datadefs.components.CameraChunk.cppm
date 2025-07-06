@@ -1,15 +1,15 @@
 module;
 
-#include <ScrewjankStd/TypeMacros.hpp>
+#include <ScrewjankDataDefinitions/ChunkMacros.hpp>
 
-export module sj.datadefs:CameraComponent;
+export module sj.datadefs.components.CameraChunk;
 import sj.std.math;
 
 export namespace sj
 {
-    struct CameraComponent
+    struct CameraChunk
     {
-        SJ_STRUCT_TYPE_ID(CameraComponent);
+        SJ_CHUNK(CameraChunk);
 
         Mat44 localToGoTransform;
         float fov = 0;

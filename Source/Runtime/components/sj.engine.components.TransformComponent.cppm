@@ -1,5 +1,5 @@
 module;
-#include <ScrewjankDataDefinitions/ComponentMacros.hpp>
+#include <ScrewjankEngine/components/ComponentMacros.hpp>
 
 export module sj.engine.components.TransformComponent;
 import sj.engine.framework.ecs;
@@ -8,20 +8,19 @@ import sj.std.math;
 
 export namespace sj
 {
-    class TransformComponent2
+    class TransformComponent
     {
     public:
-        TransformComponent2(const ECSRegistry& registry, const TransformComponentChunk& chunk)
+        TransformComponent(const ECSRegistry& registry, const TransformChunk& chunk)
         {
             m_localToParentTransform = chunk.localToParent;
 
             // GameObjectId parentGoId = registry.FindGameObject(data.parentId);
         }
 
-        SJ_COMPONENT_TYPE(TransformComponent2, TransformComponentChunk);
+        SJ_COMPONENT(TransformComponent, TransformChunk);
 
-    private:
-        TransformComponent2* m_parent;
+        TransformComponent* m_parent;
         Mat44 m_localToParentTransform = Mat44(kIdentityTag);
     };
 } // namespace sj

@@ -106,8 +106,8 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
             TypeId typeId = typeHash.AsInt();
             componentChunk.type = typeId;
 
-            const ComponentMetaInfo* info = g_componentSerializationFuncs.find(typeId); 
-            info->m_serializationFuncs.toBeveFn(component.componentJson, componentChunk.data);
+            WriteChunkFn writeFn = g_chunkWriterFuncs.get(typeId);
+            writeFn(component.componentJson, componentChunk);
 
             goChunk.components.emplace_back(std::move(componentChunk));
         }

@@ -32,21 +32,21 @@ export namespace sj
             m_gameObjects.release(go);
         }
 
-        template <ComponentType T, class... Args>
+        template <class T, class... Args>
         void CreateComponent(GameObjectId goId, Args&&... args)
         {
             ComponentPool<T>& pool = GetComponentPool<T>();
             pool.create(goId, T {std::forward<Args>(args)...});
         }
 
-        template <ComponentType T>
+        template <class T>
         T* GetComponent(GameObjectId goId)
         {
             ComponentPool<T>& pool = GetComponentPool<T>();
             return pool.template get<T>(goId);
         }
 
-        template <ComponentType T>
+        template <class T>
         void RegisterComponentType()
         {
             m_componentPools.emplace(
@@ -54,7 +54,7 @@ export namespace sj
                 ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
         }
 
-        template <ComponentType T>
+        template <class T>
         auto GetComponents()
         {
             auto& pool = GetComponentPool<T>();
@@ -66,7 +66,7 @@ export namespace sj
         using ComponentPool = sparse_set<GameObjectId, T>;
         using ComponentPoolHandle = sj::static_any<sizeof(ComponentPool<int>)>;
 
-        template <ComponentType T>
+        template <class T>
         ComponentPool<T>& GetComponentPool()
         {
             ComponentPoolHandle* handle = FindComponentPool(T::kTypeId);
