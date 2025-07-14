@@ -10,8 +10,8 @@ module;
 #include <SG14/flat_set.h>
 #endif
 
-export module sj.std.containers:set;
-import :vector;
+export module sj.std.containers.set;
+import sj.std.containers.vector;
 
 #if __cpp_lib_flat_set >= 202207L
 #define set_type std::flat_set

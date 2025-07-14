@@ -6,7 +6,6 @@
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Datadefs
-#include <ScrewjankDataDefinitions/Assets/Texture.hpp>
 #include <ScrewjankDataDefinitions/Assets/Model.hpp>
 
 // Screwjank STD Headers
@@ -26,8 +25,8 @@
 #include <cstddef>
 #include <fstream>
 
+import sj.datadefs.assets.Texture;
 import sj.engine.system.memory;
-import sj.std.containers;
 import sj.std.math;
 
 namespace sj

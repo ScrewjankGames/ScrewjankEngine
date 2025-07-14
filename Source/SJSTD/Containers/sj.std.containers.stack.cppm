@@ -2,8 +2,8 @@ module;
 
 #include <stack>
 
-export module sj.std.containers:stack;
-import :vector;
+export module sj.std.containers.stack;
+import sj.std.containers.vector;
 
 export namespace sj
 {

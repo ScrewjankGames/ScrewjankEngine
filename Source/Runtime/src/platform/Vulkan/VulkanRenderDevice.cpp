@@ -12,7 +12,8 @@
 #include <ScrewjankStd/PlatformDetection.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
-import sj.std.containers;
+import sj.std.containers.array;
+import sj.std.containers.set;
 import sj.std.memory;
 
 namespace sj {

@@ -5,7 +5,7 @@ module;
 #include <cstdint>
 #include <utility>
 #include <type_traits>
-export module sj.std.containers:any;
+export module sj.std.containers.any;
 import sj.std.type_traits;
 
 export namespace sj {

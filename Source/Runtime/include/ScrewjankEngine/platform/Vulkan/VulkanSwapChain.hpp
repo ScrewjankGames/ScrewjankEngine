@@ -9,7 +9,8 @@
 
 // Screwjank Headers
 
-import sj.std.containers;
+import sj.std.containers.array;
+import sj.std.containers.vector;
 
 namespace sj {
 

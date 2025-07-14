@@ -5,7 +5,7 @@ module;
 export module sj.std.memory.resources.pool_allocator;
 import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
-import sj.std.containers;
+import sj.std.containers.unmanaged_list;
 
 export namespace sj
 {

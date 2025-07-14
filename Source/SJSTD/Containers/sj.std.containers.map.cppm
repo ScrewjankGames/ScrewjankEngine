@@ -8,8 +8,8 @@ module;
 #include <stdexcept>
 #include <SG14/flat_map.h>
 #endif
-export module sj.std.containers:map;
-import :vector;
+export module sj.std.containers.map;
+import sj.std.containers.vector;
 
 #if __cpp_lib_flat_map >= 202207L
 #define map_type std::flat_map

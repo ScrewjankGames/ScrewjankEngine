@@ -13,7 +13,6 @@
 #include <span>
 
 import sj.engine.system;
-import sj.std.containers;
 import sj.std.math;
 import sj.std.memory.resources;
 

@@ -11,7 +11,8 @@ export module sj.engine.framework.Scene;
 import sj.engine.components;
 import sj.engine.framework.ecs;
 import sj.std.memory;
-import sj.std.containers;
+import sj.std.containers.type_list;
+import sj.std.containers.vector;
 import sj.datadefs;
 
 export namespace sj

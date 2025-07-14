@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 // SJ Headers
-import sj.std.containers;
+import sj.std.containers.unmanaged_list;
 
 using namespace sj;
 
@@ -90,7 +90,7 @@ namespace container_tests
             }
 
             int count = 0;
-            for(FwdListDummy& _ : fwdList){}
+            for(FwdListDummy& _ : fwdList)
                 count++;
 
             ASSERT_EQ(count, 10000);

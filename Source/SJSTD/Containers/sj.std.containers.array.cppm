@@ -7,7 +7,7 @@ module;
 #include <iterator>
 #include <memory>
 
-export module sj.std.containers:array;
+export module sj.std.containers.array;
 
 export namespace sj
 {

@@ -36,6 +36,10 @@
                         "rotation": [0, 0, 0],
                         "scale": [1, 1, 1]
                     }
+                },
+                {
+                    "type": "TextureChunk",
+                    "path": "Engine/texture.sj_tex"
                 }
             ]
         }

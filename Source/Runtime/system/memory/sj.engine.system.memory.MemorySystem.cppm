@@ -10,7 +10,8 @@ export module sj.engine.system.memory.MemorySystem;
 import sj.std.memory.resources;
 import sj.std.memory.literals;
 import sj.std.memory.utils;
-import sj.std.containers;
+import sj.std.containers.stack;
+import sj.std.containers.vector;
 
 export namespace sj
 {

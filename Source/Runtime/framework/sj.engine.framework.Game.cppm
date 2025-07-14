@@ -15,7 +15,7 @@ module;
 export module sj.engine.framework.Game;
 
 import sj.std.memory;
-import sj.std.containers;
+import sj.std.containers.vector;
 
 import sj.engine.components;
 

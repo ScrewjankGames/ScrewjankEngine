@@ -5,7 +5,7 @@
 // Library Headers
 #include <gtest/gtest.h>
 
-import sj.std.containers;
+import sj.std.containers.sparse_set;
 
 using namespace sj;
 

@@ -12,7 +12,7 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 // End global module fragment
-export module sj.std.containers:vector;
+export module sj.std.containers.vector;
 
 export namespace sj
 {

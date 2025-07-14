@@ -4,7 +4,7 @@
 // Library Headers
 #include <gtest/gtest.h>
 
-import sj.std.containers;
+import sj.std.containers.array;
 
 using namespace sj;
 

@@ -3,9 +3,6 @@
 // Library Headers
 #include <vulkan/vulkan.h>
 
-// SJ Headers
-import sj.std.containers;
-
 namespace sj
 {
     class VulkanPipeline

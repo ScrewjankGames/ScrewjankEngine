@@ -12,7 +12,8 @@ module;
 export module sj.datadefs.DataChunk;
 import sj.datadefs.ChunkTypes;
 import sj.datadefs.Serialization;
-import sj.std.containers;
+import sj.std.containers.type_list;
+import sj.std.containers.vector;
 
 export namespace sj
 {

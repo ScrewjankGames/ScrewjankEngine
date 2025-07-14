@@ -7,9 +7,9 @@ module;
 #include <ranges>
 
 // End global module fragment
-export module sj.std.containers:sparse_set;
-import :array;
-import :vector;
+export module sj.std.containers.sparse_set;
+import sj.std.containers.array;
+import sj.std.containers.vector;
 
 export namespace sj 
 {

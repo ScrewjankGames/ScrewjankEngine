@@ -7,7 +7,7 @@ module;
 #include <cstddef>
 
 export module sj.datadefs:SceneChunks;
-import sj.std.containers;
+import sj.std.containers.vector;
 import sj.datadefs.DataChunk;
 
 export namespace sj

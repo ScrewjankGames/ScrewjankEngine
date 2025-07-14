@@ -8,7 +8,10 @@ module;
 export module sj.engine.framework.ecs:ECSRegistry;
 import :Identifiers;
 
-import sj.std.containers;
+import sj.std.containers.any;
+import sj.std.containers.sparse_set;
+import sj.std.containers.map;
+
 import sj.datadefs;
 
 export namespace sj

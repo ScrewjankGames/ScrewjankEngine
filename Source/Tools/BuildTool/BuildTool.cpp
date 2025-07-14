@@ -1,12 +1,13 @@
 #include "BuildTool_Config_generated.hpp"
 
-#include "TextureBuilder.hpp"
 #include "ModelBuilder.hpp"
 #include "SceneBuilder.hpp"
 
 #include <cstdlib>
 #include <print>
 #include <filesystem>
+
+import sj.TextureBuilder;
 
 int main()
 {
