@@ -39,7 +39,7 @@
                 },
                 {
                     "type": "TextureChunk",
-                    "path": "Engine/texture.sj_tex"
+                    "path": "Data/Engine/texture.sj_tex"
                 }
             ]
         }

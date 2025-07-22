@@ -1,18 +1,16 @@
 module;
 
 #include <ScrewjankDataDefinitions/ChunkMacros.hpp>
-#include <array>
 
 export module sj.datadefs.components.TextureChunk;
-import sj.std.math;
+import sj.std.containers.static_string;
 
 export namespace sj
 {
     struct TextureChunk
     {
         SJ_CHUNK(TextureChunk)
-
-        std::array<char, 256> path;
+        static_string<256> path;
     };
 
 } // namespace sj

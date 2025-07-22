@@ -9,8 +9,8 @@ export namespace sj
 {
     using EngineComponentChunkTypes = type_list<
         TransformChunk, 
-        CameraChunk 
-        //TextureChunk
+        CameraChunk,
+        TextureChunk
     >;
     using ComponentChunkTypeList = concat_type_lists<EngineComponentChunkTypes, GameComponentChunkTypes>::list;
     constexpr ComponentChunkTypeList g_componentChunkTypes;
