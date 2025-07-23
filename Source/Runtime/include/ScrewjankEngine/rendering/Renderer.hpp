@@ -2,7 +2,6 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
 #include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
 
 // Library Headers
@@ -13,6 +12,7 @@
 #include <span>
 
 import sj.engine.system;
+import sj.engine.rendering.vk.SwapChain;
 import sj.std.math;
 import sj.std.memory.resources;
 
@@ -51,7 +51,7 @@ namespace sj {
         };
 
       private:
-        Renderer() = default;
+        Renderer();
         ~Renderer() = default;
 
         static constexpr uint32_t kMaxFramesInFlight = 2;
@@ -140,7 +140,7 @@ namespace sj {
         VulkanRenderDevice m_renderDevice;
 
         /** Used for image presentation */
-        VulkanSwapChain m_swapChain;
+        sj::vk::SwapChain m_swapChain;
 
         /** Pipeline used to describe rendering process */
         VulkanPipeline m_defaultPipeline;

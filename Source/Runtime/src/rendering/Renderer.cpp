@@ -3,7 +3,6 @@
 
 // Screwjank Headers
 #include <ScrewjankEngine/framework/Window.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // Datadefs
 #include <ScrewjankDataDefinitions/Assets/Model.hpp>
@@ -27,6 +26,9 @@
 
 import sj.datadefs.assets.Texture;
 import sj.engine.system.memory;
+import sj.engine.rendering.vk;
+import sj.std.containers.vector;
+import sj.std.memory.literals;
 import sj.std.math;
 
 namespace sj
@@ -46,6 +48,11 @@ namespace sj
     {
         static Renderer s_renderer;
         return &s_renderer;
+    }
+
+    Renderer::Renderer() : m_swapChain(WorkBuffer())
+    {
+
     }
 
     void Renderer::Render(const Mat44& cameraMatrix)
@@ -80,6 +87,7 @@ namespace sj
             m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
                                  m_renderDevice.GetLogicalDevice(),
                                  m_renderingSurface,
+                                 Window::GetInstance(),
                                  m_defaultRenderPass);
 
             return;
@@ -135,6 +143,7 @@ namespace sj
             m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
                                  m_renderDevice.GetLogicalDevice(),
                                  m_renderingSurface,
+                                 Window::GetInstance(),
                                  m_defaultRenderPass);
             return;
         }
@@ -161,7 +170,8 @@ namespace sj
         // Create the vulkan swap chain connected to the current window and device
         m_swapChain.Init(m_renderDevice.GetPhysicalDevice(),
                          m_renderDevice.GetLogicalDevice(),
-                         m_renderingSurface);
+                         m_renderingSurface, 
+                         Window::GetInstance());
 
         CreateRenderPass();
 

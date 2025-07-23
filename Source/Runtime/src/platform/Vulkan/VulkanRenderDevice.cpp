@@ -10,11 +10,13 @@
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankStd/PlatformDetection.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 import sj.std.containers.array;
 import sj.std.containers.set;
+import sj.std.containers.vector;
 import sj.std.memory;
+import sj.engine.rendering.vk.SwapChain;
+import sj.engine.rendering.vk.Utils;
 
 namespace sj {
     
@@ -93,8 +95,8 @@ namespace sj {
         }
 
         // Check swap chain support
-        VulkanSwapChain::SwapChainParams params =
-            VulkanSwapChain::QuerySwapChainParams(device, renderSurface);
+        sj::vk::SwapChain::SwapChainParams params =
+            sj::vk::SwapChain::QuerySwapChainParams(device, renderSurface);
         bool swap_chain_supported = (params.Formats.size() > 0) && (params.PresentModes.size() > 0);
 
 

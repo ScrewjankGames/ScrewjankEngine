@@ -1,18 +1,21 @@
-// Parent include
-#include "ScrewjankEngine/rendering/Renderer.hpp"
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
+module;
 
 // Screwjank Headers
+#include <ScrewjankDataDefinitions/Assets/Model.hpp>
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
-//STD Includes
-#include <array>
+// Library Headers
+#include <vulkan/vulkan.h>
 
+export module sj.engine.rendering.vk.Utils;
 import sj.std.memory;
 
-namespace sj
+export namespace sj
 {
+    inline constexpr VkAllocationCallbacks* g_vkAllocationFns = nullptr;
+
+    [[nodiscard]]
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,
                             uint32_t typeFilter,
                             VkMemoryPropertyFlags properties)
@@ -33,7 +36,7 @@ namespace sj
         return -1;
     }
 
-    void CreateImage(VkDevice logicalDevice, 
+    void CreateImage(VkDevice logicalDevice,
                      VkPhysicalDevice physicalDevice,
                      uint32_t width,
                      uint32_t height,
@@ -59,12 +62,7 @@ namespace sj
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult success = vkCreateImage(
-            logicalDevice, 
-            &imageInfo, 
-            sj::g_vkAllocationFns, 
-            &image
-        );
+        VkResult success = vkCreateImage(logicalDevice, &imageInfo, sj::g_vkAllocationFns, &image);
 
         SJ_ASSERT(success == VK_SUCCESS, "failed to create image!");
 
@@ -74,19 +72,16 @@ namespace sj
         VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex =
+            FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
-        success = vkAllocateMemory(
-            logicalDevice, 
-            &allocInfo, 
-            sj::g_vkAllocationFns, 
-            &imageMemory
-        );
+        success = vkAllocateMemory(logicalDevice, &allocInfo, sj::g_vkAllocationFns, &imageMemory);
         SJ_ASSERT(success == VK_SUCCESS, "failed to allocate image memory!");
 
         vkBindImageMemory(logicalDevice, image, imageMemory, 0);
     }
 
+    [[nodiscard]]
     VkImageView
     CreateImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
     {
@@ -103,28 +98,13 @@ namespace sj
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView {};
-        VkResult res = vkCreateImageView(
-            device, 
-            &viewInfo, 
-            sj::g_vkAllocationFns, &imageView);
+        VkResult res = vkCreateImageView(device, &viewInfo, sj::g_vkAllocationFns, &imageView);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create texture image view");
 
         return imageView;
     }
-
-    VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice)
-    {
-        std::array depthFormats = {VK_FORMAT_D32_SFLOAT,
-                                   VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                   VK_FORMAT_D24_UNORM_S8_UINT};
-
-        VkFormat depthFormat = FindSupportedFormat(physicalDevice,
-                                                   depthFormats,
-                                                   VK_IMAGE_TILING_OPTIMAL,
-                                                   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        return depthFormat;
-    }
-
+    
+    [[nodiscard]]
     VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,
                                  std::span<VkFormat> candidates,
                                  VkImageTiling tiling,
@@ -150,4 +130,52 @@ namespace sj
         SJ_ASSERT(false, "Failed to acquire supported VkFormat with given arguments");
         return VK_FORMAT_UNDEFINED;
     }
-}
+
+    [[nodiscard]]
+    VkFormat FindDepthFormat(VkPhysicalDevice physicalDevice)
+    {
+        std::array depthFormats = {VK_FORMAT_D32_SFLOAT,
+                                   VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                   VK_FORMAT_D24_UNORM_S8_UINT};
+
+        VkFormat depthFormat = FindSupportedFormat(physicalDevice,
+                                                   depthFormats,
+                                                   VK_IMAGE_TILING_OPTIMAL,
+                                                   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        return depthFormat;
+    }
+
+    inline VkVertexInputBindingDescription GetVertexBindingDescription()
+    {
+        VkVertexInputBindingDescription desc {};
+
+        desc.binding = 0;
+        desc.stride = sizeof(Vertex);
+        desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return desc;
+    }
+
+    inline std::array<VkVertexInputAttributeDescription, 3> GetVertexAttributeDescriptions()
+    {
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, uv);
+
+        return attributeDescriptions;
+    }
+
+} // namespace sj

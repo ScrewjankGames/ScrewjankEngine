@@ -7,13 +7,13 @@
 #include <imgui_impl_glfw.h>
 
 // Engine Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 #include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankEngine/platform/Windows/GLFW_Window.hpp>
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
 import sj.engine.system.memory.MemorySystem;
+import sj.engine.rendering.vk;
 
 namespace sj
 {

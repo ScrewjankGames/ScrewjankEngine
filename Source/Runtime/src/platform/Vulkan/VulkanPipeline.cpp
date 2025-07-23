@@ -6,8 +6,6 @@
 
 // Engine Headers
 #include <ScrewjankEngine/rendering/Renderer.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanSwapChain.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanHelpers.hpp>
 
 // ScrewjankStd Headers
 #include <ScrewjankStd/Assert.hpp>
@@ -16,6 +14,7 @@
 #include <fstream>
 
 import sj.std.memory;
+import sj.engine.rendering.vk.Utils;
 
 namespace sj
 {
