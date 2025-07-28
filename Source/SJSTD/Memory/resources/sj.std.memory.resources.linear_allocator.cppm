@@ -57,6 +57,16 @@ export namespace sj
             return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
         }
 
+        void* data() 
+        {
+            return m_BufferStart;
+        }
+
+        size_t buffer_size() const
+        {
+            return uintptr_t(m_BufferEnd) - uintptr_t(m_BufferStart);
+        }
+
     private:
         [[nodiscard]] void* do_allocate(const size_t size,
                                         const size_t alignment = alignof(std::max_align_t)) override
