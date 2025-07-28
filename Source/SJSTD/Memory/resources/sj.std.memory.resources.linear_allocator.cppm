@@ -2,6 +2,9 @@ module;
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
+#include <cstddef>
+#include <cstdint>
+
 export module sj.std.memory.resources.linear_allocator;
 import sj.std.memory.resources.memory_resource;
 import sj.std.memory.utils;
@@ -11,14 +14,8 @@ export namespace sj
     class linear_allocator final : public sj::memory_resource
     {
     public:
-        /**
-         * Default constructor
-         */
         linear_allocator() = default;
 
-        /**
-         * Initializing Constructor
-         */
         explicit linear_allocator(size_t buffer_size, std::byte* memory)
         {
             init(buffer_size, memory);
@@ -33,23 +30,23 @@ export namespace sj
             m_CurrFrameStart = memory;
         }
 
-        /**
-         * Destructor
-         */
         ~linear_allocator() final = default;
 
-        /**
-         * Marks all allocations for this allocator as invalid and frees the buffer for more
-         * allocations
-         */
+        auto get_current_offset() -> size_t
+        {
+            return uintptr_t(m_CurrFrameStart) - uintptr_t(m_BufferStart);
+        }
+
         void reset()
         {
             m_CurrFrameStart = m_BufferStart;
         }
 
-        /**
-         * @return whether the allocator is in a valid state
-         */
+        void reset(size_t to_offset)
+        {
+            m_CurrFrameStart = reinterpret_cast<void*>(uintptr_t(m_BufferStart) + to_offset);
+        }
+
         [[nodiscard]] bool is_initialized() const
         {
             return m_BufferStart != nullptr;
@@ -78,7 +75,7 @@ export namespace sj
 
             auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, free_space);
 
-            SJ_ASSERT(uintptr_t(allocated_memory) + size <= free_space, "Linear Allocator is out of memory!");
+            SJ_ASSERT(uintptr_t(allocated_memory) + size <= uintptr_t(m_BufferEnd), "Linear Allocator is out of memory!");
 
             // Bump allocation pointer to the first free byte after the current allocation
             m_CurrFrameStart =
@@ -88,7 +85,6 @@ export namespace sj
         }
 
         /**
-         * Attempts to free a memory address
          * @note Linear Allocators don't support the free operation, expected to just call reset
          * eventually
          */
@@ -108,5 +104,4 @@ export namespace sj
         /** Pointer to the first free byte in the linear allocator */
         void* m_CurrFrameStart = nullptr;
     };
-
 } // namespace sj

@@ -8,6 +8,7 @@
 #include <memory_resource>
 
 import sj.std.memory.resources.linear_allocator;
+import sj.std.memory.scratchpad_scope;
 
 using namespace sj;
 
@@ -97,5 +98,25 @@ namespace system_tests
         ASSERT_EQ(3.0, dummy3->m_double);
 
         mem_resource->deallocate(memory, mem_size);
+    }
+
+    TEST(LinearAllocatorTests, ScratchpadScopeTest)
+    {
+        // Reserve 256 bytes
+        std::pmr::memory_resource* mem_resource = std::pmr::get_default_resource();
+        size_t mem_size = 256;
+        void* memory = mem_resource->allocate(mem_size);
+
+        linear_allocator test_resource(mem_size, reinterpret_cast<std::byte*>(memory));
+        size_t watermark = test_resource.get_current_offset();
+
+        {
+            scratchpad_scope scratchpad(test_resource);
+            auto _ = scratchpad.get_allocator().allocate(256, alignof(std::byte));
+            size_t new_offset = test_resource.get_current_offset();
+            ASSERT_NE(watermark, new_offset);
+        }
+        size_t new_watermark = test_resource.get_current_offset();
+        ASSERT_EQ(watermark, new_watermark);
     }
 } // namespace system_tests
