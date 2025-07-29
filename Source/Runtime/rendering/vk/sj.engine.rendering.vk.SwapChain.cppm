@@ -10,7 +10,6 @@ module;
 // Screwjank Headers
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankEngine/framework/Window.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
 
 export module sj.engine.rendering.vk.SwapChain;
 import sj.engine.rendering.vk.Utils;
@@ -54,16 +53,6 @@ export namespace sj::vk
     class SwapChain
     {
     public:
-        /**
-         * Structure binding the parameters needed to build a swap chain
-         */
-        struct SwapChainParams
-        {
-            VkSurfaceCapabilitiesKHR Capabilities;
-            sj::static_vector<VkSurfaceFormatKHR, 32> Formats;
-            sj::static_vector<VkPresentModeKHR, 32> PresentModes;
-        };
-
         SwapChain(sj::memory_resource* cpu_resource)
             : m_cpuMemoryResource(cpu_resource), m_images(cpu_resource), m_imageViews(cpu_resource), m_swapChainBuffers(cpu_resource)
         {
@@ -115,8 +104,7 @@ export namespace sj::vk
             create_info.imageArrayLayers = 1;
             create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            DeviceQueueFamilyIndices indices =
-                VulkanRenderDevice::GetDeviceQueueFamilyIndices(physicalDevice, renderingSurface);
+            DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(physicalDevice, renderingSurface);
 
             std::array queue_family_indices_array = {indices.graphicsFamilyIndex.value(),
                                                      indices.presentationFamilyIndex.value()};
@@ -265,45 +253,6 @@ export namespace sj::vk
         [[nodiscard]] VkSwapchainKHR GetSwapChain() const
         {
             return m_swapChain;
-        }
-
-        /**
-         * Query swap chain support parameters
-         */
-        static SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device,
-                                                    VkSurfaceKHR surface)
-        {
-            VkSurfaceCapabilitiesKHR capabilities;            
-            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
-
-            SwapChainParams params {
-                .Capabilities = capabilities,
-            };
-
-            uint32_t format_count = 0;
-            vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
-            SJ_ASSERT(format_count != 0, "No surface formats found");
-            params.Formats.resize(format_count);
-
-            uint32_t present_mode_count = 0;
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
-                                                      surface,
-                                                      &present_mode_count,
-                                                      nullptr);
-            SJ_ASSERT(present_mode_count != 0, "No present modes found");
-            params.PresentModes.resize(present_mode_count);
-
-            vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
-                                                 surface,
-                                                 &format_count,
-                                                 params.Formats.data());
-
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
-                                                      surface,
-                                                      &present_mode_count,
-                                                      params.PresentModes.data());
-
-            return params;
         }
 
         [[nodiscard]] std::span<VkImageView> GetImageViews() const

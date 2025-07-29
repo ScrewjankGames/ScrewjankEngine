@@ -11,7 +11,7 @@ export namespace sj
     class CameraComponent
     {
     public:
-        CameraComponent(const ECSRegistry& registry, const CameraChunk& chunk)
+        CameraComponent(const CameraChunk& chunk)
             : localToGoTransform(chunk.localToGoTransform),
               fov(chunk.fov),
               nearPlane(chunk.nearPlane),

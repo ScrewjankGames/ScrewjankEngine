@@ -165,7 +165,7 @@ namespace sj
         CreateRenderSurface();
 
         // Select physical device and create and logical render device
-        m_renderDevice.Init(m_renderingSurface);
+        m_renderDevice.Init(m_vkInstance, m_renderingSurface);
 
         // Create the vulkan swap chain connected to the current window and device
         m_swapChain.Init(m_renderDevice.GetPhysicalDevice(),
@@ -210,8 +210,7 @@ namespace sj
 
         m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
 
-        DeviceQueueFamilyIndices indices =
-            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
 #ifndef SJ_GOLD
         // Init ImGui
@@ -684,8 +683,7 @@ namespace sj
 
     void Renderer::CreateCommandPools()
     {
-        DeviceQueueFamilyIndices indices =
-            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
 
         // Create Graphics Command Pool
         {
@@ -703,16 +701,16 @@ namespace sj
         }
     }
 
-    void Renderer::CreateBuffer(VkDeviceSize size,
+    void Renderer::CreateBuffer(const sj::vk::RenderDevice& device, 
+                                VkDeviceSize size,
                                 VkBufferUsageFlags usage,
                                 VkMemoryPropertyFlags properties,
                                 VkBuffer& out_buffer,
                                 VkDeviceMemory& out_bufferMemory)
     {
-        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
+        VkDevice logicalDevice = device.GetLogicalDevice();
 
-        DeviceQueueFamilyIndices indices =
-            VulkanRenderDevice::GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+        DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device.GetPhysicalDevice());
 
         std::array<uint32_t, 1> queueFamilyIndices {*indices.graphicsFamilyIndex};
 
@@ -735,7 +733,7 @@ namespace sj
         VkMemoryAllocateInfo allocInfo {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(m_renderDevice.GetPhysicalDevice(),
+        allocInfo.memoryTypeIndex = FindMemoryType(device.GetPhysicalDevice(),
                                                    memRequirements.memoryTypeBits,
                                                    properties);
 
@@ -791,7 +789,8 @@ namespace sj
             VkBuffer stagingBuffer {};
             VkDeviceMemory stagingBufferMemory {};
 
-            CreateBuffer(bufferSize,
+            CreateBuffer(m_renderDevice,
+                         bufferSize,
                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                          stagingBuffer,
@@ -810,7 +809,8 @@ namespace sj
 
             vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-            CreateBuffer(bufferSize,
+            CreateBuffer(m_renderDevice,
+                         bufferSize,
                          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                          m_dummyVertexBuffer,
@@ -834,7 +834,8 @@ namespace sj
 
             VkBuffer stagingBuffer {};
             VkDeviceMemory stagingBufferMemory {};
-            CreateBuffer(bufferSize,
+            CreateBuffer(m_renderDevice,
+                         bufferSize,
                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                          stagingBuffer,
@@ -852,7 +853,8 @@ namespace sj
 
             vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-            CreateBuffer(bufferSize,
+            CreateBuffer(m_renderDevice, 
+                         bufferSize,
                          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                          m_dummyIndexBuffer,
@@ -882,7 +884,8 @@ namespace sj
         VkBuffer stagingBuffer {};
         VkDeviceMemory stagingBufferMemory {};
 
-        CreateBuffer(imageSize,
+        CreateBuffer(m_renderDevice,
+                     imageSize,
                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      stagingBuffer,
@@ -957,7 +960,8 @@ namespace sj
 
         for(size_t i = 0; i < kMaxFramesInFlight; i++)
         {
-            CreateBuffer(bufferSize,
+            CreateBuffer(m_renderDevice,
+                         bufferSize,
                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                          m_frameData.globalUniformBuffers[i],

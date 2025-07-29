@@ -24,7 +24,7 @@ export namespace sj
     template<class T>
     void LoadComponent(ECSRegistry& registry, GameObjectId goId, const DataChunk& componentData) 
     {
-        T component(registry, componentData);
+        T component(componentData);
 
         // Add new component
         registry.CreateComponent<T>(goId, component);

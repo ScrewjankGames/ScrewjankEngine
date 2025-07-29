@@ -9,7 +9,10 @@ module;
 #include <vulkan/vulkan.h>
 
 export module sj.engine.rendering.vk.Utils;
-import sj.std.memory;
+import sj.std.containers.vector;
+import sj.std.containers.array;
+import sj.engine.system.memory;
+import sj.engine.system.threading.ThreadContext;
 
 export namespace sj
 {
@@ -103,7 +106,7 @@ export namespace sj
 
         return imageView;
     }
-    
+
     [[nodiscard]]
     VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice,
                                  std::span<VkFormat> candidates,
@@ -178,4 +181,97 @@ export namespace sj
         return attributeDescriptions;
     }
 
+    /**
+     * Query swap chain support parameters
+     */
+    struct SwapChainParams
+    {
+        VkSurfaceCapabilitiesKHR Capabilities;
+        sj::static_vector<VkSurfaceFormatKHR, 32> Formats;
+        sj::static_vector<VkPresentModeKHR, 32> PresentModes;
+    };
+    SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+
+        SwapChainParams params {
+            .Capabilities = capabilities,
+        };
+
+        uint32_t format_count = 0;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
+        SJ_ASSERT(format_count != 0, "No surface formats found");
+        params.Formats.resize(format_count);
+
+        uint32_t present_mode_count = 0;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
+                                                  surface,
+                                                  &present_mode_count,
+                                                  nullptr);
+        SJ_ASSERT(present_mode_count != 0, "No present modes found");
+        params.PresentModes.resize(present_mode_count);
+
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
+                                             surface,
+                                             &format_count,
+                                             params.Formats.data());
+
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
+                                                  surface,
+                                                  &present_mode_count,
+                                                  params.PresentModes.data());
+
+        return params;
+    }
+
+    /**
+     * Returns the queue families available for the supplied VkPhysicalDevice
+     */
+    struct DeviceQueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamilyIndex;
+        std::optional<uint32_t> presentationFamilyIndex;
+    };
+
+    DeviceQueueFamilyIndices
+    GetDeviceQueueFamilyIndices(VkPhysicalDevice device,
+                                VkSurfaceKHR renderSurface = VK_NULL_HANDLE)
+    {
+        uint32_t queue_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
+        scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
+        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count,
+                                                          &scratchpad.get_allocator());
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
+
+        DeviceQueueFamilyIndices indices;
+
+        int i = 0;
+        for(const VkQueueFamilyProperties& family : queue_data)
+        {
+            if(family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.graphicsFamilyIndex = i;
+            }
+
+            if(renderSurface != VK_NULL_HANDLE)
+            {
+                VkBool32 presentation_support = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device,
+                                                     i,
+                                                     renderSurface,
+                                                     &presentation_support);
+
+                if(presentation_support)
+                {
+                    indices.presentationFamilyIndex = i;
+                }
+            }
+
+            i++;
+        }
+
+        return indices;
+    }
 } // namespace sj

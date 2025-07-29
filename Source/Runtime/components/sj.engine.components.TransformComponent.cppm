@@ -11,7 +11,7 @@ export namespace sj
     class TransformComponent
     {
     public:
-        TransformComponent(const ECSRegistry& registry, const TransformChunk& chunk) 
+        TransformComponent(const TransformChunk& chunk) 
             : m_localToParentTransform(chunk.localToParent)
         {
 

@@ -3,13 +3,15 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankEngine/components/ComponentMacros.hpp>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <fstream>
 
 export module sj.engine.components.TextureComponent;
 import sj.engine.framework.ecs;
-import sj.datadefs;
+import sj.datadefs.DataChunk;
+import sj.datadefs.components.TextureChunk;
+import sj.datadefs.assets.Texture;
 import sj.std.math;
 
 export namespace sj
@@ -17,19 +19,74 @@ export namespace sj
     class TextureComponent
     {
     public:
-        TextureComponent(const ECSRegistry& registry, const TextureChunk& chunk) 
+        TextureComponent(const TextureChunk& chunk)
         {
             std::ifstream textureStream;
-            textureStream.open(chunk.path.c_str());
-            // GameObjectId parentGoId = registry.FindGameObject(data.parentId);
+            textureStream.open(chunk.path.c_str(), std::ios::in | std::ios::binary);
             SJ_ASSERT(textureStream.is_open(), "Failed to open texture stream");
+            
+            TextureHeader header;
+            textureStream.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+            VkDeviceSize imageSize = header.width * header.height * 4;
+            VkBuffer stagingBuffer {};
+            VkDeviceMemory stagingBufferMemory {};
+
+            // CreateBuffer(imageSize,
+            //              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            //              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            //              stagingBuffer,
+            //              stagingBufferMemory);
+
+            // void* data = nullptr;
+            // vkMapMemory(m_renderDevice.GetLogicalDevice(),
+            //             stagingBufferMemory,
+            //             0,
+            //             imageSize,
+            //             0,
+            //             &data);
+
+            // // Read texture data straight into GPU memory
+            // textureFile.read(reinterpret_cast<char*>(data), imageSize);
+            // vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+
+            // textureFile.close();
+            // CreateImage(m_renderDevice.GetLogicalDevice(),
+            //             m_renderDevice.GetPhysicalDevice(),
+            //             header.width,
+            //             header.height,
+            //             VK_FORMAT_R8G8B8A8_SRGB,
+            //             VK_IMAGE_TILING_OPTIMAL,
+            //             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            //             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            //             m_dummyTextureImage,
+            //             m_dummyTextureImageMemory);
+
+            // TransitionImageLayout(m_dummyTextureImage,
+            //                       VK_IMAGE_LAYOUT_UNDEFINED,
+            //                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+            // CopyBufferToImage(stagingBuffer, m_dummyTextureImage, header.width, header.height);
+
+            // TransitionImageLayout(m_dummyTextureImage,
+            //                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            //                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+            // vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
+            //                 stagingBuffer,
+            //                 sj::g_vkAllocationFns);
+            // vkFreeMemory(m_renderDevice.GetLogicalDevice(),
+            //              stagingBufferMemory,
+            //              sj::g_vkAllocationFns);
+
+            return;
         }
 
         SJ_COMPONENT(TextureComponent, TextureChunk);
 
-        VkImage m_TextureImage;
-        VkDeviceMemory m_TextureImageMemory;
-        VkImageView m_TextureImageView;
-        VkSampler m_TextureSampler;
+        VkImage m_TextureImage = VK_NULL_HANDLE;
+        VkDeviceMemory m_TextureImageMemory = VK_NULL_HANDLE;
+        VkImageView m_TextureImageView = VK_NULL_HANDLE;
+        VkSampler m_TextureSampler = VK_NULL_HANDLE;
     };
 } // namespace sj

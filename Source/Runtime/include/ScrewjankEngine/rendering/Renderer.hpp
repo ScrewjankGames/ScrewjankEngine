@@ -1,8 +1,6 @@
 #pragma once
 
 // Screwjank Headers
-#include <ScrewjankEngine/platform/Vulkan/VulkanRenderDevice.hpp>
-#include <ScrewjankEngine/platform/Vulkan/VulkanPipeline.hpp>
 
 // Library Headers
 #include <vulkan/vulkan.h>
@@ -13,17 +11,16 @@
 
 import sj.engine.system;
 import sj.engine.rendering.vk.SwapChain;
+import sj.engine.rendering.vk.RenderDevice;
+import sj.engine.rendering.vk.Pipeline;
 import sj.std.math;
 import sj.std.memory.resources;
 
-namespace sj {
+namespace sj
+{
     // Forward declarations
-    class VulkanPipeline;
-    class VulkanRenderDevice;
-    class VulkanSwapChain;
     class Window;
-    struct DeviceQueueFamilyIndices;
-    
+
     class Renderer
     {
     public:
@@ -50,7 +47,7 @@ namespace sj {
             Mat44 projection;
         };
 
-      private:
+    private:
         Renderer();
         ~Renderer() = default;
 
@@ -87,19 +84,18 @@ namespace sj {
 
         void EnableDebugMessaging();
 
-        void TransitionImageLayout(VkImage image,
-                                   VkImageLayout oldLayout,
-                                   VkImageLayout newLayout);
+        void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
         void CreateCommandPools();
 
-        void CreateBuffer(VkDeviceSize size,
-                          VkBufferUsageFlags usage,
-                          VkMemoryPropertyFlags properties,
-                          VkBuffer& out_buffer,
-                          VkDeviceMemory& out_bufferMemory);
+        static void CreateBuffer(const sj::vk::RenderDevice& device,
+                                 VkDeviceSize size,
+                                 VkBufferUsageFlags usage,
+                                 VkMemoryPropertyFlags properties,
+                                 VkBuffer& out_buffer,
+                                 VkDeviceMemory& out_bufferMemory);
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -113,13 +109,12 @@ namespace sj {
 
         void CreateGlobalUBODescriptorPool();
 
-        #ifndef SJ_GOLD
+#ifndef SJ_GOLD
         void CreateImGuiDescriptorPool();
-        #endif // !SJ_GOLD
-
+#endif // !SJ_GOLD
 
         void CreateGlobalUBODescriptorSets();
-        
+
         void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx);
 
         void UpdateUniformBuffer(void* bufferMem, const Mat44& cameraMatrix);
@@ -137,13 +132,13 @@ namespace sj {
         VkRenderPass m_defaultRenderPass;
 
         /** Used to back API operations */
-        VulkanRenderDevice m_renderDevice;
+        sj::vk::RenderDevice m_renderDevice;
 
         /** Used for image presentation */
         sj::vk::SwapChain m_swapChain;
 
         /** Pipeline used to describe rendering process */
-        VulkanPipeline m_defaultPipeline;
+        sj::vk::Pipeline m_defaultPipeline;
 
         VkCommandPool m_graphicsCommandPool;
 
