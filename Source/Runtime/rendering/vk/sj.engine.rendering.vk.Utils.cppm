@@ -241,8 +241,7 @@ export namespace sj
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
         scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count,
-                                                          &scratchpad.get_allocator());
+        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count, &scratchpad.get_allocator());
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
 
         DeviceQueueFamilyIndices indices;
@@ -274,4 +273,15 @@ export namespace sj
 
         return indices;
     }
+
+    void CheckImguiVulkanResult(VkResult res)
+    {
+        SJ_ASSERT(res == VK_SUCCESS, "ImGui Vulkan operation failed!");
+    }
+
+    bool HasStencilComponent(VkFormat format)
+    {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
 } // namespace sj

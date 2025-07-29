@@ -9,7 +9,6 @@ module;
 
 // Engine Headers
 #include <ScrewjankEngine/framework/Window.hpp>
-#include <ScrewjankEngine/rendering/Renderer.hpp>
 #include <ScrewjankStd/Log.hpp>
 
 export module sj.engine.framework.Game;
@@ -19,10 +18,14 @@ import sj.std.containers.vector;
 
 import sj.engine.components;
 
+import sj.engine.system.memory.MemorySystem;
+
 import sj.engine.framework.ecs;
 import sj.engine.framework.Scene;
 import sj.engine.framework.systems.CameraSystem;
 import sj.engine.framework.systems.InputSystem;
+
+import sj.engine.rendering.Renderer;
 
 export namespace sj
 {
