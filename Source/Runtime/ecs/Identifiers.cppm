@@ -3,7 +3,7 @@ module;
 #include <cstdint>
 #include <functional>
 
-export module sj.engine.framework.ecs:Identifiers;
+export module sj.engine.ecs:Identifiers;
 
 export namespace sj
 {

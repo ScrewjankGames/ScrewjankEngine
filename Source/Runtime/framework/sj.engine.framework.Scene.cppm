@@ -8,8 +8,8 @@ module;
 #include <glaze/beve/read.hpp>
 
 export module sj.engine.framework.Scene;
-import sj.engine.components;
-import sj.engine.framework.ecs;
+import sj.engine.ecs.components;
+import sj.engine.ecs;
 import sj.std.memory;
 import sj.std.containers.type_list;
 import sj.std.containers.vector;

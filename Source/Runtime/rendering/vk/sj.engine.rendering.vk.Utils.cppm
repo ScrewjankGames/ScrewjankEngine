@@ -235,8 +235,7 @@ export namespace sj
     };
 
     DeviceQueueFamilyIndices
-    GetDeviceQueueFamilyIndices(VkPhysicalDevice device,
-                                VkSurfaceKHR renderSurface = VK_NULL_HANDLE)
+    QueryDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
     {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);

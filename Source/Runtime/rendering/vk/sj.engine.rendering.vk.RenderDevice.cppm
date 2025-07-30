@@ -8,11 +8,11 @@ module;
 #include <optional>
 
 export module sj.engine.rendering.vk.RenderDevice;
+export import sj.engine.rendering.vk.Utils;
 import sj.std.containers.array;
 import sj.std.containers.set;
 import sj.std.containers.vector;
 import sj.std.memory;
-import sj.engine.rendering.vk.Utils;
 import sj.engine.system.threading.ThreadContext;
 
 /** List of extensions devices must support */
@@ -30,6 +30,7 @@ export namespace sj::vk
         void Init(VkInstance instance, VkSurfaceKHR renderSurface)
         {
             SelectPhysicalDevice(instance, renderSurface);
+            m_queueFamilyIndices = QueryDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
             CreateLogicalDevice(renderSurface);
         }
 
@@ -65,6 +66,11 @@ export namespace sj::vk
         [[nodiscard]] VkQueue GetPresentationQueue() const
         {
             return m_PresentationQueue;
+        }
+
+        [[nodiscard]] auto GetQueueFamilyIndices() const -> const DeviceQueueFamilyIndices&
+        {
+            return m_queueFamilyIndices;
         }
 
     private:
@@ -129,6 +135,7 @@ export namespace sj::vk
                       "Screwjank Engine failed to select suitable physical device.");
         }
 
+
         /**
          * After selecting a physical device, construct the corresponding logical device
          */
@@ -138,14 +145,11 @@ export namespace sj::vk
                       "CreateLogicalDevice requires a selected physical device");
             SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
 
-            DeviceQueueFamilyIndices indices =
-                GetDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
-
             constexpr int kMaxUniqueQueues = 2;
             static_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
             unique_queue_families = {
-                indices.graphicsFamilyIndex.value(),
-                indices.presentationFamilyIndex.value(),
+                m_queueFamilyIndices.graphicsFamilyIndex.value(),
+                m_queueFamilyIndices.presentationFamilyIndex.value(),
             };
 
             static_vector<VkDeviceQueueCreateInfo, kMaxUniqueQueues> queue_create_infos;
@@ -183,8 +187,8 @@ export namespace sj::vk
 
             SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");
 
-            vkGetDeviceQueue(m_Device, *indices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
-            vkGetDeviceQueue(m_Device, *indices.presentationFamilyIndex, 0, &m_PresentationQueue);
+            vkGetDeviceQueue(m_Device, *m_queueFamilyIndices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
+            vkGetDeviceQueue(m_Device, *m_queueFamilyIndices.presentationFamilyIndex, 0, &m_PresentationQueue);
         }
 
         /**
@@ -192,7 +196,7 @@ export namespace sj::vk
          */
         static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
         {
-            DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(device, renderSurface);
+            DeviceQueueFamilyIndices indices = QueryDeviceQueueFamilyIndices(device, renderSurface);
 
             // Query queue support
             bool indicies_complete = indices.graphicsFamilyIndex.has_value() &&
@@ -246,5 +250,7 @@ export namespace sj::vk
          * @note This handle is freed automatically when the VkInstance is destroyed
          */
         VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
+
+        DeviceQueueFamilyIndices m_queueFamilyIndices = {};
     };
 } // namespace sj::vk

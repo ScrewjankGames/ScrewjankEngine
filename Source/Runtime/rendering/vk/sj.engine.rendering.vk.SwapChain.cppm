@@ -13,6 +13,7 @@ module;
 
 export module sj.engine.rendering.vk.SwapChain;
 import sj.engine.rendering.vk.Utils;
+import sj.engine.rendering.vk.RenderDevice;
 import sj.std.containers.array;
 import sj.std.containers.vector;
 import sj.std.memory;
@@ -61,11 +62,11 @@ export namespace sj::vk
         ~SwapChain() = default;
 
         void
-        Init(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkSurfaceKHR renderingSurface, Window* surfaceHost)
+        Init(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, Window* surfaceHost)
         {
             SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
-            SwapChainParams params = QuerySwapChainParams(physicalDevice, renderingSurface);
+            SwapChainParams params = QuerySwapChainParams(device.GetPhysicalDevice(), renderingSurface);
 
             VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
             VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);
@@ -86,7 +87,7 @@ export namespace sj::vk
             m_renderFinishedSemaphores.resize(image_count);
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
             {
-                VkResult res = vkCreateSemaphore(logicalDevice,
+                VkResult res = vkCreateSemaphore(device.GetLogicalDevice(),
                                                  &semaphoreInfo,
                                                  sj::g_vkAllocationFns,
                                                  &semaphore);
@@ -104,7 +105,7 @@ export namespace sj::vk
             create_info.imageArrayLayers = 1;
             create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            DeviceQueueFamilyIndices indices = GetDeviceQueueFamilyIndices(physicalDevice, renderingSurface);
+            const DeviceQueueFamilyIndices& indices = device.GetQueueFamilyIndices();
 
             std::array queue_family_indices_array = {indices.graphicsFamilyIndex.value(),
                                                      indices.presentationFamilyIndex.value()};
@@ -129,7 +130,7 @@ export namespace sj::vk
             create_info.oldSwapchain = VK_NULL_HANDLE;
 
             // Create Swap Chain
-            VkResult swap_chain_create_success = vkCreateSwapchainKHR(logicalDevice,
+            VkResult swap_chain_create_success = vkCreateSwapchainKHR(device.GetLogicalDevice(),
                                                                       &create_info,
                                                                       sj::g_vkAllocationFns,
                                                                       &m_swapChain);
@@ -139,11 +140,11 @@ export namespace sj::vk
 
             // Extract swap chain image handles
             uint32_t real_image_count = 0;
-            vkGetSwapchainImagesKHR(logicalDevice, m_swapChain, &real_image_count, nullptr);
+            vkGetSwapchainImagesKHR(device.GetLogicalDevice(), m_swapChain, &real_image_count, nullptr);
 
             m_images.resize(real_image_count);
 
-            vkGetSwapchainImagesKHR(logicalDevice, m_swapChain, &real_image_count, m_images.data());
+            vkGetSwapchainImagesKHR(device.GetLogicalDevice(), m_swapChain, &real_image_count, m_images.data());
 
             m_chainImageFormat = selected_format.format;
             m_imageExtent = extent;
@@ -153,13 +154,13 @@ export namespace sj::vk
 
             for(size_t i = 0; i < m_images.size(); i++)
             {
-                m_imageViews[i] = CreateImageView(logicalDevice,
+                m_imageViews[i] = CreateImageView(device.GetLogicalDevice(),
                                                   m_images[i],
                                                   m_chainImageFormat,
                                                   VK_IMAGE_ASPECT_COLOR_BIT);
             }
 
-            CreateDepthResources(logicalDevice, physicalDevice);
+            CreateDepthResources(device);
         }
 
         /**
@@ -220,8 +221,7 @@ export namespace sj::vk
             vkDestroySwapchainKHR(logicalDevice, m_swapChain, sj::g_vkAllocationFns);
         }
 
-        void Recreate(VkPhysicalDevice physicalDevice,
-                      VkDevice device,
+        void Recreate(const sj::vk::RenderDevice& device,
                       VkSurfaceKHR renderingSurface,
                       Window* window,
                       VkRenderPass pass)
@@ -233,11 +233,11 @@ export namespace sj::vk
                 return;
             }
 
-            vkDeviceWaitIdle(device);
+            vkDeviceWaitIdle(device.GetLogicalDevice());
 
-            DeInit(device);
-            Init(physicalDevice, device, renderingSurface, window);
-            InitFrameBuffers(device, pass);
+            DeInit(device.GetLogicalDevice());
+            Init(device, renderingSurface, window);
+            InitFrameBuffers(device.GetLogicalDevice(), pass);
         }
 
         [[nodiscard]] VkExtent2D GetExtent() const
@@ -294,12 +294,12 @@ export namespace sj::vk
             return extent;
         }
 
-        void CreateDepthResources(VkDevice logicalDevice, VkPhysicalDevice physicalDevice)
+        void CreateDepthResources(const sj::vk::RenderDevice& device)
         {
-            VkFormat depthFormat = FindDepthFormat(physicalDevice);
+            VkFormat depthFormat = FindDepthFormat(device.GetPhysicalDevice());
 
-            CreateImage(logicalDevice,
-                        physicalDevice,
+            CreateImage(device.GetLogicalDevice(),
+                        device.GetPhysicalDevice(),
                         GetExtent().width,
                         GetExtent().height,
                         depthFormat,
@@ -309,7 +309,7 @@ export namespace sj::vk
                         m_depthImage,
                         m_depthImageMemory);
 
-            m_depthImageView = CreateImageView(logicalDevice,
+            m_depthImageView = CreateImageView(device.GetLogicalDevice(),
                                                m_depthImage,
                                                depthFormat,
                                                VK_IMAGE_ASPECT_DEPTH_BIT);

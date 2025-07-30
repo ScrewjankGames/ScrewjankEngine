@@ -1,6 +1,7 @@
 module;
 
 export module sj.engine.rendering.vk;
+export import sj.engine.rendering.vk.Buffer;
 export import sj.engine.rendering.vk.Pipeline;
 export import sj.engine.rendering.vk.RenderDevice;
 export import sj.engine.rendering.vk.SwapChain;

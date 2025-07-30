@@ -5,7 +5,7 @@ module;
 #include <memory_resource>
 #include <ranges>
 
-export module sj.engine.framework.ecs:ECSRegistry;
+export module sj.engine.ecs:ECSRegistry;
 import :Identifiers;
 
 import sj.std.containers.any;

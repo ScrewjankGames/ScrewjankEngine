@@ -1,8 +1,8 @@
 module;
 #include <ScrewjankEngine/components/ComponentMacros.hpp>
 
-export module sj.engine.components.CameraComponent;
-import sj.engine.framework.ecs;
+export module sj.engine.ecs.components.CameraComponent;
+import sj.engine.ecs;
 import sj.datadefs;
 import sj.std.math;
 

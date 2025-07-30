@@ -14,7 +14,7 @@ module;
 #include <cmath>
 #include <algorithm>
 
-export module sj.engine.framework.systems.InputSystem;
+export module sj.engine.ecs.systems.InputSystem;
 import sj.std.math;
 
 export namespace sj

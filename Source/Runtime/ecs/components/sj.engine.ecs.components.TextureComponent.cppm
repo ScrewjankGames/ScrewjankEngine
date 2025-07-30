@@ -7,11 +7,20 @@ module;
 
 #include <fstream>
 
-export module sj.engine.components.TextureComponent;
-import sj.engine.framework.ecs;
+export module sj.engine.ecs.components.TextureComponent;
+import sj.engine.framework.Engine;
+
+import sj.engine.rendering.Renderer;
+import sj.engine.rendering.vk.RenderDevice;
+import sj.engine.rendering.vk.Buffer;
+
+
+import sj.engine.ecs;
+
 import sj.datadefs.DataChunk;
 import sj.datadefs.components.TextureChunk;
 import sj.datadefs.assets.Texture;
+
 import sj.std.math;
 
 export namespace sj
@@ -28,39 +37,42 @@ export namespace sj
             TextureHeader header;
             textureStream.read(reinterpret_cast<char*>(&header), sizeof(header));
 
+            Renderer* renderer = Engine::GetRenderer();
+            const sj::vk::RenderDevice& renderDevice = *renderer->GetRenderDevice();
+
             VkDeviceSize imageSize = header.width * header.height * 4;
             VkBuffer stagingBuffer {};
             VkDeviceMemory stagingBufferMemory {};
 
-            // CreateBuffer(imageSize,
-            //              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            //              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            //              stagingBuffer,
-            //              stagingBufferMemory);
+            sj::vk::CreateBuffer(renderDevice,
+                         imageSize,
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer,
+                         stagingBufferMemory);
 
-            // void* data = nullptr;
-            // vkMapMemory(m_renderDevice.GetLogicalDevice(),
-            //             stagingBufferMemory,
-            //             0,
-            //             imageSize,
-            //             0,
-            //             &data);
+            void* data = nullptr;
+            vkMapMemory(renderDevice.GetLogicalDevice(),
+                        stagingBufferMemory,
+                        0,
+                        imageSize,
+                        0,
+                        &data);
 
             // // Read texture data straight into GPU memory
-            // textureFile.read(reinterpret_cast<char*>(data), imageSize);
-            // vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+            textureStream.read(reinterpret_cast<char*>(data), imageSize);
+            vkUnmapMemory(renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
-            // textureFile.close();
-            // CreateImage(m_renderDevice.GetLogicalDevice(),
-            //             m_renderDevice.GetPhysicalDevice(),
+            textureStream.close();
+            // CreateImage(renderDevice,
             //             header.width,
             //             header.height,
             //             VK_FORMAT_R8G8B8A8_SRGB,
             //             VK_IMAGE_TILING_OPTIMAL,
             //             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             //             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            //             m_dummyTextureImage,
-            //             m_dummyTextureImageMemory);
+            //             m_TextureImage,
+            //             m_TextureImageMemory);
 
             // TransitionImageLayout(m_dummyTextureImage,
             //                       VK_IMAGE_LAYOUT_UNDEFINED,

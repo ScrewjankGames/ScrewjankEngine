@@ -22,6 +22,7 @@ module;
 #include <fstream>
 
 export module sj.engine.rendering.Renderer;
+import sj.engine.rendering.vk.Buffer;
 import sj.engine.rendering.vk.SwapChain;
 import sj.engine.rendering.vk.RenderDevice;
 import sj.engine.rendering.vk.Pipeline;
@@ -38,18 +39,17 @@ export namespace sj
     class Renderer
     {
     public:
-        /** Allocator used for engine helper allocations to get data over to vulkan */
         static free_list_allocator* WorkBuffer()
         {
             static free_list_allocator g_workBufferResource;
             return &g_workBufferResource;
         }
 
-        static Renderer* GetInstance()
+        Renderer() : m_swapChain(WorkBuffer())
         {
-            static Renderer s_renderer;
-            return &s_renderer;
         }
+
+        ~Renderer() = default;
 
         void Init()
         {
@@ -66,8 +66,7 @@ export namespace sj
             m_renderDevice.Init(m_vkInstance, m_renderingSurface);
 
             // Create the vulkan swap chain connected to the current window and device
-            m_swapChain.Init(m_renderDevice.GetPhysicalDevice(),
-                             m_renderDevice.GetLogicalDevice(),
+            m_swapChain.Init(m_renderDevice,
                              m_renderingSurface,
                              Window::GetInstance());
 
@@ -108,11 +107,10 @@ export namespace sj
 
             m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
 
-            DeviceQueueFamilyIndices indices =
-                GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
-
+            
 #ifndef SJ_GOLD
             // Init ImGui
+            const DeviceQueueFamilyIndices& indices = m_renderDevice.GetQueueFamilyIndices();
             ImGui_ImplVulkan_InitInfo init_info = {};
             init_info.Instance = m_vkInstance;
             init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
@@ -244,8 +242,7 @@ export namespace sj
 
             if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
-                                     m_renderDevice.GetLogicalDevice(),
+                m_swapChain.Recreate(m_renderDevice,
                                      m_renderingSurface,
                                      Window::GetInstance(),
                                      m_defaultRenderPass);
@@ -300,8 +297,7 @@ export namespace sj
             m_frameCount++;
             if(res == VK_ERROR_OUT_OF_DATE_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice.GetPhysicalDevice(),
-                                     m_renderDevice.GetLogicalDevice(),
+                m_swapChain.Recreate(m_renderDevice,
                                      m_renderingSurface,
                                      Window::GetInstance(),
                                      m_defaultRenderPass);
@@ -311,6 +307,11 @@ export namespace sj
             {
                 SJ_ASSERT(false, "Failed to acquire swap chain image.");
             }
+        }
+
+        sj::vk::RenderDevice* GetRenderDevice()
+        {
+            return &m_renderDevice;
         }
 
         /**
@@ -324,12 +325,6 @@ export namespace sj
         };
 
     private:
-        Renderer() : m_swapChain(WorkBuffer())
-        {
-        }
-
-        ~Renderer() = default;
-
         static constexpr uint32_t kMaxFramesInFlight = 2;
 
         /**
@@ -694,8 +689,7 @@ export namespace sj
 
         void CreateCommandPools()
         {
-            DeviceQueueFamilyIndices indices =
-                GetDeviceQueueFamilyIndices(m_renderDevice.GetPhysicalDevice());
+            const DeviceQueueFamilyIndices& indices = m_renderDevice.GetQueueFamilyIndices();
 
             // Create Graphics Command Pool
             {
@@ -711,50 +705,6 @@ export namespace sj
 
                 SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
             }
-        }
-
-        static void CreateBuffer(const sj::vk::RenderDevice& device,
-                                 VkDeviceSize size,
-                                 VkBufferUsageFlags usage,
-                                 VkMemoryPropertyFlags properties,
-                                 VkBuffer& out_buffer,
-                                 VkDeviceMemory& out_bufferMemory)
-        {
-            VkDevice logicalDevice = device.GetLogicalDevice();
-
-            DeviceQueueFamilyIndices indices =
-                GetDeviceQueueFamilyIndices(device.GetPhysicalDevice());
-
-            std::array<uint32_t, 1> queueFamilyIndices {*indices.graphicsFamilyIndex};
-
-            VkBufferCreateInfo bufferInfo {};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.size = size;
-            bufferInfo.usage = usage;
-            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            bufferInfo.queueFamilyIndexCount = 1;
-            bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-
-            VkResult res =
-                vkCreateBuffer(logicalDevice, &bufferInfo, sj::g_vkAllocationFns, &out_buffer);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create vulkan buffer");
-
-            VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(logicalDevice, out_buffer, &memRequirements);
-
-            VkMemoryAllocateInfo allocInfo {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = FindMemoryType(device.GetPhysicalDevice(),
-                                                       memRequirements.memoryTypeBits,
-                                                       properties);
-
-            res = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &out_bufferMemory);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy vertex buffer memory");
-
-            vkBindBufferMemory(logicalDevice, out_buffer, out_bufferMemory, 0);
         }
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -784,7 +734,7 @@ export namespace sj
                 VkBuffer stagingBuffer {};
                 VkDeviceMemory stagingBufferMemory {};
 
-                CreateBuffer(m_renderDevice,
+                sj::vk::CreateBuffer(m_renderDevice,
                              bufferSize,
                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -1220,16 +1170,16 @@ export namespace sj
         }
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
-        VkInstance m_vkInstance;
+        VkInstance m_vkInstance{};
 
         /** Handle to manage Vulkan's debug callbacks */
-        VkDebugUtilsMessengerEXT m_vkDebugMessenger;
+        VkDebugUtilsMessengerEXT m_vkDebugMessenger{};
 
         /** Handle to the surface vulkan renders to */
-        VkSurfaceKHR m_renderingSurface;
+        VkSurfaceKHR m_renderingSurface{};
 
         /** It's a render pass I guess. */
-        VkRenderPass m_defaultRenderPass;
+        VkRenderPass m_defaultRenderPass{};
 
         /** Used to back API operations */
         sj::vk::RenderDevice m_renderDevice;
@@ -1238,26 +1188,26 @@ export namespace sj
         sj::vk::SwapChain m_swapChain;
 
         /** Pipeline used to describe rendering process */
-        sj::vk::Pipeline m_defaultPipeline;
+        sj::vk::Pipeline m_defaultPipeline{};
 
-        VkCommandPool m_graphicsCommandPool;
+        VkCommandPool m_graphicsCommandPool{};
 
-        VkBuffer m_dummyVertexBuffer;
-        VkDeviceMemory m_dummyVertexBufferMem;
+        VkBuffer m_dummyVertexBuffer{};
+        VkDeviceMemory m_dummyVertexBufferMem{};
 
-        uint64_t m_dummyIndexBufferIndexCount;
-        VkBuffer m_dummyIndexBuffer;
-        VkDeviceMemory m_dummyIndexBufferMem;
+        uint64_t m_dummyIndexBufferIndexCount{};
+        VkBuffer m_dummyIndexBuffer{};
+        VkDeviceMemory m_dummyIndexBufferMem{};
 
-        VkImage m_dummyTextureImage;
-        VkDeviceMemory m_dummyTextureImageMemory;
-        VkImageView m_dummyTextureImageView;
-        VkSampler m_dummyTextureSampler;
+        VkImage m_dummyTextureImage{};
+        VkDeviceMemory m_dummyTextureImageMemory{};
+        VkImageView m_dummyTextureImageView{};
+        VkSampler m_dummyTextureSampler{};
 
-        VkDescriptorSetLayout m_globalUBODescriptorSetLayout;
-        VkDescriptorPool m_globalUBODescriptorPool;
+        VkDescriptorSetLayout m_globalUBODescriptorSetLayout{};
+        VkDescriptorPool m_globalUBODescriptorPool{};
 
-        VkDescriptorPool m_imguiDescriptorPool;
+        VkDescriptorPool m_imguiDescriptorPool{};
 
         /**
          * Data representing a render frames in flight
@@ -1330,7 +1280,7 @@ export namespace sj
                     vkFreeMemory(device, globalUniformBuffersMemory[i], sj::g_vkAllocationFns);
                 }
             }
-        } m_frameData;
+        } m_frameData{};
 
         uint32_t m_frameCount = 0;
     };

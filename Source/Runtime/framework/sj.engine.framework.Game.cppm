@@ -10,20 +10,22 @@ module;
 // Engine Headers
 #include <ScrewjankEngine/framework/Window.hpp>
 #include <ScrewjankStd/Log.hpp>
+#include <memory>
 
 export module sj.engine.framework.Game;
 
 import sj.std.memory;
 import sj.std.containers.vector;
 
-import sj.engine.components;
+import sj.engine.ecs.components;
 
 import sj.engine.system.memory.MemorySystem;
 
-import sj.engine.framework.ecs;
+import sj.engine.ecs;
+import sj.engine.framework.Engine;
 import sj.engine.framework.Scene;
-import sj.engine.framework.systems.CameraSystem;
-import sj.engine.framework.systems.InputSystem;
+import sj.engine.ecs.systems.CameraSystem;
+import sj.engine.ecs.systems.InputSystem;
 
 import sj.engine.rendering.Renderer;
 
@@ -56,21 +58,29 @@ export namespace sj
          */
         void Start()
         {
+#ifndef SJ_GOLD
             // Setup Dear ImGui context
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-
             // Setup Dear ImGui style
             ImGui::StyleColorsDark();
+#endif
             // Initialize systems
             m_Window = Window::GetInstance();
             m_Window->Init();
+            
+            {
+                MemoryResourceScope _(MemorySystem::GetRootMemoryResource());
+                m_Renderer = std::make_unique<Renderer>();
+            }
 
-            m_Renderer = Renderer::GetInstance();
             m_Renderer->Init();
+
+            Engine::RegisterRenderer(m_Renderer.get());
+            Engine::RegisterECSRegistry(&m_ecs);
 
             LoadScene("Data/Engine/Scenes/Default.sj_scene");
 
@@ -155,7 +165,7 @@ export namespace sj
         sj::dynamic_vector<std::unique_ptr<Scene>> m_scenes;
 
         Window* m_Window = nullptr;
-        Renderer* m_Renderer = nullptr;
+        std::unique_ptr<Renderer> m_Renderer = nullptr;
 
         InputSystem m_InputSystem;
         CameraSystem m_CameraSystem;
