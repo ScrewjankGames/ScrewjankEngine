@@ -2,7 +2,6 @@ module;
 #include <ScrewjankEngine/components/ComponentMacros.hpp>
 
 export module sj.engine.ecs.components.TransformComponent;
-import sj.engine.ecs;
 import sj.datadefs;
 import sj.std.math;
 

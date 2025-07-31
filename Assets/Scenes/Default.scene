@@ -38,8 +38,9 @@
                     }
                 },
                 {
-                    "type": "TextureChunk",
-                    "path": "Data/Engine/texture.sj_tex"
+                    "type": "Mesh3DChunk",
+                    "model_path": "Data/Engine/viking_room.sj_mesh",
+                    "texture_path": "Data/Engine/texture.sj_tex"
                 }
             ]
         }
