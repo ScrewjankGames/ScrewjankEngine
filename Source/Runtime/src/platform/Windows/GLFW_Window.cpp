@@ -11,9 +11,11 @@
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
+import sj.engine.framework.Engine;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.rendering.Renderer;
 import sj.engine.rendering.vk;
+
 namespace sj
 {
     Window* Window::GetInstance()
@@ -40,7 +42,7 @@ namespace sj
         SJ_ENGINE_LOG_INFO("Creating glfw window");
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_NativeWindow = glfwCreateWindow(1280, 720, "Vulkan window", nullptr, nullptr);
+        m_NativeWindow = glfwCreateWindow(1280, 720, Engine::GetGameName().data(), nullptr, nullptr);
 
         glfwSetKeyCallback(m_NativeWindow, KeyCallback);
 
@@ -86,9 +88,6 @@ namespace sj
         const char** extensions = nullptr;
 
         extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-
-        const char** error = nullptr;
-        glfwGetError(error);
 
         return std::span {extensions, extension_count};
     }

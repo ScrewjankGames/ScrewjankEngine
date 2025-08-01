@@ -34,6 +34,8 @@ export namespace sj
     class Game
     {
     public:
+        virtual std::string_view GetGameName() = 0;
+
         /**
          * Constructor
          */
@@ -58,6 +60,8 @@ export namespace sj
          */
         void Start()
         {
+            Engine::RegisterGameName(GetGameName());
+
 #ifndef SJ_GOLD
             // Setup Dear ImGui context
             IMGUI_CHECKVERSION();
@@ -78,7 +82,6 @@ export namespace sj
             }
 
             m_Renderer->Init();
-
             Engine::RegisterRenderer(m_Renderer.get());
             Engine::RegisterECSRegistry(&m_ecs);
 
