@@ -30,3 +30,6 @@ find_package(glaze REQUIRED)
 
 ## Gtest
 find_package(GTest CONFIG REQUIRED)
+
+## VMA
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)

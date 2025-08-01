@@ -14,7 +14,8 @@
     },
     "glaze",
     "gtest",
-    "vulkan"
+    "vulkan",
+    "vulkan-memory-allocator"
   ],
   "builtin-baseline": "30f771d4acf01bc7773d5c602443e7f839844a15"
 }

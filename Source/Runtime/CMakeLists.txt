@@ -47,6 +47,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE 
         glfw
         Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
     PUBLIC
         ScrewjankStd
         ScrewjankDataDefs
