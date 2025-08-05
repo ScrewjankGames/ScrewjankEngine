@@ -33,3 +33,6 @@ find_package(GTest CONFIG REQUIRED)
 
 ## VMA
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+
+## VK Bootstrap
+find_package(vk-bootstrap CONFIG REQUIRED)

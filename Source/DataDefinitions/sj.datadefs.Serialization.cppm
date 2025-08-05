@@ -7,6 +7,7 @@ module;
 #include <glaze/glaze.hpp>
 
 export module sj.datadefs.Serialization;
+import sj.std.string_hash;
 import sj.std.math;
 
 export namespace glz
