@@ -28,6 +28,8 @@ import sj.engine.ecs.systems.CameraSystem;
 import sj.engine.ecs.systems.InputSystem;
 
 import sj.engine.rendering.Renderer;
+import sj.engine.rendering.Renderer2;
+
 
 export namespace sj
 {
@@ -75,6 +77,13 @@ export namespace sj
             // Initialize systems
             m_Window = Window::GetInstance();
             m_Window->Init();
+            
+            {
+                Renderer2 test;
+                test.Init();
+                test.DeInit();
+                return;
+            }
             
             {
                 MemoryResourceScope _(MemorySystem::GetRootMemoryResource());

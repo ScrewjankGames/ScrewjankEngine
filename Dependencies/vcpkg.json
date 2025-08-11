@@ -18,5 +18,5 @@
     "vulkan-memory-allocator",
     "vk-bootstrap"
   ],
-  "builtin-baseline": "903956eff7cb94774a9e805ff573c000afc43e3e"
+  "builtin-baseline": "d30fdf55cfca16e12bc3ad99cbc615997014b61b"
 }

@@ -6,3 +6,4 @@ export import sj.engine.rendering.vk.Pipeline;
 export import sj.engine.rendering.vk.RenderDevice;
 export import sj.engine.rendering.vk.SwapChain;
 export import sj.engine.rendering.vk.Utils;
+export import sj.engine.rendering.vk.Helpers;

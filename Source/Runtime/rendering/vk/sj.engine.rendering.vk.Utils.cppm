@@ -234,8 +234,8 @@ export namespace sj
         std::optional<uint32_t> presentationFamilyIndex;
     };
 
-    DeviceQueueFamilyIndices
-    QueryDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
+    DeviceQueueFamilyIndices QueryDeviceQueueFamilyIndices(VkPhysicalDevice device,
+                                                           VkSurfaceKHR renderSurface)
     {
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
@@ -281,6 +281,36 @@ export namespace sj
     bool HasStencilComponent(VkFormat format)
     {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
+    /**
+     * Callback function that allows the Vulkan API to use the engine's logging system
+     * @note See Vulkan API for description of arguments
+     */
+    VKAPI_ATTR VkBool32 VKAPI_CALL
+    VulkanDebugLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                           VkDebugUtilsMessageTypeFlagsEXT message_type,
+                           const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                           void* user_data)
+    {
+        if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+        {
+            SJ_ENGINE_LOG_TRACE("Vulkan Validation Layer message: {}", callback_data->pMessage);
+        }
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+        {
+            SJ_ENGINE_LOG_INFO("Vulkan Validation Layer message: {}", callback_data->pMessage);
+        }
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        {
+            SJ_ENGINE_LOG_WARN("Vulkan Validation Layer message: {}", callback_data->pMessage);
+        }
+        else if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        {
+            SJ_ENGINE_LOG_ERROR("Vulkan Validation Layer message: {}", callback_data->pMessage);
+        }
+
+        return VK_FALSE;
     }
 
 } // namespace sj
