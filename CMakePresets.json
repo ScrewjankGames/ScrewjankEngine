@@ -7,6 +7,9 @@
             "binaryDir": "out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CMAKE_CXX_STANDARD": "26",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "SJ_ARCHIVE_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
                 "SJ_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/bin/${presetName}/lib",
