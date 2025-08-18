@@ -17,9 +17,7 @@ export namespace sj::vk
     {
         VkDevice logicalDevice = device.GetLogicalDevice();
 
-        const DeviceQueueFamilyIndices& indices = device.GetQueueFamilyIndices();
-
-        std::array<uint32_t, 1> queueFamilyIndices {*indices.graphicsFamilyIndex};
+        std::array<uint32_t, 1> queueFamilyIndices {device.GetGraphicsQueueIndex()};
 
         VkBufferCreateInfo bufferInfo {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

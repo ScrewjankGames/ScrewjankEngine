@@ -55,7 +55,8 @@ export namespace sj::vk
     {
     public:
         SwapChain(sj::memory_resource* cpu_resource)
-            : m_cpuMemoryResource(cpu_resource), m_images(cpu_resource), m_imageViews(cpu_resource), m_swapChainBuffers(cpu_resource)
+            : m_cpuMemoryResource(cpu_resource), m_images(cpu_resource), m_imageViews(cpu_resource),
+              m_swapChainBuffers(cpu_resource)
         {
         }
 
@@ -66,7 +67,8 @@ export namespace sj::vk
         {
             SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
-            SwapChainParams params = QuerySwapChainParams(device.GetPhysicalDevice(), renderingSurface);
+            SwapChainParams params =
+                QuerySwapChainParams(device.GetPhysicalDevice(), renderingSurface);
 
             VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
             VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);
@@ -105,12 +107,12 @@ export namespace sj::vk
             create_info.imageArrayLayers = 1;
             create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            const DeviceQueueFamilyIndices& indices = device.GetQueueFamilyIndices();
+            const uint32_t graphicsFamilyIdx = device.GetGraphicsQueueIndex();
+            const uint32_t presentationFamilyIdx = device.GetPresentationQueueIndex();
 
-            std::array queue_family_indices_array = {indices.graphicsFamilyIndex.value(),
-                                                     indices.presentationFamilyIndex.value()};
+            std::array queue_family_indices_array = {graphicsFamilyIdx, presentationFamilyIdx};
 
-            if(indices.graphicsFamilyIndex != indices.presentationFamilyIndex)
+            if(graphicsFamilyIdx != presentationFamilyIdx)
             {
                 create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
                 create_info.queueFamilyIndexCount = 2;
@@ -140,11 +142,17 @@ export namespace sj::vk
 
             // Extract swap chain image handles
             uint32_t real_image_count = 0;
-            vkGetSwapchainImagesKHR(device.GetLogicalDevice(), m_swapChain, &real_image_count, nullptr);
+            vkGetSwapchainImagesKHR(device.GetLogicalDevice(),
+                                    m_swapChain,
+                                    &real_image_count,
+                                    nullptr);
 
             m_images.resize(real_image_count);
 
-            vkGetSwapchainImagesKHR(device.GetLogicalDevice(), m_swapChain, &real_image_count, m_images.data());
+            vkGetSwapchainImagesKHR(device.GetLogicalDevice(),
+                                    m_swapChain,
+                                    &real_image_count,
+                                    m_images.data());
 
             m_chainImageFormat = selected_format.format;
             m_imageExtent = extent;
@@ -274,7 +282,8 @@ export namespace sj::vk
         /**
          * Communicates with the window to query swap chain extents
          */
-        VkExtent2D QuerySwapExtent(Window* targetWindow, const VkSurfaceCapabilitiesKHR& capabilities)
+        VkExtent2D QuerySwapExtent(Window* targetWindow,
+                                   const VkSurfaceCapabilitiesKHR& capabilities)
         {
             if(capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
             {

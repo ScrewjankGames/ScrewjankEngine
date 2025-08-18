@@ -79,13 +79,6 @@ export namespace sj
             m_Window->Init();
             
             {
-                Renderer2 test;
-                test.Init();
-                test.DeInit();
-                return;
-            }
-            
-            {
                 MemoryResourceScope _(MemorySystem::GetRootMemoryResource());
                 m_Renderer = std::make_unique<Renderer>();
             }

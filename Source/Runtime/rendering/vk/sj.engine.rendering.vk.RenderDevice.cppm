@@ -3,9 +3,7 @@ module;
 #include <ScrewjankStd/PlatformDetection.hpp>
 
 #include <vulkan/vulkan_core.h>
-
-#include <array>
-#include <optional>
+#include <VkBootstrap.h>
 
 export module sj.engine.rendering.vk.RenderDevice;
 export import sj.engine.rendering.vk.Utils;
@@ -15,10 +13,6 @@ import sj.std.containers.vector;
 import sj.std.memory;
 import sj.engine.system.threading.ThreadContext;
 
-/** List of extensions devices must support */
-static constexpr std::array<const char*, 1> kRequiredDeviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
 export namespace sj::vk
 {
     class RenderDevice
@@ -27,18 +21,59 @@ export namespace sj::vk
         RenderDevice() = default;
         ~RenderDevice() = default;
 
-        void Init(VkInstance instance, VkSurfaceKHR renderSurface)
+        void Init(const vkb::Instance& instanceInfo, VkSurfaceKHR renderSurface)
         {
-            SelectPhysicalDevice(instance, renderSurface);
-            m_queueFamilyIndices = QueryDeviceQueueFamilyIndices(m_PhysicalDevice, renderSurface);
-            CreateLogicalDevice(renderSurface);
+                        // vulkan 1.3 features
+            VkPhysicalDeviceVulkan13Features features1_3 {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+            features1_3.dynamicRendering = true;
+            features1_3.synchronization2 = true;
+
+            // vulkan 1.2 features
+            VkPhysicalDeviceVulkan12Features features1_2 {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+            features1_2.bufferDeviceAddress = true;
+            features1_2.descriptorIndexing = true;
+
+            VkPhysicalDeviceFeatures features 
+            {
+                .samplerAnisotropy = VK_TRUE 
+            };
+
+            // use vkbootstrap to select a gpu.
+            vkb::PhysicalDeviceSelector selector {instanceInfo};
+            vkb::PhysicalDevice physicalDevice = selector.set_minimum_version(1, 3)
+                                                     .set_required_features_13(features1_3)
+                                                     .set_required_features_12(features1_2)
+                                                     .set_required_features(features)
+                                                     .set_surface(renderSurface)
+                                                     .select()
+                                                     .value();
+
+            // create the final vulkan device
+            vkb::DeviceBuilder deviceBuilder {physicalDevice};
+            vkb::Device vkbDevice = deviceBuilder.build().value();
+
+            // Get the VkDevice handle used in the rest of a vulkan application
+            m_logicalDevice = vkbDevice.device;
+            m_physicalDevice = physicalDevice.physical_device;
+
+            SJ_ENGINE_LOG_INFO("Selected GPU {}", vkbDevice.physical_device.name.c_str());
+
+            // Grab graphics queue info
+            m_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+            m_graphicsQueueIndex =
+                vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+
+            m_presentationQueue = vkbDevice.get_queue(vkb::QueueType::present).value();
+            m_presentationQueueIndex = vkbDevice.get_queue_index(vkb::QueueType::present).value(); 
         }
 
         void DeInit()
         {
-            if(m_Device != VK_NULL_HANDLE)
+            if(m_logicalDevice != VK_NULL_HANDLE)
             {
-                vkDestroyDevice(m_Device, sj::g_vkAllocationFns);
+                vkDestroyDevice(m_logicalDevice, sj::g_vkAllocationFns);
             }
         }
 
@@ -47,7 +82,7 @@ export namespace sj::vk
          */
         [[nodiscard]] VkPhysicalDevice GetPhysicalDevice() const
         {
-            return m_PhysicalDevice;
+            return m_physicalDevice;
         }
 
         /**
@@ -55,202 +90,45 @@ export namespace sj::vk
          */
         [[nodiscard]] VkDevice GetLogicalDevice() const
         {
-            return m_Device;
+            return m_logicalDevice;
         }
 
         [[nodiscard]] VkQueue GetGraphicsQueue() const
         {
-            return m_GraphicsQueue;
+            return m_graphicsQueue;
+        }
+
+        [[nodiscard]] uint32_t GetGraphicsQueueIndex() const
+        {
+            return m_graphicsQueueIndex;
         }
 
         [[nodiscard]] VkQueue GetPresentationQueue() const
         {
-            return m_PresentationQueue;
+            return m_presentationQueue;
         }
 
-        [[nodiscard]] auto GetQueueFamilyIndices() const -> const DeviceQueueFamilyIndices&
+        [[nodiscard]] uint32_t GetPresentationQueueIndex() const
         {
-            return m_queueFamilyIndices;
+            return m_presentationQueueIndex;
         }
 
     private:
-        /**
-         * Iterates over the system's rendering hardware, and selects the most suitable GPU for
-         * rendering
-         */
-        void SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR renderSurface)
-        {
-            uint32_t deviceCount = 0;
-
-            vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-            SJ_ENGINE_LOG_INFO("{} Vulkan-capable render devices detected", deviceCount);
-
-            scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-            dynamic_array<VkPhysicalDevice> devices(deviceCount, &scratchpad.get_allocator());
-            vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-            int best_score = -1;
-
-            // Picks the best compatible GPU found, prefering discrete GPUs
-            for(const VkPhysicalDevice& device : devices)
-            {
-                int score = 0;
-
-                if(!IsDeviceSuitable(device, renderSurface))
-                {
-                    continue;
-                }
-
-                VkPhysicalDeviceProperties deviceProps;
-                VkPhysicalDeviceFeatures deviceFeatures;
-
-                vkGetPhysicalDeviceProperties(device, &deviceProps);
-                vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-                if(deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-                {
-                    score += 1000;
-                }
-                else if(deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
-                {
-                    score += 500;
-                }
-
-                if(score > best_score)
-                {
-                    best_score = score;
-                    m_PhysicalDevice = device;
-                }
-            }
-
-            if constexpr(g_IsDebugBuild)
-            {
-                VkPhysicalDeviceProperties device_props;
-                vkGetPhysicalDeviceProperties(m_PhysicalDevice, &device_props);
-
-                SJ_ENGINE_LOG_INFO("Selected render device: {}", device_props.deviceName);
-            }
-
-            SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE,
-                      "Screwjank Engine failed to select suitable physical device.");
-        }
-
-
-        /**
-         * After selecting a physical device, construct the corresponding logical device
-         */
-        void CreateLogicalDevice(VkSurfaceKHR renderSurface)
-        {
-            SJ_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE,
-                      "CreateLogicalDevice requires a selected physical device");
-            SJ_ASSERT(m_Device == VK_NULL_HANDLE, "Logical device already created.");
-
-            constexpr int kMaxUniqueQueues = 2;
-            static_set<uint32_t, kMaxUniqueQueues> unique_queue_families;
-            unique_queue_families = {
-                m_queueFamilyIndices.graphicsFamilyIndex.value(),
-                m_queueFamilyIndices.presentationFamilyIndex.value(),
-            };
-
-            static_vector<VkDeviceQueueCreateInfo, kMaxUniqueQueues> queue_create_infos;
-            float queue_priorities = 1.0f;
-            for(auto family : unique_queue_families)
-            {
-                VkDeviceQueueCreateInfo queue_create_info {};
-                queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queue_create_info.queueFamilyIndex = family;
-                queue_create_info.queueCount = 1;
-                queue_create_info.pQueuePriorities = &queue_priorities;
-                queue_create_infos.emplace_back(queue_create_info);
-            }
-
-            VkPhysicalDeviceFeatures device_features = {};
-            device_features.samplerAnisotropy = VK_TRUE;
-
-            VkDeviceCreateInfo device_create_info = {};
-            device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            device_create_info.queueCreateInfoCount =
-                static_cast<uint32_t>(queue_create_infos.size());
-            device_create_info.pQueueCreateInfos = queue_create_infos.data();
-            device_create_info.enabledLayerCount = 0;
-            device_create_info.pEnabledFeatures = &device_features;
-
-            const char* const* deviceExtensionNames = kRequiredDeviceExtensions.data();
-            device_create_info.enabledExtensionCount =
-                static_cast<uint32_t>(kRequiredDeviceExtensions.size());
-            device_create_info.ppEnabledExtensionNames = deviceExtensionNames;
-
-            VkResult success = vkCreateDevice(m_PhysicalDevice,
-                                              &device_create_info,
-                                              sj::g_vkAllocationFns,
-                                              &m_Device);
-
-            SJ_ASSERT(success == VK_SUCCESS, "Vulkan failed to create logical device.");
-
-            vkGetDeviceQueue(m_Device, *m_queueFamilyIndices.graphicsFamilyIndex, 0, &m_GraphicsQueue);
-            vkGetDeviceQueue(m_Device, *m_queueFamilyIndices.presentationFamilyIndex, 0, &m_PresentationQueue);
-        }
-
-        /**
-         * Queries physical device suitability for use in engine
-         */
-        static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR renderSurface)
-        {
-            DeviceQueueFamilyIndices indices = QueryDeviceQueueFamilyIndices(device, renderSurface);
-
-            // Query queue support
-            bool indicies_complete = indices.graphicsFamilyIndex.has_value() &&
-                                     indices.presentationFamilyIndex.has_value();
-
-            static_set<std::string_view, kRequiredDeviceExtensions.size()> missing_extensions(
-                kRequiredDeviceExtensions.begin(),
-                kRequiredDeviceExtensions.end());
-
-            // Check extension support
-            {
-                uint32_t extension_count = 0;
-                vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-
-                dynamic_array<VkExtensionProperties> extension_props(extension_count);
-
-                vkEnumerateDeviceExtensionProperties(device,
-                                                     nullptr,
-                                                     &extension_count,
-                                                     extension_props.data());
-
-                for(const VkExtensionProperties& extension : extension_props)
-                {
-                    missing_extensions.erase(extension.extensionName);
-                }
-            }
-
-            // Check swap chain support
-            SwapChainParams params = QuerySwapChainParams(device, renderSurface);
-            bool swap_chain_supported =
-                (params.Formats.size() > 0) && (params.PresentModes.size() > 0);
-
-            VkPhysicalDeviceFeatures supportedFeatures;
-            vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
-            return indicies_complete && missing_extensions.size() == 0 && swap_chain_supported &&
-                   supportedFeatures.samplerAnisotropy;
-        }
-
         /** Vulkan's logical representation of the physical device */
-        VkDevice m_Device = VK_NULL_HANDLE;
-
-        /** Queue used to handle graphics commands */
-        VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
-
-        /** Used to execute presentation commands */
-        VkQueue m_PresentationQueue = VK_NULL_HANDLE;
+        VkDevice m_logicalDevice = VK_NULL_HANDLE;
 
         /**
          * Vulkan's representation of the physical rendering device
          * @note This handle is freed automatically when the VkInstance is destroyed
          */
-        VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
+        VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 
-        DeviceQueueFamilyIndices m_queueFamilyIndices = {};
+        /** Queue used to handle graphics commands */
+        VkQueue m_graphicsQueue = VK_NULL_HANDLE;
+        uint32_t m_graphicsQueueIndex = -1;
+
+        /** Used to execute presentation commands */
+        VkQueue m_presentationQueue = VK_NULL_HANDLE;
+        uint32_t m_presentationQueueIndex = -1;
     };
 } // namespace sj::vk

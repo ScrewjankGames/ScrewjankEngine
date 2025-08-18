@@ -10,6 +10,8 @@ module;
 
 // Library Headers
 #include <vulkan/vulkan_core.h>
+#include <VkBootstrap.h>
+
 #ifndef SJ_GOLD
     #include <imgui_impl_glfw.h>
     #include <imgui_impl_vulkan.h>
@@ -59,13 +61,12 @@ export namespace sj
             workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
             MemorySystem::TrackMemoryResource(workBuffer);
 
-            InitializeVulkan();
+            vkb::Instance bootstrapInfo = InitializeVulkan();
 
-            // Create rendering surface
-            CreateRenderSurface();
+            m_renderingSurface = Window::GetInstance()->CreateWindowSurface(m_vkInstance);
 
             // Select physical device and create and logical render device
-            m_renderDevice.Init(m_vkInstance, m_renderingSurface);
+            m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
 
             // Create the vulkan swap chain connected to the current window and device
             m_swapChain.Init(m_renderDevice, m_renderingSurface, Window::GetInstance());
@@ -109,12 +110,11 @@ export namespace sj
 
 #ifndef SJ_GOLD
             // Init ImGui
-            const DeviceQueueFamilyIndices& indices = m_renderDevice.GetQueueFamilyIndices();
             ImGui_ImplVulkan_InitInfo init_info = {};
             init_info.Instance = m_vkInstance;
             init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
             init_info.Device = m_renderDevice.GetLogicalDevice();
-            init_info.QueueFamily = *indices.graphicsFamilyIndex;
+            init_info.QueueFamily = m_renderDevice.GetGraphicsQueueIndex();
             init_info.Queue = m_renderDevice.GetGraphicsQueue();
             init_info.PipelineCache = VK_NULL_HANDLE;
             init_info.DescriptorPool = m_imguiDescriptorPool;
@@ -253,13 +253,14 @@ export namespace sj
                 SJ_ASSERT(false, "Failed to acquire swap chain image.");
             }
 
-            UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx], cameraMatrix);
-
+            
             // Reset fence when we know we're going to be able to draw this frame
             vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
-
+            
             vkResetCommandBuffer(currCommandBuffer, 0);
-
+            
+            UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx], cameraMatrix);
+            
             RecordCommandBuffer(currCommandBuffer, frameIdx, imageIndex);
 
             VkSubmitInfo submitInfo {};
@@ -306,11 +307,6 @@ export namespace sj
             {
                 SJ_ASSERT(false, "Failed to acquire swap chain image.");
             }
-        }
-
-        auto LoadTextureResource(std::string_view texturePath) -> TextureResource
-        {
-
         }
 
         sj::vk::RenderDevice* GetRenderDevice()
@@ -366,77 +362,23 @@ export namespace sj
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
          */
-        void InitializeVulkan()
+        auto InitializeVulkan() -> vkb::Instance
         {
-            VkApplicationInfo app_info;
-            app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            app_info.pNext = nullptr;
-            app_info.pApplicationName = "Screwjank Engine Game";
-            app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-            app_info.pEngineName = "Screwjank Engine";
-            app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-            app_info.apiVersion = VK_API_VERSION_1_2;
-
-            VkInstanceCreateInfo create_info = {};
-            create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-            create_info.pNext = nullptr;
-            create_info.flags = {};
-            create_info.pApplicationInfo = &app_info;
-            create_info.enabledLayerCount = {};
-            create_info.ppEnabledLayerNames = nullptr;
-
-            // Get extension count and names
-            std::span<const char*> required_extensions =
-                Window::GetInstance()->GetRequiredVulkanExtenstions();
-            create_info.ppEnabledExtensionNames = required_extensions.data();
-            create_info.enabledExtensionCount = required_extensions.size();
-
+            vkb::InstanceBuilder builder;
+            auto inst_ret = builder.set_app_name("SJ Game")
+                                .request_validation_layers(g_IsDebugBuild)
 #ifndef SJ_GOLD
-            create_info.enabledExtensionCount++;
-            dynamic_vector<const char*> debug_required_extensions(
-                std::from_range_t {},
-                required_extensions,
-                MemorySystem::GetDebugMemoryResource());
-
-            debug_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            create_info.ppEnabledExtensionNames = debug_required_extensions.data();
-
-            static std::array layers {"VK_LAYER_KHRONOS_validation"};
-
-            EnableValidationLayers(layers);
-
-            create_info.enabledLayerCount = (uint32_t)layers.size();
-            create_info.ppEnabledLayerNames = layers.data();
+                                .set_debug_callback(VulkanDebugLogCallback)
 #endif
+                                .require_api_version(1, 3, 0)
+                                .build();
 
-            // Create the vulkan instance
-            {
-                VkResult result =
-                    vkCreateInstance(&create_info, sj::g_vkAllocationFns, &m_vkInstance);
+            vkb::Instance vkb_inst = inst_ret.value();
+            m_vkInstance = vkb_inst.instance;
+            m_vkDebugMessenger = vkb_inst.debug_messenger;
 
-                SJ_ASSERT(result == VK_SUCCESS,
-                          "Vulkan instance creation failed with error code {}",
-                          (int)result);
-            }
-
-            // Compile-time check to enable debug messaging
-            if constexpr(g_IsDebugBuild)
-            {
-                EnableDebugMessaging();
-            }
-
-            // Log success
-            uint32_t extensionCount = 0;
-            vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-            SJ_ENGINE_LOG_INFO("Vulkan loaded with {} extensions supported", extensionCount);
-        }
-
-        /**
-         * Communicates with the Window to creates the rendering surface
-         */
-        void CreateRenderSurface()
-        {
-            m_renderingSurface = Window::GetInstance()->CreateWindowSurface(m_vkInstance);
+            SJ_ENGINE_LOG_INFO("Vulkan Instance Initialized");
+            return vkb_inst;
         }
 
         void CreateRenderPass()
@@ -542,67 +484,6 @@ export namespace sj
                                  &commandBuffer);
         }
 
-        void EnableValidationLayers(std::span<const char*> required_validation_layers)
-        {
-            uint32_t layer_count = 0;
-            vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-            SJ_ASSERT(layer_count <= 64, "Overflow");
-            std::array<VkLayerProperties, 64> available_layers {};
-            vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-
-            // Verify required validation layers are supported
-            for(auto layer_name : required_validation_layers)
-            {
-                bool layer_found = false;
-
-                for(const auto& layer_properties : available_layers)
-                {
-                    if(strcmp(layer_name, layer_properties.layerName) == 0)
-                    {
-                        layer_found = true;
-                        break;
-                    }
-                }
-
-                if(!layer_found)
-                {
-                    SJ_ASSERT(false, "Failed to enable vulkan validation layer {}", layer_name);
-                }
-
-                SJ_ENGINE_LOG_DEBUG("Enabled Vulkan validation layer: {}", layer_name);
-            }
-        }
-
-        void EnableDebugMessaging()
-        {
-            // Hook up the debug messenger to instance
-            VkDebugUtilsMessengerCreateInfoEXT messenger_create_info = {};
-            messenger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            messenger_create_info.messageSeverity =
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-            messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-
-            messenger_create_info.pfnUserCallback = VulkanDebugLogCallback;
-            messenger_create_info.pUserData = nullptr;
-
-            // Get extension function pointer
-            auto create_function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-                vkGetInstanceProcAddr(m_vkInstance, "vkCreateDebugUtilsMessengerEXT"));
-
-            SJ_ASSERT(create_function != nullptr,
-                      "Failed to load vulkan extension function vkCreateDebugUtilsMessengerEXT");
-
-            create_function(m_vkInstance,
-                            &messenger_create_info,
-                            sj::g_vkAllocationFns,
-                            &m_vkDebugMessenger);
-        }
-
         void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout)
         {
             VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
@@ -693,22 +574,17 @@ export namespace sj
 
         void CreateCommandPools()
         {
-            const DeviceQueueFamilyIndices& indices = m_renderDevice.GetQueueFamilyIndices();
+            VkCommandPoolCreateInfo poolInfo {};
+            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            poolInfo.queueFamilyIndex = m_renderDevice.GetGraphicsQueueIndex();
 
-            // Create Graphics Command Pool
-            {
-                VkCommandPoolCreateInfo poolInfo {};
-                poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-                poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-                poolInfo.queueFamilyIndex = *(indices.graphicsFamilyIndex);
+            VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
+                                                &poolInfo,
+                                                sj::g_vkAllocationFns,
+                                                &m_graphicsCommandPool);
 
-                VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
-                                                   &poolInfo,
-                                                   sj::g_vkAllocationFns,
-                                                   &m_graphicsCommandPool);
-
-                SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
-            }
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
         }
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
