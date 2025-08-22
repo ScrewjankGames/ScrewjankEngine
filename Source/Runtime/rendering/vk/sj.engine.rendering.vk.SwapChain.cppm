@@ -105,7 +105,7 @@ export namespace sj::vk
             create_info.imageColorSpace = selected_format.colorSpace;
             create_info.imageExtent = extent;
             create_info.imageArrayLayers = 1;
-            create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
             const uint32_t graphicsFamilyIdx = device.GetGraphicsQueueIndex();
             const uint32_t presentationFamilyIdx = device.GetPresentationQueueIndex();
@@ -246,6 +246,18 @@ export namespace sj::vk
             DeInit(device.GetLogicalDevice());
             Init(device, renderingSurface, window);
             InitFrameBuffers(device.GetLogicalDevice(), pass);
+        }
+
+        [[nodiscard]] VkImage GetImage(uint32_t idx)
+        {
+            SJ_ASSERT(idx >= 0 && idx < m_images.size(), "Invalid index");
+            return m_images[idx];
+        }
+        
+        [[nodiscard]] VkImageView GetImageView(uint32_t idx)
+        {
+            SJ_ASSERT(idx >= 0 && idx < m_imageViews.size(), "Invalid index");
+            return m_imageViews[idx];
         }
 
         [[nodiscard]] VkExtent2D GetExtent() const
