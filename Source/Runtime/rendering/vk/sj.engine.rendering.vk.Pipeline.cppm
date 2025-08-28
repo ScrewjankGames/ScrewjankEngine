@@ -12,6 +12,8 @@ module;
 export module sj.engine.rendering.vk.Pipeline;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.rendering.vk.Utils;
+import sj.engine.rendering.vk.Primitives;
+
 
 export namespace sj::vk
 {

@@ -6,6 +6,7 @@ module;
 // Library Headers
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
+#include <vk_mem_alloc.h>
 
 // Screwjank Headers
 #include <ScrewjankStd/Assert.hpp>
@@ -13,7 +14,10 @@ module;
 
 export module sj.engine.rendering.vk.SwapChain;
 import sj.engine.rendering.vk.Utils;
+import sj.engine.rendering.vk.ImageUtils;
+import sj.engine.rendering.vk.Primitives;
 import sj.engine.rendering.vk.RenderDevice;
+
 import sj.std.containers.array;
 import sj.std.containers.vector;
 import sj.std.memory;
@@ -105,7 +109,8 @@ export namespace sj::vk
             create_info.imageColorSpace = selected_format.colorSpace;
             create_info.imageExtent = extent;
             create_info.imageArrayLayers = 1;
-            create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+            create_info.imageUsage =
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
             const uint32_t graphicsFamilyIdx = device.GetGraphicsQueueIndex();
             const uint32_t presentationFamilyIdx = device.GetPresentationQueueIndex();
@@ -183,7 +188,7 @@ export namespace sj::vk
             int i = 0;
             for(VkImageView& view : m_imageViews)
             {
-                std::array attachments = {view, m_depthImageView};
+                std::array attachments = {view, m_depthImage.imageView};
 
                 VkFramebufferCreateInfo framebufferInfo {};
                 framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -205,28 +210,27 @@ export namespace sj::vk
             }
         }
 
-        void DeInit(VkDevice logicalDevice)
+        void DeInit(const sj::vk::RenderDevice& device)
         {
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
             {
-                vkDestroySemaphore(logicalDevice, semaphore, sj::g_vkAllocationFns);
+                vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
             }
 
-            vkDestroyImageView(logicalDevice, m_depthImageView, sj::g_vkAllocationFns);
-            vkDestroyImage(logicalDevice, m_depthImage, sj::g_vkAllocationFns);
-            vkFreeMemory(logicalDevice, m_depthImageMemory, sj::g_vkAllocationFns);
+            vkDestroyImageView(device.GetLogicalDevice(), m_depthImage.imageView, sj::g_vkAllocationFns);
+            vmaDestroyImage(device.GetAllocator(), m_depthImage.image, m_depthImage.allocation);
 
             for(VkFramebuffer buffer : m_swapChainBuffers)
             {
-                vkDestroyFramebuffer(logicalDevice, buffer, sj::g_vkAllocationFns);
+                vkDestroyFramebuffer(device.GetLogicalDevice(), buffer, sj::g_vkAllocationFns);
             }
 
             for(VkImageView view : m_imageViews)
             {
-                vkDestroyImageView(logicalDevice, view, sj::g_vkAllocationFns);
+                vkDestroyImageView(device.GetLogicalDevice(), view, sj::g_vkAllocationFns);
             }
 
-            vkDestroySwapchainKHR(logicalDevice, m_swapChain, sj::g_vkAllocationFns);
+            vkDestroySwapchainKHR(device.GetLogicalDevice(), m_swapChain, sj::g_vkAllocationFns);
         }
 
         void Recreate(const sj::vk::RenderDevice& device,
@@ -243,7 +247,7 @@ export namespace sj::vk
 
             vkDeviceWaitIdle(device.GetLogicalDevice());
 
-            DeInit(device.GetLogicalDevice());
+            DeInit(device);
             Init(device, renderingSurface, window);
             InitFrameBuffers(device.GetLogicalDevice(), pass);
         }
@@ -253,7 +257,7 @@ export namespace sj::vk
             SJ_ASSERT(idx >= 0 && idx < m_images.size(), "Invalid index");
             return m_images[idx];
         }
-        
+
         [[nodiscard]] VkImageView GetImageView(uint32_t idx)
         {
             SJ_ASSERT(idx >= 0 && idx < m_imageViews.size(), "Invalid index");
@@ -319,21 +323,23 @@ export namespace sj::vk
         {
             VkFormat depthFormat = FindDepthFormat(device.GetPhysicalDevice());
 
-            CreateImage(device.GetLogicalDevice(),
-                        device.GetPhysicalDevice(),
-                        GetExtent().width,
-                        GetExtent().height,
-                        depthFormat,
-                        VK_IMAGE_TILING_OPTIMAL,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        m_depthImage,
-                        m_depthImageMemory);
+            VmaAllocationCreateInfo allocInfo = {};
+            allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-            m_depthImageView = CreateImageView(device.GetLogicalDevice(),
-                                               m_depthImage,
+            VkExtent3D extent = {GetExtent().width, GetExtent().height, 1};
+            m_depthImage = sj::vk::CreateImage(device.GetLogicalDevice(),
+                                               device.GetAllocator(),
+                                               allocInfo,
+                                               extent,
                                                depthFormat,
-                                               VK_IMAGE_ASPECT_DEPTH_BIT);
+                                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                               VK_IMAGE_TILING_OPTIMAL);
+
+            m_depthImage.imageView = CreateImageView(device.GetLogicalDevice(),
+                                                     m_depthImage.image,
+                                                     depthFormat,
+                                                     VK_IMAGE_ASPECT_DEPTH_BIT);
         }
 
         bool m_isInitialized = false;
@@ -362,9 +368,7 @@ export namespace sj::vk
         VkExtent2D m_imageExtent = {};
 
         /** Depth buffer resources */
-        VkImage m_depthImage {};
-        VkDeviceMemory m_depthImageMemory {};
-        VkImageView m_depthImageView {};
+        AllocatedImage m_depthImage;
     };
 
 } // namespace sj::vk

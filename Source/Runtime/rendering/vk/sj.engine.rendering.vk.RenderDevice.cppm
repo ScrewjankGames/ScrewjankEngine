@@ -5,6 +5,9 @@ module;
 #include <vulkan/vulkan_core.h>
 #include <VkBootstrap.h>
 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 export module sj.engine.rendering.vk.RenderDevice;
 export import sj.engine.rendering.vk.Utils;
 import sj.std.containers.array;
@@ -12,6 +15,7 @@ import sj.std.containers.set;
 import sj.std.containers.vector;
 import sj.std.memory;
 import sj.engine.system.threading.ThreadContext;
+import sj.engine.rendering.vk.Primitives;
 
 export namespace sj::vk
 {
@@ -58,6 +62,13 @@ export namespace sj::vk
             m_logicalDevice = vkbDevice.device;
             m_physicalDevice = physicalDevice.physical_device;
 
+            VmaAllocatorCreateInfo allocatorInfo = {};
+            allocatorInfo.physicalDevice = m_physicalDevice;
+            allocatorInfo.device = m_logicalDevice;
+            allocatorInfo.instance = instanceInfo.instance;
+            allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+            vmaCreateAllocator(&allocatorInfo, &m_allocator);
+
             SJ_ENGINE_LOG_INFO("Selected GPU {}", vkbDevice.physical_device.name.c_str());
 
             // Grab graphics queue info
@@ -71,6 +82,8 @@ export namespace sj::vk
 
         void DeInit()
         {
+            vmaDestroyAllocator(m_allocator);
+
             if(m_logicalDevice != VK_NULL_HANDLE)
             {
                 vkDestroyDevice(m_logicalDevice, sj::g_vkAllocationFns);
@@ -91,6 +104,11 @@ export namespace sj::vk
         [[nodiscard]] VkDevice GetLogicalDevice() const
         {
             return m_logicalDevice;
+        }
+
+        [[nodiscard]] VmaAllocator GetAllocator() const
+        {
+            return m_allocator;
         }
 
         [[nodiscard]] VkQueue GetGraphicsQueue() const
@@ -122,6 +140,9 @@ export namespace sj::vk
          * @note This handle is freed automatically when the VkInstance is destroyed
          */
         VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+
+        /** Manages device's memory */
+        VmaAllocator m_allocator;
 
         /** Queue used to handle graphics commands */
         VkQueue m_graphicsQueue = VK_NULL_HANDLE;

@@ -13,11 +13,10 @@ import sj.std.containers.vector;
 import sj.std.containers.array;
 import sj.engine.system.memory;
 import sj.engine.system.threading.ThreadContext;
+import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
-    inline constexpr VkAllocationCallbacks* g_vkAllocationFns = nullptr;
-
     [[nodiscard]]
     uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,
                             uint32_t typeFilter,
@@ -37,51 +36,6 @@ export namespace sj
 
         SJ_ASSERT(false, "Failed to find suitable memory type.");
         return -1;
-    }
-
-    void CreateImage(VkDevice logicalDevice,
-                     VkPhysicalDevice physicalDevice,
-                     uint32_t width,
-                     uint32_t height,
-                     VkFormat format,
-                     VkImageTiling tiling,
-                     VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties,
-                     VkImage& image,
-                     VkDeviceMemory& imageMemory)
-    {
-        VkImageCreateInfo imageInfo {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = width;
-        imageInfo.extent.height = height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = format;
-        imageInfo.tiling = tiling;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = usage;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        VkResult success = vkCreateImage(logicalDevice, &imageInfo, sj::g_vkAllocationFns, &image);
-
-        SJ_ASSERT(success == VK_SUCCESS, "failed to create image!");
-
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(logicalDevice, image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex =
-            FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
-
-        success = vkAllocateMemory(logicalDevice, &allocInfo, sj::g_vkAllocationFns, &imageMemory);
-        SJ_ASSERT(success == VK_SUCCESS, "failed to allocate image memory!");
-
-        vkBindImageMemory(logicalDevice, image, imageMemory, 0);
     }
 
     [[nodiscard]]

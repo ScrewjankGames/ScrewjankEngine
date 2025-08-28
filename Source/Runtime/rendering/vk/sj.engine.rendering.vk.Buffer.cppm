@@ -5,6 +5,7 @@ module;
 
 export module sj.engine.rendering.vk.Buffer;
 import sj.engine.rendering.vk.RenderDevice;
+import sj.engine.rendering.vk.Primitives;
 
 export namespace sj::vk
 {

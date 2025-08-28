@@ -1,9 +1,12 @@
 module;
 
+#include <ScrewjankStd/Assert.hpp>
+
 #include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 
 export module sj.engine.rendering.vk.ImageUtils;
+import sj.engine.rendering.vk.Primitives;
 
 export namespace sj::vk
 {
@@ -17,6 +20,60 @@ export namespace sj::vk
         subImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
         return subImage;
+    }
+
+    AllocatedImage CreateImage(VkDevice logicalDevice,
+                               VmaAllocator allocator,
+                               const VmaAllocationCreateInfo& allocationInfo,
+                               VkExtent3D extent,
+                               VkFormat format,
+                               VkImageUsageFlags usageFlags,
+                               VkImageTiling tiling)
+    {
+        VkImageCreateInfo imageInfo {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = extent.width;
+        imageInfo.extent.height = extent.height;
+        imageInfo.extent.depth = extent.depth;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = usageFlags;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        AllocatedImage newImage = {};
+        VkResult res = vmaCreateImage(allocator,
+                                      &imageInfo,
+                                      &allocationInfo,
+                                      &newImage.image,
+                                      &newImage.allocation,
+                                      nullptr);
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate image");
+        newImage.imageExtent = extent;
+        newImage.imageFormat = format;
+
+        return newImage;
+    }
+
+    AllocatedImage CreateImage(VkDevice logicalDevice,
+                               VmaAllocator allocator,
+                               const VmaAllocationCreateInfo& allocationInfo,
+                               VkExtent2D extent,
+                               VkFormat format,
+                               VkImageUsageFlags usageFlags,
+                               VkImageTiling tiling)
+    {
+        return CreateImage(logicalDevice,
+                           allocator,
+                           allocationInfo,
+                           VkExtent3D {extent.width, extent.height, 1},
+                           format,
+                           usageFlags,
+                           tiling);
     }
 
     void TransitionImage(VkCommandBuffer cmd,

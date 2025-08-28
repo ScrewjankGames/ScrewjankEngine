@@ -11,9 +11,7 @@ module;
 // Library Headers
 #include <vulkan/vulkan_core.h>
 #include <VkBootstrap.h>
-
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 #ifndef SJ_GOLD
     #include <imgui_impl_glfw.h>
@@ -29,7 +27,7 @@ module;
 export module sj.engine.rendering.Renderer;
 import sj.engine.rendering.resources.TextureResource;
 import sj.engine.rendering.vk;
-
+import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs.assets.Texture;
 import sj.std.containers.vector;
@@ -69,13 +67,6 @@ export namespace sj
             // Select physical device and create and logical render device
             m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
 
-            VmaAllocatorCreateInfo allocatorInfo = {};
-            allocatorInfo.physicalDevice = m_renderDevice.GetPhysicalDevice();
-            allocatorInfo.device = m_renderDevice.GetLogicalDevice();
-            allocatorInfo.instance = m_vkInstance;
-            allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-            vmaCreateAllocator(&allocatorInfo, &m_allocator);
-
             // Create the vulkan swap chain connected to the current window and device
             m_swapChain.Init(m_renderDevice, m_renderingSurface, window);
             CreateRenderTarget(window->GetViewportSize());
@@ -98,10 +89,10 @@ export namespace sj
             LoadDummyModel();
             CreateDummyTextureImage();
 
-            m_dummyTextureImageView = CreateImageView(m_renderDevice.GetLogicalDevice(),
-                                                      m_dummyTextureImage,
-                                                      VK_FORMAT_R8G8B8A8_SRGB,
-                                                      VK_IMAGE_ASPECT_COLOR_BIT);
+            m_dummyTextureImage.imageView = CreateImageView(m_renderDevice.GetLogicalDevice(),
+                                                            m_dummyTextureImage.image,
+                                                            m_dummyTextureImage.imageFormat,
+                                                            VK_IMAGE_ASPECT_COLOR_BIT);
 
             CreateDummyTextureSampler();
 
@@ -134,7 +125,7 @@ export namespace sj
             init_info.QueueFamily = m_renderDevice.GetGraphicsQueueIndex();
             init_info.Queue = m_renderDevice.GetGraphicsQueue();
             init_info.PipelineCache = VK_NULL_HANDLE;
-            init_info.DescriptorPool = m_imguiDescriptorPool;
+            init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
             init_info.Allocator = nullptr;
             init_info.MinImageCount = kMaxFramesInFlight;
             init_info.ImageCount = kMaxFramesInFlight;
@@ -172,12 +163,13 @@ export namespace sj
             vkDestroyCommandPool(logicalDevice, m_immediateCommandPool, sj::g_vkAllocationFns);
 
             DestroyRenderTarget();
-            m_swapChain.DeInit(logicalDevice);
+            m_swapChain.DeInit(m_renderDevice);
 
             vkDestroySampler(logicalDevice, m_dummyTextureSampler, sj::g_vkAllocationFns);
-            vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
-            vkDestroyImage(logicalDevice, m_dummyTextureImage, sj::g_vkAllocationFns);
-            vkFreeMemory(logicalDevice, m_dummyTextureImageMemory, sj::g_vkAllocationFns);
+            vkDestroyImageView(logicalDevice, m_dummyTextureImage.imageView, sj::g_vkAllocationFns);
+            vmaDestroyImage(m_renderDevice.GetAllocator(),
+                            m_dummyTextureImage.image,
+                            m_dummyTextureImage.allocation);
 
             vkDestroyDescriptorPool(logicalDevice,
                                     m_globalUBODescriptorPool,
@@ -185,9 +177,7 @@ export namespace sj
 
             if constexpr(g_IsDebugBuild)
             {
-                vkDestroyDescriptorPool(logicalDevice,
-                                        m_imguiDescriptorPool,
-                                        sj::g_vkAllocationFns);
+                m_imguiDescriptorAllocator.DeInit(logicalDevice);
             }
 
             vkDestroyDescriptorSetLayout(logicalDevice,
@@ -203,8 +193,6 @@ export namespace sj
 
             vkDestroyBuffer(logicalDevice, m_dummyIndexBuffer, sj::g_vkAllocationFns);
             vkFreeMemory(logicalDevice, m_dummyIndexBufferMem, sj::g_vkAllocationFns);
-
-            vmaDestroyAllocator(m_allocator);
 
             // Important: All things attached to the device need to be torn down first
             m_renderDevice.DeInit();
@@ -602,10 +590,12 @@ export namespace sj
 
         void CreateRenderTarget(Viewport windowSize)
         {
-            VkExtent3D drawImageExtent = {windowSize.Width, windowSize.Height, 1};
+            VmaAllocationCreateInfo renderImageAllocInfo = {};
+            renderImageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            renderImageAllocInfo.requiredFlags =
+                VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            m_drawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-            m_drawImage.imageExtent = drawImageExtent;
+            VkExtent3D drawImageExtent = {windowSize.Width, windowSize.Height, 1};
 
             VkImageUsageFlags drawImageUsages {};
             drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -613,21 +603,13 @@ export namespace sj
             drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
             drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            VkImageCreateInfo renderImageInfo = sj::vk::MakeImageCreateInfo(m_drawImage.imageFormat,
-                                                                            drawImageUsages,
-                                                                            drawImageExtent);
-
-            VmaAllocationCreateInfo renderImageAllocInfo = {};
-            renderImageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-            renderImageAllocInfo.requiredFlags =
-                VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-            vmaCreateImage(m_allocator,
-                           &renderImageInfo,
-                           &renderImageAllocInfo,
-                           &m_drawImage.image,
-                           &m_drawImage.allocation,
-                           nullptr);
+            m_drawImage = sj::vk::CreateImage(m_renderDevice.GetLogicalDevice(),
+                                              m_renderDevice.GetAllocator(),
+                                              renderImageAllocInfo,
+                                              drawImageExtent,
+                                              VK_FORMAT_R16G16B16A16_SFLOAT,
+                                              drawImageUsages,
+                                              VK_IMAGE_TILING_OPTIMAL);
 
             VkImageViewCreateInfo renderImageViewInfo =
                 sj::vk::MakeImageViewCreateInfo(m_drawImage.imageFormat,
@@ -636,14 +618,16 @@ export namespace sj
 
             VkResult res = vkCreateImageView(m_renderDevice.GetLogicalDevice(),
                                              &renderImageViewInfo,
-                                             nullptr,
+                                             g_vkAllocationFns,
                                              &m_drawImage.imageView);
         }
 
         void DestroyRenderTarget()
         {
             vkDestroyImageView(m_renderDevice.GetLogicalDevice(), m_drawImage.imageView, nullptr);
-            vmaDestroyImage(m_allocator, m_drawImage.image, m_drawImage.allocation);
+            vmaDestroyImage(m_renderDevice.GetAllocator(),
+                            m_drawImage.image,
+                            m_drawImage.allocation);
         }
 
         void CreateCommandPools()
@@ -818,30 +802,42 @@ export namespace sj
             vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
 
             textureFile.close();
-            CreateImage(m_renderDevice.GetLogicalDevice(),
-                        m_renderDevice.GetPhysicalDevice(),
-                        header.width,
-                        header.height,
-                        VK_FORMAT_R8G8B8A8_SRGB,
-                        VK_IMAGE_TILING_OPTIMAL,
-                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        m_dummyTextureImage,
-                        m_dummyTextureImageMemory);
 
-            TransitionImageLayout(m_dummyTextureImage,
+            VmaAllocationCreateInfo allocCreateInfo = {};
+            allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            allocCreateInfo.requiredFlags =
+                VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            VkExtent3D imageExtent = {static_cast<uint32_t>(header.width),
+                                      static_cast<uint32_t>(header.height),
+                                      1};
+
+            m_dummyTextureImage =
+                sj::vk::CreateImage(m_renderDevice.GetLogicalDevice(),
+                                    m_renderDevice.GetAllocator(),
+                                    allocCreateInfo,
+                                    imageExtent,
+                                    VK_FORMAT_R8G8B8A8_SRGB,
+                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                    VK_IMAGE_TILING_OPTIMAL);
+
+            TransitionImageLayout(m_dummyTextureImage.image,
                                   VK_IMAGE_LAYOUT_UNDEFINED,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-            CopyBufferToImage(stagingBuffer, m_dummyTextureImage, header.width, header.height);
+            CopyBufferToImage(stagingBuffer,
+                              m_dummyTextureImage.image,
+                              header.width,
+                              header.height);
 
-            TransitionImageLayout(m_dummyTextureImage,
+            TransitionImageLayout(m_dummyTextureImage.image,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
             vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
                             stagingBuffer,
                             sj::g_vkAllocationFns);
+
             vkFreeMemory(m_renderDevice.GetLogicalDevice(),
                          stagingBufferMemory,
                          sj::g_vkAllocationFns);
@@ -879,33 +875,15 @@ export namespace sj
 
         void CreateGlobalDescriptorSetlayout()
         {
-            VkDescriptorSetLayoutBinding uboLayoutBinding {};
-            uboLayoutBinding.binding = 0;
-            uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uboLayoutBinding.descriptorCount = 1;
-            uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-            uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+            scratchpad_scope scope = ThreadContext::GetScratchpad();
 
-            VkDescriptorSetLayoutBinding samplerLayoutBinding {};
-            samplerLayoutBinding.binding = 1;
-            samplerLayoutBinding.descriptorCount = 1;
-            samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            samplerLayoutBinding.pImmutableSamplers = nullptr;
-            samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            sj::vk::DescriptorLayoutBuilder builder(&scope.get_allocator());
+            builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+            builder.AddBinding(1,
+                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                               VK_SHADER_STAGE_FRAGMENT_BIT);
 
-            std::array bindings = {uboLayoutBinding, samplerLayoutBinding};
-
-            VkDescriptorSetLayoutCreateInfo layoutInfo {};
-            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-            layoutInfo.pBindings = bindings.data();
-
-            VkResult res = vkCreateDescriptorSetLayout(m_renderDevice.GetLogicalDevice(),
-                                                       &layoutInfo,
-                                                       sj::g_vkAllocationFns,
-                                                       &m_globalUBODescriptorSetLayout);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor set layout");
+            m_globalUBODescriptorSetLayout = builder.Build(m_renderDevice.GetLogicalDevice(), nullptr );
         }
 
         void CreateGlobalUniformBuffers()
@@ -969,19 +947,7 @@ export namespace sj
                 VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
                 VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
-            VkDescriptorPoolCreateInfo poolInfo = {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-            poolInfo.maxSets = 1;
-            poolInfo.poolSizeCount = pool_sizes.size();
-            poolInfo.pPoolSizes = pool_sizes.data();
-
-            VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
-                                                  &poolInfo,
-                                                  sj::g_vkAllocationFns,
-                                                  &m_imguiDescriptorPool);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
+            m_imguiDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(), 1, pool_sizes, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
         }
 #endif // !SJ_GOLD
 
@@ -1015,7 +981,7 @@ export namespace sj
 
                 VkDescriptorImageInfo imageInfo {};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = m_dummyTextureImageView;
+                imageInfo.imageView = m_dummyTextureImage.imageView;
                 imageInfo.sampler = m_dummyTextureSampler;
 
                 std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
@@ -1175,10 +1141,6 @@ export namespace sj
             //}
             // vkCmdEndRenderPass(buffer);
 
-#ifndef SJ_GOLD
-
-#endif
-
             VkImage swapChainImage = m_swapChain.GetImage(imageIdx);
             // transition the draw image and the swapchain image into their correct transfer layouts
             sj::vk::TransitionImage(buffer,
@@ -1202,9 +1164,9 @@ export namespace sj
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-            #ifndef SJ_GOLD
+#ifndef SJ_GOLD
             DrawImGui(buffer, m_swapChain.GetImageView(imageIdx), m_swapChain.GetExtent());
-            #endif
+#endif
 
             // Make swapchain image ready for presentation
             sj::vk::TransitionImage(buffer,
@@ -1231,8 +1193,6 @@ export namespace sj
 
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_vkInstance {};
-
-        VmaAllocator m_allocator;
 
         sj::vk::AllocatedImage m_drawImage = {};
         VkExtent2D m_drawExtent = {};
@@ -1264,15 +1224,13 @@ export namespace sj
         VkBuffer m_dummyIndexBuffer {};
         VkDeviceMemory m_dummyIndexBufferMem {};
 
-        VkImage m_dummyTextureImage {};
-        VkDeviceMemory m_dummyTextureImageMemory {};
-        VkImageView m_dummyTextureImageView {};
+        sj::vk::AllocatedImage m_dummyTextureImage {};
         VkSampler m_dummyTextureSampler {};
 
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout {};
         VkDescriptorPool m_globalUBODescriptorPool {};
 
-        VkDescriptorPool m_imguiDescriptorPool {};
+        sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
 
         VkFence m_immediateFence;
         VkCommandBuffer m_immediateCommandBuffer;
