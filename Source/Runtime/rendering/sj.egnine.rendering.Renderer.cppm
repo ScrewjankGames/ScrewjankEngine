@@ -71,16 +71,12 @@ export namespace sj
             m_swapChain.Init(m_renderDevice, m_renderingSurface, window);
             CreateRenderTarget(window->GetViewportSize());
 
-            CreateRenderPass();
-
             CreateGlobalDescriptorSetlayout();
 
             m_defaultPipeline.Init(m_renderDevice.GetLogicalDevice(),
                                    m_globalUBODescriptorSetLayout,
                                    "Data/Engine/Shaders/Default.vert.spv",
                                    "Data/Engine/Shaders/Default.frag.spv");
-
-            m_swapChain.InitFrameBuffers(m_renderDevice.GetLogicalDevice(), m_defaultRenderPass);
 
             CreateCommandPools();
 
@@ -184,8 +180,6 @@ export namespace sj
 
             m_defaultPipeline.DeInit(logicalDevice);
 
-            vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, sj::g_vkAllocationFns);
-
             vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, sj::g_vkAllocationFns);
             vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, sj::g_vkAllocationFns);
 
@@ -261,10 +255,7 @@ export namespace sj
 
             if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice,
-                                     m_renderingSurface,
-                                     Window::GetInstance(),
-                                     m_defaultRenderPass);
+                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, Window::GetInstance());
 
                 return;
             }
@@ -311,10 +302,7 @@ export namespace sj
             m_frameCount++;
             if(res == VK_ERROR_OUT_OF_DATE_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice,
-                                     m_renderingSurface,
-                                     Window::GetInstance(),
-                                     m_defaultRenderPass);
+                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, Window::GetInstance());
                 return;
             }
             else if(res != VK_SUCCESS)
@@ -393,71 +381,6 @@ export namespace sj
 
             SJ_ENGINE_LOG_INFO("Vulkan Instance Initialized");
             return vkb_inst;
-        }
-
-        void CreateRenderPass()
-        {
-            VkAttachmentDescription depthAttachment {};
-            depthAttachment.format = FindDepthFormat(m_renderDevice.GetPhysicalDevice());
-            depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-            VkAttachmentDescription colorAttachment {};
-            colorAttachment.format = m_swapChain.GetImageFormat();
-            colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-            VkAttachmentReference depthAttachmentRef {};
-            depthAttachmentRef.attachment = 1;
-            depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-            VkAttachmentReference colorAttachmentRef {};
-            colorAttachmentRef.attachment = 0;
-            colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription subpass {};
-            subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subpass.colorAttachmentCount = 1;
-            subpass.pColorAttachments = &colorAttachmentRef;
-            subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-            VkSubpassDependency dependency {};
-            dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-            dependency.dstSubpass = 0;
-            dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            dependency.srcAccessMask = 0;
-            dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            dependency.dstAccessMask =
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-            std::array attachments = {colorAttachment, depthAttachment};
-            VkRenderPassCreateInfo renderPassInfo {};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-            renderPassInfo.pAttachments = attachments.data();
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &subpass;
-            renderPassInfo.dependencyCount = 1;
-            renderPassInfo.pDependencies = &dependency;
-
-            VkResult res = vkCreateRenderPass(m_renderDevice.GetLogicalDevice(),
-                                              &renderPassInfo,
-                                              sj::g_vkAllocationFns,
-                                              &m_defaultRenderPass);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create render pass.");
         }
 
         VkCommandBuffer BeginSingleTimeCommands()
@@ -1205,9 +1128,6 @@ export namespace sj
 
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_renderingSurface {};
-
-        /** It's a render pass I guess. */
-        VkRenderPass m_defaultRenderPass {};
 
         /** Used to back API operations */
         sj::vk::RenderDevice m_renderDevice;

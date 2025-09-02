@@ -19,7 +19,6 @@ import sj.engine.rendering.vk.Primitives;
 import sj.engine.rendering.vk.RenderDevice;
 
 import sj.std.containers.array;
-import sj.std.containers.vector;
 import sj.std.memory;
 
 namespace sj::vk
@@ -59,8 +58,7 @@ export namespace sj::vk
     {
     public:
         SwapChain(sj::memory_resource* cpu_resource)
-            : m_cpuMemoryResource(cpu_resource), m_images(cpu_resource), m_imageViews(cpu_resource),
-              m_swapChainBuffers(cpu_resource)
+            : m_cpuMemoryResource(cpu_resource), m_images(cpu_resource), m_imageViews(cpu_resource)
         {
         }
 
@@ -176,40 +174,6 @@ export namespace sj::vk
             CreateDepthResources(device);
         }
 
-        /**
-         * Called after init because info from the swap chain is need to create the render pass
-         */
-        void InitFrameBuffers(VkDevice device, VkRenderPass pass)
-        {
-
-            // Create Frame Buffers
-            m_swapChainBuffers.resize(m_imageViews.size());
-
-            int i = 0;
-            for(VkImageView& view : m_imageViews)
-            {
-                std::array attachments = {view, m_depthImage.imageView};
-
-                VkFramebufferCreateInfo framebufferInfo {};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = pass;
-                framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-                framebufferInfo.pAttachments = attachments.data();
-                framebufferInfo.width = GetExtent().width;
-                framebufferInfo.height = GetExtent().height;
-                framebufferInfo.layers = 1;
-
-                VkResult res = vkCreateFramebuffer(device,
-                                                   &framebufferInfo,
-                                                   sj::g_vkAllocationFns,
-                                                   &m_swapChainBuffers[i]);
-
-                SJ_ASSERT(res == VK_SUCCESS, "Failed to construct frame buffers.");
-
-                i++;
-            }
-        }
-
         void DeInit(const sj::vk::RenderDevice& device)
         {
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
@@ -219,11 +183,6 @@ export namespace sj::vk
 
             vkDestroyImageView(device.GetLogicalDevice(), m_depthImage.imageView, sj::g_vkAllocationFns);
             vmaDestroyImage(device.GetAllocator(), m_depthImage.image, m_depthImage.allocation);
-
-            for(VkFramebuffer buffer : m_swapChainBuffers)
-            {
-                vkDestroyFramebuffer(device.GetLogicalDevice(), buffer, sj::g_vkAllocationFns);
-            }
 
             for(VkImageView view : m_imageViews)
             {
@@ -235,8 +194,7 @@ export namespace sj::vk
 
         void Recreate(const sj::vk::RenderDevice& device,
                       VkSurfaceKHR renderingSurface,
-                      Window* window,
-                      VkRenderPass pass)
+                      Window* window )
         {
             // Window is minimized. Can't recreate swap chain.
             if(Window::GetInstance()->GetViewportSize().Width == 0 ||
@@ -249,7 +207,6 @@ export namespace sj::vk
 
             DeInit(device);
             Init(device, renderingSurface, window);
-            InitFrameBuffers(device.GetLogicalDevice(), pass);
         }
 
         [[nodiscard]] VkImage GetImage(uint32_t idx)
@@ -282,11 +239,6 @@ export namespace sj::vk
         [[nodiscard]] std::span<VkImageView> GetImageViews() const
         {
             return std::span<VkImageView>(m_imageViews.data(), m_imageViews.size());
-        }
-
-        [[nodiscard]] std::span<VkFramebuffer> GetFrameBuffers() const
-        {
-            return std::span<VkFramebuffer>(m_swapChainBuffers.data(), m_imageViews.size());
         }
 
         [[nodiscard]] VkSemaphore GetImageRenderCompleteSemaphore(uint32_t imageIdx)
@@ -353,13 +305,10 @@ export namespace sj::vk
         dynamic_array<VkSemaphore> m_renderFinishedSemaphores;
 
         /** List of handles to images in the swap chain */
-        dynamic_vector<VkImage> m_images;
+        dynamic_array<VkImage> m_images;
 
         /** List of Image Views onto the images in the swap chain */
-        dynamic_vector<VkImageView> m_imageViews;
-
-        /** Frame buffers for images in the swap chain */
-        dynamic_vector<VkFramebuffer> m_swapChainBuffers;
+        dynamic_array<VkImageView> m_imageViews;
 
         /** Format for images in the swap chain */
         VkFormat m_chainImageFormat = VK_FORMAT_UNDEFINED;
