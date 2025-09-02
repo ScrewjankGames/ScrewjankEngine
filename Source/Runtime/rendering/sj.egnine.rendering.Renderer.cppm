@@ -76,8 +76,6 @@ export namespace sj
             CreateGlobalDescriptorSetlayout();
 
             m_defaultPipeline.Init(m_renderDevice.GetLogicalDevice(),
-                                   m_swapChain.GetExtent(),
-                                   m_defaultRenderPass,
                                    m_globalUBODescriptorSetLayout,
                                    "Data/Engine/Shaders/Default.vert.spv",
                                    "Data/Engine/Shaders/Default.frag.spv");
@@ -184,7 +182,7 @@ export namespace sj
                                          m_globalUBODescriptorSetLayout,
                                          sj::g_vkAllocationFns);
 
-            m_defaultPipeline.DeInit();
+            m_defaultPipeline.DeInit(logicalDevice);
 
             vkDestroyRenderPass(logicalDevice, m_defaultRenderPass, sj::g_vkAllocationFns);
 
@@ -282,7 +280,7 @@ export namespace sj
 
             UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx], cameraMatrix);
 
-            RecordCommandBuffer(currCommandBuffer, frameIdx, imageIndex);
+            RecordDrawCommands(currCommandBuffer, frameIdx, imageIndex);
 
             VkCommandBufferSubmitInfo submitCommandInfo =
                 sj::vk::MakeCommandBufferSubmitInfo(currCommandBuffer);
@@ -883,7 +881,8 @@ export namespace sj
                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                VK_SHADER_STAGE_FRAGMENT_BIT);
 
-            m_globalUBODescriptorSetLayout = builder.Build(m_renderDevice.GetLogicalDevice(), nullptr );
+            m_globalUBODescriptorSetLayout =
+                builder.Build(m_renderDevice.GetLogicalDevice(), nullptr);
         }
 
         void CreateGlobalUniformBuffers()
@@ -947,7 +946,10 @@ export namespace sj
                 VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
                 VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
-            m_imguiDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(), 1, pool_sizes, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+            m_imguiDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(),
+                                                1,
+                                                pool_sizes,
+                                                VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
         }
 #endif // !SJ_GOLD
 
@@ -1066,23 +1068,8 @@ export namespace sj
         }
 #endif
 
-        void RecordCommandBuffer(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx)
+        void DrawBackground(VkCommandBuffer cmd)
         {
-            VkCommandBufferBeginInfo beginInfo =
-                sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VkResult res = vkBeginCommandBuffer(buffer, &beginInfo);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to start command buffer!");
-
-            // std::array<VkClearValue, 2> clearValues {};
-            // clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-            // clearValues[1].depthStencil = {.depth = 1.0f, .stencil = 0};
-
-            // Make swapchain image writable
-            sj::vk::TransitionImage(buffer,
-                                    m_drawImage.image,
-                                    VK_IMAGE_LAYOUT_UNDEFINED,
-                                    VK_IMAGE_LAYOUT_GENERAL);
-
             // Blue flashy clear color
             VkClearColorValue clearValue;
             float flash = std::abs(std::sin((float)m_frameCount / 240.f));
@@ -1091,62 +1078,77 @@ export namespace sj
             VkImageSubresourceRange clearRange =
                 sj::vk::MakeImageSubResourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 
-            vkCmdClearColorImage(buffer,
+            vkCmdClearColorImage(cmd,
                                  m_drawImage.image,
                                  VK_IMAGE_LAYOUT_GENERAL,
                                  &clearValue,
                                  1,
                                  &clearRange);
+        }
 
-            // vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            //{
-            // vkCmdBindPipeline(buffer,
-            //                   VK_PIPELINE_BIND_POINT_GRAPHICS,
-            //                   m_defaultPipeline.GetPipeline());
+        void DrawGeometry(VkCommandBuffer cmd)
+        {
+            VkRenderingAttachmentInfo colorAttachment =
+                sj::vk::MakeAttachmentInfo(m_drawImage.imageView,
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            VkRenderingInfo renderInfo = sj::vk::MakeRenderingInfo(
+                {m_drawImage.imageExtent.width, m_drawImage.imageExtent.height},
+                &colorAttachment,
+                nullptr);
 
-            // std::array<VkBuffer, 1> vertexBuffers = {m_dummyVertexBuffer};
-            // std::array<VkDeviceSize, 1> offsets = {0};
-            // vkCmdBindVertexBuffers(buffer, 0, 1, vertexBuffers.data(), offsets.data());
-            // vkCmdBindIndexBuffer(buffer, m_dummyIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdBindPipeline(cmd,
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              m_defaultPipeline.GetPipeline());
 
-            // VkViewport viewport {};
-            // viewport.x = 0.0f;
-            // viewport.y = 0.0f;
-            // viewport.width = static_cast<float>(m_swapChain.GetExtent().width);
-            // viewport.height = static_cast<float>(m_swapChain.GetExtent().height);
-            // viewport.minDepth = 0.0f;
-            // viewport.maxDepth = 1.0f;
-            // vkCmdSetViewport(buffer, 0, 1, &viewport);
+            VkViewport viewport {};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = static_cast<float>(m_swapChain.GetExtent().width);
+            viewport.height = static_cast<float>(m_swapChain.GetExtent().height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+            vkCmdSetViewport(cmd, 0, 1, &viewport);
 
-            // VkRect2D scissor {};
-            // scissor.offset = {.x = 0, .y = 0};
-            // scissor.extent = m_swapChain.GetExtent();
-            // vkCmdSetScissor(buffer, 0, 1, &scissor);
+            VkRect2D scissor {};
+            scissor.offset = {.x = 0, .y = 0};
+            scissor.extent = m_swapChain.GetExtent();
+            vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-            // vkCmdBindDescriptorSets(buffer,
-            //                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-            //                         m_defaultPipeline.GetLayout(),
-            //                         0,
-            //                         1,
-            //                         &m_frameData.globalUBODescriptorSets[frameIdx],
-            //                         0,
-            //                         nullptr);
+            vkCmdDrawIndexed(cmd, static_cast<uint32_t>(m_dummyIndexBufferIndexCount), 1, 0, 0, 0);
 
-            // vkCmdDrawIndexed(buffer,
-            //                  static_cast<uint32_t>(m_dummyIndexBufferIndexCount),
-            //                  1,
-            //                  0,
-            //                  0,
-            //                  0);
-            //}
-            // vkCmdEndRenderPass(buffer);
+            vkCmdEndRendering(cmd);
+        }
 
-            VkImage swapChainImage = m_swapChain.GetImage(imageIdx);
-            // transition the draw image and the swapchain image into their correct transfer layouts
+        void RecordDrawCommands(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx)
+        {
+            VkCommandBufferBeginInfo beginInfo =
+                sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            VkResult res = vkBeginCommandBuffer(buffer, &beginInfo);
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to start command buffer!");
+
+            // Make swapchain image writable
+            sj::vk::TransitionImage(buffer,
+                                    m_drawImage.image,
+                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_GENERAL);
+
+            DrawBackground(buffer);
+
             sj::vk::TransitionImage(buffer,
                                     m_drawImage.image,
                                     VK_IMAGE_LAYOUT_GENERAL,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            // DrawGeometry(buffer);
+
+            // transition the draw image and the swapchain image into their correct transfer layouts
+            sj::vk::TransitionImage(buffer,
+                                    m_drawImage.image,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+            VkImage swapChainImage = m_swapChain.GetImage(imageIdx);
             sj::vk::TransitionImage(buffer,
                                     swapChainImage,
                                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -1159,6 +1161,7 @@ export namespace sj
                                      m_drawExtent,
                                      m_swapChain.GetExtent());
 
+            // Put swapchain image back into color attachment mode
             sj::vk::TransitionImage(buffer,
                                     swapChainImage,
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
