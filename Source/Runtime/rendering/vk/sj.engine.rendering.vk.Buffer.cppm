@@ -2,6 +2,7 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 #include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 export module sj.engine.rendering.vk.Buffer;
 import sj.engine.rendering.vk.RenderDevice;
@@ -9,43 +10,47 @@ import sj.engine.rendering.vk.Primitives;
 
 export namespace sj::vk
 {
-    void CreateBuffer(const sj::vk::RenderDevice& device,
-                      VkDeviceSize size,
-                      VkBufferUsageFlags usage,
-                      VkMemoryPropertyFlags properties,
-                      VkBuffer& out_buffer,
-                      VkDeviceMemory& out_bufferMemory)
+    struct BufferResource
     {
-        VkDevice logicalDevice = device.GetLogicalDevice();
+        VkBuffer buffer;
+        VmaAllocation allocation;
+        VmaAllocationInfo info;
+    };
 
-        std::array<uint32_t, 1> queueFamilyIndices {device.GetGraphicsQueueIndex()};
+    BufferResource CreateBuffer(VmaAllocator allocator,
+                                size_t bufferSizeBytes,
+                                VkBufferUsageFlags bufferUsage,
+                                VmaAllocationCreateFlags allocationFlags = {},
+                                VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO)
+    {
+        // allocate buffer
+        VkBufferCreateInfo bufferInfo = {.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        bufferInfo.pNext = nullptr;
+        bufferInfo.size = bufferSizeBytes;
+        bufferInfo.usage = bufferUsage;
 
-        VkBufferCreateInfo bufferInfo {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.queueFamilyIndexCount = 1;
-        bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+        VmaAllocationCreateInfo vmaallocInfo = {};
+        vmaallocInfo.usage = memoryUsage;
+        vmaallocInfo.flags = allocationFlags;
 
-        VkResult res =
-            vkCreateBuffer(logicalDevice, &bufferInfo, sj::g_vkAllocationFns, &out_buffer);
+        BufferResource newBuffer;
 
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create vulkan buffer");
+        // allocate the buffer
+        VkResult res = vmaCreateBuffer(allocator,
+                                       &bufferInfo,
+                                       &vmaallocInfo,
+                                       &newBuffer.buffer,
+                                       &newBuffer.allocation,
+                                       &newBuffer.info);
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(logicalDevice, out_buffer, &memRequirements);
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate buffer");
 
-        VkMemoryAllocateInfo allocInfo {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex =
-            FindMemoryType(device.GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
-
-        res = vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &out_bufferMemory);
-
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate dummy vertex buffer memory");
-
-        vkBindBufferMemory(logicalDevice, out_buffer, out_bufferMemory, 0);
+        return newBuffer;
     }
+
+    void DestroyBuffer(VmaAllocator allocator, BufferResource& buffer)
+    {
+        vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
+    }
+
 } // namespace sj::vk

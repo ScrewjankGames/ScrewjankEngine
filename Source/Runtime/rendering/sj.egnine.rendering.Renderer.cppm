@@ -151,7 +151,7 @@ export namespace sj
                            m_immediateFence,
                            sj::g_vkAllocationFns);
 
-            m_frameData.DeInit(logicalDevice);
+            m_frameData.DeInit(m_renderDevice);
 
             vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
             vkDestroyCommandPool(logicalDevice, m_immediateCommandPool, sj::g_vkAllocationFns);
@@ -180,11 +180,13 @@ export namespace sj
 
             m_defaultPipeline.DeInit(logicalDevice);
 
-            vkDestroyBuffer(logicalDevice, m_dummyVertexBuffer, sj::g_vkAllocationFns);
-            vkFreeMemory(logicalDevice, m_dummyVertexBufferMem, sj::g_vkAllocationFns);
+            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
+                             m_dummyVertexBuffer.buffer,
+                             m_dummyVertexBuffer.allocation);
 
-            vkDestroyBuffer(logicalDevice, m_dummyIndexBuffer, sj::g_vkAllocationFns);
-            vkFreeMemory(logicalDevice, m_dummyIndexBufferMem, sj::g_vkAllocationFns);
+            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
+                             m_dummyIndexBuffer.buffer,
+                             m_dummyIndexBuffer.allocation);
 
             // Important: All things attached to the device need to be torn down first
             m_renderDevice.DeInit();
@@ -269,7 +271,8 @@ export namespace sj
 
             vkResetCommandBuffer(currCommandBuffer, 0);
 
-            UpdateUniformBuffer(m_frameData.globalUniformBuffersMapped[frameIdx], cameraMatrix);
+            UpdateUniformBuffer(m_frameData.globalUniformBuffers[frameIdx].info.pMappedData,
+                                cameraMatrix);
 
             RecordDrawCommands(currCommandBuffer, frameIdx, imageIndex);
 
@@ -601,92 +604,60 @@ export namespace sj
 
             // Read verts into GPU memory
             {
-                VkDeviceSize bufferSize = sizeof(Vertex) * header.numVerts;
+                VkDeviceSize bufferSizeBytes = sizeof(Vertex) * header.numVerts;
                 // Stage vertex data in host visible buffer
-                VkBuffer stagingBuffer {};
-                VkDeviceMemory stagingBufferMemory {};
 
-                sj::vk::CreateBuffer(m_renderDevice,
-                                     bufferSize,
-                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     stagingBuffer,
-                                     stagingBufferMemory);
-
-                void* data = nullptr;
-                vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                            stagingBufferMemory,
-                            0,
-                            bufferSize,
-                            0,
-                            &data);
+                sj::vk::BufferResource stagingBuffer =
+                    sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
+                                         bufferSizeBytes,
+                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                             VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
                 // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(data), bufferSize);
+                modelFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+                               bufferSizeBytes);
 
-                vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+                m_dummyVertexBuffer = sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
+                                                           bufferSizeBytes,
+                                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-                CreateBuffer(m_renderDevice,
-                             bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             m_dummyVertexBuffer,
-                             m_dummyVertexBufferMem);
+                CopyBuffer(stagingBuffer.buffer, m_dummyVertexBuffer.buffer, bufferSizeBytes);
 
-                CopyBuffer(stagingBuffer, m_dummyVertexBuffer, bufferSize);
-
-                vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
-                                stagingBuffer,
-                                sj::g_vkAllocationFns);
-                vkFreeMemory(m_renderDevice.GetLogicalDevice(),
-                             stagingBufferMemory,
-                             sj::g_vkAllocationFns);
+                vmaDestroyBuffer(m_renderDevice.GetAllocator(),
+                                 stagingBuffer.buffer,
+                                 stagingBuffer.allocation);
             }
 
             // Read Indices into GPU memory
             {
                 m_dummyIndexBufferIndexCount = header.numIndices;
 
-                VkDeviceSize bufferSize = sizeof(uint16_t) * header.numIndices;
+                VkDeviceSize bufferSizeBytes = sizeof(uint16_t) * header.numIndices;
 
-                VkBuffer stagingBuffer {};
-                VkDeviceMemory stagingBufferMemory {};
-                CreateBuffer(m_renderDevice,
-                             bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             stagingBuffer,
-                             stagingBufferMemory);
+                sj::vk::BufferResource stagingBuffer =
+                    sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
+                                         bufferSizeBytes,
+                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                             VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
-                void* data = nullptr;
-                vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                            stagingBufferMemory,
-                            0,
-                            bufferSize,
-                            0,
-                            &data);
                 // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(data), bufferSize);
+                modelFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+                               bufferSizeBytes);
 
-                vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
+                m_dummyIndexBuffer = sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
+                                                          bufferSizeBytes,
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-                CreateBuffer(m_renderDevice,
-                             bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             m_dummyIndexBuffer,
-                             m_dummyIndexBufferMem);
+                CopyBuffer(stagingBuffer.buffer, m_dummyIndexBuffer.buffer, bufferSizeBytes);
 
-                CopyBuffer(stagingBuffer, m_dummyIndexBuffer, bufferSize);
-
-                vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
-                                stagingBuffer,
-                                sj::g_vkAllocationFns);
-                vkFreeMemory(m_renderDevice.GetLogicalDevice(),
-                             stagingBufferMemory,
-                             sj::g_vkAllocationFns);
+                vmaDestroyBuffer(m_renderDevice.GetAllocator(),
+                                 stagingBuffer.buffer,
+                                 stagingBuffer.allocation);
             }
 
             modelFile.close();
@@ -699,29 +670,17 @@ export namespace sj
             TextureHeader header;
             textureFile.read(reinterpret_cast<char*>(&header), sizeof(header));
 
-            VkDeviceSize imageSize = header.width * header.height * 4;
-            VkBuffer stagingBuffer {};
-            VkDeviceMemory stagingBufferMemory {};
-
-            CreateBuffer(m_renderDevice,
-                         imageSize,
-                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         stagingBuffer,
-                         stagingBufferMemory);
-
-            void* data = nullptr;
-            vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                        stagingBufferMemory,
-                        0,
-                        imageSize,
-                        0,
-                        &data);
+            VkDeviceSize imageSizeBytes = header.width * header.height * 4;
+            sj::vk::BufferResource stagingBuffer =
+                sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
+                                     imageSizeBytes,
+                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                         VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
             // Read texture data straight into GPU memory
-            textureFile.read(reinterpret_cast<char*>(data), imageSize);
-            vkUnmapMemory(m_renderDevice.GetLogicalDevice(), stagingBufferMemory);
-
+            textureFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+                             imageSizeBytes);
             textureFile.close();
 
             VmaAllocationCreateInfo allocCreateInfo = {};
@@ -746,7 +705,7 @@ export namespace sj
                                   VK_IMAGE_LAYOUT_UNDEFINED,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-            CopyBufferToImage(stagingBuffer,
+            CopyBufferToImage(stagingBuffer.buffer,
                               m_dummyTextureImage.image,
                               header.width,
                               header.height);
@@ -755,13 +714,9 @@ export namespace sj
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-            vkDestroyBuffer(m_renderDevice.GetLogicalDevice(),
-                            stagingBuffer,
-                            sj::g_vkAllocationFns);
-
-            vkFreeMemory(m_renderDevice.GetLogicalDevice(),
-                         stagingBufferMemory,
-                         sj::g_vkAllocationFns);
+            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
+                             stagingBuffer.buffer,
+                             stagingBuffer.allocation);
 
             return;
         }
@@ -814,20 +769,15 @@ export namespace sj
 
             for(size_t i = 0; i < kMaxFramesInFlight; i++)
             {
-                CreateBuffer(m_renderDevice,
-                             bufferSize,
-                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             m_frameData.globalUniformBuffers[i],
-                             m_frameData.globalUniformBuffersMemory[i]);
-
-                vkMapMemory(m_renderDevice.GetLogicalDevice(),
-                            m_frameData.globalUniformBuffersMemory[i],
-                            0,
-                            bufferSize,
-                            0,
-                            &(m_frameData.globalUniformBuffersMapped[i]));
+                // This might not actaully end up being host visible:
+                // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/usage_patterns.html
+                m_frameData.globalUniformBuffers[i] = sj::vk::CreateBuffer(
+                    m_renderDevice.GetAllocator(),
+                    bufferSize,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                        VMA_ALLOCATION_CREATE_MAPPED_BIT);
             }
         }
 
@@ -900,7 +850,7 @@ export namespace sj
             for(size_t i = 0; i < kMaxFramesInFlight; i++)
             {
                 VkDescriptorBufferInfo bufferInfo {};
-                bufferInfo.buffer = m_frameData.globalUniformBuffers[i];
+                bufferInfo.buffer = m_frameData.globalUniformBuffers[i].buffer;
                 bufferInfo.offset = 0;
                 bufferInfo.range = sizeof(GlobalUniformBufferObject);
 
@@ -1140,12 +1090,10 @@ export namespace sj
 
         VkCommandPool m_graphicsCommandPool {};
 
-        VkBuffer m_dummyVertexBuffer {};
-        VkDeviceMemory m_dummyVertexBufferMem {};
+        sj::vk::BufferResource m_dummyVertexBuffer {};
 
         uint64_t m_dummyIndexBufferIndexCount {};
-        VkBuffer m_dummyIndexBuffer {};
-        VkDeviceMemory m_dummyIndexBufferMem {};
+        sj::vk::BufferResource m_dummyIndexBuffer {};
 
         sj::vk::AllocatedImage m_dummyTextureImage {};
         VkSampler m_dummyTextureSampler {};
@@ -1169,9 +1117,7 @@ export namespace sj
             std::array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
             std::array<VkFence, kMaxFramesInFlight> inFlightFences;
 
-            std::array<VkBuffer, kMaxFramesInFlight> globalUniformBuffers;
-            std::array<VkDeviceMemory, kMaxFramesInFlight> globalUniformBuffersMemory;
-            std::array<void*, kMaxFramesInFlight> globalUniformBuffersMapped;
+            std::array<sj::vk::BufferResource, kMaxFramesInFlight> globalUniformBuffers;
             std::array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets;
 
             void Init(VkDevice device, VkCommandPool commandPool)
@@ -1216,18 +1162,23 @@ export namespace sj
                 }
             }
 
-            void DeInit(VkDevice device)
+            void DeInit(sj::vk::RenderDevice& device)
             {
                 // NOTE: Command buffers are freed for us when we free the command pool.
                 //       We only need to clean up sync primitives
 
+                VkDevice logicalDevice = device.GetLogicalDevice();
+                VmaAllocator allocator = device.GetAllocator();
                 for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
                 {
-                    vkDestroySemaphore(device, imageAvailableSemaphores[i], sj::g_vkAllocationFns);
-                    vkDestroyFence(device, inFlightFences[i], sj::g_vkAllocationFns);
+                    vkDestroySemaphore(logicalDevice,
+                                       imageAvailableSemaphores[i],
+                                       sj::g_vkAllocationFns);
+                    vkDestroyFence(logicalDevice, inFlightFences[i], sj::g_vkAllocationFns);
 
-                    vkDestroyBuffer(device, globalUniformBuffers[i], sj::g_vkAllocationFns);
-                    vkFreeMemory(device, globalUniformBuffersMemory[i], sj::g_vkAllocationFns);
+                    vmaDestroyBuffer(allocator,
+                                     globalUniformBuffers[i].buffer,
+                                     globalUniformBuffers[i].allocation);
                 }
             }
         } m_frameData {};
