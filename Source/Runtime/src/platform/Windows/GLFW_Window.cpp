@@ -13,8 +13,7 @@
 
 import sj.engine.framework.Engine;
 import sj.engine.system.memory.MemorySystem;
-import sj.engine.rendering.Renderer;
-import sj.engine.rendering.vk;
+import sj.engine.rendering.vk.Primitives;
 
 namespace sj
 {

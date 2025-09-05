@@ -74,4 +74,10 @@ export namespace sj::vk
                                   VMA_ALLOCATION_CREATE_MAPPED_BIT);
     }
 
+    void CopyBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    {
+        VkBufferCopy copyRegion {};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion);
+    }
 } // namespace sj::vk

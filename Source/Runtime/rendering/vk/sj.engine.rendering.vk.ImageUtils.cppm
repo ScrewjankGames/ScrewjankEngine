@@ -139,6 +139,32 @@ export namespace sj::vk
         vkCmdPipelineBarrier2(cmd, &depInfo);
     }
 
+    void CopyBufferToImage(
+        VkCommandBuffer cmd, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    {
+        VkBufferImageCopy region {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = {.x = 0, .y = 0, .z = 0};
+        region.imageExtent = {.width = width, .height = height, .depth = 1};
+
+        // "Assuming here that the image has already been transitioned to the layout that is
+        // optimal for copying pixels to"
+        vkCmdCopyBufferToImage(cmd,
+                               buffer,
+                               image,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               1,
+                               &region);
+    }
+
     void CopyImageToImage(
         VkCommandBuffer cmd, VkImage source, VkImage dest, VkExtent2D srcSize, VkExtent2D dstSize)
     {
