@@ -1,42 +1,41 @@
-#pragma once
-
+module;
 // SJ Includes
 #include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // STD Includes
 #include <cstdint>
 #include <functional>
-
+export module sj.datadefs.assets.Mesh;
 import sj.std.math;
 
-namespace sj
+export namespace sj
 {
-    struct Vertex
+    struct MeshVertex
     {
         Vec3 pos;
         Vec3 color;
         Vec2 uv;
 
-        inline bool operator==(const Vertex& other) const
+        inline bool operator==(const MeshVertex& other) const
         {
             return pos == other.pos && color == other.color && uv == other.uv;
         }
     };
 
-    struct Model
+    struct MeshHeader
     {
-        AssetType type = AssetType::kModel;
-        int32_t numVerts;
-        int32_t numIndices;
+        AssetType type = AssetType::kMesh;
+        int32_t numVerts = 0;
+        int32_t numIndices = 0;
     };
-}
+} // namespace sj
 
-namespace std
+export namespace std
 {
     template <>
-    struct hash<sj::Vertex>
+    struct hash<sj::MeshVertex>
     {
-        size_t operator()(sj::Vertex const& vertex) const
+        size_t operator()(sj::MeshVertex const& vertex) const
         {
             return ((hash<sj::Vec3>()(vertex.pos) ^ (hash<sj::Vec3>()(vertex.color) << 1)) >> 1) ^
                    (hash<sj::Vec2>()(vertex.uv) << 1);

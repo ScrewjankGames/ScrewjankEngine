@@ -1,7 +1,6 @@
 module;
 
 // Screwjank Headers
-#include <ScrewjankDataDefinitions/Assets/Model.hpp>
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
@@ -9,6 +8,7 @@ module;
 #include <vulkan/vulkan.h>
 
 export module sj.engine.rendering.vk.Utils;
+import sj.datadefs.assets.Mesh;
 import sj.std.containers.vector;
 import sj.std.containers.array;
 import sj.engine.system.memory;
@@ -17,27 +17,6 @@ import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
-    [[nodiscard]]
-    uint32_t FindMemoryType(VkPhysicalDevice physicalDevice,
-                            uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties)
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
-        for(uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-        {
-            if((typeFilter & (1 << i)) &&
-               (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                return i;
-            }
-        }
-
-        SJ_ASSERT(false, "Failed to find suitable memory type.");
-        return -1;
-    }
-
     [[nodiscard]]
     VkImageView
     CreateImageView(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
@@ -107,7 +86,7 @@ export namespace sj
         VkVertexInputBindingDescription desc {};
 
         desc.binding = 0;
-        desc.stride = sizeof(Vertex);
+        desc.stride = sizeof(MeshVertex);
         desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         return desc;
@@ -120,17 +99,17 @@ export namespace sj
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+        attributeDescriptions[0].offset = offsetof(MeshVertex, pos);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
+        attributeDescriptions[1].offset = offsetof(MeshVertex, color);
 
         attributeDescriptions[2].binding = 0;
         attributeDescriptions[2].location = 2;
         attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, uv);
+        attributeDescriptions[2].offset = offsetof(MeshVertex, uv);
 
         return attributeDescriptions;
     }
@@ -177,54 +156,6 @@ export namespace sj
                                                   params.PresentModes.data());
 
         return params;
-    }
-
-    /**
-     * Returns the queue families available for the supplied VkPhysicalDevice
-     */
-    struct DeviceQueueFamilyIndices
-    {
-        std::optional<uint32_t> graphicsFamilyIndex;
-        std::optional<uint32_t> presentationFamilyIndex;
-    };
-
-    DeviceQueueFamilyIndices QueryDeviceQueueFamilyIndices(VkPhysicalDevice device,
-                                                           VkSurfaceKHR renderSurface)
-    {
-        uint32_t queue_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, nullptr);
-        scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-        dynamic_array<VkQueueFamilyProperties> queue_data(queue_count, &scratchpad.get_allocator());
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_count, queue_data.data());
-
-        DeviceQueueFamilyIndices indices;
-
-        int i = 0;
-        for(const VkQueueFamilyProperties& family : queue_data)
-        {
-            if(family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                indices.graphicsFamilyIndex = i;
-            }
-
-            if(renderSurface != VK_NULL_HANDLE)
-            {
-                VkBool32 presentation_support = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device,
-                                                     i,
-                                                     renderSurface,
-                                                     &presentation_support);
-
-                if(presentation_support)
-                {
-                    indices.presentationFamilyIndex = i;
-                }
-            }
-
-            i++;
-        }
-
-        return indices;
     }
 
     void CheckImguiVulkanResult(VkResult res)

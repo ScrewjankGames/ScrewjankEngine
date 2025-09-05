@@ -9,6 +9,6 @@ namespace sj
     {
         kInvalid,
         kTexture,
-        kModel
+        kMesh
     };
 }

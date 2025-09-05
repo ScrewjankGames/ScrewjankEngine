@@ -1,6 +1,6 @@
 #include "BuildTool_Config_generated.hpp"
 
-#include "ModelBuilder.hpp"
+#include "MeshBuilder.hpp"
 #include "SceneBuilder.hpp"
 
 #include <cstdlib>
@@ -19,8 +19,8 @@ int main()
 	sj::build::TextureBuilder texture_builder;
 	texture_builder.BuildAll();
 
-	sj::build::ModelBuilder model_builder;
-	model_builder.BuildAll();
+	sj::build::MeshBuilder mesh_builder;
+	mesh_builder.BuildAll();
 
 	sj::build::SceneBuilder scene_builder;
 	scene_builder.BuildAll();

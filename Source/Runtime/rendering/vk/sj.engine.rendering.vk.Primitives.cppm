@@ -17,16 +17,6 @@ export namespace sj
 
 export namespace sj::vk
 {
-
-    struct AllocatedImage
-    {
-        VkImage image;
-        VkImageView imageView;
-        VmaAllocation allocation;
-        VkExtent3D imageExtent;
-        VkFormat imageFormat;
-    };
-
     class DescriptorLayoutBuilder
     {
     public:

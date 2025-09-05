@@ -181,8 +181,8 @@ export namespace sj::vk
                 vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
             }
 
-            vkDestroyImageView(device.GetLogicalDevice(), m_depthImage.imageView, sj::g_vkAllocationFns);
-            vmaDestroyImage(device.GetAllocator(), m_depthImage.image, m_depthImage.allocation);
+            vkDestroyImageView(device.GetLogicalDevice(), m_depthImageView, sj::g_vkAllocationFns);
+            m_depthImage.DeInit(device.GetAllocator());
 
             for(VkImageView view : m_imageViews)
             {
@@ -192,9 +192,8 @@ export namespace sj::vk
             vkDestroySwapchainKHR(device.GetLogicalDevice(), m_swapChain, sj::g_vkAllocationFns);
         }
 
-        void Recreate(const sj::vk::RenderDevice& device,
-                      VkSurfaceKHR renderingSurface,
-                      Window* window )
+        void
+        Recreate(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, Window* window)
         {
             // Window is minimized. Can't recreate swap chain.
             if(Window::GetInstance()->GetViewportSize().Width == 0 ||
@@ -280,18 +279,15 @@ export namespace sj::vk
             allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
             VkExtent3D extent = {GetExtent().width, GetExtent().height, 1};
-            m_depthImage = sj::vk::CreateImage(device.GetLogicalDevice(),
-                                               device.GetAllocator(),
-                                               allocInfo,
-                                               extent,
-                                               depthFormat,
-                                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                               VK_IMAGE_TILING_OPTIMAL);
+            m_depthImage = sj::vk::ImageResource(device.GetAllocator(),
+                                                 allocInfo,
+                                                 extent,
+                                                 depthFormat,
+                                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                                 VK_IMAGE_TILING_OPTIMAL);
 
-            m_depthImage.imageView = CreateImageView(device.GetLogicalDevice(),
-                                                     m_depthImage.image,
-                                                     depthFormat,
-                                                     VK_IMAGE_ASPECT_DEPTH_BIT);
+            m_depthImageView =
+                m_depthImage.MakeImageView(device.GetLogicalDevice(), VK_IMAGE_ASPECT_DEPTH_BIT);
         }
 
         bool m_isInitialized = false;
@@ -317,7 +313,8 @@ export namespace sj::vk
         VkExtent2D m_imageExtent = {};
 
         /** Depth buffer resources */
-        AllocatedImage m_depthImage;
+        ImageResource m_depthImage;
+        VkImageView m_depthImageView = VK_NULL_HANDLE;
     };
 
 } // namespace sj::vk

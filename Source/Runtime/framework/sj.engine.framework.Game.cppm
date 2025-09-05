@@ -28,8 +28,6 @@ import sj.engine.ecs.systems.CameraSystem;
 import sj.engine.ecs.systems.InputSystem;
 
 import sj.engine.rendering.Renderer;
-import sj.engine.rendering.Renderer2;
-
 
 export namespace sj
 {

@@ -1,9 +1,9 @@
 // Parent Include
-#include "ModelBuilder.hpp"
+#include "MeshBuilder.hpp"
 
 // SJ Includes
-#include <ScrewjankDataDefinitions/Assets/Model.hpp>
 #include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // Library Includes
 #include <tiny_obj_loader.h>
@@ -14,10 +14,12 @@
 #include <limits>
 #include <fstream>
 
+import sj.datadefs.assets.Mesh;
+
 namespace sj::build
 {
 void ExtractBuffers(const char* inputFilePath,
-                    std::vector<Vertex>& out_verts,
+                    std::vector<MeshVertex>& out_verts,
                     std::vector<uint16_t>& out_indices)
 {
     tinyobj::attrib_t attrib;
@@ -28,7 +30,7 @@ void ExtractBuffers(const char* inputFilePath,
     bool success = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, inputFilePath);
     (void)success;
     // SJ_ASSERT(success,
-    //           "Failed to load model {}.\n warn: {}\n err: {}",
+    //           "Failed to load mesh {}.\n warn: {}\n err: {}",
     //           inputFilePath,
     //           warn.c_str(),
     //           err.c_str());
@@ -36,13 +38,13 @@ void ExtractBuffers(const char* inputFilePath,
     out_verts.reserve(attrib.vertices.size() / 3);
     out_indices.reserve(out_verts.capacity());
 
-    std::unordered_map<Vertex, uint16_t> uniqueVertices {};
+    std::unordered_map<MeshVertex, uint16_t> uniqueVertices {};
 
     for(const tinyobj::shape_t& shape : shapes)
     {
         for(const tinyobj::index_t& index : shape.mesh.indices)
         {
-            Vertex vertex {};
+            MeshVertex vertex {};
 
             vertex.pos = {.x=attrib.vertices[3 * index.vertex_index + 0],
                           .y=attrib.vertices[3 * index.vertex_index + 1],
@@ -66,30 +68,30 @@ void ExtractBuffers(const char* inputFilePath,
               "Index count out of range of uint16 for index buffers")
 }
 
-bool ModelBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const 
+bool MeshBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const 
 {
-    std::vector<Vertex> verts;
+    std::vector<MeshVertex> verts;
     std::vector<uint16_t> indices;
     ExtractBuffers(item.c_str(), verts, indices);
 
-    const size_t vertexMemSize = (sizeof(Vertex) * verts.size());
+    const size_t vertexMemSize = (sizeof(MeshVertex) * verts.size());
     const size_t indexMemSize = (sizeof(uint16_t) * indices.size());
     
-    Model model{};
-    model.type = AssetType::kModel;
+    MeshHeader mesh{};
+    mesh.type = AssetType::kMesh;
 
-    SJ_ASSERT(verts.size() <= std::numeric_limits<decltype(Model::numVerts)>::max(),
-              "Too many vertices to fit in Model::NumVerts");
-    model.numVerts = static_cast<decltype(Model::numVerts)>(verts.size());
+    SJ_ASSERT(verts.size() <= std::numeric_limits<decltype(MeshHeader::numVerts)>::max(),
+              "Too many vertices to fit in Mesh::NumVerts");
+    mesh.numVerts = static_cast<decltype(MeshHeader::numVerts)>(verts.size());
 
-    SJ_ASSERT(indices.size() <= std::numeric_limits<decltype(Model::numIndices)>::max(),
-            "Too many vertices to fit in Model::NumVerts");
-    model.numIndices = static_cast<decltype(Model::numIndices)>(indices.size());
+    SJ_ASSERT(indices.size() <= std::numeric_limits<decltype(MeshHeader::numIndices)>::max(),
+            "Too many vertices to fit in Mesh::NumVerts");
+    mesh.numIndices = static_cast<decltype(MeshHeader::numIndices)>(indices.size());
 
     std::ofstream outputFile;
     outputFile.open(output_path, std::ios::out | std::ios::binary);
     SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", output_path.c_str());
-    outputFile.write(reinterpret_cast<char*>(&model), sizeof(model));
+    outputFile.write(reinterpret_cast<char*>(&mesh), sizeof(mesh));
 
     outputFile.write(reinterpret_cast<char*>(verts.data()), vertexMemSize);
     outputFile.write(reinterpret_cast<char*>(indices.data()), indexMemSize);

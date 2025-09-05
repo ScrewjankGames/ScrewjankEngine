@@ -3,8 +3,6 @@ module;
 // Screwjank Headers
 #include <ScrewjankEngine/framework/Window.hpp>
 
-#include <ScrewjankDataDefinitions/Assets/Model.hpp>
-
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
@@ -30,6 +28,7 @@ import sj.engine.rendering.vk;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs.assets.Texture;
+import sj.datadefs.assets.Mesh;
 import sj.std.containers.vector;
 import sj.std.math;
 import sj.std.memory.literals;
@@ -82,11 +81,6 @@ export namespace sj
 
             LoadDummyModel();
             CreateDummyTextureImage();
-
-            m_dummyTextureImage.imageView = CreateImageView(m_renderDevice.GetLogicalDevice(),
-                                                            m_dummyTextureImage.image,
-                                                            m_dummyTextureImage.imageFormat,
-                                                            VK_IMAGE_ASPECT_COLOR_BIT);
 
             CreateDummyTextureSampler();
 
@@ -156,14 +150,16 @@ export namespace sj
             vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
             vkDestroyCommandPool(logicalDevice, m_immediateCommandPool, sj::g_vkAllocationFns);
 
-            DestroyRenderTarget();
+            vkDestroyImageView(m_renderDevice.GetLogicalDevice(),
+                               m_drawImageView,
+                               g_vkAllocationFns);
+            m_drawImage.DeInit(m_renderDevice.GetAllocator());
+
             m_swapChain.DeInit(m_renderDevice);
 
             vkDestroySampler(logicalDevice, m_dummyTextureSampler, sj::g_vkAllocationFns);
-            vkDestroyImageView(logicalDevice, m_dummyTextureImage.imageView, sj::g_vkAllocationFns);
-            vmaDestroyImage(m_renderDevice.GetAllocator(),
-                            m_dummyTextureImage.image,
-                            m_dummyTextureImage.allocation);
+            vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
+            m_dummyTextureImage.DeInit(m_renderDevice.GetAllocator());
 
             vkDestroyDescriptorPool(logicalDevice,
                                     m_globalUBODescriptorPool,
@@ -180,13 +176,8 @@ export namespace sj
 
             m_defaultPipeline.DeInit(logicalDevice);
 
-            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
-                             m_dummyVertexBuffer.buffer,
-                             m_dummyVertexBuffer.allocation);
-
-            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
-                             m_dummyIndexBuffer.buffer,
-                             m_dummyIndexBuffer.allocation);
+            m_dummyVertexBuffer.DeInit(m_renderDevice.GetAllocator());
+            m_dummyIndexBuffer.DeInit(m_renderDevice.GetAllocator());
 
             // Important: All things attached to the device need to be torn down first
             m_renderDevice.DeInit();
@@ -271,7 +262,7 @@ export namespace sj
 
             vkResetCommandBuffer(currCommandBuffer, 0);
 
-            UpdateUniformBuffer(m_frameData.globalUniformBuffers[frameIdx].info.pMappedData,
+            UpdateUniformBuffer(m_frameData.globalUniformBuffers[frameIdx].GetMappedMemory(),
                                 cameraMatrix);
 
             RecordDrawCommands(currCommandBuffer, frameIdx, imageIndex);
@@ -527,31 +518,15 @@ export namespace sj
             drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
             drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            m_drawImage = sj::vk::CreateImage(m_renderDevice.GetLogicalDevice(),
-                                              m_renderDevice.GetAllocator(),
-                                              renderImageAllocInfo,
-                                              drawImageExtent,
-                                              VK_FORMAT_R16G16B16A16_SFLOAT,
-                                              drawImageUsages,
-                                              VK_IMAGE_TILING_OPTIMAL);
+            m_drawImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+                                                renderImageAllocInfo,
+                                                drawImageExtent,
+                                                VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                drawImageUsages,
+                                                VK_IMAGE_TILING_OPTIMAL);
 
-            VkImageViewCreateInfo renderImageViewInfo =
-                sj::vk::MakeImageViewCreateInfo(m_drawImage.imageFormat,
-                                                m_drawImage.image,
-                                                VK_IMAGE_ASPECT_COLOR_BIT);
-
-            VkResult res = vkCreateImageView(m_renderDevice.GetLogicalDevice(),
-                                             &renderImageViewInfo,
-                                             g_vkAllocationFns,
-                                             &m_drawImage.imageView);
-        }
-
-        void DestroyRenderTarget()
-        {
-            vkDestroyImageView(m_renderDevice.GetLogicalDevice(), m_drawImage.imageView, nullptr);
-            vmaDestroyImage(m_renderDevice.GetAllocator(),
-                            m_drawImage.image,
-                            m_drawImage.allocation);
+            m_drawImageView = m_drawImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
+                                                        VK_IMAGE_ASPECT_COLOR_BIT);
         }
 
         void CreateCommandPools()
@@ -599,35 +574,31 @@ export namespace sj
             modelFile.open("Data/Engine/viking_room.sj_mesh", std::ios::in | std::ios::binary);
             SJ_ASSERT(modelFile.is_open(), "Failed to load model file!");
 
-            Model header;
+            MeshHeader header;
             modelFile.read(reinterpret_cast<char*>(&header), sizeof(header));
 
             // Read verts into GPU memory
             {
-                VkDeviceSize bufferSizeBytes = sizeof(Vertex) * header.numVerts;
-                // Stage vertex data in host visible buffer
+                VkDeviceSize bufferSizeBytes = sizeof(MeshVertex) * header.numVerts;
 
+                // Stage vertex data in host visible buffer
                 sj::vk::BufferResource stagingBuffer =
-                    sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
-                                         bufferSizeBytes,
-                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                             VMA_ALLOCATION_CREATE_MAPPED_BIT);
+                    sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), bufferSizeBytes);
 
                 // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+                modelFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
                                bufferSizeBytes);
 
-                m_dummyVertexBuffer = sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
-                                                           bufferSizeBytes,
-                                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+                m_dummyVertexBuffer = sj::vk::BufferResource(m_renderDevice.GetAllocator(),
+                                                             bufferSizeBytes,
+                                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-                CopyBuffer(stagingBuffer.buffer, m_dummyVertexBuffer.buffer, bufferSizeBytes);
+                CopyBuffer(stagingBuffer.GetBuffer(),
+                           m_dummyVertexBuffer.GetBuffer(),
+                           bufferSizeBytes);
 
-                vmaDestroyBuffer(m_renderDevice.GetAllocator(),
-                                 stagingBuffer.buffer,
-                                 stagingBuffer.allocation);
+                stagingBuffer.DeInit(m_renderDevice.GetAllocator());
             }
 
             // Read Indices into GPU memory
@@ -637,27 +608,23 @@ export namespace sj
                 VkDeviceSize bufferSizeBytes = sizeof(uint16_t) * header.numIndices;
 
                 sj::vk::BufferResource stagingBuffer =
-                    sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
-                                         bufferSizeBytes,
-                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                             VMA_ALLOCATION_CREATE_MAPPED_BIT);
+                    sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), bufferSizeBytes);
 
                 // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+                modelFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
                                bufferSizeBytes);
 
-                m_dummyIndexBuffer = sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
-                                                          bufferSizeBytes,
-                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                m_dummyIndexBuffer = sj::vk::BufferResource(m_renderDevice.GetAllocator(),
+                                                            bufferSizeBytes,
+                                                            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                                VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-                CopyBuffer(stagingBuffer.buffer, m_dummyIndexBuffer.buffer, bufferSizeBytes);
+                CopyBuffer(stagingBuffer.GetBuffer(),
+                           m_dummyIndexBuffer.GetBuffer(),
+                           bufferSizeBytes);
 
-                vmaDestroyBuffer(m_renderDevice.GetAllocator(),
-                                 stagingBuffer.buffer,
-                                 stagingBuffer.allocation);
+                stagingBuffer.DeInit(m_renderDevice.GetAllocator());
             }
 
             modelFile.close();
@@ -672,14 +639,10 @@ export namespace sj
 
             VkDeviceSize imageSizeBytes = header.width * header.height * 4;
             sj::vk::BufferResource stagingBuffer =
-                sj::vk::CreateBuffer(m_renderDevice.GetAllocator(),
-                                     imageSizeBytes,
-                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                         VMA_ALLOCATION_CREATE_MAPPED_BIT);
+                sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), imageSizeBytes);
 
             // Read texture data straight into GPU memory
-            textureFile.read(reinterpret_cast<char*>(stagingBuffer.info.pMappedData),
+            textureFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
                              imageSizeBytes);
             textureFile.close();
 
@@ -693,30 +656,31 @@ export namespace sj
                                       1};
 
             m_dummyTextureImage =
-                sj::vk::CreateImage(m_renderDevice.GetLogicalDevice(),
-                                    m_renderDevice.GetAllocator(),
-                                    allocCreateInfo,
-                                    imageExtent,
-                                    VK_FORMAT_R8G8B8A8_SRGB,
-                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                    VK_IMAGE_TILING_OPTIMAL);
+                sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+                                      allocCreateInfo,
+                                      imageExtent,
+                                      VK_FORMAT_R8G8B8A8_SRGB,
+                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                      VK_IMAGE_TILING_OPTIMAL);
 
-            TransitionImageLayout(m_dummyTextureImage.image,
+            TransitionImageLayout(m_dummyTextureImage.GetImage(),
                                   VK_IMAGE_LAYOUT_UNDEFINED,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-            CopyBufferToImage(stagingBuffer.buffer,
-                              m_dummyTextureImage.image,
+            CopyBufferToImage(stagingBuffer.GetBuffer(),
+                              m_dummyTextureImage.GetImage(),
                               header.width,
                               header.height);
 
-            TransitionImageLayout(m_dummyTextureImage.image,
+            TransitionImageLayout(m_dummyTextureImage.GetImage(),
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-            vmaDestroyBuffer(m_renderDevice.GetAllocator(),
-                             stagingBuffer.buffer,
-                             stagingBuffer.allocation);
+            stagingBuffer.DeInit(m_renderDevice.GetAllocator());
+
+            m_dummyTextureImageView =
+                m_dummyTextureImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
+                                                  VK_IMAGE_ASPECT_COLOR_BIT);
 
             return;
         }
@@ -771,7 +735,7 @@ export namespace sj
             {
                 // This might not actaully end up being host visible:
                 // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/usage_patterns.html
-                m_frameData.globalUniformBuffers[i] = sj::vk::CreateBuffer(
+                m_frameData.globalUniformBuffers[i] = sj::vk::BufferResource(
                     m_renderDevice.GetAllocator(),
                     bufferSize,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -850,13 +814,13 @@ export namespace sj
             for(size_t i = 0; i < kMaxFramesInFlight; i++)
             {
                 VkDescriptorBufferInfo bufferInfo {};
-                bufferInfo.buffer = m_frameData.globalUniformBuffers[i].buffer;
+                bufferInfo.buffer = m_frameData.globalUniformBuffers[i].GetBuffer();
                 bufferInfo.offset = 0;
                 bufferInfo.range = sizeof(GlobalUniformBufferObject);
 
                 VkDescriptorImageInfo imageInfo {};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = m_dummyTextureImage.imageView;
+                imageInfo.imageView = m_dummyTextureImageView;
                 imageInfo.sampler = m_dummyTextureSampler;
 
                 std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
@@ -952,7 +916,7 @@ export namespace sj
                 sj::vk::MakeImageSubResourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 
             vkCmdClearColorImage(cmd,
-                                 m_drawImage.image,
+                                 m_drawImage.GetImage(),
                                  VK_IMAGE_LAYOUT_GENERAL,
                                  &clearValue,
                                  1,
@@ -962,13 +926,16 @@ export namespace sj
         void DrawGeometry(VkCommandBuffer cmd)
         {
             VkRenderingAttachmentInfo colorAttachment =
-                sj::vk::MakeAttachmentInfo(m_drawImage.imageView,
+                sj::vk::MakeAttachmentInfo(m_drawImageView,
                                            nullptr,
                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
             VkRenderingInfo renderInfo = sj::vk::MakeRenderingInfo(
-                {m_drawImage.imageExtent.width, m_drawImage.imageExtent.height},
+                {m_drawImage.GetExtent().width, m_drawImage.GetExtent().height},
                 &colorAttachment,
                 nullptr);
+
+            vkCmdBeginRendering(cmd, &renderInfo);
 
             vkCmdBindPipeline(cmd,
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1002,14 +969,14 @@ export namespace sj
 
             // Make swapchain image writable
             sj::vk::TransitionImage(buffer,
-                                    m_drawImage.image,
+                                    m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_GENERAL);
 
             DrawBackground(buffer);
 
             sj::vk::TransitionImage(buffer,
-                                    m_drawImage.image,
+                                    m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_GENERAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
@@ -1017,7 +984,7 @@ export namespace sj
 
             // transition the draw image and the swapchain image into their correct transfer layouts
             sj::vk::TransitionImage(buffer,
-                                    m_drawImage.image,
+                                    m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
@@ -1029,7 +996,7 @@ export namespace sj
 
             // Copy working image into swapchain
             sj::vk::CopyImageToImage(buffer,
-                                     m_drawImage.image,
+                                     m_drawImage.GetImage(),
                                      swapChainImage,
                                      m_drawExtent,
                                      m_swapChain.GetExtent());
@@ -1070,7 +1037,9 @@ export namespace sj
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_vkInstance {};
 
-        sj::vk::AllocatedImage m_drawImage = {};
+        sj::vk::ImageResource m_drawImage;
+        VkImageView m_drawImageView;
+
         VkExtent2D m_drawExtent = {};
 
         /** Handle to manage Vulkan's debug callbacks */
@@ -1095,7 +1064,8 @@ export namespace sj
         uint64_t m_dummyIndexBufferIndexCount {};
         sj::vk::BufferResource m_dummyIndexBuffer {};
 
-        sj::vk::AllocatedImage m_dummyTextureImage {};
+        sj::vk::ImageResource m_dummyTextureImage {};
+        VkImageView m_dummyTextureImageView;
         VkSampler m_dummyTextureSampler {};
 
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout {};
@@ -1176,9 +1146,7 @@ export namespace sj
                                        sj::g_vkAllocationFns);
                     vkDestroyFence(logicalDevice, inFlightFences[i], sj::g_vkAllocationFns);
 
-                    vmaDestroyBuffer(allocator,
-                                     globalUniformBuffers[i].buffer,
-                                     globalUniformBuffers[i].allocation);
+                    globalUniformBuffers[i].DeInit(allocator);
                 }
             }
         } m_frameData {};
