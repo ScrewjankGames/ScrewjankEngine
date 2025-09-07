@@ -13,7 +13,7 @@ export namespace sj::vk
     public:
         BufferResource() = default;
         BufferResource(VmaAllocator allocator,
-                       size_t bufferSizeBytes,
+                       VkDeviceSize bufferSizeBytes,
                        VkBufferUsageFlags bufferUsage,
                        VmaAllocationCreateFlags allocationFlags = {},
                        VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO)
@@ -22,7 +22,7 @@ export namespace sj::vk
         }
 
         void Init(VmaAllocator allocator,
-                  size_t bufferSizeBytes,
+                  VkDeviceSize bufferSizeBytes,
                   VkBufferUsageFlags bufferUsage,
                   VmaAllocationCreateFlags allocationFlags = {},
                   VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO)

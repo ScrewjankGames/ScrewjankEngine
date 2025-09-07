@@ -6,6 +6,7 @@
 #include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // Library Includes
+#include <ios>
 #include <tiny_obj_loader.h>
 
 // STD Includes
@@ -18,9 +19,11 @@ import sj.datadefs.assets.Mesh;
 
 namespace sj::build
 {
+using IndexType = decltype(tinyobj::index_t::vertex_index);
+
 void ExtractBuffers(const char* inputFilePath,
                     std::vector<MeshVertex>& out_verts,
-                    std::vector<uint16_t>& out_indices)
+                    std::vector<IndexType>& out_indices)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -38,7 +41,7 @@ void ExtractBuffers(const char* inputFilePath,
     out_verts.reserve(attrib.vertices.size() / 3);
     out_indices.reserve(out_verts.capacity());
 
-    std::unordered_map<MeshVertex, uint16_t> uniqueVertices {};
+    std::unordered_map<MeshVertex, IndexType> uniqueVertices {};
 
     for(const tinyobj::shape_t& shape : shapes)
     {
@@ -57,7 +60,7 @@ void ExtractBuffers(const char* inputFilePath,
 
             if(uniqueVertices.count(vertex) == 0)
             {
-                uniqueVertices[vertex] = static_cast<uint16_t>(out_verts.size());
+                uniqueVertices[vertex] = static_cast<IndexType>(out_verts.size());
                 out_verts.push_back(vertex);
             }
 
@@ -71,14 +74,15 @@ void ExtractBuffers(const char* inputFilePath,
 bool MeshBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const 
 {
     std::vector<MeshVertex> verts;
-    std::vector<uint16_t> indices;
+    std::vector<IndexType> indices;
     ExtractBuffers(item.c_str(), verts, indices);
 
     const size_t vertexMemSize = (sizeof(MeshVertex) * verts.size());
-    const size_t indexMemSize = (sizeof(uint16_t) * indices.size());
+    const size_t indexMemSize = (sizeof(IndexType) * indices.size());
     
     MeshHeader mesh{};
     mesh.type = AssetType::kMesh;
+    mesh.indexSize = sizeof(IndexType);
 
     SJ_ASSERT(verts.size() <= std::numeric_limits<decltype(MeshHeader::numVerts)>::max(),
               "Too many vertices to fit in Mesh::NumVerts");
@@ -93,8 +97,11 @@ bool MeshBuilder::BuildItem(const std::filesystem::path& item, const std::filesy
     SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", output_path.c_str());
     outputFile.write(reinterpret_cast<char*>(&mesh), sizeof(mesh));
 
-    outputFile.write(reinterpret_cast<char*>(verts.data()), vertexMemSize);
-    outputFile.write(reinterpret_cast<char*>(indices.data()), indexMemSize);
+    SJ_ASSERT(vertexMemSize < std::numeric_limits<std::streamsize>::max(), "Vertex blob too big for single write!");
+    SJ_ASSERT(indexMemSize < std::numeric_limits<std::streamsize>::max(), "Index blob too big for single write!");
+
+    outputFile.write(reinterpret_cast<char*>(verts.data()), static_cast<std::streamsize>(vertexMemSize));
+    outputFile.write(reinterpret_cast<char*>(indices.data()), static_cast<std::streamsize>(indexMemSize));
 
     outputFile.close();
 

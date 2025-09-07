@@ -25,8 +25,9 @@ export namespace sj
     struct MeshHeader
     {
         AssetType type = AssetType::kMesh;
-        int32_t numVerts = 0;
-        int32_t numIndices = 0;
+        uint8_t indexSize = 0;
+        uint32_t numVerts = 0;
+        uint32_t numIndices = 0;
     };
 } // namespace sj
 

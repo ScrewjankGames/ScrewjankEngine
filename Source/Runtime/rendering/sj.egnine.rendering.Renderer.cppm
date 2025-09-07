@@ -78,16 +78,14 @@ export namespace sj
                                    "Data/Engine/Shaders/Default.frag.spv");
 
             CreateCommandPools();
+            m_immediateCommandContext.Init(m_renderDevice.GetLogicalDevice(),
+                                           m_renderDevice.GetGraphicsQueueIndex(),
+                                           m_renderDevice.GetGraphicsQueue());
 
-            VkFenceCreateInfo fenceInfo {};
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-            vkCreateFence(m_renderDevice.GetLogicalDevice(),
-                          &fenceInfo,
-                          sj::g_vkAllocationFns,
-                          &m_immediateFence);
+            m_dummyMeshBuffers.Init("Data/Engine/viking_room.sj_mesh",
+                                    m_renderDevice.GetAllocator(),
+                                    m_immediateCommandContext);
 
-            LoadDummyModel();
             CreateDummyTextureImage();
             CreateDummyTextureSampler();
 
@@ -140,14 +138,11 @@ export namespace sj
             ImGui_ImplVulkan_Shutdown();
 #endif // !SJ_GOLD
 
-            vkDestroyFence(m_renderDevice.GetLogicalDevice(),
-                           m_immediateFence,
-                           sj::g_vkAllocationFns);
+            m_immediateCommandContext.DeInit();
 
             m_frameData.DeInit(m_renderDevice);
 
             vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
-            vkDestroyCommandPool(logicalDevice, m_immediateCommandPool, sj::g_vkAllocationFns);
 
             vkDestroyImageView(m_renderDevice.GetLogicalDevice(),
                                m_drawImageView,
@@ -175,8 +170,7 @@ export namespace sj
 
             m_defaultPipeline.DeInit(logicalDevice);
 
-            m_dummyVertexBuffer.DeInit(m_renderDevice.GetAllocator());
-            m_dummyIndexBuffer.DeInit(m_renderDevice.GetAllocator());
+            m_dummyMeshBuffers.DeInit(m_renderDevice.GetAllocator());
 
             // Important: All things attached to the device need to be torn down first
             m_renderDevice.DeInit();
@@ -415,84 +409,6 @@ export namespace sj
                                                &m_graphicsCommandPool);
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
-
-            res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
-                                      &poolInfo,
-                                      nullptr,
-                                      &m_immediateCommandPool);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create immediate command pool");
-
-            VkCommandBufferAllocateInfo immCommandInfo =
-                sj::vk::MakeCommandBufferAllocateInfo(m_immediateCommandPool, 1);
-            res = vkAllocateCommandBuffers(m_renderDevice.GetLogicalDevice(),
-                                           &immCommandInfo,
-                                           &m_immediateCommandBuffer);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate immediate command buffer");
-        }
-
-        void LoadDummyModel()
-        {
-            std::ifstream modelFile;
-            modelFile.open("Data/Engine/viking_room.sj_mesh", std::ios::in | std::ios::binary);
-            SJ_ASSERT(modelFile.is_open(), "Failed to load model file!");
-
-            MeshHeader header;
-            modelFile.read(reinterpret_cast<char*>(&header), sizeof(header));
-
-            // Read verts into GPU memory
-            {
-                VkDeviceSize bufferSizeBytes = sizeof(MeshVertex) * header.numVerts;
-
-                // Stage vertex data in host visible buffer
-                sj::vk::BufferResource stagingBuffer =
-                    sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), bufferSizeBytes);
-
-                // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
-                               bufferSizeBytes);
-
-                m_dummyVertexBuffer = sj::vk::BufferResource(m_renderDevice.GetAllocator(),
-                                                             bufferSizeBytes,
-                                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-                ImmediateSubmit([src = stagingBuffer.GetBuffer(),
-                                 dst = m_dummyVertexBuffer.GetBuffer(),
-                                 bufferSizeBytes](VkCommandBuffer cmd) {
-                    sj::vk::CopyBuffer(cmd, src, dst, bufferSizeBytes);
-                });
-
-                stagingBuffer.DeInit(m_renderDevice.GetAllocator());
-            }
-
-            // Read Indices into GPU memory
-            {
-                m_dummyIndexBufferIndexCount = header.numIndices;
-
-                VkDeviceSize bufferSizeBytes = sizeof(uint16_t) * header.numIndices;
-
-                sj::vk::BufferResource stagingBuffer =
-                    sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), bufferSizeBytes);
-
-                // Copy data from file to GPU
-                modelFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
-                               bufferSizeBytes);
-
-                m_dummyIndexBuffer = sj::vk::BufferResource(m_renderDevice.GetAllocator(),
-                                                            bufferSizeBytes,
-                                                            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                                                VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                ImmediateSubmit([src = stagingBuffer.GetBuffer(),
-                                 dst = m_dummyIndexBuffer.GetBuffer(),
-                                 bufferSizeBytes](VkCommandBuffer cmd) {
-                    sj::vk::CopyBuffer(cmd, src, dst, bufferSizeBytes);
-                });
-
-                stagingBuffer.DeInit(m_renderDevice.GetAllocator());
-            }
-
-            modelFile.close();
         }
 
         void CreateDummyTextureImage()
@@ -529,20 +445,20 @@ export namespace sj
                                       VK_IMAGE_TILING_OPTIMAL);
 
             VkImage textureImage = m_dummyTextureImage.GetImage();
-            ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
+            m_immediateCommandContext.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
                 sj::vk::TransitionImage(cmd,
                                         textureImage,
                                         VK_IMAGE_LAYOUT_UNDEFINED,
                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             });
 
-            ImmediateSubmit([buf = stagingBuffer.GetBuffer(),
-                             img = m_dummyTextureImage.GetImage(),
-                             header](VkCommandBuffer cmd) {
+            m_immediateCommandContext.ImmediateSubmit([buf = stagingBuffer.GetBuffer(),
+                                                       img = m_dummyTextureImage.GetImage(),
+                                                       header](VkCommandBuffer cmd) {
                 sj::vk::CopyBufferToImage(cmd, buf, img, header.width, header.height);
             });
 
-            ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
+            m_immediateCommandContext.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
                 sj::vk::TransitionImage(cmd,
                                         textureImage,
                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -592,9 +508,9 @@ export namespace sj
 
             sj::vk::DescriptorLayoutBuilder builder(&scope.get_allocator());
             builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-            builder.AddBinding(1,
-                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                               VK_SHADER_STAGE_FRAGMENT_BIT);
+            // builder.AddBinding(1,
+            //                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            //                    VK_SHADER_STAGE_FRAGMENT_BIT);
 
             m_globalUBODescriptorSetLayout =
                 builder.Build(m_renderDevice.GetLogicalDevice(), nullptr);
@@ -696,23 +612,22 @@ export namespace sj
                 imageInfo.imageView = m_dummyTextureImageView;
                 imageInfo.sampler = m_dummyTextureSampler;
 
-                std::array<VkWriteDescriptorSet, 2> descriptorWrites {};
+                std::array descriptorWrites {
+                    VkWriteDescriptorSet {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                          .dstSet = m_frameData.globalUBODescriptorSets[i],
+                                          .dstBinding = 0,
+                                          .dstArrayElement = 0,
+                                          .descriptorCount = 1,
+                                          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          .pBufferInfo = &bufferInfo}};
 
-                descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrites[0].dstSet = m_frameData.globalUBODescriptorSets[i];
-                descriptorWrites[0].dstBinding = 0;
-                descriptorWrites[0].dstArrayElement = 0;
-                descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                descriptorWrites[0].descriptorCount = 1;
-                descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-                descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrites[1].dstSet = m_frameData.globalUBODescriptorSets[i];
-                descriptorWrites[1].dstBinding = 1;
-                descriptorWrites[1].dstArrayElement = 0;
-                descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                descriptorWrites[1].descriptorCount = 1;
-                descriptorWrites[1].pImageInfo = &imageInfo;
+                // descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                // descriptorWrites[1].dstSet = m_frameData.globalUBODescriptorSets[i];
+                // descriptorWrites[1].dstBinding = 1;
+                // descriptorWrites[1].dstArrayElement = 0;
+                // descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                // descriptorWrites[1].descriptorCount = 1;
+                // descriptorWrites[1].pImageInfo = &imageInfo;
 
                 vkUpdateDescriptorSets(logicalDevice,
                                        static_cast<uint32_t>(descriptorWrites.size()),
@@ -720,45 +635,6 @@ export namespace sj
                                        0,
                                        nullptr);
             }
-        }
-
-        template <class Fn>
-            requires std::invocable<Fn, VkCommandBuffer>
-        void ImmediateSubmit(Fn&& function)
-        {
-            VkResult res = vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &m_immediateFence);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to reset immediate render fence!");
-
-            res = vkResetCommandBuffer(m_immediateCommandBuffer, 0);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to reset immediate mode command buffer!");
-
-            VkCommandBuffer cmd = m_immediateCommandBuffer;
-
-            VkCommandBufferBeginInfo beginInfo =
-                sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-            res = vkBeginCommandBuffer(cmd, &beginInfo);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to start immediate mode command buffer!");
-
-            std::forward<Fn>(function)(cmd);
-
-            res = vkEndCommandBuffer(cmd);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to finalize immediate mode command buffer!");
-
-            VkCommandBufferSubmitInfo submitCommandInfo = sj::vk::MakeCommandBufferSubmitInfo(cmd);
-
-            VkSubmitInfo2 submitInfo = sj::vk::MakeSubmitInfo(&submitCommandInfo, nullptr, nullptr);
-
-            res =
-                vkQueueSubmit2(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, m_immediateFence);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to submit immediate command buffer!");
-
-            res = vkWaitForFences(m_renderDevice.GetLogicalDevice(),
-                                  1,
-                                  &m_immediateFence,
-                                  true,
-                                  9999999999);
-            SJ_ASSERT(res == VK_SUCCESS, "Immediate mode wait for fence timed out!");
         }
 
 #ifndef SJ_GOLD
@@ -814,6 +690,10 @@ export namespace sj
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
                               m_defaultPipeline.GetPipeline());
 
+            //            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            //            m_defaultPipeline.GetLayout(), 0,)
+
+
             VkViewport viewport {};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
@@ -828,7 +708,14 @@ export namespace sj
             scissor.extent = m_swapChain.GetExtent();
             vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-            vkCmdDrawIndexed(cmd, static_cast<uint32_t>(m_dummyIndexBufferIndexCount), 1, 0, 0, 0);
+            std::array vertexBuffers = {m_dummyMeshBuffers.GetVertexBuffer()};
+            std::array<VkDeviceSize, 1> offsets = {0};
+            vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers.data(), offsets.data());
+            vkCmdBindIndexBuffer(cmd,
+                                 m_dummyMeshBuffers.GetIndexBuffer(),
+                                 0,
+                                 m_dummyMeshBuffers.GetIndexType());
+            vkCmdDrawIndexed(cmd, m_dummyMeshBuffers.GetIndexCount(), 1, 0, 0, 0);
 
             vkCmdEndRendering(cmd);
         }
@@ -853,7 +740,7 @@ export namespace sj
                                     VK_IMAGE_LAYOUT_GENERAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-            // DrawGeometry(buffer);
+            //DrawGeometry(buffer);
 
             // transition the draw image and the swapchain image into their correct transfer layouts
             sj::vk::TransitionImage(buffer,
@@ -932,10 +819,7 @@ export namespace sj
 
         VkCommandPool m_graphicsCommandPool {};
 
-        sj::vk::BufferResource m_dummyVertexBuffer {};
-
-        uint64_t m_dummyIndexBufferIndexCount {};
-        sj::vk::BufferResource m_dummyIndexBuffer {};
+        sj::vk::MeshBuffers m_dummyMeshBuffers;
 
         sj::vk::ImageResource m_dummyTextureImage {};
         VkImageView m_dummyTextureImageView;
@@ -946,9 +830,7 @@ export namespace sj
 
         sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
 
-        VkFence m_immediateFence;
-        VkCommandBuffer m_immediateCommandBuffer;
-        VkCommandPool m_immediateCommandPool;
+        sj::vk::ImmediateCommandContext m_immediateCommandContext;
 
         /**
          * Data representing a render frames in flight

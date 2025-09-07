@@ -198,7 +198,7 @@ export namespace sj::vk
 
             pipelineInfo.pDynamicState = &dynamicInfo;
 
-            [[indeterminate]] VkPipeline newPipeline;
+            VkPipeline newPipeline; // [[indeterminate]];
             VkResult status = vkCreateGraphicsPipelines(device,
                                                         VK_NULL_HANDLE,
                                                         1,
@@ -213,15 +213,15 @@ export namespace sj::vk
     private:
         sj::dynamic_vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
-        VkPipelineInputAssemblyStateCreateInfo m_inputAssembly;
-        VkPipelineVertexInputStateCreateInfo m_vertextInput;
-        VkPipelineRasterizationStateCreateInfo m_rasterizer;
-        VkPipelineColorBlendAttachmentState m_colorBlendAttachment;
-        VkPipelineMultisampleStateCreateInfo m_multisampling;
-        VkPipelineLayout m_pipelineLayout;
-        VkPipelineDepthStencilStateCreateInfo m_depthStencil;
-        VkPipelineRenderingCreateInfo m_renderInfo;
-        VkFormat m_colorAttachmentformat;
+        VkPipelineInputAssemblyStateCreateInfo m_inputAssembly{};
+        VkPipelineVertexInputStateCreateInfo m_vertextInput{};
+        VkPipelineRasterizationStateCreateInfo m_rasterizer{};
+        VkPipelineColorBlendAttachmentState m_colorBlendAttachment{};
+        VkPipelineMultisampleStateCreateInfo m_multisampling{};
+        VkPipelineLayout m_pipelineLayout{};
+        VkPipelineDepthStencilStateCreateInfo m_depthStencil{};
+        VkPipelineRenderingCreateInfo m_renderInfo{};
+        VkFormat m_colorAttachmentformat{};
     };
 
     class Pipeline
@@ -262,7 +262,7 @@ export namespace sj::vk
             builder.SetCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
             builder.SetMultiSamplingNone();
             builder.DisableBlending();
-            builder.DisableDepthTest(); // TODO: Re-enable
+            builder.EnableDepthTest();
 
             {
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo {};

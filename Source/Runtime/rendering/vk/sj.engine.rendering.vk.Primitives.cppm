@@ -104,7 +104,7 @@ export namespace sj::vk
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &layout;
 
-            [[indeterminate]] VkDescriptorSet set;
+            VkDescriptorSet set; // [[indeterminate]];
             VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &set);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor set!");
 
