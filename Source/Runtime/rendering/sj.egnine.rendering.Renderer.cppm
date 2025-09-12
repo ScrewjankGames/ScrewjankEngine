@@ -74,6 +74,7 @@ export namespace sj
 
             m_defaultPipeline.Init(m_renderDevice.GetLogicalDevice(),
                                    m_globalUBODescriptorSetLayout,
+                                   m_drawImage.GetImageFormat(),
                                    "Data/Engine/Shaders/Default.vert.spv",
                                    "Data/Engine/Shaders/Default.frag.spv");
 
@@ -112,8 +113,8 @@ export namespace sj
             init_info.PipelineCache = VK_NULL_HANDLE;
             init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
             init_info.Allocator = nullptr;
-            init_info.MinImageCount = kMaxFramesInFlight;
-            init_info.ImageCount = kMaxFramesInFlight;
+            init_info.MinImageCount = sj::vk::kMaxFramesInFlight;
+            init_info.ImageCount = sj::vk::kMaxFramesInFlight;
             init_info.CheckVkResultFn = CheckImguiVulkanResult;
 
             VkFormat swapchainImageFormat = m_swapChain.GetImageFormat();
@@ -214,16 +215,12 @@ export namespace sj
             ImGui::Render();
 #endif // !SJ_GOLD
 
-            const uint32_t frameIdx = m_frameCount % kMaxFramesInFlight;
-
-            VkCommandBuffer currCommandBuffer = m_frameData.commandBuffers[frameIdx];
-            VkFence currFence = m_frameData.inFlightFences[frameIdx];
-            VkSemaphore currImageAvailableSemaphore =
-                m_frameData.imageAvailableSemaphores[frameIdx];
+            const uint32_t frameIdx = m_frameCount % sj::vk::kMaxFramesInFlight;
+            sj::vk::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
 
             vkWaitForFences(m_renderDevice.GetLogicalDevice(),
                             1,
-                            &currFence,
+                            &currFrameData.fence,
                             VK_TRUE,
                             std::numeric_limits<uint64_t>::max());
 
@@ -232,7 +229,7 @@ export namespace sj
             VkResult res = vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
                                                  swapChain,
                                                  std::numeric_limits<uint64_t>::max(),
-                                                 currImageAvailableSemaphore,
+                                                 currFrameData.imgAvailableSemaphore,
                                                  VK_NULL_HANDLE,
                                                  &imageIndex);
 
@@ -251,21 +248,22 @@ export namespace sj
             }
 
             // Reset fence when we know we're going to be able to draw this frame
-            vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFence);
+            vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFrameData.fence);
 
-            vkResetCommandBuffer(currCommandBuffer, 0);
+            vkResetCommandBuffer(currFrameData.cmd, 0);
 
-            UpdateUniformBuffer(m_frameData.globalUniformBuffers[frameIdx].GetMappedMemory(),
-                                cameraMatrix);
+            UpdateUniformBuffer(currFrameData.globalUniformBuffer.GetMappedMemory(), cameraMatrix);
 
-            RecordDrawCommands(currCommandBuffer, frameIdx, imageIndex);
+            VkImage swapChainImage = m_swapChain.GetImage(imageIndex);
+            VkImageView swapChainImageView = m_swapChain.GetImageView(imageIndex);
+            RecordDrawCommands(currFrameData, swapChainImage, swapChainImageView);
 
             VkCommandBufferSubmitInfo submitCommandInfo =
-                sj::vk::MakeCommandBufferSubmitInfo(currCommandBuffer);
+                sj::vk::MakeCommandBufferSubmitInfo(currFrameData.cmd);
 
             VkSemaphoreSubmitInfo waitInfo =
                 sj::vk::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                                currImageAvailableSemaphore);
+                                                currFrameData.imgAvailableSemaphore);
 
             VkSemaphoreSubmitInfo signalInfo =
                 sj::vk::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
@@ -274,7 +272,10 @@ export namespace sj
             VkSubmitInfo2 submitInfo =
                 sj::vk::MakeSubmitInfo(&submitCommandInfo, &signalInfo, &waitInfo);
 
-            res = vkQueueSubmit2(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFence);
+            res = vkQueueSubmit2(m_renderDevice.GetGraphicsQueue(),
+                                 1,
+                                 &submitInfo,
+                                 currFrameData.fence);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
 
             VkPresentInfoKHR presentInfo {};
@@ -314,8 +315,6 @@ export namespace sj
         };
 
     private:
-        static constexpr uint32_t kMaxFramesInFlight = 2;
-
         /**
          * Callback function that allows the Vulkan API to use the engine's logging system
          * @note See Vulkan API for description of arguments
@@ -508,9 +507,9 @@ export namespace sj
 
             sj::vk::DescriptorLayoutBuilder builder(&scope.get_allocator());
             builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-            // builder.AddBinding(1,
-            //                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            //                    VK_SHADER_STAGE_FRAGMENT_BIT);
+            builder.AddBinding(1,
+                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                               VK_SHADER_STAGE_FRAGMENT_BIT);
 
             m_globalUBODescriptorSetLayout =
                 builder.Build(m_renderDevice.GetLogicalDevice(), nullptr);
@@ -520,7 +519,7 @@ export namespace sj
         {
             VkDeviceSize bufferSize = sizeof(GlobalUniformBufferObject);
 
-            for(size_t i = 0; i < kMaxFramesInFlight; i++)
+            for(size_t i = 0; i < sj::vk::kMaxFramesInFlight; i++)
             {
                 // This might not actaully end up being host visible:
                 // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/usage_patterns.html
@@ -538,15 +537,15 @@ export namespace sj
         {
             std::array<VkDescriptorPoolSize, 2> poolSizes {};
             poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            poolSizes[0].descriptorCount = kMaxFramesInFlight;
+            poolSizes[0].descriptorCount = sj::vk::kMaxFramesInFlight;
             poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            poolSizes[1].descriptorCount = kMaxFramesInFlight;
+            poolSizes[1].descriptorCount = sj::vk::kMaxFramesInFlight;
 
             VkDescriptorPoolCreateInfo poolInfo {};
             poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
             poolInfo.poolSizeCount = poolSizes.size();
             poolInfo.pPoolSizes = poolSizes.data();
-            poolInfo.maxSets = kMaxFramesInFlight;
+            poolInfo.maxSets = sj::vk::kMaxFramesInFlight;
 
             VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
                                                   &poolInfo,
@@ -581,7 +580,7 @@ export namespace sj
 
         void CreateGlobalUBODescriptorSets()
         {
-            std::array<VkDescriptorSetLayout, kMaxFramesInFlight> layouts {};
+            std::array<VkDescriptorSetLayout, sj::vk::kMaxFramesInFlight> layouts {};
             for(VkDescriptorSetLayout& layout : layouts)
             {
                 layout = m_globalUBODescriptorSetLayout;
@@ -590,7 +589,7 @@ export namespace sj
             VkDescriptorSetAllocateInfo allocInfo {};
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             allocInfo.descriptorPool = m_globalUBODescriptorPool;
-            allocInfo.descriptorSetCount = kMaxFramesInFlight;
+            allocInfo.descriptorSetCount = sj::vk::kMaxFramesInFlight;
             allocInfo.pSetLayouts = layouts.data();
 
             VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
@@ -600,7 +599,7 @@ export namespace sj
 
             SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor sets for global UBOs");
 
-            for(size_t i = 0; i < kMaxFramesInFlight; i++)
+            for(size_t i = 0; i < sj::vk::kMaxFramesInFlight; i++)
             {
                 VkDescriptorBufferInfo bufferInfo {};
                 bufferInfo.buffer = m_frameData.globalUniformBuffers[i].GetBuffer();
@@ -619,15 +618,17 @@ export namespace sj
                                           .dstArrayElement = 0,
                                           .descriptorCount = 1,
                                           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                          .pBufferInfo = &bufferInfo}};
+                                          .pBufferInfo = &bufferInfo},
+                    VkWriteDescriptorSet {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                          .dstSet = m_frameData.globalUBODescriptorSets[i],
+                                          .dstBinding = 1,
+                                          .dstArrayElement = 0,
+                                          .descriptorCount = 1,
+                                          .descriptorType =
+                                              VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                          .pImageInfo = &imageInfo}
 
-                // descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                // descriptorWrites[1].dstSet = m_frameData.globalUBODescriptorSets[i];
-                // descriptorWrites[1].dstBinding = 1;
-                // descriptorWrites[1].dstArrayElement = 0;
-                // descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                // descriptorWrites[1].descriptorCount = 1;
-                // descriptorWrites[1].pImageInfo = &imageInfo;
+                };
 
                 vkUpdateDescriptorSets(logicalDevice,
                                        static_cast<uint32_t>(descriptorWrites.size()),
@@ -638,8 +639,10 @@ export namespace sj
         }
 
 #ifndef SJ_GOLD
-        void
-        DrawImGui(VkCommandBuffer cmd, VkImageView targetImageView, VkExtent2D targetImageExtent)
+        void DrawImGui(VkCommandBuffer cmd,
+                       VkDescriptorSet globalDescriptorSet,
+                       VkImageView targetImageView,
+                       VkExtent2D targetImageExtent)
         {
             VkRenderingAttachmentInfo colorAttachment =
                 sj::vk::MakeAttachmentInfo(targetImageView,
@@ -672,7 +675,7 @@ export namespace sj
                                  &clearRange);
         }
 
-        void DrawGeometry(VkCommandBuffer cmd)
+        void DrawGeometry(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet)
         {
             VkRenderingAttachmentInfo colorAttachment =
                 sj::vk::MakeAttachmentInfo(m_drawImageView,
@@ -690,9 +693,15 @@ export namespace sj
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
                               m_defaultPipeline.GetPipeline());
 
-            //            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            //            m_defaultPipeline.GetLayout(), 0,)
-
+            std::array<VkDescriptorSet, 1> descriptorSets = {globalDescriptorSet};
+            vkCmdBindDescriptorSets(cmd,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_defaultPipeline.GetLayout(),
+                                    0,
+                                    descriptorSets.size(),
+                                    descriptorSets.data(),
+                                    0,
+                                    nullptr);
 
             VkViewport viewport {};
             viewport.x = 0.0f;
@@ -711,73 +720,77 @@ export namespace sj
             std::array vertexBuffers = {m_dummyMeshBuffers.GetVertexBuffer()};
             std::array<VkDeviceSize, 1> offsets = {0};
             vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers.data(), offsets.data());
-            vkCmdBindIndexBuffer(cmd,
-                                 m_dummyMeshBuffers.GetIndexBuffer(),
-                                 0,
-                                 m_dummyMeshBuffers.GetIndexType());
-            vkCmdDrawIndexed(cmd, m_dummyMeshBuffers.GetIndexCount(), 1, 0, 0, 0);
-
+            // vkCmdBindIndexBuffer(cmd,
+            //                      m_dummyMeshBuffers.GetIndexBuffer(),
+            //                      0,
+            //                      m_dummyMeshBuffers.GetIndexType());
+            // vkCmdDrawIndexed(cmd, m_dummyMeshBuffers.GetIndexCount(), 1, 0, 0, 0);
+            vkCmdDraw(cmd, 3, 1, 0, 0);
             vkCmdEndRendering(cmd);
         }
 
-        void RecordDrawCommands(VkCommandBuffer buffer, uint32_t frameIdx, uint32_t imageIdx)
+        void RecordDrawCommands(sj::vk::FrameGlobals& frameData,
+                                VkImage swapchainImage,
+                                VkImageView swapchainImageView)
         {
             VkCommandBufferBeginInfo beginInfo =
                 sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VkResult res = vkBeginCommandBuffer(buffer, &beginInfo);
+            VkResult res = vkBeginCommandBuffer(frameData.cmd, &beginInfo);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to start command buffer!");
 
             // Make swapchain image writable
-            sj::vk::TransitionImage(buffer,
+            sj::vk::TransitionImage(frameData.cmd,
                                     m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_GENERAL);
 
-            DrawBackground(buffer);
+            DrawBackground(frameData.cmd);
 
-            sj::vk::TransitionImage(buffer,
+            sj::vk::TransitionImage(frameData.cmd,
                                     m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_GENERAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-            //DrawGeometry(buffer);
+            DrawGeometry(frameData.cmd, frameData.globalDescriptorSet);
 
             // transition the draw image and the swapchain image into their correct transfer layouts
-            sj::vk::TransitionImage(buffer,
+            sj::vk::TransitionImage(frameData.cmd,
                                     m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-            VkImage swapChainImage = m_swapChain.GetImage(imageIdx);
-            sj::vk::TransitionImage(buffer,
-                                    swapChainImage,
+            sj::vk::TransitionImage(frameData.cmd,
+                                    swapchainImage,
                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             // Copy working image into swapchain
-            sj::vk::CopyImageToImage(buffer,
+            sj::vk::CopyImageToImage(frameData.cmd,
                                      m_drawImage.GetImage(),
-                                     swapChainImage,
-                                     m_drawExtent,
+                                     swapchainImage,
+                                     m_drawImage.GetExtent2D(),
                                      m_swapChain.GetExtent());
 
             // Put swapchain image back into color attachment mode
-            sj::vk::TransitionImage(buffer,
-                                    swapChainImage,
+            sj::vk::TransitionImage(frameData.cmd,
+                                    swapchainImage,
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 #ifndef SJ_GOLD
-            DrawImGui(buffer, m_swapChain.GetImageView(imageIdx), m_swapChain.GetExtent());
+            DrawImGui(frameData.cmd,
+                      frameData.globalDescriptorSet,
+                      swapchainImageView,
+                      m_swapChain.GetExtent());
 #endif
 
             // Make swapchain image ready for presentation
-            sj::vk::TransitionImage(buffer,
-                                    swapChainImage,
+            sj::vk::TransitionImage(frameData.cmd,
+                                    swapchainImage,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-            res = vkEndCommandBuffer(buffer);
+            res = vkEndCommandBuffer(frameData.cmd);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to record command buffer!");
         }
 
@@ -799,8 +812,6 @@ export namespace sj
 
         sj::vk::ImageResource m_drawImage;
         VkImageView m_drawImageView;
-
-        VkExtent2D m_drawExtent = {};
 
         /** Handle to manage Vulkan's debug callbacks */
         VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
@@ -835,76 +846,7 @@ export namespace sj
         /**
          * Data representing a render frames in flight
          */
-        struct RenderFrameData
-        {
-            std::array<VkCommandBuffer, kMaxFramesInFlight> commandBuffers;
-
-            std::array<VkSemaphore, kMaxFramesInFlight> imageAvailableSemaphores;
-            std::array<VkFence, kMaxFramesInFlight> inFlightFences;
-
-            std::array<sj::vk::BufferResource, kMaxFramesInFlight> globalUniformBuffers;
-            std::array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets;
-
-            void Init(VkDevice device, VkCommandPool commandPool)
-            {
-                // Create Command Buffer
-                {
-                    VkCommandBufferAllocateInfo allocInfo {};
-                    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                    allocInfo.commandPool = commandPool;
-                    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-
-                    VkResult res =
-                        vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
-
-                    SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command buffer");
-                }
-
-                // Create Sync Primitives
-                {
-                    VkSemaphoreCreateInfo semaphoreInfo {};
-                    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-                    VkFenceCreateInfo fenceInfo {};
-                    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-                    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-                    for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
-                    {
-                        VkResult res = vkCreateSemaphore(device,
-                                                         &semaphoreInfo,
-                                                         sj::g_vkAllocationFns,
-                                                         &imageAvailableSemaphores[i]);
-                        SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-
-                        res = vkCreateFence(device,
-                                            &fenceInfo,
-                                            sj::g_vkAllocationFns,
-                                            &inFlightFences[i]);
-                        SJ_ASSERT(res == VK_SUCCESS, "Failed to create syncronization primitive");
-                    }
-                }
-            }
-
-            void DeInit(sj::vk::RenderDevice& device)
-            {
-                // NOTE: Command buffers are freed for us when we free the command pool.
-                //       We only need to clean up sync primitives
-
-                VkDevice logicalDevice = device.GetLogicalDevice();
-                VmaAllocator allocator = device.GetAllocator();
-                for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
-                {
-                    vkDestroySemaphore(logicalDevice,
-                                       imageAvailableSemaphores[i],
-                                       sj::g_vkAllocationFns);
-                    vkDestroyFence(logicalDevice, inFlightFences[i], sj::g_vkAllocationFns);
-
-                    globalUniformBuffers[i].DeInit(allocator);
-                }
-            }
-        } m_frameData {};
+        sj::vk::RenderFrameData m_frameData {};
 
         uint32_t m_frameCount = 0;
     };

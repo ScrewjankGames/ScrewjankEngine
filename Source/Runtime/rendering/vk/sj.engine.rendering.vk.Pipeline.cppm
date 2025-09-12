@@ -1,7 +1,7 @@
 module;
 
 // Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 // ScrewjankStd Headers
 #include <ScrewjankStd/Assert.hpp>
@@ -232,6 +232,7 @@ export namespace sj::vk
 
         void Init(VkDevice device,
                   VkDescriptorSetLayout descriptorSetLayout,
+                  VkFormat colorAttachmentFormat,
                   const char* vertexShaderPath,
                   const char* fragmentShaderPath)
         {
@@ -259,10 +260,13 @@ export namespace sj::vk
             builder.SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
             builder.SetPolygonMode(VK_POLYGON_MODE_FILL);
-            builder.SetCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+            builder.SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
             builder.SetMultiSamplingNone();
             builder.DisableBlending();
-            builder.EnableDepthTest();
+            builder.DisableDepthTest();
+
+            builder.SetColorAttachmentFormat(colorAttachmentFormat);
+            builder.SetDepthFormat(VK_FORMAT_UNDEFINED);
 
             {
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo {};

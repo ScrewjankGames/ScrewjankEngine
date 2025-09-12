@@ -82,9 +82,19 @@ export namespace sj::vk
             return m_image;
         }
 
+        [[nodiscard]] VkExtent2D GetExtent2D() const
+        {
+            return VkExtent2D{ .width = m_imageExtent.width, .height = m_imageExtent.height };
+        }
+
         [[nodiscard]] VkExtent3D GetExtent() const
         {
             return m_imageExtent;
+        }
+
+        [[nodiscard]] VkFormat GetImageFormat() const
+        {
+            return m_imageFormat;
         }
 
     private:
