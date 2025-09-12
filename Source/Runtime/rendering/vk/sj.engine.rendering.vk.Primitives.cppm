@@ -82,7 +82,9 @@ export namespace sj::vk
             pool_info.poolSizeCount = (uint32_t)poolSizes.size();
             pool_info.pPoolSizes = poolSizes.data();
 
-            vkCreateDescriptorPool(device, &pool_info, sj::g_vkAllocationFns, &m_pool);
+            VkResult res =
+                vkCreateDescriptorPool(device, &pool_info, sj::g_vkAllocationFns, &m_pool);
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
         }
 
         void ResetPool(VkDevice device, VkDescriptorPoolResetFlags flags = 0)
@@ -95,20 +97,32 @@ export namespace sj::vk
             vkDestroyDescriptorPool(device, m_pool, sj::g_vkAllocationFns);
         }
 
-        VkDescriptorSet allocate(VkDevice device, VkDescriptorSetLayout layout)
+        VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout)
         {
-            VkDescriptorSetAllocateInfo allocInfo = {
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-            allocInfo.pNext = nullptr;
-            allocInfo.descriptorPool = m_pool;
-            allocInfo.descriptorSetCount = 1;
-            allocInfo.pSetLayouts = &layout;
-
             VkDescriptorSet set; // [[indeterminate]];
-            VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &set);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor set!");
+
+            Allocate(device, std::span{&layout, 1}, std::span{&set, 1} );
 
             return set;
+        }
+
+        void Allocate(VkDevice device,
+                      std::span<VkDescriptorSetLayout> layouts,
+                      std::span<VkDescriptorSet> outBuffer)
+        {
+            SJ_ASSERT(outBuffer.size() >= layouts.size(),
+                      "Insufficient space to record output descriptors");
+
+            VkDescriptorSetAllocateInfo allocInfo = {
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .descriptorPool = m_pool,
+                .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+                .pSetLayouts = layouts.data()
+            };
+
+            VkResult res = vkAllocateDescriptorSets(device, &allocInfo, outBuffer.data());
+            SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor set!");
         }
 
         VkDescriptorPool GetPool()

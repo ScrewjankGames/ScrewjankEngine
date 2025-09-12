@@ -133,7 +133,7 @@ export namespace sj::vk
     private:
         BufferResource m_vertexBuffer;
         BufferResource m_indexBuffer;
-        VkIndexType m_indexType;
+        VkIndexType m_indexType = VK_INDEX_TYPE_UINT32;
         uint32_t m_indexCount = 0;
     };
 } // namespace sj::vk

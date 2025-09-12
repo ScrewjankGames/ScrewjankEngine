@@ -7,6 +7,9 @@ module;
 // Library Headers
 #include <vulkan/vulkan.h>
 
+// STD Headers
+#include <ranges>
+
 export module sj.engine.rendering.vk.Utils;
 import sj.datadefs.assets.Mesh;
 import sj.std.containers.vector;
@@ -92,7 +95,7 @@ export namespace sj
         return desc;
     }
 
-    inline std::array<VkVertexInputAttributeDescription, 3> GetVertexAttributeDescriptions()
+    inline std::ranges::range auto GetVertexAttributeDescriptions()
     {
         std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
 

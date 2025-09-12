@@ -19,6 +19,47 @@ import sj.std.containers.vector;
 
 export namespace sj::vk
 {
+    VkShaderModule LoadShaderModule(VkDevice device, const char* path)
+    {
+        scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
+        std::ifstream shader;
+        shader.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+        SJ_ASSERT(shader.is_open(), "Failed to open compiled shader {}", path);
+        size_t shaderBufferSize = shader.tellg();
+        shader.seekg(0);
+
+        char* shaderBuffer =
+            reinterpret_cast<char*>(scratchpad.get_allocator().allocate(shaderBufferSize));
+        shader.read(shaderBuffer, shaderBufferSize);
+
+        VkShaderModuleCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = shaderBufferSize;
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
+
+        VkShaderModule shaderModule = {};
+        VkResult res =
+            vkCreateShaderModule(device, &createInfo, sj::g_vkAllocationFns, &shaderModule);
+
+        SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");
+
+        shader.close();
+
+        return shaderModule;
+    }
+
+    struct PipelineResource
+    {
+        VkPipeline pipeline;
+        VkPipelineLayout layout;
+
+        void DeInit(VkDevice device)
+        {
+            vkDestroyPipeline(device, pipeline, sj::g_vkAllocationFns);
+            vkDestroyPipelineLayout(device, layout, sj::g_vkAllocationFns);
+        }
+    };
+
     class PipelineBuilder
     {
     public:
@@ -213,15 +254,15 @@ export namespace sj::vk
     private:
         sj::dynamic_vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
-        VkPipelineInputAssemblyStateCreateInfo m_inputAssembly{};
-        VkPipelineVertexInputStateCreateInfo m_vertextInput{};
-        VkPipelineRasterizationStateCreateInfo m_rasterizer{};
-        VkPipelineColorBlendAttachmentState m_colorBlendAttachment{};
-        VkPipelineMultisampleStateCreateInfo m_multisampling{};
-        VkPipelineLayout m_pipelineLayout{};
-        VkPipelineDepthStencilStateCreateInfo m_depthStencil{};
-        VkPipelineRenderingCreateInfo m_renderInfo{};
-        VkFormat m_colorAttachmentformat{};
+        VkPipelineInputAssemblyStateCreateInfo m_inputAssembly {};
+        VkPipelineVertexInputStateCreateInfo m_vertextInput {};
+        VkPipelineRasterizationStateCreateInfo m_rasterizer {};
+        VkPipelineColorBlendAttachmentState m_colorBlendAttachment {};
+        VkPipelineMultisampleStateCreateInfo m_multisampling {};
+        VkPipelineLayout m_pipelineLayout {};
+        VkPipelineDepthStencilStateCreateInfo m_depthStencil {};
+        VkPipelineRenderingCreateInfo m_renderInfo {};
+        VkFormat m_colorAttachmentformat {};
     };
 
     class Pipeline
@@ -260,7 +301,7 @@ export namespace sj::vk
             builder.SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
             builder.SetPolygonMode(VK_POLYGON_MODE_FILL);
-            builder.SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+            builder.SetCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
             builder.SetMultiSamplingNone();
             builder.DisableBlending();
             builder.DisableDepthTest();
@@ -307,35 +348,6 @@ export namespace sj::vk
         }
 
     private:
-        VkShaderModule LoadShaderModule(VkDevice device, const char* path)
-        {
-            scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-            std::ifstream shader;
-            shader.open(path, std::ios::in | std::ios::binary | std::ios::ate);
-            SJ_ASSERT(shader.is_open(), "Failed to open compiled shader {}", path);
-            size_t shaderBufferSize = shader.tellg();
-            shader.seekg(0);
-
-            char* shaderBuffer =
-                reinterpret_cast<char*>(scratchpad.get_allocator().allocate(shaderBufferSize));
-            shader.read(shaderBuffer, shaderBufferSize);
-
-            VkShaderModuleCreateInfo createInfo = {};
-            createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            createInfo.codeSize = shaderBufferSize;
-            createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderBuffer);
-
-            VkShaderModule shaderModule = {};
-            VkResult res =
-                vkCreateShaderModule(device, &createInfo, sj::g_vkAllocationFns, &shaderModule);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to load shader module- check the log");
-
-            shader.close();
-
-            return shaderModule;
-        }
-
         VkPipelineLayout m_PipelineLayout;
         VkPipeline m_Pipeline;
     };

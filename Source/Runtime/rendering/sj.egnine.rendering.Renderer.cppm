@@ -156,14 +156,11 @@ export namespace sj
             vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
             m_dummyTextureImage.DeInit(m_renderDevice.GetAllocator());
 
-            vkDestroyDescriptorPool(logicalDevice,
-                                    m_globalUBODescriptorPool,
-                                    sj::g_vkAllocationFns);
+            m_globalDescriptorAllocator.DeInit(logicalDevice);
 
-            if constexpr(g_IsDebugBuild)
-            {
-                m_imguiDescriptorAllocator.DeInit(logicalDevice);
-            }
+#ifndef SJ_GOLD
+            m_imguiDescriptorAllocator.DeInit(logicalDevice);
+#endif
 
             vkDestroyDescriptorSetLayout(logicalDevice,
                                          m_globalUBODescriptorSetLayout,
@@ -345,8 +342,6 @@ export namespace sj
             return VK_FALSE;
         }
 
-        static bool HasStencilComponent(VkFormat format);
-
         /**
          * Initializes the Vulkan API's instance and debug messaging hooks
          */
@@ -363,8 +358,10 @@ export namespace sj
 
             vkb::Instance vkb_inst = inst_ret.value();
             m_vkInstance = vkb_inst.instance;
+            
+#ifndef SJ_GOLD
             m_vkDebugMessenger = vkb_inst.debug_messenger;
-
+#endif
             SJ_ENGINE_LOG_INFO("Vulkan Instance Initialized");
             return vkb_inst;
         }
@@ -535,24 +532,16 @@ export namespace sj
 
         void CreateGlobalUBODescriptorPool()
         {
-            std::array<VkDescriptorPoolSize, 2> poolSizes {};
-            poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            poolSizes[0].descriptorCount = sj::vk::kMaxFramesInFlight;
-            poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            poolSizes[1].descriptorCount = sj::vk::kMaxFramesInFlight;
+            std::array poolSizes {
+                VkDescriptorPoolSize {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                      .descriptorCount = sj::vk::kMaxFramesInFlight},
+                VkDescriptorPoolSize {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                      .descriptorCount = sj::vk::kMaxFramesInFlight}};
 
-            VkDescriptorPoolCreateInfo poolInfo {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            poolInfo.poolSizeCount = poolSizes.size();
-            poolInfo.pPoolSizes = poolSizes.data();
-            poolInfo.maxSets = sj::vk::kMaxFramesInFlight;
-
-            VkResult res = vkCreateDescriptorPool(m_renderDevice.GetLogicalDevice(),
-                                                  &poolInfo,
-                                                  sj::g_vkAllocationFns,
-                                                  &m_globalUBODescriptorPool);
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create descriptor pool for global UBO");
+            m_globalDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(),
+                                                 sj::vk::kMaxFramesInFlight,
+                                                 poolSizes,
+                                                 VkDescriptorPoolCreateFlags {});
         }
 
 #ifndef SJ_GOLD
@@ -581,23 +570,11 @@ export namespace sj
         void CreateGlobalUBODescriptorSets()
         {
             std::array<VkDescriptorSetLayout, sj::vk::kMaxFramesInFlight> layouts {};
-            for(VkDescriptorSetLayout& layout : layouts)
-            {
-                layout = m_globalUBODescriptorSetLayout;
-            }
+            std::ranges::fill(layouts, m_globalUBODescriptorSetLayout);
 
-            VkDescriptorSetAllocateInfo allocInfo {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = m_globalUBODescriptorPool;
-            allocInfo.descriptorSetCount = sj::vk::kMaxFramesInFlight;
-            allocInfo.pSetLayouts = layouts.data();
-
-            VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
-            VkResult res = vkAllocateDescriptorSets(logicalDevice,
-                                                    &allocInfo,
-                                                    m_frameData.globalUBODescriptorSets.data());
-
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate descriptor sets for global UBOs");
+            m_globalDescriptorAllocator.Allocate(m_renderDevice.GetLogicalDevice(),
+                                                 layouts,
+                                                 m_frameData.globalUBODescriptorSets);
 
             for(size_t i = 0; i < sj::vk::kMaxFramesInFlight; i++)
             {
@@ -630,7 +607,7 @@ export namespace sj
 
                 };
 
-                vkUpdateDescriptorSets(logicalDevice,
+                vkUpdateDescriptorSets(m_renderDevice.GetLogicalDevice(),
                                        static_cast<uint32_t>(descriptorWrites.size()),
                                        descriptorWrites.data(),
                                        0,
@@ -812,8 +789,7 @@ export namespace sj
         sj::vk::ImageResource m_drawImage;
         VkImageView m_drawImageView;
 
-        /** Handle to manage Vulkan's debug callbacks */
-        VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
+
 
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_renderingSurface {};
@@ -835,10 +811,8 @@ export namespace sj
         VkImageView m_dummyTextureImageView;
         VkSampler m_dummyTextureSampler {};
 
+        sj::vk::DescriptorAllocator m_globalDescriptorAllocator;
         VkDescriptorSetLayout m_globalUBODescriptorSetLayout {};
-        VkDescriptorPool m_globalUBODescriptorPool {};
-
-        sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
 
         sj::vk::ImmediateCommandContext m_immediateCommandContext;
 
@@ -848,5 +822,12 @@ export namespace sj
         sj::vk::RenderFrameData m_frameData {};
 
         uint32_t m_frameCount = 0;
+
+#ifndef SJ_GOLD
+        sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
+        
+        /** Handle to manage Vulkan's debug callbacks */
+        VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
+#endif
     };
 } // namespace sj

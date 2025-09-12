@@ -66,6 +66,7 @@ export namespace sj::vk
             allocatorInfo.physicalDevice = m_physicalDevice;
             allocatorInfo.device = m_logicalDevice;
             allocatorInfo.instance = instanceInfo.instance;
+            allocatorInfo.pAllocationCallbacks = sj::g_vkAllocationFns;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
             vmaCreateAllocator(&allocatorInfo, &m_allocator);
 

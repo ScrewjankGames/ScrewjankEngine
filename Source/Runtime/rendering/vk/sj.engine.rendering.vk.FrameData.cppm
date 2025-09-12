@@ -18,11 +18,12 @@ export namespace sj::vk
 
     struct FrameGlobals
     {
-        VkCommandBuffer cmd;
-        VkFence fence;
-        VkSemaphore imgAvailableSemaphore;
+        VkCommandBuffer cmd = VK_NULL_HANDLE;
+        VkFence fence = VK_NULL_HANDLE;
+        VkSemaphore imgAvailableSemaphore = VK_NULL_HANDLE;
+        VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
+
         sj::vk::BufferResource globalUniformBuffer;
-        VkDescriptorSet globalDescriptorSet;
     };
 
     struct RenderFrameData
@@ -101,8 +102,8 @@ export namespace sj::vk
                 .cmd = commandBuffers[frameIdx],
                 .fence = inFlightFences[frameIdx],
                 .imgAvailableSemaphore = imageAvailableSemaphores[frameIdx],
-                .globalUniformBuffer = globalUniformBuffers[frameIdx],
-                .globalDescriptorSet = globalUBODescriptorSets[frameIdx]
+                .globalDescriptorSet = globalUBODescriptorSets[frameIdx],
+                .globalUniformBuffer = globalUniformBuffers[frameIdx]
             };
         }
     };
