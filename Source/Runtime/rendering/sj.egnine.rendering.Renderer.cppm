@@ -720,12 +720,11 @@ export namespace sj
             std::array vertexBuffers = {m_dummyMeshBuffers.GetVertexBuffer()};
             std::array<VkDeviceSize, 1> offsets = {0};
             vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers.data(), offsets.data());
-            // vkCmdBindIndexBuffer(cmd,
-            //                      m_dummyMeshBuffers.GetIndexBuffer(),
-            //                      0,
-            //                      m_dummyMeshBuffers.GetIndexType());
-            // vkCmdDrawIndexed(cmd, m_dummyMeshBuffers.GetIndexCount(), 1, 0, 0, 0);
-            vkCmdDraw(cmd, 3, 1, 0, 0);
+            vkCmdBindIndexBuffer(cmd,
+                                 m_dummyMeshBuffers.GetIndexBuffer(),
+                                 0,
+                                 m_dummyMeshBuffers.GetIndexType());
+            vkCmdDrawIndexed(cmd, m_dummyMeshBuffers.GetIndexCount(), 1, 0, 0, 0);
             vkCmdEndRendering(cmd);
         }
 
