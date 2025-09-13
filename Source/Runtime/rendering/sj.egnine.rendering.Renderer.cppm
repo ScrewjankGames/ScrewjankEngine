@@ -1,8 +1,6 @@
 module;
 
 // Screwjank Headers
-#include <ScrewjankEngine/framework/Window.hpp>
-
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
@@ -25,6 +23,7 @@ module;
 export module sj.engine.rendering.Renderer;
 import sj.engine.rendering.resources.TextureResource;
 import sj.engine.rendering.vk;
+import sj.engine.framework.Window;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs.assets.Texture;
@@ -51,9 +50,9 @@ export namespace sj
 
         ~Renderer() = default;
 
-        void Init()
+        void Init(Window* window)
         {
-            Window* window = Window::GetInstance();
+            m_display = window;
 
             free_list_allocator* workBuffer = WorkBuffer();
             workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
@@ -67,7 +66,7 @@ export namespace sj
             m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
 
             // Create the vulkan swap chain connected to the current window and device
-            m_swapChain.Init(m_renderDevice, m_renderingSurface, window);
+            m_swapChain.Init(m_renderDevice, m_renderingSurface, window->GetViewportSize());
             CreateRenderTarget(window->GetViewportSize());
 
             CreateGlobalDescriptorSetlayout();
@@ -191,13 +190,13 @@ export namespace sj
 
         void StartRenderFrame()
         {
-            Viewport viewport = Window::GetInstance()->GetViewportSize();
-
 #ifndef SJ_GOLD
+            Vec2 viewport = m_display->GetViewportSize();
+
             {
                 MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
-                ImGui::GetIO().DisplaySize = {(float)viewport.Width, (float)viewport.Height};
+                ImGui::GetIO().DisplaySize = {viewport.GetX(), viewport.GetY()};
 
                 // Start the Dear ImGui frame
                 ImGui_ImplVulkan_NewFrame();
@@ -235,7 +234,7 @@ export namespace sj
 
             if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, Window::GetInstance());
+                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
 
                 return;
             }
@@ -287,7 +286,7 @@ export namespace sj
             m_frameCount++;
             if(res == VK_ERROR_OUT_OF_DATE_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, Window::GetInstance());
+                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
                 return;
             }
             else if(res != VK_SUCCESS)
@@ -358,7 +357,7 @@ export namespace sj
 
             vkb::Instance vkb_inst = inst_ret.value();
             m_vkInstance = vkb_inst.instance;
-            
+
 #ifndef SJ_GOLD
             m_vkDebugMessenger = vkb_inst.debug_messenger;
 #endif
@@ -366,14 +365,16 @@ export namespace sj
             return vkb_inst;
         }
 
-        void CreateRenderTarget(Viewport windowSize)
+        void CreateRenderTarget(sj::Vec2 windowSize)
         {
             VmaAllocationCreateInfo renderImageAllocInfo = {};
             renderImageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
             renderImageAllocInfo.requiredFlags =
                 VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            VkExtent3D drawImageExtent = {windowSize.Width, windowSize.Height, 1};
+            VkExtent3D drawImageExtent = {static_cast<uint32_t>(windowSize.GetX()),
+                                          static_cast<uint32_t>(windowSize.GetY()),
+                                          1};
 
             VkImageUsageFlags drawImageUsages {};
             drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -783,13 +784,13 @@ export namespace sj
             memcpy(bufferMem, &ubo, sizeof(ubo));
         }
 
+        Window* m_display = nullptr;
+
         /** The Vulkan instance is the engine's connection to the vulkan library */
         VkInstance m_vkInstance {};
 
         sj::vk::ImageResource m_drawImage;
         VkImageView m_drawImageView;
-
-
 
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_renderingSurface {};
@@ -825,7 +826,7 @@ export namespace sj
 
 #ifndef SJ_GOLD
         sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
-        
+
         /** Handle to manage Vulkan's debug callbacks */
         VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
 #endif

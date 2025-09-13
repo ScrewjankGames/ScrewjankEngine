@@ -10,7 +10,6 @@ module;
 
 // Screwjank Headers
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankEngine/framework/Window.hpp>
 
 export module sj.engine.rendering.vk.SwapChain;
 import sj.engine.rendering.vk.Utils;
@@ -20,6 +19,7 @@ import sj.engine.rendering.vk.RenderDevice;
 
 import sj.std.containers.array;
 import sj.std.memory;
+import sj.std.math;
 
 namespace sj::vk
 {
@@ -64,8 +64,9 @@ export namespace sj::vk
 
         ~SwapChain() = default;
 
-        void
-        Init(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, Window* surfaceHost)
+        void Init(const sj::vk::RenderDevice& device,
+                  VkSurfaceKHR renderingSurface,
+                  sj::Vec2 surfaceSize)
         {
             SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
@@ -74,7 +75,7 @@ export namespace sj::vk
 
             VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
             VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);
-            VkExtent2D extent = QuerySwapExtent(surfaceHost, params.Capabilities);
+            VkExtent2D extent = QuerySwapExtent(surfaceSize, params.Capabilities);
 
             SJ_ASSERT(selected_format.format != VK_FORMAT_UNDEFINED,
                       "Failed to select swap chain surface format");
@@ -193,11 +194,10 @@ export namespace sj::vk
         }
 
         void
-        Recreate(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, Window* window)
+        Recreate(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, sj::Vec2 surfaceSize)
         {
             // Window is minimized. Can't recreate swap chain.
-            if(Window::GetInstance()->GetViewportSize().Width == 0 ||
-               Window::GetInstance()->GetViewportSize().Height == 0)
+            if((surfaceSize.GetX() * surfaceSize.GetY()) == 0 )
             {
                 return;
             }
@@ -205,7 +205,7 @@ export namespace sj::vk
             vkDeviceWaitIdle(device.GetLogicalDevice());
 
             DeInit(device);
-            Init(device, renderingSurface, window);
+            Init(device, renderingSurface, surfaceSize);
         }
 
         [[nodiscard]] VkImage GetImage(uint32_t idx)
@@ -249,7 +249,7 @@ export namespace sj::vk
         /**
          * Communicates with the window to query swap chain extents
          */
-        VkExtent2D QuerySwapExtent(Window* targetWindow,
+        VkExtent2D QuerySwapExtent(sj::Vec2 surfaceExtent,
                                    const VkSurfaceCapabilitiesKHR& capabilities)
         {
             if(capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -257,8 +257,8 @@ export namespace sj::vk
                 return capabilities.currentExtent;
             }
 
-            Viewport frame_buffer_size = targetWindow->GetViewportSize();
-            VkExtent2D extent {frame_buffer_size.Width, frame_buffer_size.Height};
+            VkExtent2D extent {static_cast<uint32_t>(surfaceExtent.GetX()),
+                               static_cast<uint32_t>(surfaceExtent.GetY())};
 
             // Clamp values to max supported by implementation
             extent.width = std::max(capabilities.minImageExtent.width,
