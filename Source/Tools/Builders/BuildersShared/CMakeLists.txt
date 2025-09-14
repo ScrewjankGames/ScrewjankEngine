@@ -4,8 +4,8 @@
 project(BuildersShared)
 
 file(GLOB_RECURSE BUILDER_HEADERS CONFIGURE_DEPENDS "*.hpp")
-file(GLOB_RECURSE BUILDER_INLINES CONFIGURE_DEPENDS "*.inl")
 file(GLOB_RECURSE BUILDER_SOURCE CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE Builder_Modules CONFIGURE_DEPENDS "*.cppm")
 
 # Generate files
 set(BuildTool_Generated_File_Message "!!!This is a generated file. Do not Edit. Find corresponding *.template.hpp file!!!")
@@ -21,6 +21,11 @@ add_library(${PROJECT_NAME} ${BUILDER_HEADERS} ${BUILDER_INLINES} ${BUILDER_SOUR
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${BUILDER_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${BUILDER_INLINES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${BUILDER_SOURCE})
+target_sources(${PROJECT_NAME}
+  PUBLIC
+    FILE_SET CXX_MODULES FILES
+      ${Builder_Modules}
+)
 
 set_target_properties(${PROJECT_NAME} 
     PROPERTIES 
@@ -36,6 +41,7 @@ set_target_properties(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
         ScrewjankStd
+        ScrewjankDataDefs
         glaze::glaze
 )
 

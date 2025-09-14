@@ -25,10 +25,7 @@ set_target_properties(${PROJECT_NAME}
 ################################################################################
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
-        ScrewjankStd
-        ScrewjankDataDefs
         BuildersShared
-        glaze::glaze
 )
 
 ################################################################################

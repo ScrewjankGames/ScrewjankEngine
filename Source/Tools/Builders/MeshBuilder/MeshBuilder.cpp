@@ -71,7 +71,7 @@ void ExtractBuffers(const char* inputFilePath,
               "Index count out of range of uint16 for index buffers")
 }
 
-bool MeshBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const 
+bool MeshBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) 
 {
     std::vector<MeshVertex> verts;
     std::vector<IndexType> indices;

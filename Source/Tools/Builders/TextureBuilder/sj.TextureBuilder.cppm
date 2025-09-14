@@ -1,7 +1,6 @@
 module;
 
 // SJ Headers
-#include <BuilderTypes.hpp>
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
@@ -10,36 +9,39 @@ module;
 #include <stb_image.h>
 
 // STD Includes
+#include <span>
+#include <filesystem>
 #include <cstdio>
 #include <fstream>
 #include <span>
 
 export module sj.TextureBuilder;
 import sj.datadefs.assets.Texture;
+import sj.build.IGlobBuilder;
 
 export namespace sj::build
 {
-    class TextureBuilder final : public GlobBuilder
+    class TextureBuilder final : public IGlobBuilder
     {
     public:
-        std::span<const char* const> GetExtensions() override
+        [[nodiscard]] std::span<const char* const> GetExtensions() const override
         {
             static constexpr std::array extensions = {".png", ".jpg"};
             return extensions;
         }
 
-        const char* GetBuilderName() override
+        [[nodiscard]] const char* GetBuilderName() const override
         {
             return "Texture Builder";
         }
 
-        const char* GetOutputExtension() override
+        [[nodiscard]] const char* GetOutputExtension() const override
         {
             return ".sj_tex";
         }
 
-        [[nodiscard]] bool BuildItem(const std::filesystem::path& item,
-                                     const std::filesystem::path& output_path) const override
+        bool BuildItem(const std::filesystem::path& item,
+                       const std::filesystem::path& output_path) override
         {
             int texWidth = 0;
             int texHeight = 0;

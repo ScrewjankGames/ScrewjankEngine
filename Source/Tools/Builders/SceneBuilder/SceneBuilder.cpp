@@ -75,7 +75,7 @@ struct SceneSchema
 namespace sj::build
 {
 
-bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path) const
+bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::filesystem::path& output_path)
 {
     SceneSchema parsedScene;
     std::string buffer;
@@ -84,7 +84,7 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
     if(errorCtx.ec != glz::error_code::none)
     {
         std::string descriptive_error = glz::format_error(errorCtx, buffer);
-        //SJ_ENGINE_LOG_ERROR("Failed to parse scene {}. Error: {}", item.c_str(), descriptive_error);
+        SJ_ENGINE_LOG_ERROR("Failed to parse scene {}. Error: {}", item.c_str(), descriptive_error);
         return false;
     }
 
@@ -116,7 +116,17 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
     }
 
     errorCtx = glz::write_file_beve(outputScene, output_path.c_str(), std::string{});
-    return errorCtx.ec == glz::error_code::none;
+    
+    if(errorCtx.ec != glz::error_code::none)
+    {
+        std::string descriptive_error = glz::format_error(errorCtx, buffer);
+        SJ_ENGINE_LOG_ERROR("Failed to parse scene {}. Error: {}", item.c_str(), descriptive_error);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 }
