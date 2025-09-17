@@ -1,4 +1,5 @@
 export module sj.engine.ecs;
-export import :ECSRegistry;
-export import :Identifiers;
-
+export import sj.engine.ecs.ECSRegistry;
+export import sj.engine.ecs.components;
+export import sj.engine.ecs.systems.CameraSystem;
+export import sj.engine.ecs.systems.InputSystem;

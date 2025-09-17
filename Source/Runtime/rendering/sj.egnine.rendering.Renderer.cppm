@@ -44,30 +44,22 @@ export namespace sj
             return &g_workBufferResource;
         }
 
-        Renderer() : m_swapChain(WorkBuffer())
+        Renderer(Window* display) : m_display(display), m_swapChain(WorkBuffer())
         {
-        }
-
-        ~Renderer() = default;
-
-        void Init(Window* window)
-        {
-            m_display = window;
-
             free_list_allocator* workBuffer = WorkBuffer();
             workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
             MemorySystem::TrackMemoryResource(workBuffer);
 
             vkb::Instance bootstrapInfo = InitializeVulkan();
 
-            m_renderingSurface = window->CreateWindowSurface(m_vkInstance);
+            m_renderingSurface = display->CreateWindowSurface(m_vkInstance);
 
             // Select physical device and create and logical render device
             m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
 
             // Create the vulkan swap chain connected to the current window and device
-            m_swapChain.Init(m_renderDevice, m_renderingSurface, window->GetViewportSize());
-            CreateRenderTarget(window->GetViewportSize());
+            m_swapChain.Init(m_renderDevice, m_renderingSurface, display->GetViewportSize());
+            CreateRenderTarget(display->GetViewportSize());
 
             CreateGlobalDescriptorSetlayout();
 
@@ -128,6 +120,8 @@ export namespace sj
             ImGui_ImplVulkan_Init(&init_info);
 #endif
         }
+
+        ~Renderer() = default;
 
         void DeInit()
         {
@@ -234,7 +228,9 @@ export namespace sj
 
             if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
+                m_swapChain.Recreate(m_renderDevice,
+                                     m_renderingSurface,
+                                     m_display->GetViewportSize());
 
                 return;
             }
@@ -286,7 +282,9 @@ export namespace sj
             m_frameCount++;
             if(res == VK_ERROR_OUT_OF_DATE_KHR)
             {
-                m_swapChain.Recreate(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
+                m_swapChain.Recreate(m_renderDevice,
+                                     m_renderingSurface,
+                                     m_display->GetViewportSize());
                 return;
             }
             else if(res != VK_SUCCESS)

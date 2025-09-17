@@ -53,11 +53,8 @@ export namespace sj
          */
         void ProcessEvents()
         {
-            // Update
             glfwPollEvents();
-
             ImGui_ImplGlfw_NewFrame();
-            return;
         }
 
         /**

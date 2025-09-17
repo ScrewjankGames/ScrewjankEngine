@@ -5,8 +5,8 @@ module;
 #include <memory_resource>
 #include <ranges>
 
-export module sj.engine.ecs:ECSRegistry;
-import :Identifiers;
+export module sj.engine.ecs.ECSRegistry;
+export import :Identifiers;
 
 import sj.std.containers.any;
 import sj.std.containers.sparse_set;

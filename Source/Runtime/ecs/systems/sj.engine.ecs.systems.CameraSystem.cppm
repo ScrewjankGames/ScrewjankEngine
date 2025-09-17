@@ -5,7 +5,7 @@ export module sj.engine.ecs.systems.CameraSystem;
 import sj.engine.ecs.components.TransformComponent;
 import sj.engine.ecs.components.CameraComponent;
 import sj.std.math;
-import sj.engine.ecs;
+import sj.engine.ecs.ECSRegistry;
 
 export namespace sj
 {
