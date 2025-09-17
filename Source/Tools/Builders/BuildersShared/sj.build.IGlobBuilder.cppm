@@ -45,8 +45,8 @@ export namespace sj::build
                 SJ_ENGINE_LOG_INFO("Building item {}", path.c_str());
                 const std::filesystem::path outputItemPath =
                     utils::GetDestinationPath(path,
-                                              config::EngineAssetDir,
-                                              config::EngineDataDir,
+                                              input_dir,
+                                              output_dir,
                                               GetOutputExtension());
 
                 std::filesystem::create_directories(outputItemPath.parent_path());
