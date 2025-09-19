@@ -11,7 +11,9 @@ export import :Identifiers;
 import sj.std.containers.any;
 import sj.std.containers.sparse_set;
 import sj.std.containers.map;
-
+import sj.engine.ecs.components;
+import sj.engine.ecs.ComponentManifest;
+import sj.engine.system.memory.MemorySystem;
 import sj.datadefs;
 
 export namespace sj
@@ -19,10 +21,20 @@ export namespace sj
     class ECSRegistry
     {
     public:
-        ECSRegistry(uint32_t initialEntityCount, std::pmr::memory_resource* resource)
-            : m_memoryResource(resource), m_gameObjects(initialEntityCount, resource),
-              m_componentPools(resource)
+        ECSRegistry(auto tComponentManifest)
+            : m_memoryResource(sj::MemorySystem::GetRootMemoryResource()), m_gameObjects(100, m_memoryResource),
+              m_componentPools(m_memoryResource)
         {
+            auto registerFn = []<class T>(sj::ECSRegistry& registry) {
+                registry.RegisterComponentType<T>();
+            };
+
+            tComponentManifest.GetComponentTypes().template for_each<registerFn>(*this);
+        }
+
+        ECSRegistry() : ECSRegistry(ComponentManifest{})
+        {
+
         }
 
         GameObjectId CreateGameObject()

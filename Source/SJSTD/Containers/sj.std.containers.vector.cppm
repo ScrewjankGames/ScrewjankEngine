@@ -322,6 +322,11 @@ export namespace sj
             }
         }
 
+        constexpr iterator insert(const_iterator pos, const T& elem)
+        {
+            return emplace(pos, elem);
+        }
+
         constexpr iterator insert(const_iterator pos, T&& elem)
         {
             return emplace(pos, std::move(elem));

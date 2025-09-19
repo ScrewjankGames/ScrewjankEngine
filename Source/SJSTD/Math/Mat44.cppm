@@ -53,6 +53,7 @@ export namespace sj
         template<int tRow>
         Mat44& SetRow(Vec4 v)
         {
+            static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
             m_rows[tRow] = v;
             return *this;
         }

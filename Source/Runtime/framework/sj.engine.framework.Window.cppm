@@ -36,8 +36,6 @@ export namespace sj
                                               nullptr,
                                               nullptr);
 
-            glfwSetKeyCallback(m_NativeWindow, KeyCallback);
-
             ImGui_ImplGlfw_InitForVulkan(m_NativeWindow, true);
         }
 
@@ -53,8 +51,7 @@ export namespace sj
          */
         void ProcessEvents()
         {
-            glfwPollEvents();
-            ImGui_ImplGlfw_NewFrame();
+
         }
 
         /**
@@ -76,6 +73,11 @@ export namespace sj
             glfwGetFramebufferSize(m_NativeWindow, &width, &height);
 
             return Vec2(static_cast<float>(width), static_cast<float>(height));
+        }
+
+        GLFWwindow* GetWindowHandle() 
+        {
+            return m_NativeWindow;
         }
 
 #ifdef SJ_VULKAN_SUPPORT
@@ -113,19 +115,6 @@ export namespace sj
 #endif
 
     private:
-        static void KeyCallback([[maybe_unused]] GLFWwindow* window,
-                                [[maybe_unused]] int key,
-                                [[maybe_unused]] int scancode,
-                                [[maybe_unused]] int action,
-                                [[maybe_unused]] int mods)
-        {
-            const char* actionStr = (action == GLFW_PRESS)     ? "Pressed"
-                                    : (action == GLFW_RELEASE) ? "Released"
-                                                               : "Held";
-
-            SJ_ENGINE_LOG_INFO("Key {}", actionStr);
-        }
-
         GLFWwindow* m_NativeWindow = nullptr;
     };
 } // namespace sj

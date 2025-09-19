@@ -18,11 +18,11 @@ import sj.datadefs;
 export namespace sj
 {
     using LoadComponentFn = void (*)(ECSRegistry& registry,
-                                       GameObjectId goId,
-                                       const DataChunk& componentData);
+                                     GameObjectId goId,
+                                     const DataChunk& componentData);
 
-    template<class T>
-    void LoadComponent(ECSRegistry& registry, GameObjectId goId, const DataChunk& componentData) 
+    template <class T>
+    void LoadComponent(ECSRegistry& registry, GameObjectId goId, const DataChunk& componentData)
     {
         T component(componentData);
 
@@ -30,20 +30,19 @@ export namespace sj
         registry.CreateComponent<T>(goId, component);
     };
 
-    // Map chunk type to function that creates runtime component
-    constexpr type_map<
-        g_componentTypes, 
-        TypeId,
-        LoadComponentFn,
-        []<class T>() -> TypeId{ return T::kChunkTypeId; }, 
-        []<class T>() -> LoadComponentFn { return LoadComponent<T>; } > 
-        kComponentLoadFns = {};
-
     class Scene
     {
     public:
-        Scene(ECSRegistry& registry, const char* path)
+        Scene(const char* path, ECSRegistry& registry, auto ComponentManifest)
         {
+            // Map chunk type to function that creates runtime component
+            constinit static type_map<ComponentManifest.GetComponentTypes(),
+                               TypeId,
+                               LoadComponentFn,
+                               []<class T>() -> TypeId {return T::kChunkTypeId;},
+                               []<class T>() -> LoadComponentFn {return LoadComponent<T>;}>
+                kComponentLoadFns = {};
+
             SceneChunk chunk;
 
             glz::error_ctx errorCtx =

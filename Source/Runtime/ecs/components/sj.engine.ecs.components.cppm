@@ -8,9 +8,12 @@ import sj.std.containers.type_list;
 
 export namespace sj
 {
-    using EngineComponentTypes = type_list<TransformComponent, CameraComponent, Mesh3DComponent>;
-    using GameComponentTypes = type_list<>;
-    using ComponentTypeList = concat_type_lists<EngineComponentTypes, GameComponentTypes>::list;
+    using EngineComponentTypes = 
+    type_list<
+        TransformComponent, 
+        CameraComponent, 
+        Mesh3DComponent
+    >;
 
-    constexpr ComponentTypeList g_componentTypes;
+    constexpr EngineComponentTypes g_engineComponentTypes;
 }
