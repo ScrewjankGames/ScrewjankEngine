@@ -1,4 +1,1 @@
-add_subdirectory(containers)
-add_subdirectory(system)
-add_subdirectory(math)
-add_subdirectory(sj_std)
+add_subdirectory(SJSTD)
