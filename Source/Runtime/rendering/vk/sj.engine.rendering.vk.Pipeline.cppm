@@ -174,11 +174,12 @@ export namespace sj::vk
             m_depthStencil.maxDepthBounds = 1.f;
         }
 
-        void EnableDepthTest()
+        void EnableDepthTest(bool depthWriteEnable, VkCompareOp op)
         {
+            m_depthStencil.depthWriteEnable = depthWriteEnable;
+            m_depthStencil.depthCompareOp = op;
+
             m_depthStencil.depthTestEnable = VK_TRUE;
-            m_depthStencil.depthWriteEnable = VK_TRUE;
-            m_depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
             m_depthStencil.depthBoundsTestEnable = VK_FALSE;
             m_depthStencil.minDepthBounds = 0.0f; // Optional
             m_depthStencil.maxDepthBounds = 1.0f; // Optional
@@ -192,7 +193,7 @@ export namespace sj::vk
             m_pipelineLayout = layout;
         }
 
-        [[nodiscard]] VkPipeline BuildPipeline(VkDevice device) const
+        [[nodiscard]] PipelineResource BuildPipeline(VkDevice device) const
         {
             // Just filling viewport and scissor count because we're using dynamic viewport state
             VkPipelineViewportStateCreateInfo viewportState = {};
@@ -248,7 +249,7 @@ export namespace sj::vk
                                                         &newPipeline);
             SJ_ASSERT(status == VK_SUCCESS, "Failed to create graphics pipeline!");
 
-            return newPipeline;
+            return PipelineResource {.pipeline = newPipeline, .layout = m_pipelineLayout};
         }
 
     private:
@@ -263,92 +264,5 @@ export namespace sj::vk
         VkPipelineDepthStencilStateCreateInfo m_depthStencil {};
         VkPipelineRenderingCreateInfo m_renderInfo {};
         VkFormat m_colorAttachmentformat {};
-    };
-
-    class Pipeline
-    {
-    public:
-        Pipeline() = default;
-        ~Pipeline() = default;
-
-        void Init(VkDevice device,
-                  VkDescriptorSetLayout descriptorSetLayout,
-                  VkFormat colorAttachmentFormat,
-                  const char* vertexShaderPath,
-                  const char* fragmentShaderPath)
-        {
-            VkShaderModule vertexShaderModule = LoadShaderModule(device, vertexShaderPath);
-            VkShaderModule fragmentShaderModule = LoadShaderModule(device, fragmentShaderPath);
-
-            scratchpad_scope scope = ThreadContext::GetScratchpad();
-            PipelineBuilder builder(&scope.get_allocator());
-
-            builder.SetShaders(vertexShaderModule, fragmentShaderModule);
-
-            auto bindingDescription = GetVertexBindingDescription();
-            auto attributeDescriptions = GetVertexAttributeDescriptions();
-
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
-            vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertexInputInfo.vertexBindingDescriptionCount = 1;
-            vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
-            vertexInputInfo.vertexAttributeDescriptionCount =
-                static_cast<uint32_t>(attributeDescriptions.size());
-            vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
-
-            builder.SetVertexInputState(vertexInputInfo);
-
-            builder.SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-            builder.SetPolygonMode(VK_POLYGON_MODE_FILL);
-            builder.SetCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-            builder.SetMultiSamplingNone();
-            builder.DisableBlending();
-            builder.DisableDepthTest();
-
-            builder.SetColorAttachmentFormat(colorAttachmentFormat);
-            builder.SetDepthFormat(VK_FORMAT_UNDEFINED);
-
-            {
-                VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
-                pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-                pipelineLayoutInfo.setLayoutCount = 1;
-                pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-                pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-                pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-                VkResult res = vkCreatePipelineLayout(device,
-                                                      &pipelineLayoutInfo,
-                                                      sj::g_vkAllocationFns,
-                                                      &m_PipelineLayout);
-                SJ_ASSERT(res == VK_SUCCESS, "failed to create pipeline layout!");
-            }
-
-            builder.SetPipelineLayout(m_PipelineLayout);
-            m_Pipeline = builder.BuildPipeline(device);
-
-            vkDestroyShaderModule(device, fragmentShaderModule, sj::g_vkAllocationFns);
-            vkDestroyShaderModule(device, vertexShaderModule, sj::g_vkAllocationFns);
-        }
-
-        void DeInit(VkDevice device)
-        {
-            vkDestroyPipeline(device, m_Pipeline, sj::g_vkAllocationFns);
-            vkDestroyPipelineLayout(device, m_PipelineLayout, sj::g_vkAllocationFns);
-        }
-
-        VkPipeline GetPipeline()
-        {
-            return m_Pipeline;
-        }
-
-        VkPipelineLayout GetLayout()
-        {
-            return m_PipelineLayout;
-        }
-
-    private:
-        VkPipelineLayout m_PipelineLayout;
-        VkPipeline m_Pipeline;
     };
 } // namespace sj::vk

@@ -174,9 +174,7 @@ export namespace sj::vk
         return colorAttachment;
     }
 
-    VkRenderingAttachmentInfo
-    MakeDepthAttachmentInfo(VkImageView view,
-                            VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+    VkRenderingAttachmentInfo MakeDepthAttachmentInfo(VkImageView view, VkImageLayout layout)
     {
         VkRenderingAttachmentInfo depthAttachment {};
         depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

@@ -21,7 +21,6 @@ module;
 #include <fstream>
 
 export module sj.engine.rendering.Renderer;
-import sj.engine.rendering.resources.TextureResource;
 import sj.engine.rendering.vk;
 import sj.engine.framework.Window;
 import sj.engine.system.threading.ThreadContext;
@@ -59,15 +58,17 @@ export namespace sj
 
             // Create the vulkan swap chain connected to the current window and device
             m_swapChain.Init(m_renderDevice, m_renderingSurface, display->GetViewportSize());
-            CreateRenderTarget(display->GetViewportSize());
+            CreateRenderImageResources(display->GetViewportSize());
 
             CreateGlobalDescriptorSetlayout();
 
-            m_defaultPipeline.Init(m_renderDevice.GetLogicalDevice(),
-                                   m_globalUBODescriptorSetLayout,
-                                   m_drawImage.GetImageFormat(),
-                                   "Data/Engine/Shaders/Default.vert.spv",
-                                   "Data/Engine/Shaders/Default.frag.spv");
+            m_defaultPipeline =
+                sj::vk::MakeDefaultMeshPipeline(m_renderDevice.GetLogicalDevice(),
+                                                m_globalUBODescriptorSetLayout,
+                                                m_drawImage.GetImageFormat(),
+                                                m_depthImage.GetImageFormat(),
+                                                "Data/Engine/Shaders/Default.vert.spv",
+                                                "Data/Engine/Shaders/Default.frag.spv");
 
             CreateCommandPools();
             m_immediateCommandContext.Init(m_renderDevice.GetLogicalDevice(),
@@ -121,9 +122,7 @@ export namespace sj
 #endif
         }
 
-        ~Renderer() = default;
-
-        void DeInit()
+        ~Renderer()
         {
             VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
             vkDeviceWaitIdle(logicalDevice);
@@ -142,6 +141,12 @@ export namespace sj
                                m_drawImageView,
                                g_vkAllocationFns);
             m_drawImage.DeInit(m_renderDevice.GetAllocator());
+
+            vkDestroyImageView(m_renderDevice.GetLogicalDevice(),
+                               m_depthImageView,
+                               g_vkAllocationFns);
+
+            m_depthImage.DeInit(m_renderDevice.GetAllocator());
 
             m_swapChain.DeInit(m_renderDevice);
 
@@ -205,6 +210,7 @@ export namespace sj
             ImGui::Render();
 #endif // !SJ_GOLD
 
+            m_frameCount++;
             const uint32_t frameIdx = m_frameCount % sj::vk::kMaxFramesInFlight;
             sj::vk::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
 
@@ -279,7 +285,6 @@ export namespace sj
             presentInfo.pImageIndices = &imageIndex;
 
             res = vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
-            m_frameCount++;
             if(res == VK_ERROR_OUT_OF_DATE_KHR)
             {
                 m_swapChain.Recreate(m_renderDevice,
@@ -363,7 +368,7 @@ export namespace sj
             return vkb_inst;
         }
 
-        void CreateRenderTarget(sj::Vec2 windowSize)
+        void CreateRenderImageResources(sj::Vec2 windowSize)
         {
             VmaAllocationCreateInfo renderImageAllocInfo = {};
             renderImageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -374,21 +379,39 @@ export namespace sj
                                           static_cast<uint32_t>(windowSize.GetY()),
                                           1};
 
-            VkImageUsageFlags drawImageUsages {};
-            drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            // Draw Target
+            {
+                VkImageUsageFlags drawImageUsages {};
+                drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+                drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+                drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
+                drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            m_drawImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
-                                                renderImageAllocInfo,
-                                                drawImageExtent,
-                                                VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                drawImageUsages,
-                                                VK_IMAGE_TILING_OPTIMAL);
+                m_drawImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+                                                    renderImageAllocInfo,
+                                                    drawImageExtent,
+                                                    VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                    drawImageUsages,
+                                                    VK_IMAGE_TILING_OPTIMAL);
 
-            m_drawImageView = m_drawImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
-                                                        VK_IMAGE_ASPECT_COLOR_BIT);
+                m_drawImageView = m_drawImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
+                                                            VK_IMAGE_ASPECT_COLOR_BIT);
+            }
+
+            // Depth Target
+            {
+                VkImageUsageFlags depthImageUsages {};
+                depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                m_depthImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+                                                     renderImageAllocInfo,
+                                                     drawImageExtent,
+                                                     VK_FORMAT_D32_SFLOAT,
+                                                     depthImageUsages,
+                                                     VK_IMAGE_TILING_OPTIMAL);
+
+                m_depthImageView = m_depthImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
+                                                              VK_IMAGE_ASPECT_DEPTH_BIT);
+            }
         }
 
         void CreateCommandPools()
@@ -624,6 +647,7 @@ export namespace sj
                 sj::vk::MakeAttachmentInfo(targetImageView,
                                            nullptr,
                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
             VkRenderingInfo renderInfo =
                 sj::vk::MakeRenderingInfo(targetImageExtent, &colorAttachment, nullptr);
 
@@ -658,21 +682,25 @@ export namespace sj
                                            nullptr,
                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
+            VkRenderingAttachmentInfo depthAttachment =
+                sj::vk::MakeDepthAttachmentInfo(m_depthImageView,
+                                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
             VkRenderingInfo renderInfo = sj::vk::MakeRenderingInfo(
                 {m_drawImage.GetExtent().width, m_drawImage.GetExtent().height},
                 &colorAttachment,
-                nullptr);
+                &depthAttachment);
 
             vkCmdBeginRendering(cmd, &renderInfo);
 
             vkCmdBindPipeline(cmd,
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              m_defaultPipeline.GetPipeline());
+                              m_defaultPipeline.pipeline);
 
             std::array<VkDescriptorSet, 1> descriptorSets = {globalDescriptorSet};
             vkCmdBindDescriptorSets(cmd,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    m_defaultPipeline.GetLayout(),
+                                    m_defaultPipeline.layout,
                                     0,
                                     descriptorSets.size(),
                                     descriptorSets.data(),
@@ -713,7 +741,7 @@ export namespace sj
             VkResult res = vkBeginCommandBuffer(frameData.cmd, &beginInfo);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to start command buffer!");
 
-            // Make swapchain image writable
+            // Make render target images
             sj::vk::TransitionImage(frameData.cmd,
                                     m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_UNDEFINED,
@@ -725,6 +753,11 @@ export namespace sj
                                     m_drawImage.GetImage(),
                                     VK_IMAGE_LAYOUT_GENERAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            sj::vk::TransitionImage(frameData.cmd,
+                                    m_depthImage.GetImage(),
+                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
             DrawGeometry(frameData.cmd, frameData.globalDescriptorSet);
 
@@ -778,7 +811,7 @@ export namespace sj
             VkExtent2D extent = m_swapChain.GetExtent();
             const float aspectRatio =
                 static_cast<float>(extent.width) / static_cast<float>(extent.height);
-            ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 0.1f, 100.0f);
+            ubo.projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 10000.0f, 0.1f);
             memcpy(bufferMem, &ubo, sizeof(ubo));
         }
 
@@ -790,6 +823,9 @@ export namespace sj
         sj::vk::ImageResource m_drawImage;
         VkImageView m_drawImageView;
 
+        sj::vk::ImageResource m_depthImage;
+        VkImageView m_depthImageView;
+
         /** Handle to the surface vulkan renders to */
         VkSurfaceKHR m_renderingSurface {};
 
@@ -800,7 +836,7 @@ export namespace sj
         sj::vk::SwapChain m_swapChain;
 
         /** Pipeline used to describe rendering process */
-        sj::vk::Pipeline m_defaultPipeline {};
+        sj::vk::PipelineResource m_defaultPipeline {};
 
         VkCommandPool m_graphicsCommandPool {};
 

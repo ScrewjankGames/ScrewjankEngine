@@ -172,7 +172,6 @@ export namespace sj::vk
                                                   VK_IMAGE_ASPECT_COLOR_BIT);
             }
 
-            CreateDepthResources(device);
         }
 
         void DeInit(const sj::vk::RenderDevice& device)
@@ -181,9 +180,6 @@ export namespace sj::vk
             {
                 vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
             }
-
-            vkDestroyImageView(device.GetLogicalDevice(), m_depthImageView, sj::g_vkAllocationFns);
-            m_depthImage.DeInit(device.GetAllocator());
 
             for(VkImageView view : m_imageViews)
             {
@@ -270,26 +266,6 @@ export namespace sj::vk
             return extent;
         }
 
-        void CreateDepthResources(const sj::vk::RenderDevice& device)
-        {
-            VkFormat depthFormat = FindDepthFormat(device.GetPhysicalDevice());
-
-            VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-            allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-            VkExtent3D extent = {GetExtent().width, GetExtent().height, 1};
-            m_depthImage = sj::vk::ImageResource(device.GetAllocator(),
-                                                 allocInfo,
-                                                 extent,
-                                                 depthFormat,
-                                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                                 VK_IMAGE_TILING_OPTIMAL);
-
-            m_depthImageView =
-                m_depthImage.MakeImageView(device.GetLogicalDevice(), VK_IMAGE_ASPECT_DEPTH_BIT);
-        }
-
         bool m_isInitialized = false;
 
         sj::memory_resource* m_cpuMemoryResource = nullptr;
@@ -311,10 +287,6 @@ export namespace sj::vk
 
         /** Size of the images in the swap chain (in pixels) */
         VkExtent2D m_imageExtent = {};
-
-        /** Depth buffer resources */
-        ImageResource m_depthImage;
-        VkImageView m_depthImageView = VK_NULL_HANDLE;
     };
 
 } // namespace sj::vk
