@@ -8,12 +8,7 @@ import sj.std.containers.type_list;
 
 export namespace sj
 {
-    using EngineComponentTypes = 
-    type_list<
-        TransformComponent, 
-        CameraComponent, 
-        Mesh3DComponent
-    >;
+    using EngineComponentTypes = type_list<TransformComponent, CameraComponent, Mesh3DComponent>;
 
     constexpr EngineComponentTypes g_engineComponentTypes;
-}
+} // namespace sj

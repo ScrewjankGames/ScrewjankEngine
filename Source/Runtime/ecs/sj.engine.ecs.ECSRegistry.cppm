@@ -6,13 +6,15 @@ module;
 #include <ranges>
 
 export module sj.engine.ecs.ECSRegistry;
-export import :Identifiers;
 
 import sj.std.containers.any;
 import sj.std.containers.sparse_set;
 import sj.std.containers.map;
+
 import sj.engine.ecs.components;
 import sj.engine.ecs.ComponentManifest;
+import sj.engine.ecs.Identifiers;
+
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs;
 
