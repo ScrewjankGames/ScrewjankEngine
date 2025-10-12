@@ -42,7 +42,7 @@ public:
 
             std::span<std::byte> colBuff {col, typeInfo->size * mCapacity};
 
-            typeInfo->destructorFn(colBuff, mSize);
+            typeInfo->destructor_fn(colBuff, mSize);
             idx++;
         }
     }
@@ -83,7 +83,7 @@ public:
             std::byte* newComponentAddr =
                 reinterpret_cast<std::byte*>(uintptr_t(column) + (colTypeInfo->size * mSize));
 
-            colTypeInfo->constructorFn(std::span {newComponentAddr, colTypeInfo->size}, 1);
+            colTypeInfo->constructor_fn(std::span {newComponentAddr, colTypeInfo->size}, 1);
         }
 
         return mSize++;
@@ -114,7 +114,7 @@ public:
             std::span<std::byte> oldCol {oldColumn, typeInfo->size * mCapacity};
             std::span<std::byte> newCol {newColumn, typeInfo->size * newCapacity};
 
-            typeInfo->moveConstructorFn(oldCol, newCol, mSize);
+            typeInfo->move_constructor_fn(oldCol, newCol, mSize);
         }
 
         // Update columns jump table

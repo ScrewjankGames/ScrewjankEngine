@@ -24,14 +24,14 @@ struct type_info
      * @param count: How many instances to construct in buffer
      */
     using ctorFn = void (*)(std::span<std::byte> buffer, size_t count);
-    ctorFn constructorFn = nullptr;
+    ctorFn constructor_fn = nullptr;
 
     /**
      * @param buffer: Location to destruct instance(s) of type
      * @param count: How many instances to destroy in buffer
      */
     using dtorFn = void (*)(std::span<std::byte> buffer, size_t count);
-    dtorFn destructorFn = nullptr;
+    dtorFn destructor_fn = nullptr;
 
     /**
      * @param oldBuffer: Element(s) to move-from
@@ -41,7 +41,7 @@ struct type_info
     using moveFn = void (*)(std::span<std::byte> oldBuffer,
                             std::span<std::byte> newBuffer,
                             size_t count);
-    moveFn moveConstructorFn = nullptr;
+    moveFn move_constructor_fn = nullptr;
 };
 
 template <class T>
