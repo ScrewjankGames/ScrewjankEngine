@@ -32,5 +32,4 @@ export namespace sj
         static inline thread_local sj::memory_resource* s_scratchpadParentResource = nullptr;
         static inline thread_local linear_allocator s_scratchpadAllocator = {};
     };
-
 }; // namespace sj

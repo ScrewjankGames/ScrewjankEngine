@@ -12,7 +12,7 @@ module;
 // STD Headers
 #include <span>
 
-export module sj.engine.framework.Window;
+export module sj.engine.core.Window;
 import sj.std.math;
 import sj.engine.rendering.vk.Primitives;
 

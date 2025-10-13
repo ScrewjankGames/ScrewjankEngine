@@ -18,12 +18,12 @@ module;
 #include <algorithm>
 #include <variant>
 
-export module sj.engine.ecs.systems.InputSystem;
+export module sj.engine.core.InputSystem;
 import sj.std.math;
 import sj.std.string_hash;
 import sj.std.containers.map;
 import sj.std.containers.vector;
-import sj.engine.framework.Window;
+import sj.engine.core.Window;
 
 export namespace sj
 {

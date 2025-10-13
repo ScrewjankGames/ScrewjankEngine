@@ -1,11 +1,14 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
+#include <ScrewjankEngine/components/ComponentMacros.hpp>
 
-export module sj.engine.ecs.systems.CameraSystem;
-import sj.engine.ecs.components.TransformComponent;
-import sj.engine.ecs.components.CameraComponent;
+export module sj.engine.core.CameraSystem;
+import sj.engine.core.CameraComponent;
+import sj.engine.core.TransformComponent;
+
 import sj.std.math;
 import sj.engine.ecs.ECSRegistry;
+import sj.datadefs.components.CameraChunk;
 
 export namespace sj
 {
@@ -24,7 +27,7 @@ export namespace sj
                 // TODO: What if there's multiple
                 Mat44 localToGoTransform = cameraComponent.localToGoTransform;
                 const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);              
-                const Mat44& goWorldSpaceTransform = goTransform->m_localToParentTransform;
+                const Mat44& goWorldSpaceTransform = goTransform->localToParentTransform;
                 
                 Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
                 

@@ -7,8 +7,7 @@ module;
 // Library Includes
 #include <glaze/beve/read.hpp>
 
-export module sj.engine.framework.Scene;
-import sj.engine.ecs.components;
+export module sj.engine.core.Scene;
 import sj.engine.ecs;
 import sj.std.memory;
 import sj.std.containers.type_list;
@@ -17,19 +16,6 @@ import sj.datadefs;
 
 export namespace sj
 {
-    using LoadComponentFn = void (*)(ECSRegistry& registry,
-                                     GameObjectId goId,
-                                     const DataChunk& componentData);
-
-    template <class T>
-    void LoadComponent(ECSRegistry& registry, GameObjectId goId, const DataChunk& componentData)
-    {
-        T component(componentData);
-
-        // Add new component
-        registry.CreateComponent<T>(goId, component);
-    };
-
     class Scene
     {
     public:

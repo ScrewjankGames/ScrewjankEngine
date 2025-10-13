@@ -22,7 +22,7 @@ module;
 
 export module sj.engine.rendering.Renderer;
 import sj.engine.rendering.vk;
-import sj.engine.framework.Window;
+import sj.engine.core.Window;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs.assets.Texture;

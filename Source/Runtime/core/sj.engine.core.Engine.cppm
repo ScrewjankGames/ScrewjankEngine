@@ -10,17 +10,11 @@ module;
     #include <imgui.h>
 #endif
 
-export module sj.engine.framework.Engine;
-import sj.engine.rendering.Renderer;
+export module sj.engine.core.Engine;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.system.Timer;
-import sj.engine.framework.Window;
-import sj.engine.ecs;
 import sj.std.memory.literals;
-import sj.std.math;
-import sj.std.string_hash;
-import sj.std.containers.vector;
 
 export namespace sj
 {
