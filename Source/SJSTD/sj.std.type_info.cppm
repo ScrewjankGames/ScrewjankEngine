@@ -8,17 +8,22 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 export module sj.std.type_info;
+import sj.std.string_hash;
 
 export namespace sj
 {
+using TypeId = uint32_t;
+
 struct type_info
 {
-    std::string_view name;
+    std::string_view name = "";
+    TypeId id = 0;
+
     size_t size = 0;
     size_t alignment = 0;
 
     bool is_trivially_destructible = false;
-    
+
     /**
      * @param buffer: Location to construct new instance(s) of type
      * @param count: How many instances to construct in buffer
@@ -84,6 +89,7 @@ constexpr const type_info* GetTypeInfo()
         };
 
     static type_info s_info {glz::type_name<T>,
+                             string_hash(glz::type_name<T>).AsInt(),
                              sizeof(T),
                              alignof(T),
                              std::is_trivially_destructible_v<T>,
