@@ -8,7 +8,6 @@ module;
 #include <span>
 #include <ranges>
 
-#include <ScrewjankEngine/components/ComponentMacros.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.ecs.Archetype;
@@ -50,7 +49,7 @@ public:
     template <class T>
     std::span<T> FindColumn()
     {
-        auto it = std::ranges::find(mComponentTypes, GetTypeInfo<T>());
+        auto it = std::ranges::find(mComponentTypes, &type_info_of<T>);
         SJ_ASSERT(it != mComponentTypes.end(), "Archetype does not contain requested component!");
 
         size_t colIdx = std::ranges::distance(std::ranges::begin(mComponentTypes), it);

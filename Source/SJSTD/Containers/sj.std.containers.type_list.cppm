@@ -66,7 +66,6 @@ export namespace sj
         {
 
         }
-
         [[nodiscard]] constexpr auto get(const KeyType& key) const -> const ValueType&
         {
             auto keyIt = std::ranges::find(m_keys, key);

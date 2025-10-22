@@ -1,6 +1,5 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankEngine/components/ComponentMacros.hpp>
 
 export module sj.engine.core.CameraSystem;
 import sj.engine.core.CameraComponent;
@@ -8,7 +7,6 @@ import sj.engine.core.TransformComponent;
 
 import sj.std.math;
 import sj.engine.ecs.ECSRegistry;
-import sj.datadefs.components.CameraChunk;
 
 export namespace sj
 {

@@ -1,9 +1,9 @@
 module;
-#include <ScrewjankEngine/components/ComponentMacros.hpp>
+
+#include <string_view>
 
 export module sj.engine.core.Mesh3DComponent;
 import sj.datadefs.DataChunk;
-import sj.datadefs.components.Mesh3DChunk;
 import sj.std.math;
 import sj.engine.ecs.ECSRegistry;
 import sj.engine.ecs.Identifiers;
@@ -13,7 +13,12 @@ export namespace sj
 {
 struct Mesh3DComponent
 {
-    SJ_COMPONENT(Mesh3DComponent, Mesh3DChunk);
+};
+
+struct Mesh3DChunk
+{
+    std::string_view model_path;
+    std::string_view texture_path;
 };
 
 template <>

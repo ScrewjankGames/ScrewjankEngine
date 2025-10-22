@@ -50,7 +50,7 @@ struct type_info
 };
 
 template <class T>
-std::span<T> byte_span_cast(std::span<std::byte> buf, int expectedCount)
+constexpr std::span<T> byte_span_cast(std::span<std::byte> buf, int expectedCount)
 {
     auto name = glz::type_name<T>;
 
@@ -65,38 +65,37 @@ std::span<T> byte_span_cast(std::span<std::byte> buf, int expectedCount)
 }
 
 template <class T>
-constexpr const type_info* GetTypeInfo()
-{
-    auto defaultCtorWrapper = [](std::span<std::byte> buf, size_t count) {
-        std::span<T> typedBuff = byte_span_cast<T>(buf, count);
-        for(T& uninitialized : typedBuff)
-        {
-            new(&uninitialized) T();
-        }
-    };
-
-    auto defaultDtorWrapper = [](std::span<std::byte> buf, size_t count) {
-        std::span<T> typedBuff = byte_span_cast<T>(buf, count);
-        std::ranges::destroy(typedBuff);
-    };
-
-    auto defaultMoveCtorWrapper =
+constexpr type_info type_info_of {
+    .name = glz::type_name<T>,
+    .id = string_hash(glz::type_name<T>).AsInt(),
+    .size = sizeof(T),
+    .alignment = alignof(T),
+    .is_trivially_destructible = std::is_trivially_destructible_v<T>,
+    .constructor_fn =
+        [](std::span<std::byte> buf, size_t count) {
+            std::span<T> typedBuff = byte_span_cast<T>(buf, count);
+            for(T& uninitialized : typedBuff)
+            {
+                new(&uninitialized) T();
+            }
+        },
+    .destructor_fn =
+        [](std::span<std::byte> buf, size_t count) {
+            std::span<T> typedBuff = byte_span_cast<T>(buf, count);
+            std::ranges::destroy(typedBuff);
+        },
+    .move_constructor_fn =
         [](std::span<std::byte> oldBuf, std::span<std::byte> newBuf, size_t count) {
             std::span<T> oldTypedBuf = byte_span_cast<T>(oldBuf, count);
             std::span<T> newTypedBuf = byte_span_cast<T>(oldBuf, count);
 
             std::ranges::uninitialized_move(oldTypedBuf, newTypedBuf);
-        };
+        }};
 
-    static type_info s_info {glz::type_name<T>,
-                             string_hash(glz::type_name<T>).AsInt(),
-                             sizeof(T),
-                             alignof(T),
-                             std::is_trivially_destructible_v<T>,
-                             defaultCtorWrapper,
-                             defaultDtorWrapper,
-                             defaultMoveCtorWrapper};
-    return &s_info;
+template <class T>
+constexpr const TypeId type_id_of()
+{
+    return type_info_of<T>.id;
 }
 
 } // namespace sj

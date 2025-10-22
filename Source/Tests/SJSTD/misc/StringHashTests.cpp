@@ -4,7 +4,8 @@
 #include "gtest/gtest.h"
 
 // Engine Headers
-#include <ScrewjankStd/TypeMacros.hpp>
+
+import sj.std.string_hash;
 
 using namespace sj;
 

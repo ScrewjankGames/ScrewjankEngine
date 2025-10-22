@@ -1,12 +1,11 @@
 module;
 
-#include <ScrewjankStd/TypeMacros.hpp>
-
 // STD Includes
 #include <cstdint>
 #include <cstddef>
 
 export module sj.datadefs:SceneChunks;
+import sj.std.string_hash;
 import sj.std.containers.vector;
 import sj.datadefs.DataChunk;
 

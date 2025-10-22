@@ -21,18 +21,6 @@ using LoadComponentFn = void (*)(ECSRegistry& registry,
 template <class T>
 void LoadComponent(ECSRegistry& registry, GameObjectId goId, const DataChunk& componentData)
 {
-    T component =
-        glz::read_beve<T>(componentData.data)
-            .or_else([](const glz::error_ctx& error) -> std::expected<T, glz::error_ctx> {
-                std::string_view componentTypeName = glz::type_name<T>;
-
-                SJ_ASSERT(error.ec == glz::error_code::none,
-                          "Failed to translate from component chunk to runtime component type {}!",
-                          componentTypeName);
-                return T();
-            })
-            .value();
-
-    registry.CreateComponent<T>(goId, std::move(component));
+    registry.CreateComponent<T>(goId, componentData.Get<T>());
 };
 } // namespace sj

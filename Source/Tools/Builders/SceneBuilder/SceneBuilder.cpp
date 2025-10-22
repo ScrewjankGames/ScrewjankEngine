@@ -6,7 +6,6 @@
 
 // SJSTD Includes
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Log.hpp>
 
 // Library Includes
@@ -18,7 +17,6 @@
 #include <glaze/core/read.hpp>
 #include <glaze/core/reflect.hpp>
 #include <glaze/core/meta.hpp>
-#include <glaze/json/json_t.hpp>
 #include <glaze/json/read.hpp>
 #include <glaze/glaze.hpp>
 
@@ -27,20 +25,19 @@
 #include <string>
 #include <vector>
 
-import sj.std.containers;
+import sj.std;
 import sj.datadefs;
-import sj.std.math;
 
 struct ComponentSchema
 {
     std::string type = {};
-    glz::json_t componentJson = glz::json_t::object_t{};
+    glz::generic componentJson = glz::generic::object_t{};
 
     void unknown_read(const glz::sv& key, const glz::raw_json& value) 
     {
-        glz::json_t::object_t& obj = componentJson.get_object();
+        glz::generic::object_t& obj = componentJson.get_object();
 
-        glz::json_t asJson;
+        glz::generic asJson;
         glz::error_ctx res = glz::read_json(asJson, value.str);
         SJ_ASSERT(res.ec == glz::error_code::none, "failed to parse raw json");
 
@@ -105,9 +102,7 @@ bool SceneBuilder::BuildItem(const std::filesystem::path& item, const std::files
             string_hash typeHash(component.type);
             TypeId typeId = typeHash.AsInt();
             componentChunk.type = typeId;
-
-            WriteChunkFn writeFn = g_chunkWriterFuncs.get(typeId);
-            writeFn(component.componentJson, componentChunk);
+            componentChunk.data = component.componentJson;
 
             goChunk.components.emplace_back(std::move(componentChunk));
         }

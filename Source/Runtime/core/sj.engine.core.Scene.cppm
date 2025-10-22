@@ -1,7 +1,6 @@
 module;
 
 // SJ Includes
-#include <ScrewjankStd/TypeMacros.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
 // Library Includes
@@ -10,6 +9,7 @@ module;
 export module sj.engine.core.Scene;
 import sj.engine.ecs;
 import sj.std.memory;
+import sj.std.type_info;
 import sj.std.containers.type_list;
 import sj.std.containers.vector;
 import sj.datadefs;
@@ -25,7 +25,7 @@ export namespace sj
             constinit static type_map<ComponentManifest.GetComponentTypes(),
                                TypeId,
                                LoadComponentFn,
-                               []<class T>() -> TypeId {return T::kChunkTypeId;},
+                               []<class T>() -> TypeId {return type_id_of<T>();},
                                []<class T>() -> LoadComponentFn {return LoadComponent<T>;}>
                 kComponentLoadFns = {};
 

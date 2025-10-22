@@ -3,7 +3,6 @@ module;
 
 // SJ Includes
 #include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
-#include <ScrewjankDataDefinitions/ChunkMacros.hpp>
 
 // STD Includes
 #include <cstdint>

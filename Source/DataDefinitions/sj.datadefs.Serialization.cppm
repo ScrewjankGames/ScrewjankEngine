@@ -1,7 +1,6 @@
 module;
 
 // SJ Includes
-#include <ScrewjankStd/TypeMacros.hpp>
 
 // Library Headers
 #include <glaze/glaze.hpp>

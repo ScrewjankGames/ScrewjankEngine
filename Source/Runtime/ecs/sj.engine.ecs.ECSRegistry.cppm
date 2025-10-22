@@ -1,6 +1,5 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankStd/TypeMacros.hpp>
 
 #include <memory_resource>
 #include <ranges>
@@ -10,6 +9,7 @@ export module sj.engine.ecs.ECSRegistry;
 import sj.std.containers.any;
 import sj.std.containers.sparse_set;
 import sj.std.containers.map;
+import sj.std.type_info;
 
 import sj.engine.ecs.ComponentManifest;
 import sj.engine.ecs.Identifiers;
@@ -66,7 +66,7 @@ export namespace sj
         void RegisterComponentType()
         {
             m_componentPools.emplace(
-                T::kTypeId,
+                type_id_of<T>(),
                 ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
         }
 
@@ -85,7 +85,7 @@ export namespace sj
         template <class T>
         ComponentPool<T>& GetComponentPool()
         {
-            ComponentPoolHandle* handle = FindComponentPool(T::kTypeId);
+            ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>());
             SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
 
             return handle->get<ComponentPool<T>>();
