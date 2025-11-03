@@ -190,16 +190,13 @@ export namespace sj
         void StartRenderFrame()
         {
 #ifndef SJ_GOLD
-            Vec2 viewport = m_display->GetViewportSize();
-
             {
                 MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
-
-                ImGui::GetIO().DisplaySize = {viewport.GetX(), viewport.GetY()};
 
                 // Start the Dear ImGui frame
                 ImGui_ImplVulkan_NewFrame();
                 ImGui::NewFrame();
+                ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
             }
 #endif // !SJ_GOLD
         }

@@ -18,9 +18,6 @@ import sj.std.memory.literals;
 
 export namespace sj
 {
-    /**
-     * Service locator to provide global access to engine systems
-     */
     class Engine
     {
     public:
@@ -34,6 +31,7 @@ export namespace sj
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
+            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
             // Setup Dear ImGui style

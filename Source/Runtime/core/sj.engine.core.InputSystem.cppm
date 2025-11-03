@@ -7,11 +7,6 @@ module;
 
 // Library Includes
 #include <GLFW/glfw3.h>
-#include <imgui_impl_glfw.h>
-
-#ifndef SJ_GOLD
-    #include <imgui.h>
-#endif // !SJ_GOLD
 
 // STD Includes
 #include <cmath>
@@ -99,10 +94,6 @@ export namespace sj
 
         void Process()
         {
-            // Poll events, trigger callbacks
-            glfwPollEvents();
-            ImGui_ImplGlfw_NewFrame();
-
             constexpr float kDeadZone = 0.15f;
             constexpr float kDeadZoneSqr = kDeadZone * kDeadZone;
 
