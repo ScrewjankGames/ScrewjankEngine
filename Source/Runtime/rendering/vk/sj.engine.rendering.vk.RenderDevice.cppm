@@ -5,7 +5,6 @@ module;
 #include <vulkan/vulkan_core.h>
 #include <VkBootstrap.h>
 
-#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
 export module sj.engine.rendering.vk.RenderDevice;

@@ -187,26 +187,8 @@ export namespace sj
             vkDestroyInstance(m_vkInstance, sj::g_vkAllocationFns);
         }
 
-        void StartRenderFrame()
-        {
-#ifndef SJ_GOLD
-            {
-                MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
-
-                // Start the Dear ImGui frame
-                ImGui_ImplVulkan_NewFrame();
-                ImGui::NewFrame();
-                ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-            }
-#endif // !SJ_GOLD
-        }
-
         void Render(const Mat44& cameraMatrix)
         {
-#ifndef SJ_GOLD
-            ImGui::Render();
-#endif // !SJ_GOLD
-
             m_frameCount++;
             const uint32_t frameIdx = m_frameCount % sj::vk::kMaxFramesInFlight;
             sj::vk::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
@@ -299,7 +281,7 @@ export namespace sj
         {
             return &m_renderDevice;
         }
-
+        
         /**
          * Global state shared by all shaders
          */

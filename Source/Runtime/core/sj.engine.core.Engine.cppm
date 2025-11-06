@@ -34,6 +34,8 @@ export namespace sj
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+            io.FontGlobalScale = 1.5;
+            
             // Setup Dear ImGui style
             ImGui::StyleColorsDark();
 #endif
