@@ -11,12 +11,10 @@ import sj.engine.system.memory.MemorySystem;
 
 export namespace sj
 {
-#ifndef SJ_GOLD
-
 class Editor
 {
 public:
-    Editor(Window& mainWindow, Renderer& renderer)
+    Editor(Window& mainWindow, Renderer& renderer) : mRenderer(&renderer)
     {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
@@ -29,9 +27,14 @@ public:
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
-        
+
         ImGui_ImplGlfw_InitForVulkan(mainWindow.GetWindowHandle(), true);
         renderer.InitImGui();
+    }
+
+    ~Editor()
+    {
+        mRenderer->DeInitImGui();
     }
 
     void Process(float deltaSeconds)
@@ -53,8 +56,7 @@ public:
     }
 
 private:
+    Renderer* mRenderer;
 };
-
-#endif
 
 } // namespace sj

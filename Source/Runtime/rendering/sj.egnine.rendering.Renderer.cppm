@@ -100,10 +100,6 @@ export namespace sj
             VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
             vkDeviceWaitIdle(logicalDevice);
 
-#ifndef SJ_GOLD
-            ImGui_ImplVulkan_Shutdown();
-#endif // !SJ_GOLD
-
             m_immediateCommandContext.DeInit();
 
             m_frameData.DeInit(m_renderDevice);
@@ -281,6 +277,14 @@ export namespace sj
             init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
             
             ImGui_ImplVulkan_Init(&init_info);
+        }
+
+        void DeInitImGui()
+        {
+            VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
+            vkDeviceWaitIdle(logicalDevice);
+
+            ImGui_ImplVulkan_Shutdown();
         }
             
         /**
@@ -617,7 +621,6 @@ export namespace sj
             }
         }
 
-#ifndef SJ_GOLD
         void DrawImGui(VkCommandBuffer cmd,
                        VkDescriptorSet globalDescriptorSet,
                        VkImageView targetImageView,
@@ -635,7 +638,6 @@ export namespace sj
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
             vkCmdEndRendering(cmd);
         }
-#endif
 
         void DrawBackground(VkCommandBuffer cmd)
         {
