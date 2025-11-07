@@ -93,33 +93,6 @@ export namespace sj
             CreateGlobalUBODescriptorSets();
 
             m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
-
-#ifndef SJ_GOLD
-            // Init ImGui
-            ImGui_ImplVulkan_InitInfo init_info = {};
-            init_info.Instance = m_vkInstance;
-            init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
-            init_info.Device = m_renderDevice.GetLogicalDevice();
-            init_info.QueueFamily = m_renderDevice.GetGraphicsQueueIndex();
-            init_info.Queue = m_renderDevice.GetGraphicsQueue();
-            init_info.PipelineCache = VK_NULL_HANDLE;
-            init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
-            init_info.Allocator = nullptr;
-            init_info.MinImageCount = sj::vk::kMaxFramesInFlight;
-            init_info.ImageCount = sj::vk::kMaxFramesInFlight;
-            init_info.CheckVkResultFn = CheckImguiVulkanResult;
-
-            VkFormat swapchainImageFormat = m_swapChain.GetImageFormat();
-            init_info.UseDynamicRendering = true;
-            init_info.PipelineRenderingCreateInfo.sType =
-                VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-            init_info.PipelineRenderingCreateInfo.pNext = nullptr;
-            init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-            init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainImageFormat;
-
-            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-            ImGui_ImplVulkan_Init(&init_info);
-#endif
         }
 
         ~Renderer()
@@ -282,6 +255,34 @@ export namespace sj
             return &m_renderDevice;
         }
         
+        void InitImGui()
+        {
+            ImGui_ImplVulkan_InitInfo init_info = {};
+            init_info.Instance = m_vkInstance;
+            init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
+            init_info.Device = m_renderDevice.GetLogicalDevice();
+            init_info.QueueFamily = m_renderDevice.GetGraphicsQueueIndex();
+            init_info.Queue = m_renderDevice.GetGraphicsQueue();
+            init_info.PipelineCache = VK_NULL_HANDLE;
+            init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
+            init_info.Allocator = nullptr;
+            init_info.MinImageCount = sj::vk::kMaxFramesInFlight;
+            init_info.ImageCount = sj::vk::kMaxFramesInFlight;
+            init_info.CheckVkResultFn = CheckImguiVulkanResult;
+
+            VkFormat swapchainImageFormat = m_swapChain.GetImageFormat();
+            init_info.UseDynamicRendering = true;
+            init_info.PipelineRenderingCreateInfo.sType =
+                VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+            init_info.PipelineRenderingCreateInfo.pNext = nullptr;
+            init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+            init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainImageFormat;
+            
+            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+            
+            ImGui_ImplVulkan_Init(&init_info);
+        }
+            
         /**
          * Global state shared by all shaders
          */

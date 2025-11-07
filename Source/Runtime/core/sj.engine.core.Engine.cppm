@@ -5,7 +5,6 @@ module;
 
 #include <memory>
 #include <concepts>
-
 #ifndef SJ_VERSION
     #include <imgui.h>
 #endif
@@ -23,22 +22,8 @@ export namespace sj
     public:
         Engine(uint64_t rootHeapSize)
         {
-            sj::MemorySystem::Init();
+            sj::MemorySystem::Init(rootHeapSize);
             sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
-
-#ifndef SJ_GOLD
-            // Setup Dear ImGui context
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-            ImGuiIO& io = ImGui::GetIO();
-            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-            io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-            io.FontGlobalScale = 1.5;
-            
-            // Setup Dear ImGui style
-            ImGui::StyleColorsDark();
-#endif
 
             SJ_ENGINE_LOG_INFO("Initializing...");
         }

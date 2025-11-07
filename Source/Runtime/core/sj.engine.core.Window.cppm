@@ -35,8 +35,6 @@ export namespace sj
                                               windowTitle,
                                               nullptr,
                                               nullptr);
-
-            ImGui_ImplGlfw_InitForVulkan(m_NativeWindow, true);
         }
 
         ~Window()

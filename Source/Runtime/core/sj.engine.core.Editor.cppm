@@ -18,20 +18,20 @@ class Editor
 public:
     Editor(Window& mainWindow, Renderer& renderer)
     {
-        // // Setup Dear ImGui context
-        // IMGUI_CHECKVERSION();
-        // ImGui::CreateContext();
-        // ImGuiIO& io = ImGui::GetIO();
-        // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-        // // Setup Dear ImGui style
-        // ImGui::StyleColorsDark();
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        io.FontGlobalScale = 1.5;
 
-        //ImGui_ImplGlfw_InitForVulkan(mainWindow.GetWindowHandle(), true);
-
-        //auto vulkanInitInfo = renderer.GetImGuiInitInfo();
-        //ImGui_ImplVulkan_Init(&vulkanInitInfo);
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        
+        ImGui_ImplGlfw_InitForVulkan(mainWindow.GetWindowHandle(), true);
+        renderer.InitImGui();
     }
 
     void Process(float deltaSeconds)
