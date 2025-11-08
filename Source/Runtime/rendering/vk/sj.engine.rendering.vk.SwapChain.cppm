@@ -177,14 +177,10 @@ export namespace sj::vk
         void DeInit(const sj::vk::RenderDevice& device)
         {
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
-            {
                 vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
-            }
 
             for(VkImageView view : m_imageViews)
-            {
                 vkDestroyImageView(device.GetLogicalDevice(), view, sj::g_vkAllocationFns);
-            }
 
             vkDestroySwapchainKHR(device.GetLogicalDevice(), m_swapChain, sj::g_vkAllocationFns);
         }

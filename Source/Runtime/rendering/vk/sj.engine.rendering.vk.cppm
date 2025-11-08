@@ -3,7 +3,7 @@ module;
 export module sj.engine.rendering.vk;
 export import sj.engine.rendering.vk.Buffer;
 export import sj.engine.rendering.vk.DefaultMeshPipeline;
-export import sj.engine.rendering.vk.FrameData;
+export import sj.engine.rendering.vk.FrameResources;
 export import sj.engine.rendering.vk.Helpers;
 export import sj.engine.rendering.vk.ImageUtils;
 export import sj.engine.rendering.vk.ImmediateCommandContext;
