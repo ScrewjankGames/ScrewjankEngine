@@ -12,4 +12,5 @@ export import sj.engine.rendering.vk.Pipeline;
 export import sj.engine.rendering.vk.Primitives;
 export import sj.engine.rendering.vk.RenderDevice;
 export import sj.engine.rendering.vk.SwapChain;
+export import sj.engine.rendering.vk.TextureResource;
 export import sj.engine.rendering.vk.Utils;

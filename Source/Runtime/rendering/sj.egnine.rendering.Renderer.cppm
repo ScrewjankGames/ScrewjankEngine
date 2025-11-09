@@ -78,8 +78,7 @@ public:
                                 m_renderDevice.GetAllocator(),
                                 m_immediateCommandContext);
 
-        CreateDummyTextureImage();
-        CreateDummyTextureSampler();
+        m_dummyTextureResource.Init("Data/Engine/viking_room.sj_tex", m_renderDevice, m_immediateCommandContext);
 
         CreateGlobalUniformBuffers();
 
@@ -109,9 +108,7 @@ public:
 
         m_swapChain.DeInit(m_renderDevice);
 
-        vkDestroySampler(logicalDevice, m_dummyTextureSampler, sj::g_vkAllocationFns);
-        vkDestroyImageView(logicalDevice, m_dummyTextureImageView, sj::g_vkAllocationFns);
-        m_dummyTextureImage.DeInit(m_renderDevice.GetAllocator());
+        m_dummyTextureResource.DeInit(logicalDevice, m_renderDevice.GetAllocator());
 
         m_globalDescriptorAllocator.DeInit(logicalDevice);
 
@@ -406,95 +403,6 @@ private:
         SJ_ASSERT(res == VK_SUCCESS, "Failed to create graphics command pool");
     }
 
-    void CreateDummyTextureImage()
-    {
-        std::ifstream textureFile;
-        textureFile.open("Data/Engine/viking_room.sj_tex", std::ios::in | std::ios::binary);
-        TextureHeader header;
-        textureFile.read(reinterpret_cast<char*>(&header), sizeof(header));
-
-        VkDeviceSize imageSizeBytes = header.width * header.height * 4;
-        sj::vk::BufferResource stagingBuffer =
-            sj::vk::MakeStagingBuffer(m_renderDevice.GetAllocator(), imageSizeBytes);
-
-        // Read texture data straight into GPU memory
-        textureFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()), imageSizeBytes);
-        textureFile.close();
-
-        VmaAllocationCreateInfo allocCreateInfo = {};
-        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-        allocCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        VkExtent3D imageExtent = {static_cast<uint32_t>(header.width),
-                                  static_cast<uint32_t>(header.height),
-                                  1};
-
-        m_dummyTextureImage =
-            sj::vk::ImageResource(m_renderDevice.GetAllocator(),
-                                  allocCreateInfo,
-                                  imageExtent,
-                                  VK_FORMAT_R8G8B8A8_SRGB,
-                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL);
-
-        VkImage textureImage = m_dummyTextureImage.GetImage();
-        m_immediateCommandContext.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
-            sj::vk::TransitionImage(cmd,
-                                    textureImage,
-                                    VK_IMAGE_LAYOUT_UNDEFINED,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        });
-
-        m_immediateCommandContext.ImmediateSubmit([buf = stagingBuffer.GetBuffer(),
-                                                   img = m_dummyTextureImage.GetImage(),
-                                                   header](VkCommandBuffer cmd) {
-            sj::vk::CopyBufferToImage(cmd, buf, img, header.width, header.height);
-        });
-
-        m_immediateCommandContext.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
-            sj::vk::TransitionImage(cmd,
-                                    textureImage,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        });
-
-        stagingBuffer.DeInit(m_renderDevice.GetAllocator());
-
-        m_dummyTextureImageView =
-            m_dummyTextureImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
-                                              VK_IMAGE_ASPECT_COLOR_BIT);
-
-        return;
-    }
-
-    void CreateDummyTextureSampler()
-    {
-        VkPhysicalDeviceProperties properties {};
-        vkGetPhysicalDeviceProperties(m_renderDevice.GetPhysicalDevice(), &properties);
-
-        VkSamplerCreateInfo samplerInfo {};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-        VkResult res = vkCreateSampler(m_renderDevice.GetLogicalDevice(),
-                                       &samplerInfo,
-                                       sj::g_vkAllocationFns,
-                                       &m_dummyTextureSampler);
-
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create image sampler");
-    }
-
     void CreateGlobalDescriptorSetlayout()
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
@@ -581,8 +489,8 @@ private:
 
             VkDescriptorImageInfo imageInfo {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_dummyTextureImageView;
-            imageInfo.sampler = m_dummyTextureSampler;
+            imageInfo.imageView = m_dummyTextureResource.GetImageView();
+            imageInfo.sampler = m_dummyTextureResource.GetSampler();
 
             std::array descriptorWrites {
                 VkWriteDescriptorSet {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -611,7 +519,6 @@ private:
     }
 
     void DrawImGui(VkCommandBuffer cmd,
-                   VkDescriptorSet globalDescriptorSet,
                    VkImageView targetImageView,
                    VkExtent2D targetImageExtent)
     {
@@ -756,7 +663,6 @@ private:
 
 #ifndef SJ_GOLD
         DrawImGui(frameData.cmd,
-                  frameData.globalDescriptorSet,
                   swapchainImageView,
                   m_swapChain.GetExtent());
 #endif
@@ -827,9 +733,7 @@ private:
 
     sj::vk::MeshBuffers m_dummyMeshBuffers;
 
-    sj::vk::ImageResource m_dummyTextureImage {};
-    VkImageView m_dummyTextureImageView;
-    VkSampler m_dummyTextureSampler {};
+    sj::vk::TextureResource m_dummyTextureResource;
 
     sj::vk::DescriptorAllocator m_globalDescriptorAllocator;
     VkDescriptorSetLayout m_globalUBODescriptorSetLayout {};

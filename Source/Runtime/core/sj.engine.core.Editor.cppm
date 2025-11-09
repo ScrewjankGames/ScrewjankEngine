@@ -23,7 +23,7 @@ public:
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-        io.FontGlobalScale = 1.5;
+        io.FontGlobalScale = 2.0f;
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
