@@ -25,7 +25,7 @@ export namespace sj
             constinit static type_map<ComponentManifest.GetComponentTypes(),
                                TypeId,
                                LoadComponentFn,
-                               []<class T>() -> TypeId {return type_id_of<T>();},
+                               []<class T>() -> TypeId {return type_id_of<T>;},
                                []<class T>() -> LoadComponentFn {return LoadComponent<T>;}>
                 kComponentLoadFns = {};
 

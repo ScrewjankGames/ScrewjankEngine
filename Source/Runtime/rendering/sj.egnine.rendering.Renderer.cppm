@@ -21,8 +21,9 @@ module;
 #include <fstream>
 
 export module sj.engine.rendering.Renderer;
-import sj.engine.rendering.vk;
+import sj.engine.core.Program;
 import sj.engine.core.Window;
+import sj.engine.rendering.vk;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.datadefs.assets.Texture;
@@ -34,7 +35,7 @@ import sj.std.memory.resources.free_list_allocator;
 
 export namespace sj
 {
-class Renderer
+class Renderer : public IModule
 {
 public:
     static free_list_allocator* WorkBuffer()
@@ -43,7 +44,7 @@ public:
         return &g_workBufferResource;
     }
 
-    Renderer(Window* display) : m_display(display), m_swapChain(WorkBuffer())
+    Renderer(Program& program) : m_display(program.GetModule<Window>()), m_swapChain(WorkBuffer())
     {
         free_list_allocator* workBuffer = WorkBuffer();
         workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
@@ -51,14 +52,14 @@ public:
 
         vkb::Instance bootstrapInfo = InitializeVulkan();
 
-        m_renderingSurface = display->CreateWindowSurface(m_vkInstance);
+        m_renderingSurface = m_display->CreateWindowSurface(m_vkInstance);
 
         // Select physical device and create and logical render device
         m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
 
         // Create the vulkan swap chain connected to the current window and device
-        m_swapChain.Init(m_renderDevice, m_renderingSurface, display->GetViewportSize());
-        CreateRenderImageResources(display->GetViewportSize());
+        m_swapChain.Init(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
+        CreateRenderImageResources(m_display->GetViewportSize());
 
         CreateGlobalDescriptorSetlayout();
 

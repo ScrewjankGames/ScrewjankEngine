@@ -14,11 +14,13 @@ module;
 #include <variant>
 
 export module sj.engine.core.InputSystem;
+import sj.engine.core.Program;
+import sj.engine.core.Window;
+
 import sj.std.math;
 import sj.std.string_hash;
 import sj.std.containers.map;
 import sj.std.containers.vector;
-import sj.engine.core.Window;
 
 export namespace sj
 {
@@ -49,11 +51,12 @@ export namespace sj
         kNumEvents = 3
     };
 
-    class InputSystem
+    class InputSystem : public IModule
     {
     public:
-        InputSystem(Window& display)
+        InputSystem(Program& program)
         {
+            Window& display = *program.GetModule<Window>();
             glfwSetKeyCallback(display.GetWindowHandle(), KeyCallback);
             glfwSetWindowUserPointer(display.GetWindowHandle(), this);
         }
@@ -92,7 +95,7 @@ export namespace sj
             return it->second.value;
         }
 
-        void Process()
+        void Process(float _) override
         {
             constexpr float kDeadZone = 0.15f;
             constexpr float kDeadZoneSqr = kDeadZone * kDeadZone;

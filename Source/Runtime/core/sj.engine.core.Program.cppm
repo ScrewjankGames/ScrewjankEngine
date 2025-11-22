@@ -13,6 +13,8 @@ export module sj.engine.core.Program;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.system.Timer;
+
+import sj.std.type_info;
 import sj.std.memory.literals;
 import sj.std.containers.unmanaged_list;
 
@@ -23,13 +25,26 @@ class Program;
 
 template <class T, class... Args>
 concept Module = requires(T t) {
-    T::T(std::declval<Program>(), std::declval<Args>()...); // Accepts program as first ctor arg
+    T(std::declval<Program&>(), std::declval<Args>()...); // Accepts program as first ctor arg
 };
 
 class IModule : public dl_list_node<IModule>
 {
 public:
+    TypeId mTypeId;
     virtual ~IModule() = default;
+
+    virtual void NewFrame()
+    {
+    }
+
+    virtual void Process([[maybe_unused]] float deltaSeconds)
+    {
+    }
+
+    virtual void EndFrame()
+    {
+    }
 };
 
 class Program
@@ -45,12 +60,58 @@ public:
 
     ~Program() = default;
 
-    template<class T, class ... Args>
+    template <class T, class... Args>
         requires Module<T, Args...>
-    T* AddModule(Args&& ... args)
+    T* AddModule(Args&&... args)
     {
-       static T sModule(*this, std::forward<Args>()... );
-       return sModule;
+        static T sModule(*this, std::forward<Args>(args)...);
+        sModule.mTypeId = type_id_of<T>;
+        mModules.push_back(&sModule);
+        return &sModule;
+    }
+
+    template <class T>
+    T* GetModule()
+    {
+        auto it = std::ranges::find(mModules, type_id_of<T>, &IModule::mTypeId);
+        SJ_ASSERT(it != mModules.end(), "Failed to find module {}", type_name_of<T>);
+
+        return static_cast<T*>(&*it);
+    }
+
+    void Run()
+    {
+        Timer timer;
+        auto previousTime = timer.Now();
+
+        while(!mTerminated)
+        {
+            mDeltaSeconds = timer.Elapsed();
+            timer.Reset();
+
+            constexpr float kMaxDeltaTime = 1.0f / 15.0f;
+            if(mDeltaSeconds > kMaxDeltaTime)
+            {
+                SJ_ENGINE_LOG_WARN("Large delta time detected- {}. Capping at {}",
+                                   mDeltaSeconds,
+                                   kMaxDeltaTime)
+                mDeltaSeconds = kMaxDeltaTime;
+            }
+
+            for(IModule& m : mModules)
+                m.NewFrame();
+
+            for(IModule& m : mModules)
+                m.Process(mDeltaSeconds);
+
+            for(IModule& m : mModules)
+                m.EndFrame();
+        }
+    }
+
+    float GetDeltaSeconds() const
+    {
+        return mDeltaSeconds;
     }
 
     template <class TerminateFn, class FrameUpdateFn>
@@ -80,6 +141,8 @@ public:
 
 private:
     unmanaged_list<IModule> mModules;
+    bool mTerminated = false;
+    float mDeltaSeconds = 0.0f;
 };
 
 } // namespace sj

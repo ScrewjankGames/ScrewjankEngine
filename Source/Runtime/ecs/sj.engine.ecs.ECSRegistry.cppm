@@ -66,7 +66,7 @@ export namespace sj
         void RegisterComponentType()
         {
             m_componentPools.emplace(
-                type_id_of<T>(),
+                type_id_of<T>,
                 ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
         }
 
@@ -85,7 +85,7 @@ export namespace sj
         template <class T>
         ComponentPool<T>& GetComponentPool()
         {
-            ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>());
+            ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>);
             SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
 
             return handle->get<ComponentPool<T>>();

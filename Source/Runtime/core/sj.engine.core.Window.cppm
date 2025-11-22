@@ -13,19 +13,19 @@ module;
 #include <span>
 
 export module sj.engine.core.Window;
+import sj.engine.core.Program;
 import sj.std.math;
 import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
-
     /**
      * @brief Platform-specific implementation of a windows window
      */
-    class Window
+    class Window : public IModule
     {
     public:
-        Window(const char* windowTitle, Vec2 dimensions)
+        Window(Program& _, const char* windowTitle, Vec2 dimensions)
         {
             SJ_ENGINE_LOG_INFO("Creating glfw window");
             glfwInit();
@@ -44,10 +44,7 @@ export namespace sj
             glfwTerminate();
         }
 
-        /**
-         * Pump the window's event queue
-         */
-        void ProcessEvents()
+        void NewFrame() override
         {
             glfwPollEvents();
             ImGui_ImplGlfw_NewFrame();

@@ -65,9 +65,15 @@ constexpr std::span<T> byte_span_cast(std::span<std::byte> buf, int expectedCoun
 }
 
 template <class T>
+constexpr TypeId type_id_of = string_hash(glz::type_name<T>).AsInt();
+
+template <class T>
+constexpr std::string_view type_name_of = glz::type_name<T>;
+
+template <class T>
 constexpr type_info type_info_of {
-    .name = glz::type_name<T>,
-    .id = string_hash(glz::type_name<T>).AsInt(),
+    .name = type_name_of<T>,
+    .id = type_id_of<T>,
     .size = sizeof(T),
     .alignment = alignof(T),
     .is_trivially_destructible = std::is_trivially_destructible_v<T>,
@@ -91,11 +97,5 @@ constexpr type_info type_info_of {
 
             std::ranges::uninitialized_move(oldTypedBuf, newTypedBuf);
         }};
-
-template <class T>
-constexpr const TypeId type_id_of()
-{
-    return type_info_of<T>.id;
-}
 
 } // namespace sj
