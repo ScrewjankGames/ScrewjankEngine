@@ -1,13 +1,10 @@
-module;
 #include <cstddef>
 #include <new>
 #include <memory_resource>
 
-export module sj.engine.system.memory.NewDelete;
 import sj.engine.system.memory.MemorySystem;
 import sj.std.memory.resources;
 
-extern "C++" {
 [[nodiscard]] void* do_allocate(size_t count, size_t alignment = alignof(std::max_align_t))
 {
     if(count == 0)
@@ -83,6 +80,16 @@ void operator delete[](void* ptr) noexcept
     do_deallocate(ptr, 0);
 }
 
+void operator delete(void* ptr, std::align_val_t align) noexcept
+{
+    do_deallocate(ptr, 0, static_cast<size_t>(align));
+}
+
+void operator delete[](void* ptr, std::align_val_t align) noexcept
+{
+    do_deallocate(ptr, 0, static_cast<size_t>(align));
+}
+
 void operator delete(void* ptr, std::size_t sz) noexcept
 {
     do_deallocate(ptr, sz);
@@ -93,14 +100,12 @@ void operator delete[](void* ptr, std::size_t sz) noexcept
     do_deallocate(ptr, sz);
 }
 
-void operator delete(void* ptr, std::size_t sz, std::align_val_t _) noexcept
+void operator delete(void* ptr, std::size_t sz, std::align_val_t align) noexcept
 {
-    do_deallocate(ptr, sz);
+    do_deallocate(ptr, sz, static_cast<size_t>(align));
 }
 
-void operator delete[](void* ptr, std::size_t sz, std::align_val_t _) noexcept
+void operator delete[](void* ptr, std::size_t sz, std::align_val_t align) noexcept
 {
-    do_deallocate(ptr, sz);
-}
-
+    do_deallocate(ptr, sz, static_cast<size_t>(align));
 }
