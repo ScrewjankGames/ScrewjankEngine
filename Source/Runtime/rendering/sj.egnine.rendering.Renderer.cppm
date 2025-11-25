@@ -317,20 +317,20 @@ private:
     {
         vkb::InstanceBuilder builder;
         auto inst_ret = builder.set_app_name("SJ Game")
-                            .request_validation_layers(g_IsDebugBuild)
+                            .request_validation_layers(false) // todo- why cause crash on boot?
 #ifndef SJ_GOLD
                             .set_debug_callback(VulkanDebugLogCallback)
 #endif
-                            .require_api_version(1, 3, 0)
+                            .require_api_version(1, 4, 0)
                             .build();
-
         vkb::Instance vkb_inst = inst_ret.value();
         m_vkInstance = vkb_inst.instance;
 
 #ifndef SJ_GOLD
         m_vkDebugMessenger = vkb_inst.debug_messenger;
 #endif
-        SJ_ENGINE_LOG_INFO("Vulkan Instance Initialized");
+
+        SJ_ENGINE_LOG_INFO("Vulkan Instance Created. Version: {}", inst_ret->instance_version);
         return vkb_inst;
     }
 
