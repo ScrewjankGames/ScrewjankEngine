@@ -1,6 +1,7 @@
 module;
 
 // Screwjank Headers
+#include <ScrewjankStd/PlatformDetection.hpp>
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
 
@@ -317,7 +318,7 @@ private:
     {
         vkb::InstanceBuilder builder;
         auto inst_ret = builder.set_app_name("SJ Game")
-                            .request_validation_layers(false) // todo- why cause crash on boot?
+                            .request_validation_layers(g_IsDebugBuild) // todo- why cause crash on boot?
 #ifndef SJ_GOLD
                             .set_debug_callback(VulkanDebugLogCallback)
 #endif

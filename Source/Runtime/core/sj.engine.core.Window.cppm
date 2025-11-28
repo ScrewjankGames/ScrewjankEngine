@@ -14,103 +14,106 @@ module;
 
 export module sj.engine.core.Window;
 import sj.engine.core.Program;
+import sj.engine.core.Signal;
+
 import sj.std.math;
 import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
-    /**
-     * @brief Platform-specific implementation of a windows window
-     */
-    class Window : public IModule
+/**
+ * @brief Platform-specific implementation of a windows window
+ */
+class Window : public IModule
+{
+public:
+    Window(Program& program, const char* windowTitle, Vec2 dimensions) : m_hostProgram(&program)
     {
-    public:
-        Window(Program& _, const char* windowTitle, Vec2 dimensions)
-        {
-            SJ_ENGINE_LOG_INFO("Creating glfw window");
-            glfwInit();
-            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-            m_NativeWindow = glfwCreateWindow(dimensions.GetX(),
-                                              dimensions.GetY(),
-                                              windowTitle,
-                                              nullptr,
-                                              nullptr);
-        }
+        SJ_ENGINE_LOG_INFO("Creating glfw window");
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        m_NativeWindow =
+            glfwCreateWindow(dimensions.GetX(), dimensions.GetY(), windowTitle, nullptr, nullptr);
+    }
 
-        ~Window()
-        {
-            SJ_ENGINE_LOG_INFO("Terminating glfw window");
-            glfwDestroyWindow(m_NativeWindow);
-            glfwTerminate();
-        }
+    ~Window()
+    {
+        SJ_ENGINE_LOG_INFO("Terminating glfw window");
+        glfwDestroyWindow(m_NativeWindow);
+        glfwTerminate();
+    }
 
-        void NewFrame() override
-        {
-            glfwPollEvents();
-            ImGui_ImplGlfw_NewFrame();
-        }
+    void NewFrame() override
+    {
+        glfwPollEvents();
+        ImGui_ImplGlfw_NewFrame();
 
-        /**
-         * @return true If the window has been instructed to close, else false
-         */
-        [[nodiscard]] bool IsWindowClosed() const
-        {
-            return glfwWindowShouldClose(m_NativeWindow);
-        }
+        if(IsWindowClosed())
+            m_hostProgram->Terminate();
+    }
 
-        /**
-         * @return Window size in pixels
-         */
-        [[nodiscard]] Vec2 GetViewportSize() const
-        {
-            int width = 0;
-            int height = 0;
+    /**
+     * @return true If the window has been instructed to close, else false
+     */
+    [[nodiscard]] bool IsWindowClosed() const
+    {
+        return glfwWindowShouldClose(m_NativeWindow);
+    }
 
-            glfwGetFramebufferSize(m_NativeWindow, &width, &height);
+    /**
+     * @return Window size in pixels
+     */
+    [[nodiscard]] Vec2 GetViewportSize() const
+    {
+        int width = 0;
+        int height = 0;
 
-            return Vec2(static_cast<float>(width), static_cast<float>(height));
-        }
+        glfwGetFramebufferSize(m_NativeWindow, &width, &height);
 
-        GLFWwindow* GetWindowHandle() 
-        {
-            return m_NativeWindow;
-        }
+        return Vec2(static_cast<float>(width), static_cast<float>(height));
+    }
+
+    GLFWwindow* GetWindowHandle()
+    {
+        return m_NativeWindow;
+    }
 
 #ifdef SJ_VULKAN_SUPPORT
-        /**
-         * @return Extensions Vulkan API must support to support this window.
-         */
-        [[nodiscard]] std::span<const char*> GetRequiredVulkanExtenstions() const
-        {
-            uint32_t extension_count = 0;
-            const char** extensions = nullptr;
+    /**
+     * @return Extensions Vulkan API must support to support this window.
+     */
+    [[nodiscard]] std::span<const char*> GetRequiredVulkanExtenstions() const
+    {
+        uint32_t extension_count = 0;
+        const char** extensions = nullptr;
 
-            extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+        extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-            return std::span {extensions, extension_count};
-        }
+        return std::span {extensions, extension_count};
+    }
 
-        /**
-         * @return The Vulkan presentation surface for this window
-         */
-        VkSurfaceKHR CreateWindowSurface(VkInstance instance) const
-        {
-            VkSurfaceKHR surface {};
-            [[maybe_unused]] VkResult success =
-                glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
+    /**
+     * @return The Vulkan presentation surface for this window
+     */
+    VkSurfaceKHR CreateWindowSurface(VkInstance instance) const
+    {
+        VkSurfaceKHR surface {};
+        [[maybe_unused]] VkResult success =
+            glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
     #ifndef SJ_GOLD
-            if(success != VK_SUCCESS)
-            {
-                const char* error = nullptr;
-                glfwGetError(&error);
-                SJ_ASSERT(false, "Failed to create vulkan window surface. Error: {}", error);
-            }
-    #endif
-            return surface;
+        if(success != VK_SUCCESS)
+        {
+            const char* error = nullptr;
+            glfwGetError(&error);
+            SJ_ASSERT(false, "Failed to create vulkan window surface. Error: {}", error);
         }
+    #endif
+        return surface;
+    }
 #endif
 
-    private:
-        GLFWwindow* m_NativeWindow = nullptr;
-    };
+private:
+    Program* m_hostProgram = nullptr;
+    GLFWwindow* m_NativeWindow = nullptr;
+};
 } // namespace sj
