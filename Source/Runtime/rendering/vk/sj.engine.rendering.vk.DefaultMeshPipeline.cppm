@@ -14,7 +14,7 @@ import sj.engine.rendering.vk.Primitives;
 import sj.datadefs.assets.Mesh;
 import sj.engine.rendering.vk.Pipeline;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     struct MeshDrawPushConstants
     {
@@ -118,4 +118,4 @@ export namespace sj::vk
         return pipeline;
     }
 
-} // namespace sj::vk
+} // namespace sj::vulkan

@@ -9,7 +9,7 @@ export module sj.engine.rendering.vk.ImageUtils;
 import sj.engine.rendering.vk.Helpers;
 import sj.engine.rendering.vk.Primitives;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class ImageResource
     {
@@ -67,7 +67,7 @@ export namespace sj::vk
                                                 VkImageAspectFlags aspectFlags) const
         {
             VkImageViewCreateInfo imageViewCreateInfo =
-                sj::vk::MakeImageViewCreateInfo(m_imageFormat, m_image, aspectFlags);
+                sj::vulkan::MakeImageViewCreateInfo(m_imageFormat, m_image, aspectFlags);
 
             VkImageView view;
             VkResult res =
@@ -209,4 +209,4 @@ export namespace sj::vk
 
         vkCmdBlitImage2(cmd, &blitInfo);
     }
-} // namespace sj::vk
+} // namespace sj::vulkan

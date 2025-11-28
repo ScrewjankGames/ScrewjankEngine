@@ -12,7 +12,7 @@ import sj.engine.rendering.vk.RenderDevice;
 import sj.engine.rendering.vk.Buffer;
 import sj.engine.rendering.vk.Primitives;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
 constexpr uint32_t kMaxFramesInFlight = 2;
 
@@ -23,7 +23,7 @@ struct FrameGlobals
     VkSemaphore presentCompleteSemaphore = VK_NULL_HANDLE;
     VkDescriptorSet globalDescriptorSet = VK_NULL_HANDLE;
 
-    sj::vk::BufferResource globalUniformBuffer;
+    sj::vulkan::BufferResource globalUniformBuffer;
 };
 
 struct FrameResources
@@ -33,7 +33,7 @@ struct FrameResources
     std::array<VkFence, kMaxFramesInFlight> inFlightFences = {};
     std::array<VkSemaphore, kMaxFramesInFlight> presentCompleteSemaphores = {};
 
-    std::array<sj::vk::BufferResource, kMaxFramesInFlight> globalUniformBuffers;
+    std::array<sj::vulkan::BufferResource, kMaxFramesInFlight> globalUniformBuffers;
     std::array<VkDescriptorSet, kMaxFramesInFlight> globalUBODescriptorSets = {};
 
     void Init(VkDevice device, VkCommandPool commandPool)
@@ -85,7 +85,7 @@ struct FrameResources
         }
     }
 
-    void DeInit(sj::vk::RenderDevice& device)
+    void DeInit(sj::vulkan::RenderDevice& device)
     {
         DestroySyncPrimitives(device.GetLogicalDevice());
 
@@ -105,4 +105,4 @@ struct FrameResources
                              .globalUniformBuffer = globalUniformBuffers[frameIdx]};
     }
 };
-} // namespace sj::vk
+} // namespace sj::vulkan

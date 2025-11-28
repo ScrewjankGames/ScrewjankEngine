@@ -15,12 +15,12 @@ import sj.engine.rendering.vk.ImmediateCommandContext;
 import sj.engine.rendering.vk.Primitives;
 import sj.engine.rendering.vk.RenderDevice;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
 class TextureResource
 {
 public:
-    void Init(const char* path, sj::vk::RenderDevice& device, ImmediateCommandContext& ctx)
+    void Init(const char* path, sj::vulkan::RenderDevice& device, ImmediateCommandContext& ctx)
     {
         std::ifstream textureFile;
         textureFile.open("Data/Engine/viking_room.sj_tex", std::ios::in | std::ios::binary);
@@ -28,8 +28,8 @@ public:
         textureFile.read(reinterpret_cast<char*>(&header), sizeof(header));
 
         VkDeviceSize imageSizeBytes = header.width * header.height * 4;
-        sj::vk::BufferResource stagingBuffer =
-            sj::vk::MakeStagingBuffer(device.GetAllocator(), imageSizeBytes);
+        sj::vulkan::BufferResource stagingBuffer =
+            sj::vulkan::MakeStagingBuffer(device.GetAllocator(), imageSizeBytes);
 
         // Read texture data straight into GPU memory
         textureFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()), imageSizeBytes);
@@ -44,7 +44,7 @@ public:
                                   1};
 
         mImageResource =
-            sj::vk::ImageResource(device.GetAllocator(),
+            sj::vulkan::ImageResource(device.GetAllocator(),
                                   allocCreateInfo,
                                   imageExtent,
                                   VK_FORMAT_R8G8B8A8_SRGB,
@@ -53,7 +53,7 @@ public:
 
         VkImage textureImage = mImageResource.GetImage();
         ctx.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
-            sj::vk::TransitionImage(cmd,
+            sj::vulkan::TransitionImage(cmd,
                                     textureImage,
                                     VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -62,11 +62,11 @@ public:
         ctx.ImmediateSubmit([buf = stagingBuffer.GetBuffer(),
                              img = mImageResource.GetImage(),
                              header](VkCommandBuffer cmd) {
-            sj::vk::CopyBufferToImage(cmd, buf, img, header.width, header.height);
+            sj::vulkan::CopyBufferToImage(cmd, buf, img, header.width, header.height);
         });
 
         ctx.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
-            sj::vk::TransitionImage(cmd,
+            sj::vulkan::TransitionImage(cmd,
                                     textureImage,
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -121,8 +121,8 @@ public:
     }
 
 private:
-    sj::vk::ImageResource mImageResource;
+    sj::vulkan::ImageResource mImageResource;
     VkImageView mImageView {};
     VkSampler mTextureSampler {};
 };
-} // namespace sj::vk
+} // namespace sj::vulkan

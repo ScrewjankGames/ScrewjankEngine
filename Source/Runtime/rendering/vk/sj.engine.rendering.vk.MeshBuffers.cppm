@@ -12,7 +12,7 @@ import sj.datadefs.assets.Mesh;
 import sj.engine.rendering.vk.Buffer;
 import sj.engine.rendering.vk.ImmediateCommandContext;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class MeshBuffers
     {
@@ -52,14 +52,14 @@ export namespace sj::vk
                           "Buffer too large for single read");
 
                 // Stage vertex data in host visible buffer
-                sj::vk::BufferResource stagingBuffer =
-                    sj::vk::MakeStagingBuffer(allocator, bufferSizeBytes);
+                sj::vulkan::BufferResource stagingBuffer =
+                    sj::vulkan::MakeStagingBuffer(allocator, bufferSizeBytes);
 
                 // Copy data from file to GPU
                 meshFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
                               static_cast<std::streamsize>(bufferSizeBytes));
 
-                m_vertexBuffer = sj::vk::BufferResource(allocator,
+                m_vertexBuffer = sj::vulkan::BufferResource(allocator,
                                                         bufferSizeBytes,
                                                         VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -67,7 +67,7 @@ export namespace sj::vk
                 ctx.ImmediateSubmit([src = stagingBuffer.GetBuffer(),
                                      dst = m_vertexBuffer.GetBuffer(),
                                      bufferSizeBytes](VkCommandBuffer cmd) {
-                    sj::vk::CopyBuffer(cmd, src, dst, bufferSizeBytes);
+                    sj::vulkan::CopyBuffer(cmd, src, dst, bufferSizeBytes);
                 });
 
                 stagingBuffer.DeInit(allocator);
@@ -80,14 +80,14 @@ export namespace sj::vk
                 VkDeviceSize bufferSizeBytes = header.indexSize * header.numIndices;
                 SJ_ASSERT(bufferSizeBytes < std::numeric_limits<std::streamsize>::max(),
                           "Buffer too large for single read");
-                sj::vk::BufferResource stagingBuffer =
-                    sj::vk::MakeStagingBuffer(allocator, bufferSizeBytes);
+                sj::vulkan::BufferResource stagingBuffer =
+                    sj::vulkan::MakeStagingBuffer(allocator, bufferSizeBytes);
 
                 // Copy data from file to GPU
                 meshFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()),
                               static_cast<std::streamsize>(bufferSizeBytes));
 
-                m_indexBuffer = sj::vk::BufferResource(allocator,
+                m_indexBuffer = sj::vulkan::BufferResource(allocator,
                                                        bufferSizeBytes,
                                                        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -95,7 +95,7 @@ export namespace sj::vk
                 ctx.ImmediateSubmit([src = stagingBuffer.GetBuffer(),
                                      dst = m_indexBuffer.GetBuffer(),
                                      bufferSizeBytes](VkCommandBuffer cmd) {
-                    sj::vk::CopyBuffer(cmd, src, dst, bufferSizeBytes);
+                    sj::vulkan::CopyBuffer(cmd, src, dst, bufferSizeBytes);
                 });
 
                 stagingBuffer.DeInit(allocator);
@@ -136,4 +136,4 @@ export namespace sj::vk
         VkIndexType m_indexType = VK_INDEX_TYPE_UINT32;
         uint32_t m_indexCount = 0;
     };
-} // namespace sj::vk
+} // namespace sj::vulkan

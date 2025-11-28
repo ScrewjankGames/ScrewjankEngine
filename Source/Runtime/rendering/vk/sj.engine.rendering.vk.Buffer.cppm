@@ -6,7 +6,7 @@ module;
 
 export module sj.engine.rendering.vk.Buffer;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class BufferResource
     {
@@ -80,4 +80,4 @@ export namespace sj::vk
         copyRegion.size = size;
         vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &copyRegion);
     }
-} // namespace sj::vk
+} // namespace sj::vulkan

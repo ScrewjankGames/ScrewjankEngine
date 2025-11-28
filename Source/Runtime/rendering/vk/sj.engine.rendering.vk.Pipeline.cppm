@@ -17,7 +17,7 @@ import sj.engine.rendering.vk.Utils;
 import sj.engine.rendering.vk.Primitives;
 import sj.std.containers.vector;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     VkShaderModule LoadShaderModule(VkDevice device, const char* path)
     {
@@ -265,4 +265,4 @@ export namespace sj::vk
         VkPipelineRenderingCreateInfo m_renderInfo {};
         VkFormat m_colorAttachmentformat {};
     };
-} // namespace sj::vk
+} // namespace sj::vulkan

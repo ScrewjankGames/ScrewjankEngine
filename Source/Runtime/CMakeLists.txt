@@ -45,6 +45,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE 
         glfw
         Vulkan::Vulkan
+        VulkanHppModule
         vk-bootstrap::vk-bootstrap 
         GPUOpen::VulkanMemoryAllocator
     PUBLIC

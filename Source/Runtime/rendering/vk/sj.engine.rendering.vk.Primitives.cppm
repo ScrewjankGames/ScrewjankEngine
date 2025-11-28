@@ -15,7 +15,7 @@ export namespace sj
     inline constexpr VkAllocationCallbacks* g_vkAllocationFns = nullptr;
 }
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class DescriptorLayoutBuilder
     {
@@ -134,4 +134,4 @@ export namespace sj::vk
         VkDescriptorPool m_pool;
     };
 
-} // namespace sj::vk
+} // namespace sj::vulkan

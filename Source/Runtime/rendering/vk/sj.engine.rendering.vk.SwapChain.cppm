@@ -21,7 +21,7 @@ import sj.std.containers.array;
 import sj.std.memory;
 import sj.std.math;
 
-namespace sj::vk
+namespace sj::vulkan
 {
     VkSurfaceFormatKHR ChoseSurfaceFormat(const std::span<VkSurfaceFormatKHR> formats)
     {
@@ -50,9 +50,9 @@ namespace sj::vk
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-} // namespace sj::vk
+} // namespace sj::vulkan
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class SwapChain
     {
@@ -64,7 +64,7 @@ export namespace sj::vk
 
         ~SwapChain() = default;
 
-        void Init(const sj::vk::RenderDevice& device,
+        void Init(const sj::vulkan::RenderDevice& device,
                   VkSurfaceKHR renderingSurface,
                   sj::Vec2 surfaceSize)
         {
@@ -174,7 +174,7 @@ export namespace sj::vk
 
         }
 
-        void DeInit(const sj::vk::RenderDevice& device)
+        void DeInit(const sj::vulkan::RenderDevice& device)
         {
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
                 vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
@@ -186,7 +186,7 @@ export namespace sj::vk
         }
 
         void
-        Recreate(const sj::vk::RenderDevice& device, VkSurfaceKHR renderingSurface, sj::Vec2 surfaceSize)
+        Recreate(const sj::vulkan::RenderDevice& device, VkSurfaceKHR renderingSurface, sj::Vec2 surfaceSize)
         {
             // Window is minimized. Can't recreate swap chain.
             if((surfaceSize.GetX() * surfaceSize.GetY()) == 0 )
@@ -285,4 +285,4 @@ export namespace sj::vk
         VkExtent2D m_imageExtent = {};
     };
 
-} // namespace sj::vk
+} // namespace sj::vulkan

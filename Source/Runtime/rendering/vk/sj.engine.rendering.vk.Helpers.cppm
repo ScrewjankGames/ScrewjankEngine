@@ -4,7 +4,7 @@ module;
 
 export module sj.engine.rendering.vk.Helpers;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     VkCommandPoolCreateInfo MakeCommandPoolCreateInfo(uint32_t queueFamilyIndex,
                                                       VkCommandPoolCreateFlags flags)
@@ -207,4 +207,4 @@ export namespace sj::vk
         return renderInfo;
     }
 
-} // namespace sj::vk
+} // namespace sj::vulkan

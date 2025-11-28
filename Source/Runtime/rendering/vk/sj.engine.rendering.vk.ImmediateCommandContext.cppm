@@ -11,7 +11,7 @@ export module sj.engine.rendering.vk.ImmediateCommandContext;
 import sj.engine.rendering.vk.Helpers;
 import sj.engine.rendering.vk.Primitives;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class ImmediateCommandContext
     {
@@ -30,7 +30,7 @@ export namespace sj::vk
             SJ_ASSERT(res == VK_SUCCESS, "Failed to create immediate command pool");
 
             VkCommandBufferAllocateInfo immCommandInfo =
-                sj::vk::MakeCommandBufferAllocateInfo(m_pool, 1);
+                sj::vulkan::MakeCommandBufferAllocateInfo(m_pool, 1);
             res = vkAllocateCommandBuffers(m_device, &immCommandInfo, &m_buffer);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate immediate command buffer");
 
@@ -57,7 +57,7 @@ export namespace sj::vk
             SJ_ASSERT(res == VK_SUCCESS, "Failed to reset immediate mode command buffer!");
 
             VkCommandBufferBeginInfo beginInfo =
-                sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+                sj::vulkan::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
             res = vkBeginCommandBuffer(m_buffer, &beginInfo);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to start immediate mode command buffer!");
@@ -68,8 +68,8 @@ export namespace sj::vk
             SJ_ASSERT(res == VK_SUCCESS, "Failed to finalize immediate mode command buffer!");
 
             VkCommandBufferSubmitInfo submitCommandInfo =
-                sj::vk::MakeCommandBufferSubmitInfo(m_buffer);
-            VkSubmitInfo2 submitInfo = sj::vk::MakeSubmitInfo(&submitCommandInfo, nullptr, nullptr);
+                sj::vulkan::MakeCommandBufferSubmitInfo(m_buffer);
+            VkSubmitInfo2 submitInfo = sj::vulkan::MakeSubmitInfo(&submitCommandInfo, nullptr, nullptr);
 
             res = vkQueueSubmit2(m_queue, 1, &submitInfo, m_fence);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to submit immediate command buffer!");
@@ -85,4 +85,4 @@ export namespace sj::vk
         VkCommandPool m_pool;
         VkCommandBuffer m_buffer;
     };
-} // namespace sj::vk
+} // namespace sj::vulkan

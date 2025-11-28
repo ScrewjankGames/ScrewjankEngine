@@ -16,7 +16,7 @@ import sj.std.memory;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.rendering.vk.Primitives;
 
-export namespace sj::vk
+export namespace sj::vulkan
 {
     class RenderDevice
     {
@@ -152,4 +152,4 @@ export namespace sj::vk
         VkQueue m_presentationQueue = VK_NULL_HANDLE;
         uint32_t m_presentationQueueIndex = -1;
     };
-} // namespace sj::vk
+} // namespace sj::vulkan

@@ -6,7 +6,7 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 // Library Headers
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan_hpp_macros.hpp>
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 
@@ -34,6 +34,8 @@ import sj.std.math;
 import sj.std.memory.literals;
 import sj.std.memory.resources.free_list_allocator;
 
+import vulkan_hpp;
+
 export namespace sj
 {
 class Renderer : public IModule
@@ -51,6 +53,11 @@ public:
         workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
         MemorySystem::TrackMemoryResource(workBuffer);
 
+#if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
+        // initialize minimal set of function pointers
+        VULKAN_HPP_DEFAULT_DISPATCHER.init();
+#endif
+
         vkb::Instance bootstrapInfo = InitializeVulkan();
 
         m_renderingSurface = m_display->CreateWindowSurface(m_vkInstance);
@@ -64,7 +71,7 @@ public:
 
         CreateGlobalDescriptorSetlayout();
 
-        m_defaultPipeline = sj::vk::MakeDefaultMeshPipeline(m_renderDevice.GetLogicalDevice(),
+        m_defaultPipeline = sj::vulkan::MakeDefaultMeshPipeline(m_renderDevice.GetLogicalDevice(),
                                                             m_globalUBODescriptorSetLayout,
                                                             m_drawImage.GetImageFormat(),
                                                             m_depthImage.GetImageFormat(),
@@ -80,7 +87,9 @@ public:
                                 m_renderDevice.GetAllocator(),
                                 m_immediateCommandContext);
 
-        m_dummyTextureResource.Init("Data/Engine/viking_room.sj_tex", m_renderDevice, m_immediateCommandContext);
+        m_dummyTextureResource.Init("Data/Engine/viking_room.sj_tex",
+                                    m_renderDevice,
+                                    m_immediateCommandContext);
 
         CreateGlobalUniformBuffers();
 
@@ -148,8 +157,8 @@ public:
     void Render(const Mat44& cameraMatrix)
     {
         m_frameCount++;
-        const uint32_t frameIdx = m_frameCount % sj::vk::kMaxFramesInFlight;
-        sj::vk::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
+        const uint32_t frameIdx = m_frameCount % sj::vulkan::kMaxFramesInFlight;
+        sj::vulkan::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
 
         vkWaitForFences(m_renderDevice.GetLogicalDevice(),
                         1,
@@ -192,18 +201,18 @@ public:
         RecordDrawCommands(currFrameData, swapChainImage, swapChainImageView);
 
         VkCommandBufferSubmitInfo submitCommandInfo =
-            sj::vk::MakeCommandBufferSubmitInfo(currFrameData.cmd);
+            sj::vulkan::MakeCommandBufferSubmitInfo(currFrameData.cmd);
 
         VkSemaphoreSubmitInfo waitInfo =
-            sj::vk::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+            sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
                                             currFrameData.presentCompleteSemaphore);
 
         VkSemaphoreSubmitInfo signalInfo =
-            sj::vk::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+            sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
                                             currRenderFinishedSemaphore);
 
         VkSubmitInfo2 submitInfo =
-            sj::vk::MakeSubmitInfo(&submitCommandInfo, &signalInfo, &waitInfo);
+            sj::vulkan::MakeSubmitInfo(&submitCommandInfo, &signalInfo, &waitInfo);
 
         res =
             vkQueueSubmit2(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFrameData.fence);
@@ -229,7 +238,7 @@ public:
         }
     }
 
-    sj::vk::RenderDevice* GetRenderDevice()
+    sj::vulkan::RenderDevice* GetRenderDevice()
     {
         return &m_renderDevice;
     }
@@ -245,8 +254,8 @@ public:
         init_info.PipelineCache = VK_NULL_HANDLE;
         init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
         init_info.Allocator = nullptr;
-        init_info.MinImageCount = sj::vk::kMaxFramesInFlight;
-        init_info.ImageCount = sj::vk::kMaxFramesInFlight;
+        init_info.MinImageCount = sj::vulkan::kMaxFramesInFlight;
+        init_info.ImageCount = sj::vulkan::kMaxFramesInFlight;
         init_info.CheckVkResultFn = CheckImguiVulkanResult;
 
         VkFormat swapchainImageFormat = m_swapChain.GetImageFormat();
@@ -317,13 +326,14 @@ private:
     auto InitializeVulkan() -> vkb::Instance
     {
         vkb::InstanceBuilder builder;
-        auto inst_ret = builder.set_app_name("SJ Game")
-                            .request_validation_layers(g_IsDebugBuild) // todo- why cause crash on boot?
+        auto inst_ret =
+            builder.set_app_name("SJ Game")
+                .request_validation_layers(g_IsDebugBuild) // todo- why cause crash on boot?
 #ifndef SJ_GOLD
-                            .set_debug_callback(VulkanDebugLogCallback)
+                .set_debug_callback(VulkanDebugLogCallback)
 #endif
-                            .require_api_version(1, 4, 0)
-                            .build();
+                .require_api_version(1, 4, 0)
+                .build();
         vkb::Instance vkb_inst = inst_ret.value();
         m_vkInstance = vkb_inst.instance;
 
@@ -354,7 +364,7 @@ private:
             drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
             drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            m_drawImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+            m_drawImage = sj::vulkan::ImageResource(m_renderDevice.GetAllocator(),
                                                 renderImageAllocInfo,
                                                 drawImageExtent,
                                                 VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -369,7 +379,7 @@ private:
         {
             VkImageUsageFlags depthImageUsages {};
             depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            m_depthImage = sj::vk::ImageResource(m_renderDevice.GetAllocator(),
+            m_depthImage = sj::vulkan::ImageResource(m_renderDevice.GetAllocator(),
                                                  renderImageAllocInfo,
                                                  drawImageExtent,
                                                  VK_FORMAT_D32_SFLOAT,
@@ -409,7 +419,7 @@ private:
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
 
-        sj::vk::DescriptorLayoutBuilder builder(&scope.get_allocator());
+        sj::vulkan::DescriptorLayoutBuilder builder(&scope.get_allocator());
         builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
         builder.AddBinding(1,
                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -422,11 +432,11 @@ private:
     {
         VkDeviceSize bufferSize = sizeof(GlobalUniformBufferObject);
 
-        for(size_t i = 0; i < sj::vk::kMaxFramesInFlight; i++)
+        for(size_t i = 0; i < sj::vulkan::kMaxFramesInFlight; i++)
         {
             // This might not actaully end up being host visible:
             // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/usage_patterns.html
-            m_frameData.globalUniformBuffers[i] = sj::vk::BufferResource(
+            m_frameData.globalUniformBuffers[i] = sj::vulkan::BufferResource(
                 m_renderDevice.GetAllocator(),
                 bufferSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -440,12 +450,12 @@ private:
     {
         std::array poolSizes {
             VkDescriptorPoolSize {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                  .descriptorCount = sj::vk::kMaxFramesInFlight},
+                                  .descriptorCount = sj::vulkan::kMaxFramesInFlight},
             VkDescriptorPoolSize {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  .descriptorCount = sj::vk::kMaxFramesInFlight}};
+                                  .descriptorCount = sj::vulkan::kMaxFramesInFlight}};
 
         m_globalDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(),
-                                             sj::vk::kMaxFramesInFlight,
+                                             sj::vulkan::kMaxFramesInFlight,
                                              poolSizes,
                                              VkDescriptorPoolCreateFlags {});
     }
@@ -475,14 +485,14 @@ private:
 
     void CreateGlobalUBODescriptorSets()
     {
-        std::array<VkDescriptorSetLayout, sj::vk::kMaxFramesInFlight> layouts {};
+        std::array<VkDescriptorSetLayout, sj::vulkan::kMaxFramesInFlight> layouts {};
         std::ranges::fill(layouts, m_globalUBODescriptorSetLayout);
 
         m_globalDescriptorAllocator.Allocate(m_renderDevice.GetLogicalDevice(),
                                              layouts,
                                              m_frameData.globalUBODescriptorSets);
 
-        for(size_t i = 0; i < sj::vk::kMaxFramesInFlight; i++)
+        for(size_t i = 0; i < sj::vulkan::kMaxFramesInFlight; i++)
         {
             VkDescriptorBufferInfo bufferInfo {};
             bufferInfo.buffer = m_frameData.globalUniformBuffers[i].GetBuffer();
@@ -520,17 +530,15 @@ private:
         }
     }
 
-    void DrawImGui(VkCommandBuffer cmd,
-                   VkImageView targetImageView,
-                   VkExtent2D targetImageExtent)
+    void DrawImGui(VkCommandBuffer cmd, VkImageView targetImageView, VkExtent2D targetImageExtent)
     {
         VkRenderingAttachmentInfo colorAttachment =
-            sj::vk::MakeAttachmentInfo(targetImageView,
+            sj::vulkan::MakeAttachmentInfo(targetImageView,
                                        nullptr,
                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
         VkRenderingInfo renderInfo =
-            sj::vk::MakeRenderingInfo(targetImageExtent, &colorAttachment, nullptr);
+            sj::vulkan::MakeRenderingInfo(targetImageExtent, &colorAttachment, nullptr);
 
         vkCmdBeginRendering(cmd, &renderInfo);
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
@@ -545,7 +553,7 @@ private:
         clearValue = {{0.0f, 0.0f, flash, 1.0f}};
 
         VkImageSubresourceRange clearRange =
-            sj::vk::MakeImageSubResourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+            sj::vulkan::MakeImageSubResourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 
         vkCmdClearColorImage(cmd,
                              m_drawImage.GetImage(),
@@ -558,15 +566,15 @@ private:
     void DrawGeometry(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet)
     {
         VkRenderingAttachmentInfo colorAttachment =
-            sj::vk::MakeAttachmentInfo(m_drawImageView,
+            sj::vulkan::MakeAttachmentInfo(m_drawImageView,
                                        nullptr,
                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
         VkRenderingAttachmentInfo depthAttachment =
-            sj::vk::MakeDepthAttachmentInfo(m_depthImageView,
+            sj::vulkan::MakeDepthAttachmentInfo(m_depthImageView,
                                             VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
-        VkRenderingInfo renderInfo = sj::vk::MakeRenderingInfo(
+        VkRenderingInfo renderInfo = sj::vulkan::MakeRenderingInfo(
             {m_drawImage.GetExtent().width, m_drawImage.GetExtent().height},
             &colorAttachment,
             &depthAttachment);
@@ -610,29 +618,29 @@ private:
         vkCmdEndRendering(cmd);
     }
 
-    void RecordDrawCommands(sj::vk::FrameGlobals& frameData,
+    void RecordDrawCommands(sj::vulkan::FrameGlobals& frameData,
                             VkImage swapchainImage,
                             VkImageView swapchainImageView)
     {
         VkCommandBufferBeginInfo beginInfo =
-            sj::vk::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            sj::vulkan::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         VkResult res = vkBeginCommandBuffer(frameData.cmd, &beginInfo);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to start command buffer!");
 
         // Make render target images
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 m_drawImage.GetImage(),
                                 VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_GENERAL);
 
         DrawBackground(frameData.cmd);
 
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 m_drawImage.GetImage(),
                                 VK_IMAGE_LAYOUT_GENERAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 m_depthImage.GetImage(),
                                 VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
@@ -640,37 +648,35 @@ private:
         DrawGeometry(frameData.cmd, frameData.globalDescriptorSet);
 
         // transition the draw image and the swapchain image into their correct transfer layouts
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 m_drawImage.GetImage(),
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 swapchainImage,
                                 VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         // Copy working image into swapchain
-        sj::vk::CopyImageToImage(frameData.cmd,
+        sj::vulkan::CopyImageToImage(frameData.cmd,
                                  m_drawImage.GetImage(),
                                  swapchainImage,
                                  m_drawImage.GetExtent2D(),
                                  m_swapChain.GetExtent());
 
         // Put swapchain image back into color attachment mode
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 swapchainImage,
                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 #ifndef SJ_GOLD
-        DrawImGui(frameData.cmd,
-                  swapchainImageView,
-                  m_swapChain.GetExtent());
+        DrawImGui(frameData.cmd, swapchainImageView, m_swapChain.GetExtent());
 #endif
 
         // Make swapchain image ready for presentation
-        sj::vk::TransitionImage(frameData.cmd,
+        sj::vulkan::TransitionImage(frameData.cmd,
                                 swapchainImage,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -713,41 +719,41 @@ private:
     /** The Vulkan instance is the engine's connection to the vulkan library */
     VkInstance m_vkInstance {};
 
-    sj::vk::ImageResource m_drawImage;
+    sj::vulkan::ImageResource m_drawImage;
     VkImageView m_drawImageView;
 
-    sj::vk::ImageResource m_depthImage;
+    sj::vulkan::ImageResource m_depthImage;
     VkImageView m_depthImageView;
 
     /** Handle to the surface vulkan renders to */
     VkSurfaceKHR m_renderingSurface {};
 
     /** Used to back API operations */
-    sj::vk::RenderDevice m_renderDevice;
+    sj::vulkan::RenderDevice m_renderDevice;
 
     /** Used for image presentation */
-    sj::vk::SwapChain m_swapChain;
+    sj::vulkan::SwapChain m_swapChain;
 
     /** Pipeline used to describe rendering process */
-    sj::vk::PipelineResource m_defaultPipeline {};
+    sj::vulkan::PipelineResource m_defaultPipeline {};
 
     VkCommandPool m_graphicsCommandPool {};
 
-    sj::vk::MeshBuffers m_dummyMeshBuffers;
+    sj::vulkan::MeshBuffers m_dummyMeshBuffers;
 
-    sj::vk::TextureResource m_dummyTextureResource;
+    sj::vulkan::TextureResource m_dummyTextureResource;
 
-    sj::vk::DescriptorAllocator m_globalDescriptorAllocator;
+    sj::vulkan::DescriptorAllocator m_globalDescriptorAllocator;
     VkDescriptorSetLayout m_globalUBODescriptorSetLayout {};
 
-    sj::vk::ImmediateCommandContext m_immediateCommandContext;
+    sj::vulkan::ImmediateCommandContext m_immediateCommandContext;
 
-    sj::vk::FrameResources m_frameData {};
+    sj::vulkan::FrameResources m_frameData {};
 
     uint32_t m_frameCount = 0;
 
 #ifndef SJ_GOLD
-    sj::vk::DescriptorAllocator m_imguiDescriptorAllocator;
+    sj::vulkan::DescriptorAllocator m_imguiDescriptorAllocator;
 
     /** Handle to manage Vulkan's debug callbacks */
     VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
