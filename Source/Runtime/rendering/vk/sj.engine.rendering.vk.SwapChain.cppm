@@ -71,7 +71,7 @@ export namespace sj::vulkan
             SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
 
             SwapChainParams params =
-                QuerySwapChainParams(device.GetPhysicalDevice(), renderingSurface);
+                QuerySwapChainParams(*device.mPhysicalDevice, renderingSurface);
 
             VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
             VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);
@@ -92,7 +92,7 @@ export namespace sj::vulkan
             m_renderFinishedSemaphores.resize(image_count);
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
             {
-                VkResult res = vkCreateSemaphore(device.GetLogicalDevice(),
+                VkResult res = vkCreateSemaphore(*device.mLogicalDevice,
                                                  &semaphoreInfo,
                                                  sj::g_vkAllocationFns,
                                                  &semaphore);
@@ -111,8 +111,8 @@ export namespace sj::vulkan
             create_info.imageUsage =
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-            const uint32_t graphicsFamilyIdx = device.GetGraphicsQueueIndex();
-            const uint32_t presentationFamilyIdx = device.GetPresentationQueueIndex();
+            const uint32_t graphicsFamilyIdx = device.mGraphicsQueueIndex;
+            const uint32_t presentationFamilyIdx = device.mPresentationQueueIndex;
 
             std::array queue_family_indices_array = {graphicsFamilyIdx, presentationFamilyIdx};
 
@@ -136,7 +136,7 @@ export namespace sj::vulkan
             create_info.oldSwapchain = VK_NULL_HANDLE;
 
             // Create Swap Chain
-            VkResult swap_chain_create_success = vkCreateSwapchainKHR(device.GetLogicalDevice(),
+            VkResult swap_chain_create_success = vkCreateSwapchainKHR(*device.mLogicalDevice,
                                                                       &create_info,
                                                                       sj::g_vkAllocationFns,
                                                                       &m_swapChain);
@@ -146,14 +146,14 @@ export namespace sj::vulkan
 
             // Extract swap chain image handles
             uint32_t real_image_count = 0;
-            vkGetSwapchainImagesKHR(device.GetLogicalDevice(),
+            vkGetSwapchainImagesKHR(*device.mLogicalDevice,
                                     m_swapChain,
                                     &real_image_count,
                                     nullptr);
 
             m_images.resize(real_image_count);
 
-            vkGetSwapchainImagesKHR(device.GetLogicalDevice(),
+            vkGetSwapchainImagesKHR(*device.mLogicalDevice,
                                     m_swapChain,
                                     &real_image_count,
                                     m_images.data());
@@ -166,7 +166,7 @@ export namespace sj::vulkan
 
             for(size_t i = 0; i < m_images.size(); i++)
             {
-                m_imageViews[i] = CreateImageView(device.GetLogicalDevice(),
+                m_imageViews[i] = CreateImageView(*device.mLogicalDevice,
                                                   m_images[i],
                                                   m_chainImageFormat,
                                                   VK_IMAGE_ASPECT_COLOR_BIT);
@@ -177,12 +177,12 @@ export namespace sj::vulkan
         void DeInit(const sj::vulkan::RenderDevice& device)
         {
             for(VkSemaphore& semaphore : m_renderFinishedSemaphores)
-                vkDestroySemaphore(device.GetLogicalDevice(), semaphore, sj::g_vkAllocationFns);
+                vkDestroySemaphore(*device.mLogicalDevice, semaphore, sj::g_vkAllocationFns);
 
             for(VkImageView view : m_imageViews)
-                vkDestroyImageView(device.GetLogicalDevice(), view, sj::g_vkAllocationFns);
+                vkDestroyImageView(*device.mLogicalDevice, view, sj::g_vkAllocationFns);
 
-            vkDestroySwapchainKHR(device.GetLogicalDevice(), m_swapChain, sj::g_vkAllocationFns);
+            vkDestroySwapchainKHR(*device.mLogicalDevice, m_swapChain, sj::g_vkAllocationFns);
         }
 
         void
@@ -194,7 +194,7 @@ export namespace sj::vulkan
                 return;
             }
 
-            vkDeviceWaitIdle(device.GetLogicalDevice());
+            vkDeviceWaitIdle(*device.mLogicalDevice);
 
             DeInit(device);
             Init(device, renderingSurface, surfaceSize);

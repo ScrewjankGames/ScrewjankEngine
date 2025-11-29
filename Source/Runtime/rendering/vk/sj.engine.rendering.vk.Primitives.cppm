@@ -3,12 +3,13 @@ module;
 #include <memory_resource>
 #include <span>
 
-#include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 
 #include <ScrewjankStd/Assert.hpp>
 export module sj.engine.rendering.vk.Primitives;
 import sj.std.containers.vector;
+
+import vulkan_hpp;
 
 export namespace sj
 {

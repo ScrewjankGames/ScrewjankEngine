@@ -3,8 +3,10 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankStd/Log.hpp>
 
-#include <memory>
 #include <concepts>
+#include <memory>
+#include <string_view>
+
 #ifndef SJ_VERSION
     #include <imgui.h>
 #endif
@@ -51,7 +53,7 @@ public:
 class Program
 {
 public:
-    Program(uint64_t rootHeapSize)
+    Program(std::string_view programName, uint64_t rootHeapSize) : mProgramName(programName)
     {
         sj::MemorySystem::Init(rootHeapSize);
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
@@ -114,12 +116,18 @@ public:
         return mDeltaSeconds;
     }
 
+    [[nodiscard]] std::string_view GetName() const
+    {
+        return mProgramName;
+    }
+
     void Terminate()
     {
         mTerminated = true;
     }
 
 private:
+    std::string_view mProgramName;
     unmanaged_list<IModule> mModules;
     bool mTerminated = false;
     float mDeltaSeconds = 0.0f;

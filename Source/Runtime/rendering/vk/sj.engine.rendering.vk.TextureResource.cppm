@@ -29,7 +29,7 @@ public:
 
         VkDeviceSize imageSizeBytes = header.width * header.height * 4;
         sj::vulkan::BufferResource stagingBuffer =
-            sj::vulkan::MakeStagingBuffer(device.GetAllocator(), imageSizeBytes);
+            sj::vulkan::MakeStagingBuffer(device.mAllocator, imageSizeBytes);
 
         // Read texture data straight into GPU memory
         textureFile.read(reinterpret_cast<char*>(stagingBuffer.GetMappedMemory()), imageSizeBytes);
@@ -44,7 +44,7 @@ public:
                                   1};
 
         mImageResource =
-            sj::vulkan::ImageResource(device.GetAllocator(),
+            sj::vulkan::ImageResource(device.mAllocator,
                                   allocCreateInfo,
                                   imageExtent,
                                   VK_FORMAT_R8G8B8A8_SRGB,
@@ -72,12 +72,12 @@ public:
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         });
 
-        stagingBuffer.DeInit(device.GetAllocator());
+        stagingBuffer.DeInit(device.mAllocator);
 
         mImageView =
-            mImageResource.MakeImageView(device.GetLogicalDevice(), VK_IMAGE_ASPECT_COLOR_BIT);
+            mImageResource.MakeImageView(*device.mLogicalDevice, VK_IMAGE_ASPECT_COLOR_BIT);
         VkPhysicalDeviceProperties properties {};
-        vkGetPhysicalDeviceProperties(device.GetPhysicalDevice(), &properties);
+        vkGetPhysicalDeviceProperties(*device.mPhysicalDevice, &properties);
 
         VkSamplerCreateInfo samplerInfo {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -94,7 +94,7 @@ public:
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-        VkResult res = vkCreateSampler(device.GetLogicalDevice(),
+        VkResult res = vkCreateSampler(*device.mLogicalDevice,
                                        &samplerInfo,
                                        sj::g_vkAllocationFns,
                                        &mTextureSampler);

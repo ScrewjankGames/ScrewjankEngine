@@ -7,7 +7,7 @@ import sj.engine;
 
 int main(int argc, char** argv)
 {
-    sj::Program engine(1_MiB);
+    sj::Program engine("test", 1_MiB);
 
     SJ_ENGINE_LOG_INFO("Running main() from {}\n", __FILE__);
     testing::InitGoogleTest(&argc, argv);

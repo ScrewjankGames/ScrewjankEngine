@@ -87,9 +87,9 @@ struct FrameResources
 
     void DeInit(sj::vulkan::RenderDevice& device)
     {
-        DestroySyncPrimitives(device.GetLogicalDevice());
+        DestroySyncPrimitives(*device.mLogicalDevice);
 
-        VmaAllocator allocator = device.GetAllocator();
+        VmaAllocator allocator = device.mAllocator;
         for(uint32_t i = 0; i < kMaxFramesInFlight; i++)
         {
             globalUniformBuffers[i].DeInit(allocator);

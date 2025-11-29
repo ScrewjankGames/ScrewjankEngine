@@ -58,37 +58,60 @@ public:
         VULKAN_HPP_DEFAULT_DISPATCHER.init();
 #endif
 
-        vkb::Instance bootstrapInfo = InitializeVulkan();
+        auto&& [vkbInstance, surface, debugMessenger, vkbPhysicalDevice, vkbDevice] =
+            Bootstrap(m_display);
+        mVkInstance = vk::raii::Instance(mVkContext, vkbInstance);
+        mSurface = vk::raii::SurfaceKHR(mVkInstance, surface);
 
-        m_renderingSurface = m_display->CreateWindowSurface(m_vkInstance);
+#ifndef SJ_GOLD
+        mVkDebugMessenger =
+            vk::raii::DebugUtilsMessengerEXT(mVkInstance, vkbInstance.debug_messenger);
+#endif
 
-        // Select physical device and create and logical render device
-        m_renderDevice.Init(bootstrapInfo, m_renderingSurface);
+        mRenderDevice.mPhysicalDevice = vk::raii::PhysicalDevice(mVkInstance, vkbPhysicalDevice);
+        mRenderDevice.mLogicalDevice =
+            vk::raii::Device(mRenderDevice.mPhysicalDevice, vkbDevice.device);
+        mRenderDevice.mGraphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+        mRenderDevice.mGraphicsQueueIndex =
+            vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+        mRenderDevice.mPresentationQueue = vkbDevice.get_queue(vkb::QueueType::present).value();
+        mRenderDevice.mPresentationQueueIndex =
+            vkbDevice.get_queue_index(vkb::QueueType::present).value();
+
+        VmaAllocatorCreateInfo allocatorInfo = {
+            .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+            .physicalDevice = *mRenderDevice.mPhysicalDevice,
+            .device = *mRenderDevice.mLogicalDevice,
+            .pAllocationCallbacks = sj::g_vkAllocationFns,
+            .instance = *mVkInstance,
+        };
+        vmaCreateAllocator(&allocatorInfo, &mRenderDevice.mAllocator);
 
         // Create the vulkan swap chain connected to the current window and device
-        m_swapChain.Init(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
+        m_swapChain.Init(mRenderDevice, *mSurface, m_display->GetViewportSize());
         CreateRenderImageResources(m_display->GetViewportSize());
 
         CreateGlobalDescriptorSetlayout();
 
-        m_defaultPipeline = sj::vulkan::MakeDefaultMeshPipeline(m_renderDevice.GetLogicalDevice(),
-                                                            m_globalUBODescriptorSetLayout,
-                                                            m_drawImage.GetImageFormat(),
-                                                            m_depthImage.GetImageFormat(),
-                                                            "Data/Engine/Shaders/Default.vert.spv",
-                                                            "Data/Engine/Shaders/Default.frag.spv");
+        m_defaultPipeline =
+            sj::vulkan::MakeDefaultMeshPipeline(*mRenderDevice.mLogicalDevice,
+                                                m_globalUBODescriptorSetLayout,
+                                                m_drawImage.GetImageFormat(),
+                                                m_depthImage.GetImageFormat(),
+                                                "Data/Engine/Shaders/Default.vert.spv",
+                                                "Data/Engine/Shaders/Default.frag.spv");
 
         CreateCommandPools();
-        m_immediateCommandContext.Init(m_renderDevice.GetLogicalDevice(),
-                                       m_renderDevice.GetGraphicsQueueIndex(),
-                                       m_renderDevice.GetGraphicsQueue());
+        m_immediateCommandContext.Init(*mRenderDevice.mLogicalDevice,
+                                       mRenderDevice.mGraphicsQueueIndex,
+                                       mRenderDevice.mGraphicsQueue);
 
         m_dummyMeshBuffers.Init("Data/Engine/viking_room.sj_mesh",
-                                m_renderDevice.GetAllocator(),
+                                mRenderDevice.mAllocator,
                                 m_immediateCommandContext);
 
         m_dummyTextureResource.Init("Data/Engine/viking_room.sj_tex",
-                                    m_renderDevice,
+                                    mRenderDevice,
                                     m_immediateCommandContext);
 
         CreateGlobalUniformBuffers();
@@ -101,25 +124,26 @@ public:
 
         CreateGlobalUBODescriptorSets();
 
-        m_frameData.Init(m_renderDevice.GetLogicalDevice(), m_graphicsCommandPool);
+        m_frameData.Init(*mRenderDevice.mLogicalDevice, m_graphicsCommandPool);
     }
 
     ~Renderer()
     {
-        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
-        vkDeviceWaitIdle(logicalDevice);
+        mRenderDevice.mLogicalDevice.waitIdle();
+
+        VkDevice logicalDevice = *mRenderDevice.mLogicalDevice;
 
         m_immediateCommandContext.DeInit();
 
-        m_frameData.DeInit(m_renderDevice);
+        m_frameData.DeInit(mRenderDevice);
 
         vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
 
         DestroyRenderImageResources();
 
-        m_swapChain.DeInit(m_renderDevice);
+        m_swapChain.DeInit(mRenderDevice);
 
-        m_dummyTextureResource.DeInit(logicalDevice, m_renderDevice.GetAllocator());
+        m_dummyTextureResource.DeInit(logicalDevice, mRenderDevice.mAllocator);
 
         m_globalDescriptorAllocator.DeInit(logicalDevice);
 
@@ -133,25 +157,69 @@ public:
 
         m_defaultPipeline.DeInit(logicalDevice);
 
-        m_dummyMeshBuffers.DeInit(m_renderDevice.GetAllocator());
+        m_dummyMeshBuffers.DeInit(mRenderDevice.mAllocator);
+    }
 
-        // Important: All things attached to the device need to be torn down first
-        m_renderDevice.DeInit();
+    static auto Bootstrap(Window* display) -> std::tuple<vkb::Instance,
+                                                         VkSurfaceKHR,
+                                                         VkDebugUtilsMessengerEXT,
+                                                         vkb::PhysicalDevice,
+                                                         vkb::Device>
+    {
+        vkb::InstanceBuilder builder;
+        vkb::Instance vkbInstance =
+            builder.set_app_name("SJ Game")
+                .request_validation_layers(g_IsDebugBuild) // todo- why cause crash on boot?
+#ifndef SJ_GOLD
+                .set_debug_callback(VulkanDebugLogCallback)
+#endif
+                .require_api_version(1, 4, 0)
+                .build()
+                .value();
 
-        vkDestroySurfaceKHR(m_vkInstance, m_renderingSurface, sj::g_vkAllocationFns);
+        SJ_ENGINE_LOG_INFO("Vulkan Instance Created. Version: {}", vkbInstance.instance_version);
 
-        if constexpr(g_IsDebugBuild)
-        {
-            auto messenger_destroy_func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-                vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT"));
+        VkSurfaceKHR surface = display->CreateWindowSurface(vkbInstance);
 
-            SJ_ASSERT(messenger_destroy_func != nullptr,
-                      "Failed to load Vulkan Debug messenger destroy function");
+#ifndef SJ_GOLD
+        VkDebugUtilsMessengerEXT debugMessenger = vkbInstance.debug_messenger;
+#endif
 
-            messenger_destroy_func(m_vkInstance, m_vkDebugMessenger, sj::g_vkAllocationFns);
-        }
+        SJ_ENGINE_LOG_INFO("Vulkan Instance Created. Version: {}", vkbInstance.instance_version);
 
-        vkDestroyInstance(m_vkInstance, sj::g_vkAllocationFns);
+        // vulkan 1.3 features
+        VkPhysicalDeviceVulkan13Features features1_3 {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+        features1_3.dynamicRendering = true;
+        features1_3.synchronization2 = true;
+
+        // vulkan 1.2 features
+        VkPhysicalDeviceVulkan12Features features1_2 {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+        features1_2.bufferDeviceAddress = true;
+        features1_2.descriptorIndexing = true;
+
+        VkPhysicalDeviceFeatures features {.samplerAnisotropy = VK_TRUE};
+
+        // use vkbootstrap to select a gpu.
+        vkb::PhysicalDeviceSelector selector {vkbInstance};
+        vkb::PhysicalDevice physicalDevice = selector.set_minimum_version(1, 3)
+                                                 .set_required_features_13(features1_3)
+                                                 .set_required_features_12(features1_2)
+                                                 .set_required_features(features)
+                                                 .set_surface(surface)
+                                                 .select()
+                                                 .value();
+        SJ_ENGINE_LOG_INFO("Selected GPU {}", physicalDevice.name.c_str());
+
+        vkb::DeviceBuilder deviceBuilder {physicalDevice};
+        vkb::Device logicalDevice = deviceBuilder.build().value();
+
+        return {vkbInstance,
+                surface,
+                debugMessenger,
+                std::move(physicalDevice),
+                std::move(logicalDevice)};
     }
 
     void Render(const Mat44& cameraMatrix)
@@ -160,7 +228,7 @@ public:
         const uint32_t frameIdx = m_frameCount % sj::vulkan::kMaxFramesInFlight;
         sj::vulkan::FrameGlobals currFrameData = m_frameData.GetFrameGlobals(frameIdx);
 
-        vkWaitForFences(m_renderDevice.GetLogicalDevice(),
+        vkWaitForFences(*mRenderDevice.mLogicalDevice,
                         1,
                         &currFrameData.fence,
                         VK_TRUE,
@@ -168,7 +236,7 @@ public:
 
         VkSwapchainKHR swapChain = m_swapChain.GetSwapChain();
         uint32_t imageIndex = 0;
-        VkResult res = vkAcquireNextImageKHR(m_renderDevice.GetLogicalDevice(),
+        VkResult res = vkAcquireNextImageKHR(*mRenderDevice.mLogicalDevice,
                                              swapChain,
                                              std::numeric_limits<uint64_t>::max(),
                                              currFrameData.presentCompleteSemaphore,
@@ -190,7 +258,7 @@ public:
         }
 
         // Reset fence when we know we're going to be able to draw this frame
-        vkResetFences(m_renderDevice.GetLogicalDevice(), 1, &currFrameData.fence);
+        vkResetFences(*mRenderDevice.mLogicalDevice, 1, &currFrameData.fence);
 
         vkResetCommandBuffer(currFrameData.cmd, 0);
 
@@ -205,17 +273,16 @@ public:
 
         VkSemaphoreSubmitInfo waitInfo =
             sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                            currFrameData.presentCompleteSemaphore);
+                                                currFrameData.presentCompleteSemaphore);
 
         VkSemaphoreSubmitInfo signalInfo =
             sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                            currRenderFinishedSemaphore);
+                                                currRenderFinishedSemaphore);
 
         VkSubmitInfo2 submitInfo =
             sj::vulkan::MakeSubmitInfo(&submitCommandInfo, &signalInfo, &waitInfo);
 
-        res =
-            vkQueueSubmit2(m_renderDevice.GetGraphicsQueue(), 1, &submitInfo, currFrameData.fence);
+        res = vkQueueSubmit2(mRenderDevice.mGraphicsQueue, 1, &submitInfo, currFrameData.fence);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
 
         VkPresentInfoKHR presentInfo {};
@@ -226,7 +293,7 @@ public:
         presentInfo.pSwapchains = &swapChain;
         presentInfo.pImageIndices = &imageIndex;
 
-        res = vkQueuePresentKHR(m_renderDevice.GetPresentationQueue(), &presentInfo);
+        res = vkQueuePresentKHR(mRenderDevice.mPresentationQueue, &presentInfo);
         if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
             OnWindowResize();
@@ -240,17 +307,17 @@ public:
 
     sj::vulkan::RenderDevice* GetRenderDevice()
     {
-        return &m_renderDevice;
+        return &mRenderDevice;
     }
 
     void InitImGui()
     {
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = m_vkInstance;
-        init_info.PhysicalDevice = m_renderDevice.GetPhysicalDevice();
-        init_info.Device = m_renderDevice.GetLogicalDevice();
-        init_info.QueueFamily = m_renderDevice.GetGraphicsQueueIndex();
-        init_info.Queue = m_renderDevice.GetGraphicsQueue();
+        init_info.Instance = *mVkInstance;
+        init_info.PhysicalDevice = *mRenderDevice.mPhysicalDevice;
+        init_info.Device = *mRenderDevice.mLogicalDevice;
+        init_info.QueueFamily = mRenderDevice.mGraphicsQueueIndex;
+        init_info.Queue = mRenderDevice.mGraphicsQueue;
         init_info.PipelineCache = VK_NULL_HANDLE;
         init_info.DescriptorPool = m_imguiDescriptorAllocator.GetPool();
         init_info.Allocator = nullptr;
@@ -273,8 +340,7 @@ public:
 
     void DeInitImGui()
     {
-        VkDevice logicalDevice = m_renderDevice.GetLogicalDevice();
-        vkDeviceWaitIdle(logicalDevice);
+        mRenderDevice.mLogicalDevice.waitIdle();
 
         ImGui_ImplVulkan_Shutdown();
     }
@@ -320,31 +386,6 @@ private:
         return VK_FALSE;
     }
 
-    /**
-     * Initializes the Vulkan API's instance and debug messaging hooks
-     */
-    auto InitializeVulkan() -> vkb::Instance
-    {
-        vkb::InstanceBuilder builder;
-        auto inst_ret =
-            builder.set_app_name("SJ Game")
-                .request_validation_layers(g_IsDebugBuild) // todo- why cause crash on boot?
-#ifndef SJ_GOLD
-                .set_debug_callback(VulkanDebugLogCallback)
-#endif
-                .require_api_version(1, 4, 0)
-                .build();
-        vkb::Instance vkb_inst = inst_ret.value();
-        m_vkInstance = vkb_inst.instance;
-
-#ifndef SJ_GOLD
-        m_vkDebugMessenger = vkb_inst.debug_messenger;
-#endif
-
-        SJ_ENGINE_LOG_INFO("Vulkan Instance Created. Version: {}", inst_ret->instance_version);
-        return vkb_inst;
-    }
-
     void CreateRenderImageResources(sj::Vec2 windowSize)
     {
         VmaAllocationCreateInfo renderImageAllocInfo = {};
@@ -364,40 +405,40 @@ private:
             drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
             drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            m_drawImage = sj::vulkan::ImageResource(m_renderDevice.GetAllocator(),
-                                                renderImageAllocInfo,
-                                                drawImageExtent,
-                                                VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                drawImageUsages,
-                                                VK_IMAGE_TILING_OPTIMAL);
+            m_drawImage = sj::vulkan::ImageResource(mRenderDevice.mAllocator,
+                                                    renderImageAllocInfo,
+                                                    drawImageExtent,
+                                                    VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                    drawImageUsages,
+                                                    VK_IMAGE_TILING_OPTIMAL);
 
-            m_drawImageView = m_drawImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
-                                                        VK_IMAGE_ASPECT_COLOR_BIT);
+            m_drawImageView =
+                m_drawImage.MakeImageView(*mRenderDevice.mLogicalDevice, VK_IMAGE_ASPECT_COLOR_BIT);
         }
 
         // Depth Target
         {
             VkImageUsageFlags depthImageUsages {};
             depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            m_depthImage = sj::vulkan::ImageResource(m_renderDevice.GetAllocator(),
-                                                 renderImageAllocInfo,
-                                                 drawImageExtent,
-                                                 VK_FORMAT_D32_SFLOAT,
-                                                 depthImageUsages,
-                                                 VK_IMAGE_TILING_OPTIMAL);
+            m_depthImage = sj::vulkan::ImageResource(mRenderDevice.mAllocator,
+                                                     renderImageAllocInfo,
+                                                     drawImageExtent,
+                                                     VK_FORMAT_D32_SFLOAT,
+                                                     depthImageUsages,
+                                                     VK_IMAGE_TILING_OPTIMAL);
 
-            m_depthImageView = m_depthImage.MakeImageView(m_renderDevice.GetLogicalDevice(),
+            m_depthImageView = m_depthImage.MakeImageView(*mRenderDevice.mLogicalDevice,
                                                           VK_IMAGE_ASPECT_DEPTH_BIT);
         }
     }
 
     void DestroyRenderImageResources()
     {
-        vkDestroyImageView(m_renderDevice.GetLogicalDevice(), m_drawImageView, g_vkAllocationFns);
-        m_drawImage.DeInit(m_renderDevice.GetAllocator());
+        vkDestroyImageView(*mRenderDevice.mLogicalDevice, m_drawImageView, g_vkAllocationFns);
+        m_drawImage.DeInit(mRenderDevice.mAllocator);
 
-        vkDestroyImageView(m_renderDevice.GetLogicalDevice(), m_depthImageView, g_vkAllocationFns);
-        m_depthImage.DeInit(m_renderDevice.GetAllocator());
+        vkDestroyImageView(*mRenderDevice.mLogicalDevice, m_depthImageView, g_vkAllocationFns);
+        m_depthImage.DeInit(mRenderDevice.mAllocator);
     }
 
     void CreateCommandPools()
@@ -405,9 +446,9 @@ private:
         VkCommandPoolCreateInfo poolInfo {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = m_renderDevice.GetGraphicsQueueIndex();
+        poolInfo.queueFamilyIndex = mRenderDevice.mGraphicsQueueIndex;
 
-        VkResult res = vkCreateCommandPool(m_renderDevice.GetLogicalDevice(),
+        VkResult res = vkCreateCommandPool(*mRenderDevice.mLogicalDevice,
                                            &poolInfo,
                                            sj::g_vkAllocationFns,
                                            &m_graphicsCommandPool);
@@ -425,7 +466,7 @@ private:
                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                            VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        m_globalUBODescriptorSetLayout = builder.Build(m_renderDevice.GetLogicalDevice(), nullptr);
+        m_globalUBODescriptorSetLayout = builder.Build(*mRenderDevice.mLogicalDevice, nullptr);
     }
 
     void CreateGlobalUniformBuffers()
@@ -437,7 +478,7 @@ private:
             // This might not actaully end up being host visible:
             // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/usage_patterns.html
             m_frameData.globalUniformBuffers[i] = sj::vulkan::BufferResource(
-                m_renderDevice.GetAllocator(),
+                mRenderDevice.mAllocator,
                 bufferSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -454,7 +495,7 @@ private:
             VkDescriptorPoolSize {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                   .descriptorCount = sj::vulkan::kMaxFramesInFlight}};
 
-        m_globalDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(),
+        m_globalDescriptorAllocator.InitPool(*mRenderDevice.mLogicalDevice,
                                              sj::vulkan::kMaxFramesInFlight,
                                              poolSizes,
                                              VkDescriptorPoolCreateFlags {});
@@ -476,7 +517,7 @@ private:
             VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
             VkDescriptorPoolSize {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
-        m_imguiDescriptorAllocator.InitPool(m_renderDevice.GetLogicalDevice(),
+        m_imguiDescriptorAllocator.InitPool(*mRenderDevice.mLogicalDevice,
                                             1,
                                             pool_sizes,
                                             VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
@@ -488,7 +529,7 @@ private:
         std::array<VkDescriptorSetLayout, sj::vulkan::kMaxFramesInFlight> layouts {};
         std::ranges::fill(layouts, m_globalUBODescriptorSetLayout);
 
-        m_globalDescriptorAllocator.Allocate(m_renderDevice.GetLogicalDevice(),
+        m_globalDescriptorAllocator.Allocate(*mRenderDevice.mLogicalDevice,
                                              layouts,
                                              m_frameData.globalUBODescriptorSets);
 
@@ -522,7 +563,7 @@ private:
 
             };
 
-            vkUpdateDescriptorSets(m_renderDevice.GetLogicalDevice(),
+            vkUpdateDescriptorSets(*mRenderDevice.mLogicalDevice,
                                    static_cast<uint32_t>(descriptorWrites.size()),
                                    descriptorWrites.data(),
                                    0,
@@ -534,8 +575,8 @@ private:
     {
         VkRenderingAttachmentInfo colorAttachment =
             sj::vulkan::MakeAttachmentInfo(targetImageView,
-                                       nullptr,
-                                       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
         VkRenderingInfo renderInfo =
             sj::vulkan::MakeRenderingInfo(targetImageExtent, &colorAttachment, nullptr);
@@ -567,12 +608,12 @@ private:
     {
         VkRenderingAttachmentInfo colorAttachment =
             sj::vulkan::MakeAttachmentInfo(m_drawImageView,
-                                       nullptr,
-                                       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
         VkRenderingAttachmentInfo depthAttachment =
             sj::vulkan::MakeDepthAttachmentInfo(m_depthImageView,
-                                            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+                                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
         VkRenderingInfo renderInfo = sj::vulkan::MakeRenderingInfo(
             {m_drawImage.GetExtent().width, m_drawImage.GetExtent().height},
@@ -629,47 +670,47 @@ private:
 
         // Make render target images
         sj::vulkan::TransitionImage(frameData.cmd,
-                                m_drawImage.GetImage(),
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_GENERAL);
+                                    m_drawImage.GetImage(),
+                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_GENERAL);
 
         DrawBackground(frameData.cmd);
 
         sj::vulkan::TransitionImage(frameData.cmd,
-                                m_drawImage.GetImage(),
-                                VK_IMAGE_LAYOUT_GENERAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                    m_drawImage.GetImage(),
+                                    VK_IMAGE_LAYOUT_GENERAL,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
         sj::vulkan::TransitionImage(frameData.cmd,
-                                m_depthImage.GetImage(),
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+                                    m_depthImage.GetImage(),
+                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
         DrawGeometry(frameData.cmd, frameData.globalDescriptorSet);
 
         // transition the draw image and the swapchain image into their correct transfer layouts
         sj::vulkan::TransitionImage(frameData.cmd,
-                                m_drawImage.GetImage(),
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                                    m_drawImage.GetImage(),
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
         sj::vulkan::TransitionImage(frameData.cmd,
-                                swapchainImage,
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                                    swapchainImage,
+                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         // Copy working image into swapchain
         sj::vulkan::CopyImageToImage(frameData.cmd,
-                                 m_drawImage.GetImage(),
-                                 swapchainImage,
-                                 m_drawImage.GetExtent2D(),
-                                 m_swapChain.GetExtent());
+                                     m_drawImage.GetImage(),
+                                     swapchainImage,
+                                     m_drawImage.GetExtent2D(),
+                                     m_swapChain.GetExtent());
 
         // Put swapchain image back into color attachment mode
         sj::vulkan::TransitionImage(frameData.cmd,
-                                swapchainImage,
-                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                    swapchainImage,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 #ifndef SJ_GOLD
         DrawImGui(frameData.cmd, swapchainImageView, m_swapChain.GetExtent());
@@ -677,9 +718,9 @@ private:
 
         // Make swapchain image ready for presentation
         sj::vulkan::TransitionImage(frameData.cmd,
-                                swapchainImage,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                                    swapchainImage,
+                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         res = vkEndCommandBuffer(frameData.cmd);
         SJ_ASSERT(res == VK_SUCCESS, "Failed to record command buffer!");
@@ -700,12 +741,10 @@ private:
 
     void OnWindowResize()
     {
-        VkDevice device = m_renderDevice.GetLogicalDevice();
+        mRenderDevice.mLogicalDevice.waitIdle();
+        VkDevice device = *mRenderDevice.mLogicalDevice;
 
-        // Ensure all operations on the device have been finished before destroying resources
-        vkDeviceWaitIdle(device);
-
-        m_swapChain.Recreate(m_renderDevice, m_renderingSurface, m_display->GetViewportSize());
+        m_swapChain.Recreate(mRenderDevice, *mSurface, m_display->GetViewportSize());
 
         DestroyRenderImageResources();
         CreateRenderImageResources(m_display->GetViewportSize());
@@ -716,20 +755,17 @@ private:
 
     Window* m_display = nullptr;
 
-    /** The Vulkan instance is the engine's connection to the vulkan library */
-    VkInstance m_vkInstance {};
+    vk::raii::Context mVkContext;
+    vk::raii::Instance mVkInstance {nullptr};
+    vk::raii::SurfaceKHR mSurface {nullptr};
+
+    sj::vulkan::RenderDevice mRenderDevice;
 
     sj::vulkan::ImageResource m_drawImage;
     VkImageView m_drawImageView;
 
     sj::vulkan::ImageResource m_depthImage;
     VkImageView m_depthImageView;
-
-    /** Handle to the surface vulkan renders to */
-    VkSurfaceKHR m_renderingSurface {};
-
-    /** Used to back API operations */
-    sj::vulkan::RenderDevice m_renderDevice;
 
     /** Used for image presentation */
     sj::vulkan::SwapChain m_swapChain;
@@ -756,7 +792,7 @@ private:
     sj::vulkan::DescriptorAllocator m_imguiDescriptorAllocator;
 
     /** Handle to manage Vulkan's debug callbacks */
-    VkDebugUtilsMessengerEXT m_vkDebugMessenger {};
+    vk::raii::DebugUtilsMessengerEXT mVkDebugMessenger {nullptr};
 #endif
 };
 } // namespace sj
