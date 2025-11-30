@@ -2,7 +2,6 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 
-#include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 
 #include <concepts>
@@ -11,78 +10,64 @@ export module sj.engine.rendering.vk.ImmediateCommandContext;
 import sj.engine.rendering.vk.Helpers;
 import sj.engine.rendering.vk.Primitives;
 
+import vulkan_hpp;
+
 export namespace sj::vulkan
 {
-    class ImmediateCommandContext
+class ImmediateCommandContext
+{
+public:
+    ImmediateCommandContext() = default;
+    ImmediateCommandContext(vk::raii::Device& device, uint32_t queueIndex, vk::Queue queue)
+        : mDevice(device), mQueue(queue)
     {
-    public:
-        void Init(VkDevice device, uint32_t queueIndex, VkQueue queue)
+        vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+                                           queueIndex);
+
+        mPool = vk::raii::CommandPool(device, poolInfo, g_vkAllocationCallbacks);
+
+        vk::CommandBufferAllocateInfo immCommandInfo(mPool, vk::CommandBufferLevel::ePrimary, 1);
+        
+        // Use c-api because c++ one forces use of std::vector even though we know there's only one element 
         {
-            m_device = device;
-            m_queue = queue;
-
-            VkCommandPoolCreateInfo poolInfo {};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            poolInfo.queueFamilyIndex = queueIndex;
-
-            VkResult res = vkCreateCommandPool(device, &poolInfo, sj::g_vkAllocationFns, &m_pool);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to create immediate command pool");
-
-            VkCommandBufferAllocateInfo immCommandInfo =
-                sj::vulkan::MakeCommandBufferAllocateInfo(m_pool, 1);
-            res = vkAllocateCommandBuffers(m_device, &immCommandInfo, &m_buffer);
+            VkCommandBufferAllocateInfo cInf = immCommandInfo;
+            VkCommandBuffer cBuf;
+            VkResult res = vkAllocateCommandBuffers(*device, &cInf, &cBuf);
             SJ_ASSERT(res == VK_SUCCESS, "Failed to allocate immediate command buffer");
-
-            VkFenceCreateInfo fenceInfo {};
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-            vkCreateFence(device, &fenceInfo, sj::g_vkAllocationFns, &m_fence);
+            mBuffer = cBuf;
         }
 
-        void DeInit()
-        {
-            vkDestroyFence(m_device, m_fence, sj::g_vkAllocationFns);
-            vkDestroyCommandPool(m_device, m_pool, sj::g_vkAllocationFns);
-        }
+        vk::FenceCreateInfo fenceInfo(vk::FenceCreateFlagBits::eSignaled);
+        mFence = vk::raii::Fence(device, fenceInfo, g_vkAllocationCallbacks);
+    }
 
-        template <class Fn>
-            requires std::invocable<Fn, VkCommandBuffer>
-        void ImmediateSubmit(Fn&& function)
-        {
-            VkResult res = vkResetFences(m_device, 1, &m_fence);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to reset immediate render fence!");
+    template <class Fn>
+        requires std::invocable<Fn, vk::CommandBuffer>
+    void ImmediateSubmit(Fn&& function)
+    {
+        mDevice.resetFences({mFence});
+        mBuffer.reset();
 
-            res = vkResetCommandBuffer(m_buffer, 0);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to reset immediate mode command buffer!");
+        vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        mBuffer.begin(beginInfo);
 
-            VkCommandBufferBeginInfo beginInfo =
-                sj::vulkan::MakeCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        std::forward<Fn>(function)(mBuffer);
 
-            res = vkBeginCommandBuffer(m_buffer, &beginInfo);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to start immediate mode command buffer!");
+        mBuffer.end();
 
-            std::forward<Fn>(function)(m_buffer);
+        vk::CommandBufferSubmitInfo submitCommandInfo(mBuffer);
+        vk::SubmitInfo2 submitInfo({}, {}, {submitCommandInfo});
+        mQueue.submit2({submitInfo}, mFence);
+        vk::Result res = mDevice.waitForFences({mFence}, true, 9999999999);
+        SJ_ASSERT(res == vk::Result::eSuccess, "Immediate mode wait for fence timed out!");
+    }
 
-            res = vkEndCommandBuffer(m_buffer);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to finalize immediate mode command buffer!");
+private:
+    vk::raii::Fence mFence {nullptr};
+    vk::raii::CommandPool mPool {nullptr};
 
-            VkCommandBufferSubmitInfo submitCommandInfo =
-                sj::vulkan::MakeCommandBufferSubmitInfo(m_buffer);
-            VkSubmitInfo2 submitInfo = sj::vulkan::MakeSubmitInfo(&submitCommandInfo, nullptr, nullptr);
-
-            res = vkQueueSubmit2(m_queue, 1, &submitInfo, m_fence);
-            SJ_ASSERT(res == VK_SUCCESS, "Failed to submit immediate command buffer!");
-
-            res = vkWaitForFences(m_device, 1, &m_fence, true, 9999999999);
-            SJ_ASSERT(res == VK_SUCCESS, "Immediate mode wait for fence timed out!");
-        }
-
-    private:
-        VkDevice m_device;
-        VkQueue m_queue;
-        VkFence m_fence;
-        VkCommandPool m_pool;
-        VkCommandBuffer m_buffer;
-    };
+    vk::Device mDevice;
+    vk::Queue mQueue;
+    vk::CommandBuffer mBuffer;
+};
 } // namespace sj::vulkan

@@ -177,9 +177,9 @@ public:
         return m_chainImageFormat;
     }
 
-    [[nodiscard]] VkSwapchainKHR GetSwapChain() const
+    [[nodiscard]] vk::SwapchainKHR GetSwapChain() const
     {
-        return *mSwapChain;
+        return mSwapChain;
     }
 
     [[nodiscard]] std::span<vk::raii::ImageView> GetImageViews() const

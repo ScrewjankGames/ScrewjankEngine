@@ -28,11 +28,11 @@ struct RenderDevice
     VmaAllocator mAllocator {};
 
     /** Queue used to handle graphics commands */
-    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+    vk::Queue mGraphicsQueue = VK_NULL_HANDLE;
     uint32_t mGraphicsQueueIndex = -1;
 
     /** Used to execute presentation commands */
-    VkQueue mPresentationQueue = VK_NULL_HANDLE;
+    vk::Queue mPresentationQueue = VK_NULL_HANDLE;
     uint32_t mPresentationQueueIndex = -1;
 };
 } // namespace sj::vulkan

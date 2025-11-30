@@ -22,7 +22,6 @@ module;
 #include <fstream>
 #include <optional>
 
-
 export module sj.engine.rendering.Renderer;
 import sj.engine.core.Program;
 import sj.engine.core.Window;
@@ -63,6 +62,11 @@ public:
         auto&& [vkbInstance, surface, debugMessenger, vkbPhysicalDevice, vkbDevice] =
             Bootstrap(m_display);
         mVkInstance = vk::raii::Instance(mVkContext, vkbInstance);
+
+#if (VULKAN_HPP_DISPATCH_LOADER_DYNAMIC == 1)
+        // Load the rest of the pointers
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(*mVkInstance);
+#endif
         mSurface = vk::raii::SurfaceKHR(mVkInstance, surface);
 
 #ifndef SJ_GOLD
@@ -104,9 +108,10 @@ public:
                                                 "Data/Engine/Shaders/Default.frag.spv");
 
         CreateCommandPools();
-        m_immediateCommandContext.Init(*mRenderDevice.mLogicalDevice,
-                                       mRenderDevice.mGraphicsQueueIndex,
-                                       mRenderDevice.mGraphicsQueue);
+        m_immediateCommandContext =
+            sj::vulkan::ImmediateCommandContext(mRenderDevice.mLogicalDevice,
+                                                mRenderDevice.mGraphicsQueueIndex,
+                                                mRenderDevice.mGraphicsQueue);
 
         m_dummyMeshBuffers.Init("Data/Engine/viking_room.sj_mesh",
                                 mRenderDevice.mAllocator,
@@ -134,8 +139,6 @@ public:
         mRenderDevice.mLogicalDevice.waitIdle();
 
         VkDevice logicalDevice = *mRenderDevice.mLogicalDevice;
-
-        m_immediateCommandContext.DeInit();
 
         m_frameData.DeInit(mRenderDevice);
 
@@ -228,7 +231,7 @@ public:
                         VK_TRUE,
                         std::numeric_limits<uint64_t>::max());
 
-        VkSwapchainKHR swapChain = m_swapChain.GetSwapChain();
+        vk::SwapchainKHR swapChain = m_swapChain.GetSwapChain();
         uint32_t imageIndex = 0;
         VkResult res = vkAcquireNextImageKHR(*mRenderDevice.mLogicalDevice,
                                              swapChain,
@@ -237,7 +240,7 @@ public:
                                              VK_NULL_HANDLE,
                                              &imageIndex);
 
-        VkSemaphore currRenderFinishedSemaphore =
+        vk::Semaphore currRenderFinishedSemaphore =
             m_swapChain.GetImageRenderCompleteSemaphore(imageIndex);
 
         if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
@@ -262,33 +265,23 @@ public:
         VkImageView swapChainImageView = m_swapChain.GetImageView(imageIndex);
         RecordDrawCommands(currFrameData, swapChainImage, swapChainImageView);
 
-        VkCommandBufferSubmitInfo submitCommandInfo =
-            sj::vulkan::MakeCommandBufferSubmitInfo(currFrameData.cmd);
+        vk::CommandBufferSubmitInfo submitCommandInfo(currFrameData.cmd);
 
-        VkSemaphoreSubmitInfo waitInfo =
-            sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                                currFrameData.presentCompleteSemaphore);
+        vk::SemaphoreSubmitInfo waitInfo(currFrameData.presentCompleteSemaphore,
+                                         1,
+                                         vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+        vk::SemaphoreSubmitInfo signalInfo(currRenderFinishedSemaphore,
+                                           1,
+                                           vk::PipelineStageFlagBits2::eAllGraphics);
 
-        VkSemaphoreSubmitInfo signalInfo =
-            sj::vulkan::MakeSemaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                                currRenderFinishedSemaphore);
+        vk::SubmitInfo2 submitInfo({}, waitInfo, submitCommandInfo, signalInfo);
 
-        VkSubmitInfo2 submitInfo =
-            sj::vulkan::MakeSubmitInfo(&submitCommandInfo, &signalInfo, &waitInfo);
+        mRenderDevice.mGraphicsQueue.submit2(submitInfo, currFrameData.fence);
 
-        res = vkQueueSubmit2(mRenderDevice.mGraphicsQueue, 1, &submitInfo, currFrameData.fence);
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to submit draw command buffer!");
+        vk::PresentInfoKHR presentInfo(currRenderFinishedSemaphore, swapChain, imageIndex);
 
-        VkPresentInfoKHR presentInfo {};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &currRenderFinishedSemaphore;
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = &swapChain;
-        presentInfo.pImageIndices = &imageIndex;
-
-        res = vkQueuePresentKHR(mRenderDevice.mPresentationQueue, &presentInfo);
-        if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+        vk::Result presentRes = mRenderDevice.mPresentationQueue.presentKHR(presentInfo);
+        if(presentRes == vk::Result::eErrorOutOfDateKHR || presentRes == vk::Result::eSuboptimalKHR)
         {
             OnWindowResize();
             return;
