@@ -2,7 +2,6 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 
-#include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 
 #include <fstream>
@@ -15,12 +14,17 @@ import sj.engine.rendering.vk.ImmediateCommandContext;
 import sj.engine.rendering.vk.Primitives;
 import sj.engine.rendering.vk.RenderDevice;
 
+import vulkan_hpp;
+
 export namespace sj::vulkan
 {
 class TextureResource
 {
 public:
-    void Init(const char* path, sj::vulkan::RenderDevice& device, ImmediateCommandContext& ctx)
+    TextureResource() = default;
+    TextureResource(const char* path,
+                    sj::vulkan::RenderDevice& device,
+                    ImmediateCommandContext& ctx)
     {
         std::ifstream textureFile;
         textureFile.open("Data/Engine/viking_room.sj_tex", std::ios::in | std::ios::binary);
@@ -39,24 +43,24 @@ public:
         allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         allocCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        VkExtent3D imageExtent = {static_cast<uint32_t>(header.width),
-                                  static_cast<uint32_t>(header.height),
-                                  1};
+        vk::Extent3D imageExtent = {static_cast<uint32_t>(header.width),
+                                    static_cast<uint32_t>(header.height),
+                                    1};
 
-        mImageResource =
-            sj::vulkan::ImageResource(device.mAllocator,
-                                  allocCreateInfo,
-                                  imageExtent,
-                                  VK_FORMAT_R8G8B8A8_SRGB,
-                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL);
+        mImageResource = sj::vulkan::ImageResource(device.mAllocator,
+                                                   allocCreateInfo,
+                                                   imageExtent,
+                                                   vk::Format::eR8G8B8A8Srgb,
+                                                   vk::ImageUsageFlagBits::eTransferDst |
+                                                       vk::ImageUsageFlagBits::eSampled,
+                                                   vk::ImageTiling::eOptimal);
 
         VkImage textureImage = mImageResource.GetImage();
         ctx.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
             sj::vulkan::TransitionImage(cmd,
-                                    textureImage,
-                                    VK_IMAGE_LAYOUT_UNDEFINED,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                                        textureImage,
+                                        VK_IMAGE_LAYOUT_UNDEFINED,
+                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         });
 
         ctx.ImmediateSubmit([buf = stagingBuffer.GetBuffer(),
@@ -67,62 +71,54 @@ public:
 
         ctx.ImmediateSubmit([textureImage](VkCommandBuffer cmd) {
             sj::vulkan::TransitionImage(cmd,
-                                    textureImage,
-                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                        textureImage,
+                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         });
 
         stagingBuffer.DeInit(device.mAllocator);
 
         mImageView =
-            mImageResource.MakeImageView(*device.mLogicalDevice, VK_IMAGE_ASPECT_COLOR_BIT);
+            mImageResource.MakeImageView(device.mLogicalDevice, vk::ImageAspectFlagBits::eColor);
         VkPhysicalDeviceProperties properties {};
         vkGetPhysicalDeviceProperties(*device.mPhysicalDevice, &properties);
 
-        VkSamplerCreateInfo samplerInfo {};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        vk::SamplerCreateInfo samplerInfo({},
+                                          vk::Filter::eLinear,
+                                          vk::Filter::eLinear,
+                                          vk::SamplerMipmapMode::eLinear,
+                                          vk::SamplerAddressMode::eRepeat,
+                                          vk::SamplerAddressMode::eRepeat,
+                                          vk::SamplerAddressMode::eRepeat,
+                                          {},
+                                          true,
+                                          properties.limits.maxSamplerAnisotropy,
+                                          false,
+                                          vk::CompareOp::eAlways,
+                                          {},
+                                          {},
+                                          vk::BorderColor::eIntOpaqueBlack,
+                                          false);
 
-        VkResult res = vkCreateSampler(*device.mLogicalDevice,
-                                       &samplerInfo,
-                                       sj::g_vkAllocationFns,
-                                       &mTextureSampler);
+        mTextureSampler =
+            vk::raii::Sampler(device.mLogicalDevice, samplerInfo, g_vkAllocationCallbacks);
 
-        SJ_ASSERT(res == VK_SUCCESS, "Failed to create image sampler");
         return;
     }
 
-    void DeInit(VkDevice device, VmaAllocator allocator)
-    {
-        vkDestroySampler(device, mTextureSampler, sj::g_vkAllocationFns);
-        vkDestroyImageView(device, mImageView, sj::g_vkAllocationFns);
-        mImageResource.DeInit(allocator);
-    }
-
-    VkImageView GetImageView()
+    vk::ImageView GetImageView()
     {
         return mImageView;
     }
 
-    VkSampler GetSampler()
+    vk::Sampler GetSampler()
     {
         return mTextureSampler;
     }
 
 private:
     sj::vulkan::ImageResource mImageResource;
-    VkImageView mImageView {};
-    VkSampler mTextureSampler {};
+    vk::raii::ImageView mImageView {nullptr};
+    vk::raii::Sampler mTextureSampler {nullptr};
 };
 } // namespace sj::vulkan

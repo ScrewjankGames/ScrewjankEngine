@@ -14,6 +14,7 @@ import vulkan_hpp;
 export namespace sj
 {
     inline constexpr VkAllocationCallbacks* g_vkAllocationFns = nullptr;
+    inline vk::Optional<const vk::AllocationCallbacks> g_vkAllocationCallbacks = {nullptr};
 }
 
 export namespace sj::vulkan

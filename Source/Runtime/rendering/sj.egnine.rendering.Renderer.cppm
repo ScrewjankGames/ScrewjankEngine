@@ -20,6 +20,8 @@ module;
 #include <cstring>
 #include <cstddef>
 #include <fstream>
+#include <optional>
+
 
 export module sj.engine.rendering.Renderer;
 import sj.engine.core.Program;
@@ -47,7 +49,7 @@ public:
         return &g_workBufferResource;
     }
 
-    Renderer(Program& program) : m_display(program.GetModule<Window>()), m_swapChain(WorkBuffer())
+    Renderer(Program& program) : m_display(program.GetModule<Window>())
     {
         free_list_allocator* workBuffer = WorkBuffer();
         workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
@@ -94,7 +96,7 @@ public:
         CreateGlobalDescriptorSetlayout();
 
         m_defaultPipeline =
-            sj::vulkan::MakeDefaultMeshPipeline(*mRenderDevice.mLogicalDevice,
+            sj::vulkan::MakeDefaultMeshPipeline(mRenderDevice.mLogicalDevice,
                                                 m_globalUBODescriptorSetLayout,
                                                 m_drawImage.GetImageFormat(),
                                                 m_depthImage.GetImageFormat(),
@@ -110,9 +112,9 @@ public:
                                 mRenderDevice.mAllocator,
                                 m_immediateCommandContext);
 
-        m_dummyTextureResource.Init("Data/Engine/viking_room.sj_tex",
-                                    mRenderDevice,
-                                    m_immediateCommandContext);
+        m_dummyTextureResource = sj::vulkan::TextureResource("Data/Engine/viking_room.sj_tex",
+                                                             mRenderDevice,
+                                                             m_immediateCommandContext);
 
         CreateGlobalUniformBuffers();
 
@@ -139,12 +141,6 @@ public:
 
         vkDestroyCommandPool(logicalDevice, m_graphicsCommandPool, sj::g_vkAllocationFns);
 
-        DestroyRenderImageResources();
-
-        m_swapChain.DeInit(mRenderDevice);
-
-        m_dummyTextureResource.DeInit(logicalDevice, mRenderDevice.mAllocator);
-
         m_globalDescriptorAllocator.DeInit(logicalDevice);
 
 #ifndef SJ_GOLD
@@ -154,8 +150,6 @@ public:
         vkDestroyDescriptorSetLayout(logicalDevice,
                                      m_globalUBODescriptorSetLayout,
                                      sj::g_vkAllocationFns);
-
-        m_defaultPipeline.DeInit(logicalDevice);
 
         m_dummyMeshBuffers.DeInit(mRenderDevice.mAllocator);
     }
@@ -325,7 +319,7 @@ public:
         init_info.ImageCount = sj::vulkan::kMaxFramesInFlight;
         init_info.CheckVkResultFn = CheckImguiVulkanResult;
 
-        VkFormat swapchainImageFormat = m_swapChain.GetImageFormat();
+        VkFormat swapchainImageFormat = static_cast<VkFormat>(m_swapChain.GetImageFormat());
         init_info.UseDynamicRendering = true;
         init_info.PipelineRenderingCreateInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
@@ -399,46 +393,34 @@ private:
 
         // Draw Target
         {
-            VkImageUsageFlags drawImageUsages {};
-            drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
-            drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            vk::ImageUsageFlags drawImageUsages =
+                vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+                vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eColorAttachment;
 
             m_drawImage = sj::vulkan::ImageResource(mRenderDevice.mAllocator,
                                                     renderImageAllocInfo,
                                                     drawImageExtent,
-                                                    VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                    vk::Format::eR16G16B16A16Sfloat,
                                                     drawImageUsages,
-                                                    VK_IMAGE_TILING_OPTIMAL);
+                                                    vk::ImageTiling::eOptimal);
 
-            m_drawImageView =
-                m_drawImage.MakeImageView(*mRenderDevice.mLogicalDevice, VK_IMAGE_ASPECT_COLOR_BIT);
+            m_drawImageView = m_drawImage.MakeImageView(mRenderDevice.mLogicalDevice,
+                                                        vk::ImageAspectFlagBits::eColor);
         }
 
         // Depth Target
         {
-            VkImageUsageFlags depthImageUsages {};
-            depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            m_depthImage = sj::vulkan::ImageResource(mRenderDevice.mAllocator,
-                                                     renderImageAllocInfo,
-                                                     drawImageExtent,
-                                                     VK_FORMAT_D32_SFLOAT,
-                                                     depthImageUsages,
-                                                     VK_IMAGE_TILING_OPTIMAL);
+            m_depthImage =
+                sj::vulkan::ImageResource(mRenderDevice.mAllocator,
+                                          renderImageAllocInfo,
+                                          drawImageExtent,
+                                          vk::Format::eD32Sfloat,
+                                          vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                                          vk::ImageTiling::eOptimal);
 
-            m_depthImageView = m_depthImage.MakeImageView(*mRenderDevice.mLogicalDevice,
-                                                          VK_IMAGE_ASPECT_DEPTH_BIT);
+            m_depthImageView = m_depthImage.MakeImageView(mRenderDevice.mLogicalDevice,
+                                                          vk::ImageAspectFlagBits::eDepth);
         }
-    }
-
-    void DestroyRenderImageResources()
-    {
-        vkDestroyImageView(*mRenderDevice.mLogicalDevice, m_drawImageView, g_vkAllocationFns);
-        m_drawImage.DeInit(mRenderDevice.mAllocator);
-
-        vkDestroyImageView(*mRenderDevice.mLogicalDevice, m_depthImageView, g_vkAllocationFns);
-        m_depthImage.DeInit(mRenderDevice.mAllocator);
     }
 
     void CreateCommandPools()
@@ -575,8 +557,8 @@ private:
     {
         VkRenderingAttachmentInfo colorAttachment =
             sj::vulkan::MakeAttachmentInfo(targetImageView,
-                                           nullptr,
-                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                           std::nullopt,
+                                           vk::ImageLayout::eColorAttachmentOptimal);
 
         VkRenderingInfo renderInfo =
             sj::vulkan::MakeRenderingInfo(targetImageExtent, &colorAttachment, nullptr);
@@ -608,12 +590,12 @@ private:
     {
         VkRenderingAttachmentInfo colorAttachment =
             sj::vulkan::MakeAttachmentInfo(m_drawImageView,
-                                           nullptr,
-                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                           std::nullopt,
+                                           vk::ImageLayout::eColorAttachmentOptimal);
 
         VkRenderingAttachmentInfo depthAttachment =
             sj::vulkan::MakeDepthAttachmentInfo(m_depthImageView,
-                                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+                                                vk::ImageLayout::eDepthAttachmentOptimal);
 
         VkRenderingInfo renderInfo = sj::vulkan::MakeRenderingInfo(
             {m_drawImage.GetExtent().width, m_drawImage.GetExtent().height},
@@ -622,12 +604,12 @@ private:
 
         vkCmdBeginRendering(cmd, &renderInfo);
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipeline.pipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_defaultPipeline.pipeline);
 
         std::array<VkDescriptorSet, 1> descriptorSets = {globalDescriptorSet};
         vkCmdBindDescriptorSets(cmd,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_defaultPipeline.layout,
+                                *m_defaultPipeline.layout,
                                 0,
                                 descriptorSets.size(),
                                 descriptorSets.data(),
@@ -746,7 +728,6 @@ private:
 
         m_swapChain.Recreate(mRenderDevice, *mSurface, m_display->GetViewportSize());
 
-        DestroyRenderImageResources();
         CreateRenderImageResources(m_display->GetViewportSize());
 
         m_frameData.DestroySyncPrimitives(device);
@@ -762,10 +743,10 @@ private:
     sj::vulkan::RenderDevice mRenderDevice;
 
     sj::vulkan::ImageResource m_drawImage;
-    VkImageView m_drawImageView;
+    vk::raii::ImageView m_drawImageView {nullptr};
 
     sj::vulkan::ImageResource m_depthImage;
-    VkImageView m_depthImageView;
+    vk::raii::ImageView m_depthImageView {nullptr};
 
     /** Used for image presentation */
     sj::vulkan::SwapChain m_swapChain;
