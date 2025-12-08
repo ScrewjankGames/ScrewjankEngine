@@ -33,12 +33,6 @@ set_target_properties(${PROJECT_NAME}
 )
 
 ################################################################################
-# Find Vulkan
-################################################################################
-find_package(Vulkan REQUIRED)
-add_compile_definitions(SJ_VULKAN_SUPPORT)
-
-################################################################################
 # Link dependencies
 ################################################################################
 target_link_libraries(${PROJECT_NAME} 
@@ -52,7 +46,7 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankStd
         ScrewjankDataDefs
         spdlog::spdlog
-        imgui::imgui
+        imgui
         glaze::glaze
 )
 

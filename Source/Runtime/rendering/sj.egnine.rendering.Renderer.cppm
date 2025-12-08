@@ -314,12 +314,10 @@ public:
 
         VkFormat swapchainImageFormat = static_cast<VkFormat>(m_swapChain.GetImageFormat());
         init_info.UseDynamicRendering = true;
-        init_info.PipelineRenderingCreateInfo.sType =
+        init_info.PipelineRenderingCreateInfo.sType = 
             VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-        init_info.PipelineRenderingCreateInfo.pNext = nullptr;
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
         init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainImageFormat;
-
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
         ImGui_ImplVulkan_Init(&init_info);

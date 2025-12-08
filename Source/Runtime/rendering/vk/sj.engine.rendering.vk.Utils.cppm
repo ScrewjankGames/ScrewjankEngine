@@ -8,6 +8,7 @@ module;
 #include <vulkan/vulkan.h>
 
 // STD Headers
+#include <memory_resource>
 #include <ranges>
 
 export module sj.engine.rendering.vk.Utils;
@@ -44,16 +45,18 @@ vk::raii::ImageView CreateImageView(vk::raii::Device& device,
 struct SwapChainParams
 {
     VkSurfaceCapabilitiesKHR Capabilities;
-    sj::static_vector<VkSurfaceFormatKHR, 32> Formats;
-    sj::static_vector<VkPresentModeKHR, 32> PresentModes;
+    sj::dynamic_array<VkSurfaceFormatKHR> Formats;
+    sj::dynamic_array<VkPresentModeKHR> PresentModes;
 };
-SwapChainParams QuerySwapChainParams(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
+SwapChainParams QuerySwapChainParams(std::pmr::memory_resource* resource, VkPhysicalDevice physical_device, VkSurfaceKHR surface)
 {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
 
     SwapChainParams params {
         .Capabilities = capabilities,
+        .Formats = sj::dynamic_array<VkSurfaceFormatKHR>(resource),
+        .PresentModes = sj::dynamic_array<VkPresentModeKHR>(resource),
     };
 
     uint32_t format_count = 0;

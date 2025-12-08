@@ -15,6 +15,7 @@ import sj.engine.rendering.vk.Utils;
 import sj.engine.rendering.vk.ImageUtils;
 import sj.engine.rendering.vk.Primitives;
 import sj.engine.rendering.vk.RenderDevice;
+import sj.engine.system.threading.ThreadContext;
 
 import sj.std.containers.array;
 import sj.std.containers.vector;
@@ -66,8 +67,8 @@ public:
     void Init(sj::vulkan::RenderDevice& device, VkSurfaceKHR renderingSurface, sj::Vec2 surfaceSize)
     {
         SJ_ASSERT(!m_isInitialized, "Double initialization detected!");
-
-        SwapChainParams params = QuerySwapChainParams(*device.mPhysicalDevice, renderingSurface);
+        scratchpad_scope scope = ThreadContext::GetScratchpad();
+        SwapChainParams params = QuerySwapChainParams(&scope.get_allocator(), *device.mPhysicalDevice, renderingSurface);
 
         VkSurfaceFormatKHR selected_format = ChoseSurfaceFormat(params.Formats);
         VkPresentModeKHR present_mode = ChosePresentMode(params.PresentModes);

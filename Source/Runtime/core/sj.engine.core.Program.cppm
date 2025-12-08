@@ -15,7 +15,6 @@ export module sj.engine.core.Program;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.system.Timer;
-import sj.engine.core.Signal;
 
 import sj.std.type_info;
 import sj.std.memory.literals;

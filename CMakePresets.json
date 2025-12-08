@@ -4,7 +4,7 @@
         {
             "name": "base",
             "hidden": true,
-            "binaryDir": "out/build/${presetName}",
+            "binaryDir": "build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true,
                 "CMAKE_CXX_STANDARD": "26",

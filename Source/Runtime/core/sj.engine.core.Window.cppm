@@ -14,13 +14,13 @@ module;
 
 export module sj.engine.core.Window;
 import sj.engine.core.Program;
-import sj.engine.core.Signal;
 
 import sj.std.math;
 import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
+
 /**
  * @brief Platform-specific implementation of a windows window
  */
@@ -29,9 +29,14 @@ class Window : public IModule
 public:
     Window(Program& program, const char* windowTitle, Vec2 dimensions) : m_hostProgram(&program)
     {
+        static GLFWerrorfun GLFWerrorCallback = [](int error_code, const char* description) {
+            SJ_ENGINE_LOG_ERROR("GLFW Error (code {}): {}", error_code, description);
+        };
+
         SJ_ENGINE_LOG_INFO("Creating glfw window");
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwSetErrorCallback(GLFWerrorCallback);
         m_NativeWindow =
             glfwCreateWindow(dimensions.GetX(), dimensions.GetY(), windowTitle, nullptr, nullptr);
     }
