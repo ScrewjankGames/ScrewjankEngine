@@ -3,6 +3,8 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 #include <ScrewjankStd/Log.hpp>
 
+#include <SDL3/SDL.h>
+
 #include <concepts>
 #include <memory>
 #include <string_view>
@@ -56,10 +58,16 @@ public:
     {
         sj::MemorySystem::Init(rootHeapSize);
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
+        
+        SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
+
         SJ_ENGINE_LOG_INFO("Initializing...");
     }
 
-    ~Program() = default;
+    ~Program()
+    {
+        SDL_Quit();
+    };
 
     template <class T, class... Args>
         requires Module<T, Args...>
@@ -89,6 +97,8 @@ public:
         {
             mDeltaSeconds = timer.Elapsed();
             timer.Reset();
+
+            ProcessEvents();
 
             constexpr float kMaxDeltaTime = 1.0f / 15.0f;
             if(mDeltaSeconds > kMaxDeltaTime)
@@ -120,12 +130,21 @@ public:
         return mProgramName;
     }
 
-    void Terminate()
+private:
+
+    void ProcessEvents()
     {
-        mTerminated = true;
+        SDL_Event event;
+        while(SDL_PollEvent(&event))
+        {
+            if(event.type == SDL_EVENT_QUIT)
+            {
+                mTerminated = true;
+            }
+        }
     }
 
-private:
+
     std::string_view mProgramName;
     unmanaged_list<IModule> mModules;
     bool mTerminated = false;

@@ -1,7 +1,7 @@
 module;
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
+#include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
 
 export module sj.engine.core.Editor;
@@ -24,13 +24,12 @@ public:
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-        io.FontGlobalScale = 2.0f;
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
 
         Window* display = program.GetModule<Window>();
-        ImGui_ImplGlfw_InitForVulkan(display->GetWindowHandle(), true);
+        ImGui_ImplSDL3_InitForVulkan(display->GetWindowHandle());
         mRenderer->InitImGui();
     }
 
@@ -44,6 +43,7 @@ public:
         MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
         // Start the Dear ImGui frame
+        ImGui_ImplSDL3_NewFrame();
         ImGui_ImplVulkan_NewFrame();
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport(0,

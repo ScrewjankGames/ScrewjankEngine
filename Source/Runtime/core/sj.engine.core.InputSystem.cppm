@@ -1,3 +1,4 @@
+
 module;
 
 // Engine Includes
@@ -6,9 +7,15 @@ module;
 #include <ScrewjankStd/PlatformDetection.hpp>
 
 // Library Includes
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_joystick.h>
+#include <SDL3/SDL_keycode.h>
+#include <imgui_impl_sdl3.h>
 
 // STD Includes
+#include <cstddef>
 #include <cmath>
 #include <algorithm>
 #include <variant>
@@ -26,39 +33,35 @@ export namespace sj
 {
     enum class KeyboardButton
     {
-        W = GLFW_KEY_W,
-        A = GLFW_KEY_A,
-        S = GLFW_KEY_S,
-        D = GLFW_KEY_D,
+        W = SDLK_W,
+        A = SDLK_A,
+        S = SDLK_S,
+        D = SDLK_D,
     };
 
     enum class JoystickAxis
     {
-        kLeftX = GLFW_GAMEPAD_AXIS_LEFT_X,
-        kLeftY = GLFW_GAMEPAD_AXIS_LEFT_Y,
-        kRightX = GLFW_GAMEPAD_AXIS_RIGHT_X,
-        kRightY = GLFW_GAMEPAD_AXIS_RIGHT_Y,
-        kLeftTrigger = GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,
-        kRightTrigger = GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,
-        kLastAxis = GLFW_GAMEPAD_AXIS_LAST
+        kLeftX = SDL_GAMEPAD_AXIS_LEFTX,
+        kLeftY = SDL_GAMEPAD_AXIS_LEFTY,
+        kRightX = SDL_GAMEPAD_AXIS_RIGHTX,
+        kRightY = SDL_GAMEPAD_AXIS_RIGHTY,
+        kLeftTrigger = SDL_GAMEPAD_AXIS_LEFT_TRIGGER,
+        kRightTrigger = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
+        kLastAxis = SDL_GAMEPAD_AXIS_COUNT
     };
 
     enum class ButtonEvent
     {
-        kReleased = GLFW_RELEASE,
-        kPressed = GLFW_PRESS,
-        kRepeat = GLFW_REPEAT,
-        kNumEvents = 3
+        kReleased = 0,
+        kPressed = 1,
+        kNumEvents = 2
     };
 
     class InputSystem : public IModule
     {
     public:
-        InputSystem(Program& program)
+        InputSystem(Program& _)
         {
-            Window& display = *program.GetModule<Window>();
-            glfwSetKeyCallback(display.GetWindowHandle(), KeyCallback);
-            glfwSetWindowUserPointer(display.GetWindowHandle(), this);
         }
 
         void RegisterAxis(string_hash axis, float defaultValue)
@@ -97,27 +100,36 @@ export namespace sj
 
         void Process(float _) override
         {
-            constexpr float kDeadZone = 0.15f;
-            constexpr float kDeadZoneSqr = kDeadZone * kDeadZone;
+            // constexpr float kDeadZone = 0.15f;
+            // constexpr float kDeadZoneSqr = kDeadZone * kDeadZone;
 
-            GLFWgamepadstate state = {};
-            auto connected = glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
-            if(connected == GLFW_TRUE)
-            {
-                for(int i = 0; i < static_cast<int>(JoystickAxis::kLastAxis); i++)
-                {
-                    const AxisBinding& binding = m_joystickAxisBindings[i];
-                    if(binding.bindingName == string_hash {})
-                        continue;
+            // std::span<SDL_JoystickID> gamepads = [](){
+            //     int count = 0;
+            //     SDL_JoystickID* ids = SDL_GetGamepads(&count);
+            //     return std::span{ids, static_cast<size_t>(count)};
+            // }();
 
-                    auto it = m_inputAxes.find(binding.bindingName);
+            // if(gamepads.size() == 0)
+            //     return;
 
-                    if(it == m_inputAxes.end())
-                        continue;
+            // GLFWgamepadstate state = {};
+            // auto connected = glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
+            // if(connected == GLFW_TRUE)
+            // {
+            //     for(int i = 0; i < static_cast<int>(JoystickAxis::kLastAxis); i++)
+            //     {
+            //         const AxisBinding& binding = m_joystickAxisBindings[i];
+            //         if(binding.bindingName == string_hash {})
+            //             continue;
 
-                    it->second.value = state.axes[i];
-                }
-            }
+            //         auto it = m_inputAxes.find(binding.bindingName);
+
+            //         if(it == m_inputAxes.end())
+            //             continue;
+
+            //         it->second.value = state.axes[i];
+            //     }
+            // }
         }
 
     private:
@@ -135,26 +147,18 @@ export namespace sj
             float defaultValue = 0.0f;
         };
 
-        static void KeyCallback([[maybe_unused]] GLFWwindow* window,
-                                int glfw_key,
-                                [[maybe_unused]] int scancode,
-                                int action,
-                                [[maybe_unused]] int mods)
+        void HandleKeyEvent(SDL_KeyboardEvent& event)
         {
-            InputSystem* instance =
-                reinterpret_cast<InputSystem*>(glfwGetWindowUserPointer(window));
-
-            SJ_ASSERT(instance != nullptr, "GLFW key callback can't find input system instance!");
-
-            KeyboardButton sjKey = static_cast<KeyboardButton>(glfw_key);
-
-            auto bindingIt = instance->m_keyAxisBindings.find(sjKey);
-            if(bindingIt != instance->m_keyAxisBindings.end())
+            KeyboardButton sjKey = static_cast<KeyboardButton>(event.key);
+            ButtonEvent action = event.type == SDL_EVENT_KEY_DOWN ? ButtonEvent::kPressed : ButtonEvent::kReleased;
+                
+            auto bindingIt = m_keyAxisBindings.find(sjKey);
+            if(bindingIt != m_keyAxisBindings.end())
             {
-                const AxisBinding& binding = bindingIt->second[action];
+                const AxisBinding& binding = bindingIt->second[static_cast<int>(action)];
                 if(binding.bindingName != string_hash {})
                 {
-                    instance->m_inputAxes[binding.bindingName].value += binding.effect;
+                    m_inputAxes[binding.bindingName].value += binding.effect;
                 }
             }
         }

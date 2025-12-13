@@ -40,23 +40,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vulkan-memory-allocator)
 
-## GLFW
-if(UNIX)
-set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_WAYLAND ON CACHE BOOL "" FORCE)
-endif(UNIX)
-
+## SDL3
 FetchContent_Declare(
-  glfw 
+  SDL3
   SYSTEM
-  GIT_REPOSITORY https://github.com/glfw/glfw.git 
-  GIT_TAG 3.4
+  GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+  GIT_TAG release-3.2.28
 )
-option(GLFW_INSTALL "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
-option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
-FetchContent_MakeAvailable(glfw)
+if(UNIX)
+    set(SDL_X11 OFF)
+endif()
+FetchContent_MakeAvailable(SDL3)
 
 ## Spdlog
 FetchContent_Declare(
@@ -105,12 +99,13 @@ set(imgui_src
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.h
     ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
 add_library(imgui STATIC ${imgui_src})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
-target_link_libraries(imgui PUBLIC glfw Vulkan::Vulkan)
+target_link_libraries(imgui PUBLIC SDL3::SDL3 Vulkan::Vulkan)
 
 ## Glaze
 FetchContent_Declare(

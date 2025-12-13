@@ -5,9 +5,10 @@ module;
 #include <ScrewjankStd/Log.hpp>
 
 // Library Headers
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <imgui_impl_glfw.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 // STD Headers
 #include <span>
@@ -27,42 +28,21 @@ export namespace sj
 class Window : public IModule
 {
 public:
-    Window(Program& program, const char* windowTitle, Vec2 dimensions) : m_hostProgram(&program)
+    Window(Program& program, const char* windowTitle, Vec2 dimensions)
     {
-        static GLFWerrorfun GLFWerrorCallback = [](int error_code, const char* description) {
-            SJ_ENGINE_LOG_ERROR("GLFW Error (code {}): {}", error_code, description);
-        };
+        SJ_ENGINE_LOG_INFO("Creating window");
+        m_NativeWindow = SDL_CreateWindow(windowTitle,
+                                          static_cast<int>(dimensions.GetX()),
+                                          static_cast<int>(dimensions.GetY()),
+                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
-        SJ_ENGINE_LOG_INFO("Creating glfw window");
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwSetErrorCallback(GLFWerrorCallback);
-        m_NativeWindow =
-            glfwCreateWindow(dimensions.GetX(), dimensions.GetY(), windowTitle, nullptr, nullptr);
+        SJ_ASSERT(m_NativeWindow != nullptr, "Failed to create SDL window");
     }
 
     ~Window()
     {
-        SJ_ENGINE_LOG_INFO("Terminating glfw window");
-        glfwDestroyWindow(m_NativeWindow);
-        glfwTerminate();
-    }
-
-    void NewFrame() override
-    {
-        glfwPollEvents();
-        ImGui_ImplGlfw_NewFrame();
-
-        if(IsWindowClosed())
-            m_hostProgram->Terminate();
-    }
-
-    /**
-     * @return true If the window has been instructed to close, else false
-     */
-    [[nodiscard]] bool IsWindowClosed() const
-    {
-        return glfwWindowShouldClose(m_NativeWindow);
+        SJ_ENGINE_LOG_INFO("Terminating window");
+        SDL_DestroyWindow(m_NativeWindow);
     }
 
     /**
@@ -73,12 +53,12 @@ public:
         int width = 0;
         int height = 0;
 
-        glfwGetFramebufferSize(m_NativeWindow, &width, &height);
+        SDL_GetWindowSize(m_NativeWindow, &width, &height);
 
         return Vec2(static_cast<float>(width), static_cast<float>(height));
     }
 
-    GLFWwindow* GetWindowHandle()
+    SDL_Window* GetWindowHandle()
     {
         return m_NativeWindow;
     }
@@ -87,13 +67,10 @@ public:
     /**
      * @return Extensions Vulkan API must support to support this window.
      */
-    [[nodiscard]] std::span<const char*> GetRequiredVulkanExtenstions() const
+    [[nodiscard]] std::span<const char* const> GetRequiredVulkanExtenstions() const
     {
         uint32_t extension_count = 0;
-        const char** extensions = nullptr;
-
-        extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-
+        const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extension_count);
         return std::span {extensions, extension_count};
     }
 
@@ -103,13 +80,12 @@ public:
     VkSurfaceKHR CreateWindowSurface(VkInstance instance) const
     {
         VkSurfaceKHR surface {};
-        [[maybe_unused]] VkResult success =
-            glfwCreateWindowSurface(instance, m_NativeWindow, sj::g_vkAllocationFns, &surface);
+        [[maybe_unused]] bool success =
+            SDL_Vulkan_CreateSurface(m_NativeWindow, instance, sj::g_vkAllocationFns, &surface);
     #ifndef SJ_GOLD
-        if(success != VK_SUCCESS)
+        if(!success)
         {
-            const char* error = nullptr;
-            glfwGetError(&error);
+            const char* error = SDL_GetError();
             SJ_ASSERT(false, "Failed to create vulkan window surface. Error: {}", error);
         }
     #endif
@@ -118,7 +94,6 @@ public:
 #endif
 
 private:
-    Program* m_hostProgram = nullptr;
-    GLFWwindow* m_NativeWindow = nullptr;
+    SDL_Window* m_NativeWindow = nullptr;
 };
 } // namespace sj
