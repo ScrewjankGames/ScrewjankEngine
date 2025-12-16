@@ -4,6 +4,7 @@ module;
 #include <ScrewjankStd/Log.hpp>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
 
 #include <concepts>
 #include <memory>
@@ -14,6 +15,8 @@ module;
 #endif
 
 export module sj.engine.core.Program;
+export import sj.std.signal;
+
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.system.Timer;
@@ -21,6 +24,7 @@ import sj.engine.system.Timer;
 import sj.std.type_info;
 import sj.std.memory.literals;
 import sj.std.containers.unmanaged_list;
+import sj.std.containers.map;
 
 export namespace sj
 {
@@ -54,11 +58,13 @@ public:
 class Program
 {
 public:
+    signal<void(SDL_KeyboardEvent&)> gKeyboardInputSignal;
+
     Program(std::string_view programName, uint64_t rootHeapSize) : mProgramName(programName)
     {
         sj::MemorySystem::Init(rootHeapSize);
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
-        
+
         SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 
         SJ_ENGINE_LOG_INFO("Initializing...");
@@ -131,22 +137,33 @@ public:
     }
 
 private:
-
     void ProcessEvents()
     {
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
-            if(event.type == SDL_EVENT_QUIT)
+            switch(event.type)
             {
-                mTerminated = true;
+                case SDL_EVENT_QUIT: {
+                    mTerminated = true;
+                    break;
+                }
+                case SDL_EVENT_KEY_UP:
+                case SDL_EVENT_KEY_DOWN: 
+                {
+                    gKeyboardInputSignal.emit(event.key);
+                    break;
+                }
+                default: {
+                    ;
+                }
             }
         }
     }
 
-
     std::string_view mProgramName;
     unmanaged_list<IModule> mModules;
+
     bool mTerminated = false;
     float mDeltaSeconds = 0.0f;
 };

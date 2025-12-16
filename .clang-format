@@ -49,7 +49,7 @@ IncludeCategories:
     Priority: 2
   - Regex: '^<[^.]+' #STL Includes (no "." in path)
     Priority: 3
-IndentCaseLabels: false
+IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
 IndentWidth : 4
 KeepEmptyLinesAtTheStartOfBlocks: true
