@@ -12,14 +12,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MESH_BUILDER_HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MESH_BUILDER_INLINES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${MESH_BUILDER_SOURCE})
 
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER Tools/Builders
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Builders"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Builders"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Builders"
-)
-
 ################################################################################
 # Link dependencies
 ################################################################################

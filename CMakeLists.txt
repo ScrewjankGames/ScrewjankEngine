@@ -30,7 +30,7 @@ set(Game_Shader_Built_Data_Dir ${Game_Built_Data_Dir}/Shaders/ )
 # Setup symlinks
 ################################################################################
 add_custom_target(RefreshSymlinks ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${Game_Built_Data_Dir} ${SJ_RUNTIME_OUTPUT_DIRECTORY}/Data
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${Game_Built_Data_Dir} ${CMAKE_BINARY_DIR}/Data
 )
 set_target_properties(RefreshSymlinks
     PROPERTIES 

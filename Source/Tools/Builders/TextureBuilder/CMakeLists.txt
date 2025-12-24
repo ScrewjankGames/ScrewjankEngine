@@ -20,13 +20,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEXTURE_BUILDER_INLINES}
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEXTURE_BUILDER_SOURCE})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEXTURE_BUILDER_MODULES})
 
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER Tools/Builders
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Builders"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Builders"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Builders"
-)
 get_target_property(TextureBuilderExe ${PROJECT_NAME} OUTPUT_NAME)
 
 ################################################################################

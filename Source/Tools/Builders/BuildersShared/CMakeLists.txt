@@ -9,13 +9,16 @@ file(GLOB_RECURSE Builder_Modules CONFIGURE_DEPENDS "*.cppm")
 
 # Generate files
 set(BuildTool_Generated_File_Message "!!!This is a generated file. Do not Edit. Find corresponding *.template.hpp file!!!")
+
+set(generated_header_dir ${CMAKE_CURRENT_BINARY_DIR}/generated/include/)
+
 configure_file(
     BuildTool_Config.hpp.template 
-    ${SJ_CODEGEN_OUTPUT_DIRECTORY}/BuildTool/BuildTool_Config_generated.hpp
+    ${generated_header_dir}/BuildTool_Config_generated.hpp
 )
 
 # Collect Generated files
-set(GeneratedFiles ${SJ_CODEGEN_OUTPUT_DIRECTORY}/BuildTool/BuildTool_Config_generated.hpp)
+set(GeneratedFiles ${generated_header_dir}/BuildTool_Config_generated.hpp)
 
 add_library(${PROJECT_NAME} ${BUILDER_HEADERS} ${BUILDER_INLINES} ${BUILDER_SOURCE} ${GeneratedFiles})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${BUILDER_HEADERS})
@@ -25,14 +28,6 @@ target_sources(${PROJECT_NAME}
   PUBLIC
     FILE_SET CXX_MODULES FILES
       ${Builder_Modules}
-)
-
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER Tools/Builders
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/Builders"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/Builders"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/Builders"
 )
 
 ################################################################################
@@ -48,5 +43,5 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${SJ_CODEGEN_OUTPUT_DIRECTORY}/BuildTool
+        ${generated_header_dir}
 )

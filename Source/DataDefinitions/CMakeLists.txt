@@ -15,14 +15,6 @@ target_sources(${PROJECT_NAME}
         ${DATA_DEFINITIONS_MODULES}
 )
 
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER DataDefinitions/
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/DataDefinitions/"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/DataDefinitions/"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/DataDefinitions/"
-)
-
 ################################################################################
 # Link dependencies
 ################################################################################

@@ -16,13 +16,6 @@ target_sources(${PROJECT_NAME}
       ${SJ_STD_MODULES}
 )
 
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER SJSTD/
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}/SJSTD/"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}/SJSTD/"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}/SJSTD/"
-)
 ################################################################################
 # Link dependencies
 ################################################################################

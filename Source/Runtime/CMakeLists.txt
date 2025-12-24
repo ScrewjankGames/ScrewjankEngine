@@ -24,14 +24,6 @@ if(SJ_GOLD_OPT)
 target_compile_definitions(${PROJECT_NAME} PUBLIC SJ_GOLD)
 endif()
 
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER Engine/
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}"
-)
-
 ################################################################################
 # Link dependencies
 ################################################################################

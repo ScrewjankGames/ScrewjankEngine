@@ -20,11 +20,3 @@ target_link_libraries(${PROJECT_NAME}
         TextureBuilder
         SceneBuilder
 )
-
-set_target_properties(${PROJECT_NAME} 
-    PROPERTIES 
-        FOLDER Tools/
-        ARCHIVE_OUTPUT_DIRECTORY "${SJ_ARCHIVE_OUTPUT_DIRECTORY}"
-        LIBRARY_OUTPUT_DIRECTORY "${SJ_LIBRARY_OUTPUT_DIRECTORY}"
-        RUNTIME_OUTPUT_DIRECTORY "${SJ_RUNTIME_OUTPUT_DIRECTORY}"
-)
