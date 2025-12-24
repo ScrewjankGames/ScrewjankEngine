@@ -25,10 +25,20 @@ export namespace glz
     };
 
     template <>
+    struct to<JSON, sj::string_hash>
+    {
+        template <auto Opts>
+        static void op(const sj::string_hash& hash, auto&&... args)
+        {
+            glz::serialize<JSON>::op<Opts>(hash.AsInt(), args...);
+        }
+    };
+
+    template <>
     struct to<BEVE, sj::string_hash>
     {
         template <auto Opts>
-        static void op(sj::string_hash& hash, auto&&... args)
+        static void op(const sj::string_hash& hash, auto&&... args)
         {
             glz::serialize<BEVE>::op<Opts>(hash.AsInt(), args...);
         }
@@ -63,7 +73,7 @@ export namespace glz
     struct to<BEVE, sj::Vec3>
     {
         template <auto Opts>
-        static void op(sj::Vec3& vec, auto&&... args)
+        static void op(const sj::Vec3& vec, auto&&... args)
         {
             std::array<float, 3> data = {vec.x, vec.y, vec.z};
             glz::serialize<BEVE>::op<Opts>(data, args...);
