@@ -15,7 +15,9 @@ module;
 #endif
 
 export module sj.engine.core.Program;
+export import sj.engine.core.Config;
 export import sj.std.signal;
+
 
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
@@ -65,6 +67,8 @@ public:
         sj::MemorySystem::Init(rootHeapSize);
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
 
+        mConfigHandle = LoadConfig();
+
         SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 
         SJ_ENGINE_LOG_INFO("Initializing...");
@@ -92,6 +96,11 @@ public:
         SJ_ASSERT(it != mModules.end(), "Failed to find module {}", type_name_of<T>);
 
         return static_cast<T*>(&*it);
+    }
+
+    [[nodiscard]] const Config& GetConfig() const
+    {
+        return mConfigHandle.config;
     }
 
     void Run()
@@ -160,6 +169,8 @@ private:
             }
         }
     }
+
+    ConfigHandle mConfigHandle;
 
     std::string_view mProgramName;
     unmanaged_list<IModule> mModules;

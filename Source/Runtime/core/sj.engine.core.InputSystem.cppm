@@ -1,6 +1,4 @@
 module;
-#include <glaze/core/opts.hpp>
-#include <glaze/json/write.hpp>
 
 // Engine Includes
 #include <ScrewjankStd/Assert.hpp>
@@ -17,74 +15,53 @@ module;
 
 // STD Includes
 #include <cstddef>
-#include <cmath>
-#include <algorithm>
-#include <type_traits>
-#include <variant>
+#include <ranges>
 
 export module sj.engine.core.InputSystem;
 import sj.engine.core.Program;
 import sj.engine.core.Window;
 
-import sj.datadefs.Serialization;
+import sj.engine.config.InputConfig;
 
-import sj.std.math;
 import sj.std.string_hash;
 import sj.std.containers.map;
 import sj.std.containers.vector;
 
 export namespace sj
 {
-enum class KeyboardButton
-{
-    W = SDL_SCANCODE_W,
-    A = SDL_SCANCODE_A,
-    S = SDL_SCANCODE_S,
-    D = SDL_SCANCODE_D,
-};
-inline constexpr size_t kNumKeyboardButtons = SDL_Scancode::SDL_SCANCODE_COUNT;
-
-enum class GamepadAxis
-{
-    kLeftX = SDL_GAMEPAD_AXIS_LEFTX,
-    kLeftY = SDL_GAMEPAD_AXIS_LEFTY,
-    kRightX = SDL_GAMEPAD_AXIS_RIGHTX,
-    kRightY = SDL_GAMEPAD_AXIS_RIGHTY,
-    kLeftTrigger = SDL_GAMEPAD_AXIS_LEFT_TRIGGER,
-    kRightTrigger = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,
-    kLastAxis = SDL_GAMEPAD_AXIS_COUNT
-};
-inline constexpr size_t kNumJoystickAxes = static_cast<size_t>(GamepadAxis::kLastAxis);
-
-enum class ButtonEvent
-{
-    kReleased = 0,
-    kPressed = 1,
-    kNumEvents = 2
-};
 
 class InputSystem : public IModule
 {
 public:
     InputSystem(Program& program)
     {
+        const Config& config = program.GetConfig();
+        mBindings = &config.input_bindings;
+
+        auto allAxes = std::views::concat(config.input_bindings.keyboard_axes.keys(),
+                                          config.input_bindings.gamepad_axes.keys());
+
+        for(const hashed_string_sv& axis : allAxes)
+        {
+            mInputAxes[axis.get_hash()] = 0;
+        }
     }
 
-    void RegisterAxisBinding(string_hash axisName, GamepadAxis input, float modifier)
-    {
-        mBindings.gamepad_axes[axisName].emplace_back(input, modifier);
-        auto outputIt = mInputAxes.find(axisName);
-        if(outputIt == mInputAxes.end())
-            mInputAxes[axisName] = 0.0f;
-    }
+    // void RegisterAxisBinding(string_hash axisName, GamepadAxis input, float modifier)
+    // {
+    //     mBindings.gamepad_axes[axisName].emplace_back(input, modifier);
+    //     auto outputIt = mInputAxes.find(axisName);
+    //     if(outputIt == mInputAxes.end())
+    //         mInputAxes[axisName] = 0.0f;
+    // }
 
-    void RegisterAxisBinding(string_hash axisName, KeyboardButton input, float modifier)
-    {
-        mBindings.keyboard_axes[axisName].emplace_back(input, modifier);
-        auto outputIt = mInputAxes.find(axisName);
-        if(outputIt == mInputAxes.end())
-            mInputAxes[axisName] = 0.0f;
-    }
+    // void RegisterAxisBinding(string_hash axisName, KeyboardButton input, float modifier)
+    // {
+    //     mBindings.keyboard_axes[axisName].emplace_back(input, modifier);
+    //     auto outputIt = mInputAxes.find(axisName);
+    //     if(outputIt == mInputAxes.end())
+    //         mInputAxes[axisName] = 0.0f;
+    // }
 
     [[nodiscard]] float GetAxisValue(string_hash name) const
     {
@@ -107,24 +84,7 @@ public:
         }
     }
 
-    void DebugLogBindings()
-    {
-        std::string str;
-        glz::error_ctx ctx = glz::write_json(mBindings, str);
-        SJ_ENGINE_LOG_INFO("{}", str);
-    }
-
 private:
-    template <class InputSource>
-    struct AxisBinding
-    {
-        InputSource input = {};
-        float modifier = 0.0f;
-    };
-
-    template <class InputSource>
-    using AxisBindings = sj::dynamic_vector<AxisBinding<InputSource>>;
-
     std::span<const bool> GetKeyboardState() const
     {
         int numKeys = -1;
@@ -139,8 +99,8 @@ private:
         std::optional<float> axisValue;
 
         // Poll Keyboard
-        auto keyboardBindingsIt = mBindings.keyboard_axes.find(axisName);
-        if(keyboardBindingsIt != mBindings.keyboard_axes.end())
+        auto keyboardBindingsIt = mBindings->keyboard_axes.find(hashed_string_sv(axisName));
+        if(keyboardBindingsIt != mBindings->keyboard_axes.end())
         {
             const AxisBindings<KeyboardButton>& bindings = keyboardBindingsIt->second;
             for(const AxisBinding<KeyboardButton>& binding : bindings)
@@ -159,12 +119,7 @@ private:
         return {};
     }
 
-    struct Bindings
-    {
-        sj::dynamic_flat_map<string_hash, AxisBindings<KeyboardButton>> keyboard_axes;
-        sj::dynamic_flat_map<string_hash, AxisBindings<GamepadAxis>> gamepad_axes;
-    } mBindings;
-
+    const InputBindings* mBindings = nullptr;
     sj::dynamic_flat_map<string_hash, float> mInputAxes;
 };
 } // namespace sj

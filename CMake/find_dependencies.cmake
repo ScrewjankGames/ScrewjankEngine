@@ -112,7 +112,7 @@ FetchContent_Declare(
         glaze
         SYSTEM
         GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-        GIT_TAG v6.0.0
+        GIT_TAG v6.4.0
 )
 FetchContent_MakeAvailable(glaze)
 
