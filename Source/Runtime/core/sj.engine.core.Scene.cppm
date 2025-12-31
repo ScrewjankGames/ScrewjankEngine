@@ -1,54 +1,59 @@
 module;
 
-// SJ Includes
 #include <ScrewjankStd/Assert.hpp>
 
-// Library Includes
-#include <glaze/beve/read.hpp>
+#include <glaze/glaze.hpp>
+
+#include <vector>
+#include <string_view>
 
 export module sj.engine.core.Scene;
+import sj.engine.system.threading.ThreadContext;
 import sj.engine.ecs;
-import sj.std.memory;
-import sj.std.type_info;
-import sj.std.containers.type_list;
-import sj.std.containers.vector;
+import sj.std;
 import sj.datadefs;
 
 export namespace sj
 {
-    class Scene
+class Scene
+{
+public:
+    Scene(std::string_view path, ECSRegistry& registry, auto ComponentManifest)
     {
-    public:
-        Scene(const char* path, ECSRegistry& registry, auto ComponentManifest)
+        // Map chunk type to function that creates runtime component
+        constinit static type_map<ComponentManifest.GetComponentTypes(),
+                                  TypeId,
+                                  LoadComponentFn,
+                                  []<class T>() -> TypeId {
+                                      return type_id_of<T>;
+                                  },
+                                  []<class T>() -> LoadComponentFn {
+                                      return LoadComponent<T>;
+                                  }>
+            kComponentLoadFns = {};
+
+        auto scope = ThreadContext::GetScratchpad();
+        std::pmr::vector<char> buffer(&scope.get_allocator());
+        SceneChunk chunk;
+
+        glz::error_ctx errorCtx =
+            glz::read_file_json<glz::opts {.error_on_unknown_keys = false}>(chunk, path, buffer);
+        SJ_ASSERT(errorCtx.ec == glz::error_code::none,
+                  "Failed to load scene {0}. Error {1}",
+                  path,
+                  glz::format_error(errorCtx, buffer));
+
+        for(const GameObjectChunk& goChunk : chunk.game_objects)
         {
-            // Map chunk type to function that creates runtime component
-            constinit static type_map<ComponentManifest.GetComponentTypes(),
-                               TypeId,
-                               LoadComponentFn,
-                               []<class T>() -> TypeId {return type_id_of<T>;},
-                               []<class T>() -> LoadComponentFn {return LoadComponent<T>;}>
-                kComponentLoadFns = {};
-
-            SceneChunk chunk;
-
-            glz::error_ctx errorCtx =
-                glz::read_file_beve(chunk, path, sj::dynamic_vector<std::byte> {});
-            SJ_ASSERT(errorCtx.ec == glz::error_code::none, "Failed to load scene {0}", path);
-
-            for(const GameObjectChunk& goChunk : chunk.gameObjects)
+            GameObjectId goId = registry.CreateGameObject();
+            for(const DataChunk& componentChunk : goChunk.components)
             {
-                GameObjectId goId = registry.CreateGameObject();
-                for(const DataChunk& componentChunk : goChunk.components)
-                {
-                    LoadComponentFn createFn = kComponentLoadFns.get(componentChunk.type);
-                    std::invoke(createFn, registry, goId, componentChunk);
-                }
+                LoadComponentFn createFn = kComponentLoadFns.get(componentChunk.type.get_hash().AsInt());
+                std::invoke(createFn, registry, goId, componentChunk);
             }
         }
+    }
 
-        ~Scene() = default;
-
-    private:
-        free_list_allocator m_memoryResource;
-    };
+    ~Scene() = default;
+};
 } // namespace sj

@@ -13,15 +13,15 @@ export namespace sj
 {
     struct GameObjectChunk
     {
-        string_hash id;
+        hashed_string_sv id;
         sj::dynamic_vector<DataChunk> components;
     };
 
     struct SceneChunk
     {
-        string_hash name;
+        hashed_string_sv scene_name;
         uint32_t memory; // Free ram allocated to this scene
 
-        sj::dynamic_vector<GameObjectChunk> gameObjects;
+        sj::dynamic_vector<GameObjectChunk> game_objects;
     };
 }

@@ -1,7 +1,6 @@
 #include "BuildTool_Config_generated.hpp"
 
 #include "MeshBuilder.hpp"
-#include "SceneBuilder.hpp"
 
 #include <cstdlib>
 #include <print>
@@ -21,9 +20,6 @@ int main()
 
 	sj::build::MeshBuilder mesh_builder;
 	mesh_builder.BuildAll();
-
-	sj::build::SceneBuilder scene_builder;
-	scene_builder.BuildAll();
 
 	std::print("Build Complete. Press any key to close...");
 }
