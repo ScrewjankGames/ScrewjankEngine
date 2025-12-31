@@ -1,3 +1,4 @@
 add_subdirectory(BuildersShared)
 add_subdirectory(TextureBuilder)
 add_subdirectory(MeshBuilder)
+add_subdirectory(SceneBuilder)

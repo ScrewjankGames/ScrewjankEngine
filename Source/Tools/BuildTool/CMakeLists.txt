@@ -17,5 +17,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         BuildersShared
         MeshBuilder
+        SceneBuilder
         TextureBuilder
 )

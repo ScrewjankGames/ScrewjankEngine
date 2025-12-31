@@ -7,6 +7,7 @@
 #include <filesystem>
 
 import sj.TextureBuilder;
+import sj.SceneBuilder;
 
 int main()
 {
@@ -20,6 +21,9 @@ int main()
 
 	sj::build::MeshBuilder mesh_builder;
 	mesh_builder.BuildAll();
+
+	sj::build::SceneBuilder scene_builder;
+	scene_builder.BuildAll();
 
 	std::print("Build Complete. Press any key to close...");
 }
