@@ -20,3 +20,5 @@ include(CMake/modules/engine_config.cmake)
 # Include dependencies and engine modules
 ################################################################################
 add_subdirectory(Source)
+
+add_subdirectory(Tests)
