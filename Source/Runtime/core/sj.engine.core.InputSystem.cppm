@@ -30,21 +30,20 @@ import sj.std.containers.vector;
 export namespace sj
 {
 
-class InputSystem : public IModule
+class InputSystem
 {
 public:
-    InputSystem(Program& program)
-    {
-        const Config& config = program.GetConfig();
-        mBindings = &config.input_bindings;
+    InputSystem() = default;
 
-        auto allAxes = std::views::concat(config.input_bindings.keyboard_axes.keys(),
-                                          config.input_bindings.gamepad_axes.keys());
+    void Initialize(const InputBindings& bindings)
+    {
+        mBindings = &bindings;
+
+        auto allAxes =
+            std::views::concat(bindings.keyboard_axes.keys(), bindings.gamepad_axes.keys());
 
         for(const hashed_string_sv& axis : allAxes)
-        {
             mInputAxes[axis.get_hash()] = 0;
-        }
     }
 
     // void RegisterAxisBinding(string_hash axisName, GamepadAxis input, float modifier)
@@ -70,7 +69,7 @@ public:
         return it->second;
     }
 
-    void Process(float _) override
+    void Process(float _)
     {
         std::span<const bool> keyboardState = GetKeyboardState();
 

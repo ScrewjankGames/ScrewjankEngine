@@ -12,11 +12,16 @@ import sj.engine.system.memory.MemorySystem;
 
 export namespace sj
 {
-class Editor : public IModule
+class Editor
 {
 public:
-    Editor(Program& program) : mProgram(&program), mRenderer(program.GetModule<Renderer>())
+    Editor() = default;
+    ~Editor() = default;
+
+    void Initialize(auto& program) 
     {
+        mRenderer = program.template GetModule<Renderer>();
+
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -28,17 +33,12 @@ public:
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
 
-        Window* display = program.GetModule<Window>();
+        Window* display = program.template GetModule<Window>();
         ImGui_ImplSDL3_InitForVulkan(display->GetWindowHandle());
         mRenderer->InitImGui();
     }
 
-    ~Editor()
-    {
-        mRenderer->DeInitImGui();
-    }
-
-    void NewFrame() override
+    void NewFrame()
     {
         MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
@@ -49,19 +49,21 @@ public:
         ImGui::DockSpaceOverViewport(0,
                                      ImGui::GetMainViewport(),
                                      ImGuiDockNodeFlags_PassthruCentralNode);
+    }
 
+    void Process(float deltaSeconds)
+    {
         if(ImGui::Begin("Status"))
-            ImGui::Text("timestep: %f", mProgram->GetDeltaSeconds());
+            ImGui::Text("timestep: %f", deltaSeconds);
         ImGui::End();
     }
 
-    void EndFrame() override
+    void EndFrame()
     {
         ImGui::Render();
     }
 
 private:
-    Program* mProgram;
     Renderer* mRenderer;
 };
 

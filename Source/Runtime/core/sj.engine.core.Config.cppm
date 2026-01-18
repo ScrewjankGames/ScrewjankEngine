@@ -10,11 +10,14 @@ module;
 export module sj.engine.core.Config;
 export import sj.engine.config;
 
+import sj.engine.system.threading;
+
 import sj.datadefs.Serialization;
 
-import sj.std.string_hash;
 import sj.std.containers.map;
 import sj.std.containers.vector;
+import sj.std.math;
+import sj.std.string_hash;
 
 namespace priv
 {
@@ -41,22 +44,21 @@ export namespace sj
 
 struct Config
 {
-    std::string_view default_scene;
+    std::string program_name;
+    std::string default_scene;
+    Vec2 window_size;
     InputBindings input_bindings;
 };
 
-struct ConfigHandle
-{
-    Config config;
-    std::vector<char> raw_data;
-};
-
-ConfigHandle LoadConfig()
+Config LoadConfig()
 {
     std::filesystem::path path = priv::FindConfig();
 
-    ConfigHandle handle;
-    glz::error_ctx ctx = glz::read_file_json(handle.config, path.c_str(), handle.raw_data);
+    Config config;
+    
+    scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
+    sj::dynamic_vector<char> buffer(&scratchpad.get_allocator());
+    glz::error_ctx ctx = glz::read_file_json(config, path.c_str(), buffer);
 
     if(ctx.ec != glz::error_code::none)
     {
@@ -66,6 +68,6 @@ ConfigHandle LoadConfig()
                             error);
     }
 
-    return handle;
+    return config;
 }
 } // namespace sj

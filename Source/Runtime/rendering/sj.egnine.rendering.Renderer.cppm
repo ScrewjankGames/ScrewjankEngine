@@ -38,7 +38,7 @@ import vulkan_hpp;
 
 export namespace sj
 {
-class Renderer : public IModule
+class Renderer
 {
 public:
     static free_list_allocator* WorkBuffer()
@@ -47,8 +47,12 @@ public:
         return &g_workBufferResource;
     }
 
-    Renderer(Program& program) : m_display(program.GetModule<Window>())
+    Renderer() = default;
+
+    void Initialize(auto& program)
     {
+        m_display = program.template GetModule<Window>();
+
         free_list_allocator* workBuffer = WorkBuffer();
         workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
         MemorySystem::TrackMemoryResource(workBuffer);
@@ -137,6 +141,9 @@ public:
     {
         mRenderDevice.mLogicalDevice.waitIdle();
 
+        if(mImGuiInitialized)
+            ImGui_ImplVulkan_Shutdown();
+
         VkDevice logicalDevice = *mRenderDevice.mLogicalDevice;
 
         m_frameData.DeInit(mRenderDevice);
@@ -155,6 +162,10 @@ public:
 
         m_dummyMeshBuffers.DeInit(mRenderDevice.mAllocator);
     }
+
+    void NewFrame() {}
+    void Process(float _){}
+    void EndFrame() {}
 
     static auto Bootstrap(Window* display) -> std::tuple<vkb::Instance,
                                                          VkSurfaceKHR,
@@ -180,8 +191,6 @@ public:
 #ifndef SJ_GOLD
         VkDebugUtilsMessengerEXT debugMessenger = vkbInstance.debug_messenger;
 #endif
-
-        SJ_ENGINE_LOG_INFO("Vulkan Instance Created. Version: {}", vkbInstance.instance_version);
 
         // vulkan 1.3 features
         VkPhysicalDeviceVulkan13Features features1_3 {
@@ -313,20 +322,14 @@ public:
 
         VkFormat swapchainImageFormat = static_cast<VkFormat>(m_swapChain.GetImageFormat());
         init_info.UseDynamicRendering = true;
-        init_info.PipelineRenderingCreateInfo.sType = 
+        init_info.PipelineRenderingCreateInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
         init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainImageFormat;
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
         ImGui_ImplVulkan_Init(&init_info);
-    }
-
-    void DeInitImGui()
-    {
-        mRenderDevice.mLogicalDevice.waitIdle();
-
-        ImGui_ImplVulkan_Shutdown();
+        mImGuiInitialized = true;
     }
 
     /**
@@ -725,6 +728,8 @@ private:
     }
 
     Window* m_display = nullptr;
+
+    bool mImGuiInitialized = false;
 
     vk::raii::Context mVkContext;
     vk::raii::Instance mVkInstance {nullptr};

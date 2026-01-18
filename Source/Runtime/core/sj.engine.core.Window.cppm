@@ -25,24 +25,38 @@ export namespace sj
 /**
  * @brief Platform-specific implementation of a windows window
  */
-class Window : public IModule
+class Window
 {
 public:
-    Window(Program& program, const char* windowTitle, Vec2 dimensions)
+    Window() = default;
+    ~Window()
     {
+        SDL_DestroyWindow(m_NativeWindow);
+    };
+
+    void Initialize(auto& program)
+    {
+        const Config& config = program.GetConfig();
         SJ_ENGINE_LOG_INFO("Creating window");
-        m_NativeWindow = SDL_CreateWindow(windowTitle,
-                                          static_cast<int>(dimensions.GetX()),
-                                          static_cast<int>(dimensions.GetY()),
-                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+        m_NativeWindow = SDL_CreateWindow(config.program_name.c_str(),
+                                          static_cast<int>(config.window_size.GetX()),
+                                          static_cast<int>(config.window_size.GetY()),
+                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                              SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
         SJ_ASSERT(m_NativeWindow != nullptr, "Failed to create SDL window");
     }
 
-    ~Window()
+    void NewFrame()
     {
-        SJ_ENGINE_LOG_INFO("Terminating window");
-        SDL_DestroyWindow(m_NativeWindow);
+    }
+
+    void Process(float _)
+    {
+    }
+
+    void EndFrame()
+    {
     }
 
     /**
