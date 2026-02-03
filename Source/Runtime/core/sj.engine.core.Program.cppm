@@ -5,15 +5,13 @@ module;
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
 
 #include <concepts>
 #include <memory>
 #include <string_view>
 #include <tuple>
-
-#ifndef SJ_VERSION
-    #include <imgui.h>
-#endif
 
 export module sj.engine.core.Program;
 export import sj.engine.core.Config;
@@ -58,12 +56,20 @@ public:
 
         SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 
-        new (&mModules) std::tuple<Modules ...>();
+        new(&mModules) std::tuple<Modules...>();
     }
 
     ~Program()
     {
-        std::destroy_at(&mModules);
+        auto destroyModuleFn = []<class T>(T& m) {
+            SJ_ENGINE_LOG_INFO("Destroying Module {}", sj::type_name_of<T>);
+            std::destroy_at(&m);
+        };
+        std::apply(
+            [&](auto&... args) {
+                ((destroyModuleFn(args)), ...);
+            },
+            mModules);
         SDL_Quit();
     };
 
@@ -155,6 +161,10 @@ protected:
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
+            bool capturedByImGui = ImGui_ImplSDL3_ProcessEvent(&event);
+            if(capturedByImGui)
+                continue;
+
             switch(event.type)
             {
                 case SDL_EVENT_QUIT: {

@@ -1,13 +1,12 @@
 #include "BuildTool_Config_generated.hpp"
 
-#include "MeshBuilder.hpp"
-
 #include <cstdlib>
 #include <print>
 #include <filesystem>
 
 import sj.TextureBuilder;
 import sj.SceneBuilder;
+import sj.MeshBuilder;
 
 int main()
 {
@@ -25,5 +24,5 @@ int main()
 	sj::build::SceneBuilder scene_builder;
 	scene_builder.BuildAll();
 
-	std::print("Build Complete. Press any key to close...");
+	std::print("Build Complete!");
 }

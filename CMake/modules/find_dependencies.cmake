@@ -45,7 +45,7 @@ FetchContent_Declare(
   SDL3
   SYSTEM
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-  GIT_TAG release-3.2.28
+  GIT_TAG release-3.4.0
 )
 if(UNIX)
     set(SDL_X11 OFF)
@@ -101,7 +101,8 @@ set(imgui_src
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.h
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlgpu3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlgpu3.h
 )
 add_library(imgui STATIC ${imgui_src})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)

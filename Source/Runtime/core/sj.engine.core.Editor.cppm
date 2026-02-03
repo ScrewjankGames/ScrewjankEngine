@@ -2,7 +2,7 @@ module;
 
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
-#include <imgui_impl_vulkan.h>
+#include <imgui_impl_sdlgpu3.h>
 
 export module sj.engine.core.Editor;
 import sj.engine.core.Program;
@@ -16,9 +16,8 @@ class Editor
 {
 public:
     Editor() = default;
-    ~Editor() = default;
 
-    void Initialize(auto& program) 
+    void Initialize(auto& program)
     {
         mRenderer = program.template GetModule<Renderer>();
 
@@ -33,22 +32,14 @@ public:
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
 
-        Window* display = program.template GetModule<Window>();
-        ImGui_ImplSDL3_InitForVulkan(display->GetWindowHandle());
-        mRenderer->InitImGui();
+        mRenderer->InitImGUI();
     }
+
+    ~Editor() = default;
 
     void NewFrame()
     {
-        MemoryResourceScope _(MemorySystem::GetDebugMemoryResource());
 
-        // Start the Dear ImGui frame
-        ImGui_ImplSDL3_NewFrame();
-        ImGui_ImplVulkan_NewFrame();
-        ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport(0,
-                                     ImGui::GetMainViewport(),
-                                     ImGuiDockNodeFlags_PassthruCentralNode);
     }
 
     void Process(float deltaSeconds)
@@ -60,7 +51,6 @@ public:
 
     void EndFrame()
     {
-        ImGui::Render();
     }
 
 private:

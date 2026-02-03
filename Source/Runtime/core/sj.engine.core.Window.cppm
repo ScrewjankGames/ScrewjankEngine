@@ -17,7 +17,6 @@ export module sj.engine.core.Window;
 import sj.engine.core.Program;
 
 import sj.std.math;
-import sj.engine.rendering.vk.Primitives;
 
 export namespace sj
 {
@@ -31,20 +30,20 @@ public:
     Window() = default;
     ~Window()
     {
-        SDL_DestroyWindow(m_NativeWindow);
+        SDL_DestroyWindow(mWindowHandle);
     };
 
     void Initialize(auto& program)
     {
         const Config& config = program.GetConfig();
         SJ_ENGINE_LOG_INFO("Creating window");
-        m_NativeWindow = SDL_CreateWindow(config.program_name.c_str(),
+        mWindowHandle = SDL_CreateWindow(config.program_name.c_str(),
                                           static_cast<int>(config.window_size.GetX()),
                                           static_cast<int>(config.window_size.GetY()),
                                           SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
                                               SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
-        SJ_ASSERT(m_NativeWindow != nullptr, "Failed to create SDL window");
+        SJ_ASSERT(mWindowHandle != nullptr, "Failed to create SDL window");
     }
 
     void NewFrame()
@@ -67,47 +66,17 @@ public:
         int width = 0;
         int height = 0;
 
-        SDL_GetWindowSize(m_NativeWindow, &width, &height);
+        SDL_GetWindowSize(mWindowHandle, &width, &height);
 
         return Vec2(static_cast<float>(width), static_cast<float>(height));
     }
 
     SDL_Window* GetWindowHandle()
     {
-        return m_NativeWindow;
+        return mWindowHandle;
     }
-
-#ifdef SJ_VULKAN_SUPPORT
-    /**
-     * @return Extensions Vulkan API must support to support this window.
-     */
-    [[nodiscard]] std::span<const char* const> GetRequiredVulkanExtenstions() const
-    {
-        uint32_t extension_count = 0;
-        const char* const* extensions = SDL_Vulkan_GetInstanceExtensions(&extension_count);
-        return std::span {extensions, extension_count};
-    }
-
-    /**
-     * @return The Vulkan presentation surface for this window
-     */
-    VkSurfaceKHR CreateWindowSurface(VkInstance instance) const
-    {
-        VkSurfaceKHR surface {};
-        [[maybe_unused]] bool success =
-            SDL_Vulkan_CreateSurface(m_NativeWindow, instance, sj::g_vkAllocationFns, &surface);
-    #ifndef SJ_GOLD
-        if(!success)
-        {
-            const char* error = SDL_GetError();
-            SJ_ASSERT(false, "Failed to create vulkan window surface. Error: {}", error);
-        }
-    #endif
-        return surface;
-    }
-#endif
 
 private:
-    SDL_Window* m_NativeWindow = nullptr;
+    SDL_Window* mWindowHandle = nullptr;
 };
 } // namespace sj

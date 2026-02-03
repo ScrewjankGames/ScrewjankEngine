@@ -14,6 +14,7 @@ export namespace sj
     struct TextureHeader
     {
         AssetType asset_type = AssetType::kTexture;
+        uint8_t bytesPerPixel = 0;
         int32_t width = 0;
         int32_t height = 0;
 

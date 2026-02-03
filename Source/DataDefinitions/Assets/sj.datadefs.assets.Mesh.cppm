@@ -13,12 +13,12 @@ export namespace sj
     struct MeshVertex
     {
         Vec3 pos;
-        Vec3 color;
+        Vec3 normal;
         Vec2 uv;
 
         inline bool operator==(const MeshVertex& other) const
         {
-            return pos == other.pos && color == other.color && uv == other.uv;
+            return pos == other.pos && normal == other.normal && uv == other.uv;
         }
     };
 
@@ -38,7 +38,7 @@ export namespace std
     {
         size_t operator()(sj::MeshVertex const& vertex) const
         {
-            return ((hash<sj::Vec3>()(vertex.pos) ^ (hash<sj::Vec3>()(vertex.color) << 1)) >> 1) ^
+            return ((hash<sj::Vec3>()(vertex.pos) ^ (hash<sj::Vec3>()(vertex.normal) << 1)) >> 1) ^
                    (hash<sj::Vec2>()(vertex.uv) << 1);
         }
     };
