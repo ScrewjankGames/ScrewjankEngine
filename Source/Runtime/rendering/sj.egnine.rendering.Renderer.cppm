@@ -49,6 +49,95 @@ struct MeshBuffer
     }
 };
 
+class RenderTarget
+{
+public:
+    RenderTarget() = default;
+
+    RenderTarget(SDL_GPUDevice* device, const SDL_GPUTextureCreateInfo& createInfo)
+        : mDevice(device), mCreateInfo(createInfo)
+    {
+        Create();
+    }
+
+    RenderTarget(const RenderTarget& other)
+    {
+        *this = other;
+    }
+
+    RenderTarget(RenderTarget&& other) noexcept
+    {
+        *this = std::move(other);
+    }
+
+    RenderTarget& operator=(const RenderTarget& other)
+    {
+        mDevice = other.mDevice;
+        mCreateInfo = other.mCreateInfo;
+
+        Create();
+
+        return *this;
+    }
+
+    RenderTarget& operator=(RenderTarget&& other) noexcept
+    {
+        mDevice = std::exchange(other.mDevice, nullptr);
+        mTexture = std::exchange(other.mTexture, nullptr);
+        mCreateInfo = other.mCreateInfo;
+
+        return *this;
+    }
+
+    operator SDL_GPUTexture*()
+    {
+        return mTexture;
+    }
+
+    [[nodiscard]] SDL_GPUTextureFormat GetFormat() const
+    {
+        return mCreateInfo.format;
+    }
+
+    [[nodiscard]] uint32_t GetWidth() const
+    {
+        return mCreateInfo.width;
+    }
+
+    [[nodiscard]] uint32_t GetHeight() const
+    {
+        return mCreateInfo.height;
+    }
+
+    void Resize(uint32_t width, uint32_t height)
+    {
+        Destroy();
+        mCreateInfo.width = width;
+        mCreateInfo.height = height;
+        Create();
+    }
+
+    void Destroy()
+    {
+        SDL_ReleaseGPUTexture(mDevice, mTexture);
+        mTexture = nullptr;
+    }
+
+private:
+    void Create()
+    {
+        mTexture = SDL_CreateGPUTexture(mDevice, &mCreateInfo);
+        SJ_ASSERT(mTexture,
+                  "Failed to create render target texture. Format {} Usage {}!",
+                  (int)mCreateInfo.format,
+                  (int)mCreateInfo.usage);
+    }
+
+    SDL_GPUTextureCreateInfo mCreateInfo {};
+    SDL_GPUDevice* mDevice = nullptr;
+    SDL_GPUTexture* mTexture = nullptr;
+};
+
 class Renderer
 {
 public:
@@ -71,6 +160,28 @@ public:
         mDevice = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, g_IsDebugBuild, "vulkan");
         SJ_ASSERT(mDevice, "Failed to acquire GPU");
         SDL_ClaimWindowForGPUDevice(mDevice, mDisplay->GetWindowHandle());
+
+        mDrawTarget = RenderTarget(
+            mDevice,
+            SDL_GPUTextureCreateInfo {
+                .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
+                .format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+                .usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER,
+                .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
+                .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
+                .layer_count_or_depth = 1,
+                .num_levels = 1});
+
+        mDepthTarget =
+            RenderTarget(mDevice,
+                         SDL_GPUTextureCreateInfo {
+                             .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
+                             .format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_D16_UNORM,
+                             .usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
+                             .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
+                             .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
+                             .layer_count_or_depth = 1,
+                             .num_levels = 1});
 
         mDefaultVertexShader =
             UploadShader("Data/Engine/Shaders/Default.vert.spv",
@@ -109,20 +220,15 @@ public:
 
     ~Renderer()
     {
-        if(mImGuiEnabled)
-        {
-            ImGui_ImplSDL3_Shutdown();
-            ImGui_ImplSDLGPU3_Shutdown();
-        }
-
         SDL_ReleaseGPUGraphicsPipeline(mDevice, mDefaultGraphicsPipeline);
         SDL_ReleaseGPUSampler(mDevice, mDummyTextureSampler);
         SDL_ReleaseGPUTexture(mDevice, mDummyTexture);
         SDL_ReleaseGPUBuffer(mDevice, mDummyMeshBuffer.buffer);
         SDL_ReleaseGPUShader(mDevice, mDefaultFragmentShader);
         SDL_ReleaseGPUShader(mDevice, mDefaultVertexShader);
+        mDepthTarget.Destroy();
+        mDrawTarget.Destroy();
         SDL_ReleaseWindowFromGPUDevice(mDevice, mDisplay->GetWindowHandle());
-
         SDL_DestroyGPUDevice(mDevice);
     }
 
@@ -134,19 +240,17 @@ public:
         // Start the Dear ImGui frame
         ImGui_ImplSDLGPU3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport(0,
-                                     ImGui::GetMainViewport(),
-                                     ImGuiDockNodeFlags_PassthruCentralNode);
     }
+
     void Process(float _)
     {
     }
+
     void EndFrame()
     {
     }
 
-    void InitImGUI()
+    void InitImGuiBackend()
     {
         ImGui_ImplSDLGPU3_InitInfo info {
             .Device = mDevice,
@@ -159,24 +263,24 @@ public:
         mImGuiEnabled = true;
     }
 
+    void TeardownImGuiBackend()
+    {
+        ImGui_ImplSDL3_Shutdown();
+        ImGui_ImplSDLGPU3_Shutdown();
+    }
+
     void Render(const Mat44& cameraMatrix)
     {
         SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
 
-        if(mImGuiEnabled)
-        {
-            ImGui::Render();
-            ImGui_ImplSDLGPU3_PrepareDrawData(ImGui::GetDrawData(), commandBuffer);
-        }
-
         SDL_GPUTexture* swapchainTexture = nullptr;
-        uint32_t width = 0;
-        uint32_t height = 0;
+        uint32_t renderTargetWidth = 0;
+        uint32_t renderTargetHeight = 0;
         SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer,
                                               mDisplay->GetWindowHandle(),
                                               &swapchainTexture,
-                                              &width,
-                                              &height);
+                                              &renderTargetWidth,
+                                              &renderTargetHeight);
 
         // end the frame early if a swapchain texture is not available
         if(swapchainTexture == nullptr)
@@ -185,16 +289,15 @@ public:
             return;
         }
 
-        SDL_GPUColorTargetInfo colorTargetInfo {};
-        colorTargetInfo.clear_color = {.r = 50 / 255.0f,
-                                       .g = 50 / 255.0f,
-                                       .b = 240 / 255.0f,
-                                       .a = 255 / 255.0f};
-        colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
-        colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
-        colorTargetInfo.texture = swapchainTexture;
+        if(renderTargetWidth != mDepthTarget.GetWidth() ||
+           renderTargetHeight != mDepthTarget.GetHeight())
+        {
+            mDepthTarget.Resize(renderTargetWidth, renderTargetHeight);
+            mDrawTarget.Resize(renderTargetWidth, renderTargetHeight);
+        }
 
-        const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+        const float aspectRatio =
+            static_cast<float>(renderTargetWidth) / static_cast<float>(renderTargetHeight);
         GlobalUniformBufferObject tmpGUBO {
             .model = Mat44(kIdentityTag),
             .view = cameraMatrix.AffineInverse(),
@@ -202,8 +305,22 @@ public:
 
         SDL_PushGPUVertexUniformData(commandBuffer, 0, &tmpGUBO, sizeof(GlobalUniformBufferObject));
 
+        SDL_GPUColorTargetInfo colorTargetInfo {
+            .texture = swapchainTexture,
+            .clear_color = {.r = 50 / 255.0f,
+                            .g = 50 / 255.0f,
+                            .b = 240 / 255.0f,
+                            .a = 255 / 255.0f},
+            .load_op = SDL_GPU_LOADOP_CLEAR,
+            .store_op = SDL_GPU_STOREOP_STORE,
+        };
+        SDL_GPUDepthStencilTargetInfo depthTargetInfo {
+            .texture = mDepthTarget,
+            .clear_depth = 0.0f,
+            .load_op = SDL_GPULoadOp::SDL_GPU_LOADOP_CLEAR,
+            .store_op = SDL_GPUStoreOp::SDL_GPU_STOREOP_DONT_CARE};
         SDL_GPURenderPass* renderPass =
-            SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, nullptr);
+            SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, &depthTargetInfo);
 
         SDL_BindGPUGraphicsPipeline(renderPass, mDefaultGraphicsPipeline);
 
@@ -218,19 +335,30 @@ public:
         SDL_DrawGPUIndexedPrimitives(renderPass, mDummyMeshBuffer.numIndices, 1, 0, 0, 0);
         SDL_EndGPURenderPass(renderPass);
 
-        if(mImGuiEnabled)
-        {
-            ImDrawData* drawData = ImGui::GetDrawData();
-            SDL_GPUColorTargetInfo colorTargetInfo {.texture = swapchainTexture,
-                                                    .load_op = SDL_GPU_LOADOP_LOAD,
-                                                    .store_op = SDL_GPU_STOREOP_STORE};
-            SDL_GPURenderPass* imguiPass =
-                SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, nullptr);
-            ImGui_ImplSDLGPU3_RenderDrawData(drawData, commandBuffer, imguiPass);
-            SDL_EndGPURenderPass(imguiPass);
-        }
-
         SDL_SubmitGPUCommandBuffer(commandBuffer);
+    }
+
+    void RenderImGui(ImDrawData* drawData)
+    {
+        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
+        ImGui_ImplSDLGPU3_PrepareDrawData(drawData, commandBuffer);
+
+        SDL_GPUTexture* swapchainTexture = nullptr;
+        uint32_t renderTargetWidth = 0;
+        uint32_t renderTargetHeight = 0;
+        SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer,
+                                              mDisplay->GetWindowHandle(),
+                                              &swapchainTexture,
+                                              &renderTargetWidth,
+                                              &renderTargetHeight);
+
+        SDL_GPUColorTargetInfo colorTargetInfo {.texture = swapchainTexture,
+                                                .load_op = SDL_GPU_LOADOP_LOAD,
+                                                .store_op = SDL_GPU_STOREOP_STORE};
+        SDL_GPURenderPass* imguiPass =
+            SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, nullptr);
+        ImGui_ImplSDLGPU3_RenderDrawData(drawData, commandBuffer, imguiPass);
+        SDL_EndGPURenderPass(imguiPass);
     }
 
     [[nodiscard]]
@@ -362,8 +490,8 @@ public:
             return SDL_CreateGPUTexture(device, &info);
         };
 
-        auto stageFn = [&](std::span<std::byte> buffer) {
-            file.read(reinterpret_cast<char*>(buffer.data()), bufferSize);
+        auto stageFn = [&](std::span<std::byte> uploadBuffer) {
+            file.read(reinterpret_cast<char*>(uploadBuffer.data()), bufferSize);
         };
 
         auto uploadFn = [&](SDL_GPUCopyPass* copyPass,
@@ -399,6 +527,31 @@ public:
     };
 
 private:
+    /**
+     * Computes perpsective projection matrix
+     * @param verticalFOV: Vertical FOV of the view frustrum
+     * @param aspectRatio: Render surface width / height
+     * @param near: Near render plane
+     * @param far: Far render plane
+     *
+     * When you're smarter, see:
+     * https://www.youtube.com/watch?v=U0_ONQQ5ZNM
+     * https://www.youtube.com/watch?v=YO46x8fALzE
+     */
+    Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
+    {
+        const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
+
+        Mat44 res;
+        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
+        res.Set<1, 1>(invTanHalfvFov);
+        res.Set<2, 2>(far / (near - far));
+        res.Set<2, 3>(-1.0f);
+        res.Set<3, 2>((near * far) / (near - far));
+
+        return res;
+    }
+
     SDL_GPUGraphicsPipeline* CreateDefaultGraphicsPipeline()
     {
         SDL_GPUVertexBufferDescription vertexDesc {
@@ -422,7 +575,7 @@ private:
                 .location = 2,
                 .buffer_slot = 0,
                 .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                .offset = sizeof(float) * 3},
+                .offset = sizeof(float) * 6},
         };
 
         std::array<SDL_GPUColorTargetDescription, 1> colorTargets {SDL_GPUColorTargetDescription {
@@ -440,19 +593,24 @@ private:
             .rasterizer_state =
                 SDL_GPURasterizerState {.fill_mode = SDL_GPUFillMode::SDL_GPU_FILLMODE_FILL,
                                         .cull_mode = SDL_GPUCullMode::SDL_GPU_CULLMODE_BACK,
-                                        .front_face = SDL_GPUFrontFace::SDL_GPU_FRONTFACE_CLOCKWISE,
+                                        .front_face =
+                                            SDL_GPUFrontFace::SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
                                         .enable_depth_clip = true},
             .multisample_state =
                 SDL_GPUMultisampleState {.sample_count = SDL_GPUSampleCount::SDL_GPU_SAMPLECOUNT_1,
                                          .sample_mask = 0,
                                          .enable_mask = false,
                                          .enable_alpha_to_coverage = false},
-            .depth_stencil_state = SDL_GPUDepthStencilState {.compare_op = SDL_GPU_COMPAREOP_LESS,
-                                                             .enable_depth_test = true,
-                                                             .enable_depth_write = true},
-            .target_info =
-                SDL_GPUGraphicsPipelineTargetInfo {.color_target_descriptions = colorTargets.data(),
-                                                   .num_color_targets = colorTargets.size()}};
+            .depth_stencil_state =
+                SDL_GPUDepthStencilState {.compare_op = SDL_GPU_COMPAREOP_GREATER,
+                                          .enable_depth_test = true,
+                                          .enable_depth_write = true},
+            .target_info = SDL_GPUGraphicsPipelineTargetInfo {
+                .color_target_descriptions = colorTargets.data(),
+                .num_color_targets = colorTargets.size(),
+                .depth_stencil_format = mDepthTarget.GetFormat(),
+                .has_depth_stencil_target = true,
+            }};
 
         return SDL_CreateGPUGraphicsPipeline(mDevice, &info);
     }
@@ -462,6 +620,8 @@ private:
     bool mImGuiEnabled = false;
 
     SDL_GPUDevice* mDevice = nullptr;
+    RenderTarget mDepthTarget {};
+    RenderTarget mDrawTarget {};
 
     MeshBuffer mDummyMeshBuffer = {};
     SDL_GPUTexture* mDummyTexture = nullptr;

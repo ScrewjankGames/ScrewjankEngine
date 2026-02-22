@@ -50,30 +50,6 @@ export namespace sj
     }
 
     /**
-     * Computes perpsective projection matrix
-     * @param verticalFOV: Vertical FOV of the view frustrum
-     * @param aspectRatio: Render surface width / height
-     * @param near: Near render plane
-     * @param far: Far render plane
-     *
-     * When you're smarter, see:
-     * https://www.youtube.com/watch?v=U0_ONQQ5ZNM
-     * https://www.youtube.com/watch?v=YO46x8fALzE
-     */
-    Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
-    {
-        const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
-
-        Mat44 res;
-        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
-        res.Set<1, 1>(-invTanHalfvFov);
-        res.Set<2, 2>(far / (near - far));
-        res.Set<2, 3>(-1.0f);
-        res.Set<3, 2>(-(near * far) / (far - near));
-
-        return res;
-    }
-    /**
      * Computes the exponential map from R^3 (vector space) to S^3 (Unit Quaternion Space)
      * @param v This argument is interpereted as an axis of rotation scaled
      *        by the angle of rotation

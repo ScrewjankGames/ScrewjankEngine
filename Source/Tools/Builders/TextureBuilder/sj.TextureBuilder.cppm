@@ -46,6 +46,7 @@ public:
         int texWidth = 0;
         int texHeight = 0;
         int texChannels = 0;
+        stbi_set_flip_vertically_on_load(true);
         stbi_uc* pixels =
             stbi_load(item.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 

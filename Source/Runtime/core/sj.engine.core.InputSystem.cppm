@@ -46,21 +46,23 @@ public:
             mInputAxes[axis.get_hash()] = 0;
     }
 
-    // void RegisterAxisBinding(string_hash axisName, GamepadAxis input, float modifier)
-    // {
-    //     mBindings.gamepad_axes[axisName].emplace_back(input, modifier);
-    //     auto outputIt = mInputAxes.find(axisName);
-    //     if(outputIt == mInputAxes.end())
-    //         mInputAxes[axisName] = 0.0f;
-    // }
-
-    // void RegisterAxisBinding(string_hash axisName, KeyboardButton input, float modifier)
-    // {
-    //     mBindings.keyboard_axes[axisName].emplace_back(input, modifier);
-    //     auto outputIt = mInputAxes.find(axisName);
-    //     if(outputIt == mInputAxes.end())
-    //         mInputAxes[axisName] = 0.0f;
-    // }
+    bool ProcessEvent(const SDL_Event& evt)
+    {
+        switch(evt.type)
+        {
+            case SDL_EVENT_KEY_UP:
+            case SDL_EVENT_KEY_DOWN:
+                mProcessKeyboardInput = true;
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_EVENT_MOUSE_MOTION:
+                mProcessMouseInput = true;
+                break;
+        }
+        
+        return false;
+    }
 
     [[nodiscard]] float GetAxisValue(string_hash name) const
     {
@@ -71,15 +73,20 @@ public:
 
     void Process(float _)
     {
-        std::span<const bool> keyboardState = GetKeyboardState();
-
-        for(auto&& [axis_name, axis_value] : mInputAxes)
+        if(mProcessKeyboardInput)
         {
-            axis_value = PollKeyboardAxis(axis_name)
-                             .or_else([this, axis_name]() {
-                                 return PollGamepadAxis(axis_name);
-                             })
-                             .value_or(0.0f);
+            std::span<const bool> keyboardState = GetKeyboardState();
+
+            for(auto&& [axis_name, axis_value] : mInputAxes)
+            {
+                axis_value = PollKeyboardAxis(axis_name)
+                                 .or_else([this, axis_name]() {
+                                     return PollGamepadAxis(axis_name);
+                                 })
+                                 .value_or(0.0f);
+            }
+
+            mProcessKeyboardInput = false;
         }
     }
 
@@ -117,6 +124,9 @@ private:
     {
         return {};
     }
+
+    bool mProcessKeyboardInput = false;
+    bool mProcessMouseInput = false;
 
     const InputBindings* mBindings = nullptr;
     sj::dynamic_flat_map<string_hash, float> mInputAxes;

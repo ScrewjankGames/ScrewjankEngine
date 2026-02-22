@@ -25,6 +25,7 @@ import sj.engine.system.Timer;
 import sj.std.memory.literals;
 import sj.std.containers.map;
 import sj.std.containers.type_list;
+import sj.std.tuple;
 import sj.std.type_traits;
 
 export namespace sj
@@ -65,11 +66,9 @@ public:
             SJ_ENGINE_LOG_INFO("Destroying Module {}", sj::type_name_of<T>);
             std::destroy_at(&m);
         };
-        std::apply(
-            [&](auto&... args) {
-                ((destroyModuleFn(args)), ...);
-            },
-            mModules);
+
+        sj::for_each_reverse(mModules, destroyModuleFn);
+
         SDL_Quit();
     };
 
@@ -99,6 +98,21 @@ public:
     {
         return mConfig.program_name;
     }
+    
+    void EmitEvent(const auto& evt)
+    {
+        // Visit modules in reverse and allow them to consume events
+        [&]<auto... Is>(std::index_sequence<Is...>) {
+            auto sendEventFn = [&]<class T>(T& m) -> bool {
+                if constexpr(requires { m.ProcessEvent(evt); })
+                    return !m.ProcessEvent(evt);
+                else
+                    return true;
+            };
+
+            (sendEventFn(std::get<kNumModules - Is - 1>(mModules)) && ...);
+        }(std::index_sequence_for<Modules...> {});
+    }
 
 protected:
     void Initialize(this auto&& self)
@@ -123,11 +137,6 @@ protected:
         while(!mTerminated)
         {
             mDeltaSeconds = timer.Elapsed();
-            timer.Reset();
-
-            ProcessEvents();
-
-            constexpr float kMaxDeltaTime = 1.0f / 15.0f;
             if(mDeltaSeconds > kMaxDeltaTime)
             {
                 SJ_ENGINE_LOG_WARN("Large delta time detected- {}. Capping at {}",
@@ -135,6 +144,9 @@ protected:
                                    kMaxDeltaTime)
                 mDeltaSeconds = kMaxDeltaTime;
             }
+            timer.Reset();
+
+            ProcessEvents();
 
             std::apply(
                 [&](auto&... args) {
@@ -161,27 +173,15 @@ protected:
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
-            bool capturedByImGui = ImGui_ImplSDL3_ProcessEvent(&event);
-            if(capturedByImGui)
-                continue;
+            if(event.type == SDL_EVENT_QUIT)
+                mTerminated = true;
 
-            switch(event.type)
-            {
-                case SDL_EVENT_QUIT: {
-                    mTerminated = true;
-                    break;
-                }
-                case SDL_EVENT_KEY_UP:
-                case SDL_EVENT_KEY_DOWN: {
-                    gKeyboardInputSignal.emit(event.key);
-                    break;
-                }
-                default: {
-                    ;
-                }
-            }
+            EmitEvent(event);
         }
     }
+
+    static constexpr float kMaxDeltaTime = 1.0f / 15.0f;
+    static constexpr size_t kNumModules = std::tuple_size_v<std::tuple<Modules...>>;
 
     Config mConfig;
 
@@ -191,6 +191,7 @@ protected:
     };
 
     bool mTerminated = false;
+
     float mDeltaSeconds = 0.0f;
 };
 

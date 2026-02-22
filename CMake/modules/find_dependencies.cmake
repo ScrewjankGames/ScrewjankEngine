@@ -1,45 +1,5 @@
 include(FetchContent)
 
-## Vulkan
-find_package(Vulkan REQUIRED)
-
-if(Vulkan_FOUND)
-    message(STATUS "Vulkan SDK found: Version ${Vulkan_VERSION}")
-    add_compile_definitions(SJ_VULKAN_SUPPORT)
-else()
-    message(FATAL_ERROR "Vulkan SDK could not be found. Make sure the SDK is installed and VULKAN_SDK environment variable is set correctly.")
-endif()
-
-# set up Vulkan C++ module as a library
-add_library( VulkanHppModule )
-target_sources( VulkanHppModule PUBLIC
-  FILE_SET CXX_MODULES
-  BASE_DIRS ${Vulkan_INCLUDE_DIR}
-  FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
-)
-target_compile_definitions( VulkanHppModule PUBLIC
-  VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
-)
-target_link_libraries( VulkanHppModule PUBLIC Vulkan::Vulkan )
-
-## VK Bootstrap
-FetchContent_Declare(
-  vk-bootstrap
-  SYSTEM
-  GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git
-  GIT_TAG v${Vulkan_VERSION}
-)
-FetchContent_MakeAvailable(vk-bootstrap)
-
-## Vulkan Memory Allocator
-FetchContent_Declare(
-  vulkan-memory-allocator
-  SYSTEM
-  GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-  GIT_TAG v3.3.0
-)
-FetchContent_MakeAvailable(vulkan-memory-allocator)
-
 ## SDL3
 FetchContent_Declare(
   SDL3
@@ -90,7 +50,7 @@ FetchContent_Declare(
         imgui
         SYSTEM
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.92.2-docking
+        GIT_TAG v1.92.6-docking
 )
 FetchContent_MakeAvailable(imgui)
 set(imgui_src
@@ -106,14 +66,32 @@ set(imgui_src
 )
 add_library(imgui STATIC ${imgui_src})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
-target_link_libraries(imgui PUBLIC SDL3::SDL3 Vulkan::Vulkan)
+target_link_libraries(imgui PUBLIC SDL3::SDL3)
+
+## IMPLOT
+FetchContent_Declare(
+        implot
+        SYSTEM
+        GIT_REPOSITORY https://github.com/epezent/implot.git
+        GIT_TAG v0.17
+)
+FetchContent_MakeAvailable(implot)
+set(implot_src
+    ${implot_SOURCE_DIR}/implot.h
+    ${implot_SOURCE_DIR}/implot_internal.h
+    ${implot_SOURCE_DIR}/implot.cpp
+    ${implot_SOURCE_DIR}/implot_items.cpp
+)
+add_library(implot STATIC ${implot_src})
+target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
+target_link_libraries(implot PUBLIC imgui)
 
 ## Glaze
 FetchContent_Declare(
         glaze
         SYSTEM
         GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-        GIT_TAG v6.4.0
+        GIT_TAG v7.0.2
 )
 FetchContent_MakeAvailable(glaze)
 

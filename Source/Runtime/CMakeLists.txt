@@ -30,15 +30,12 @@ endif()
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         SDL3::SDL3
-        Vulkan::Vulkan
-        VulkanHppModule
-        vk-bootstrap::vk-bootstrap 
-        GPUOpen::VulkanMemoryAllocator
     PUBLIC
         ScrewjankStd
         ScrewjankDataDefs
         spdlog::spdlog
         imgui
+        implot
         glaze::glaze
 )
 
