@@ -15,6 +15,7 @@ module;
 // STD Headers
 #include <concepts>
 #include <fstream>
+#include <functional>
 #include <filesystem>
 #include <type_traits>
 
@@ -89,7 +90,7 @@ public:
         return *this;
     }
 
-    operator SDL_GPUTexture*()
+    operator SDL_GPUTexture*() const
     {
         return mTexture;
     }
@@ -151,6 +152,10 @@ public:
 
     void Initialize(auto& program)
     {
+        mPresentCallback = [&program](const RenderTarget& image) -> void {
+            program.template EmitEvent<const RenderTarget&>(image);
+        };
+
         mDisplay = program.template GetModule<Window>();
 
         free_list_allocator* workBuffer = WorkBuffer();
@@ -232,6 +237,36 @@ public:
         SDL_DestroyGPUDevice(mDevice);
     }
 
+    // By default, renderer will handle call to present by writing to swapchain.
+    // Editor may intercept and put the image into a panel
+    bool ProcessEvent(const RenderTarget& image)
+    {
+        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
+
+        SDL_GPUTexture* swapchainTexture = nullptr;
+        uint32_t swapchainWidth = 0;
+        uint32_t swapchainHeight = 0;
+        SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer,
+                                              mDisplay->GetWindowHandle(),
+                                              &swapchainTexture,
+                                              &swapchainWidth,
+                                              &swapchainHeight);
+
+        SDL_GPUBlitInfo blitInfo {
+            .source =
+                SDL_GPUBlitRegion {.texture = image, .w = image.GetWidth(), .h = image.GetHeight()},
+            .destination = SDL_GPUBlitRegion {.texture = swapchainTexture,
+                                              .w = swapchainWidth,
+                                              .h = swapchainHeight},
+            .load_op = SDL_GPU_LOADOP_CLEAR,
+            .clear_color {0.0f, 0.0f, 0.0f, 1.0f},
+            .filter = SDL_GPU_FILTER_NEAREST};
+        SDL_BlitGPUTexture(commandBuffer, &blitInfo);
+        SDL_SubmitGPUCommandBuffer(commandBuffer);
+
+        return true;
+    }
+
     void NewFrame()
     {
         if(!mImGuiEnabled)
@@ -273,31 +308,18 @@ public:
     {
         SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
 
-        SDL_GPUTexture* swapchainTexture = nullptr;
-        uint32_t renderTargetWidth = 0;
-        uint32_t renderTargetHeight = 0;
-        SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer,
-                                              mDisplay->GetWindowHandle(),
-                                              &swapchainTexture,
-                                              &renderTargetWidth,
-                                              &renderTargetHeight);
+        uint32_t displayWidth = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX());
+        uint32_t displayHeight = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY());
 
-        // end the frame early if a swapchain texture is not available
-        if(swapchainTexture == nullptr)
+        if(displayWidth != mDepthTarget.GetWidth() || displayHeight != mDepthTarget.GetHeight())
         {
-            SDL_SubmitGPUCommandBuffer(commandBuffer);
-            return;
-        }
-
-        if(renderTargetWidth != mDepthTarget.GetWidth() ||
-           renderTargetHeight != mDepthTarget.GetHeight())
-        {
-            mDepthTarget.Resize(renderTargetWidth, renderTargetHeight);
-            mDrawTarget.Resize(renderTargetWidth, renderTargetHeight);
+            mDepthTarget.Resize(displayWidth, displayHeight);
+            mDrawTarget.Resize(displayWidth, displayHeight);
         }
 
         const float aspectRatio =
-            static_cast<float>(renderTargetWidth) / static_cast<float>(renderTargetHeight);
+            static_cast<float>(displayWidth) / static_cast<float>(displayHeight);
+
         GlobalUniformBufferObject tmpGUBO {
             .model = Mat44(kIdentityTag),
             .view = cameraMatrix.AffineInverse(),
@@ -306,7 +328,7 @@ public:
         SDL_PushGPUVertexUniformData(commandBuffer, 0, &tmpGUBO, sizeof(GlobalUniformBufferObject));
 
         SDL_GPUColorTargetInfo colorTargetInfo {
-            .texture = swapchainTexture,
+            .texture = mDrawTarget,
             .clear_color = {.r = 50 / 255.0f,
                             .g = 50 / 255.0f,
                             .b = 240 / 255.0f,
@@ -336,6 +358,8 @@ public:
         SDL_EndGPURenderPass(renderPass);
 
         SDL_SubmitGPUCommandBuffer(commandBuffer);
+
+        mPresentCallback(mDrawTarget);
     }
 
     void RenderImGui(ImDrawData* drawData)
@@ -614,6 +638,8 @@ private:
 
         return SDL_CreateGPUGraphicsPipeline(mDevice, &info);
     }
+
+    std::function<void(const RenderTarget&)> mPresentCallback;
 
     Window* mDisplay = nullptr;
 
