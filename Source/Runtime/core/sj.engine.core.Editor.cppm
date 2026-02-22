@@ -5,6 +5,8 @@ module;
 #include <imgui_impl_sdlgpu3.h>
 #include <implot.h>
 
+#include <optional>
+
 export module sj.engine.core.Editor;
 import sj.engine.core.Program;
 import sj.engine.core.Window;
@@ -37,7 +39,7 @@ public:
         mRenderer->InitImGuiBackend();
     }
 
-    ~Editor() 
+    ~Editor()
     {
         mRenderer->TeardownImGuiBackend();
         ImPlot::DestroyContext();
@@ -48,6 +50,15 @@ public:
     {
         ImGui_ImplSDL3_ProcessEvent(&evt);
         return ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+    }
+
+    bool ProcessEvent(const RenderTarget& image)
+    {
+        if(true)
+            return false;
+
+        mViewportTexture = &image;
+        return true;
     }
 
     void NewFrame()
@@ -79,7 +90,15 @@ public:
         ImGui::End();
 
         if(ImGui::Begin("Viewport"))
-            ImGui::Text("TODO");
+        {
+            // Render game scene into window
+            if(mViewportTexture)
+            {
+                ImGui::Image((ImTextureID)(intptr_t)(SDL_GPUTexture*)mViewportTexture,
+                             ImVec2(mViewportTexture->GetWidth(), mViewportTexture->GetHeight()));
+                mViewportTexture = nullptr;
+            }
+        }
         ImGui::End();
 
         if(ImGui::Begin("Performance", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
@@ -94,6 +113,7 @@ public:
     }
 
 private:
+    const RenderTarget* mViewportTexture;
     Renderer* mRenderer;
 };
 

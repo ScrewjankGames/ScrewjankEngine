@@ -13,6 +13,7 @@ module;
 #include <imgui_impl_sdlgpu3.h>
 
 // STD Headers
+#include <cstddef>
 #include <concepts>
 #include <fstream>
 #include <functional>
@@ -383,6 +384,8 @@ public:
             SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, nullptr);
         ImGui_ImplSDLGPU3_RenderDrawData(drawData, commandBuffer, imguiPass);
         SDL_EndGPURenderPass(imguiPass);
+
+        SDL_SubmitGPUCommandBuffer(commandBuffer);
     }
 
     [[nodiscard]]
@@ -589,21 +592,21 @@ private:
                 .location = 0,
                 .buffer_slot = 0,
                 .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                .offset = 0},
+                .offset = offsetof(MeshVertex, pos)},
             SDL_GPUVertexAttribute {
                 .location = 1,
                 .buffer_slot = 0,
                 .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                .offset = sizeof(float) * 3},
+                .offset = offsetof(MeshVertex, normal)},
             SDL_GPUVertexAttribute {
                 .location = 2,
                 .buffer_slot = 0,
                 .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                .offset = sizeof(float) * 6},
+                .offset = offsetof(MeshVertex, uv)},
         };
 
-        std::array<SDL_GPUColorTargetDescription, 1> colorTargets {SDL_GPUColorTargetDescription {
-            .format = SDL_GetGPUSwapchainTextureFormat(mDevice, mDisplay->GetWindowHandle())}};
+        std::array<SDL_GPUColorTargetDescription, 1> colorTargets {
+            SDL_GPUColorTargetDescription {.format = mDrawTarget.GetFormat()}};
 
         SDL_GPUGraphicsPipelineCreateInfo info {
             .vertex_shader = mDefaultVertexShader,
