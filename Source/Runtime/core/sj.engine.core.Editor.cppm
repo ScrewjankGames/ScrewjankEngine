@@ -55,9 +55,8 @@ public:
 
     bool ProcessEvent(const PresentEvent& evt)
     {
-        // mPresentEvent = evt;
-        // return true;
-        return false;
+        mPresentEvent = evt;
+        return true;
     }
 
     void NewFrame()
@@ -108,7 +107,7 @@ public:
     void EndFrame()
     {
         ImGui::Render();
-        //mRenderer->RenderImGui(ImGui::GetDrawData());
+        mRenderer->RenderImGui(ImGui::GetDrawData());
     }
 
 private:
