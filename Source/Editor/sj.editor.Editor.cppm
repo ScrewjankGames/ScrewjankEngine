@@ -7,12 +7,8 @@ module;
 
 #include <optional>
 
-export module sj.engine.core.Editor;
-import sj.engine.core.Program;
-import sj.engine.core.Window;
-import sj.engine.rendering.Renderer;
-import sj.engine.rendering.Events;
-import sj.engine.system.memory.MemorySystem;
+export module sj.editor.Editor;
+import sj.engine;
 
 export namespace sj
 {
@@ -50,7 +46,10 @@ public:
     bool ProcessEvent(const SDL_Event& evt)
     {
         ImGui_ImplSDL3_ProcessEvent(&evt);
-        return ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+        const bool captureMouse = ImGui::GetIO().WantCaptureMouse;
+        const bool captureKeyboard = ImGui::GetIO().WantCaptureKeyboard;
+
+        return captureMouse || captureKeyboard;
     }
 
     bool ProcessEvent(const PresentEvent& evt)
@@ -89,6 +88,12 @@ public:
 
         if(ImGui::Begin("Viewport"))
         {
+            if(ImGui::IsWindowFocused())
+            {
+                ImGui::SetNextFrameWantCaptureKeyboard(false);
+                ImGui::SetNextFrameWantCaptureMouse(false);
+            }
+
             // Render game scene into window
             if(mPresentEvent)
             {
