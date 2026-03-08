@@ -11,6 +11,7 @@ export module sj.engine.core.Editor;
 import sj.engine.core.Program;
 import sj.engine.core.Window;
 import sj.engine.rendering.Renderer;
+import sj.engine.rendering.Events;
 import sj.engine.system.memory.MemorySystem;
 
 export namespace sj
@@ -52,13 +53,11 @@ public:
         return ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
     }
 
-    bool ProcessEvent(const RenderTarget& image)
+    bool ProcessEvent(const PresentEvent& evt)
     {
-        if(true)
-            return false;
-
-        mViewportTexture = &image;
-        return true;
+        // mPresentEvent = evt;
+        // return true;
+        return false;
     }
 
     void NewFrame()
@@ -92,11 +91,11 @@ public:
         if(ImGui::Begin("Viewport"))
         {
             // Render game scene into window
-            if(mViewportTexture)
+            if(mPresentEvent)
             {
-                ImGui::Image((ImTextureID)(intptr_t)(SDL_GPUTexture*)mViewportTexture,
-                             ImVec2(mViewportTexture->GetWidth(), mViewportTexture->GetHeight()));
-                mViewportTexture = nullptr;
+                ImGui::Image((ImTextureID)(intptr_t)mPresentEvent->image,
+                             ImVec2(mPresentEvent->width, mPresentEvent->height));
+                mPresentEvent = std::nullopt;
             }
         }
         ImGui::End();
@@ -113,7 +112,7 @@ public:
     }
 
 private:
-    const RenderTarget* mViewportTexture;
+    std::optional<PresentEvent> mPresentEvent;
     Renderer* mRenderer;
 };
 

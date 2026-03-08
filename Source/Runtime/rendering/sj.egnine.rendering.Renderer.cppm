@@ -21,11 +21,16 @@ module;
 #include <type_traits>
 
 export module sj.engine.rendering.Renderer;
+import sj.engine.rendering.Events;
+import sj.engine.rendering.TextureResource;
+import sj.engine.rendering.SamplerResource;
+
 import sj.engine.core.Program;
 import sj.engine.core.Window;
 
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
+
 import sj.datadefs.assets.Texture;
 import sj.datadefs.assets.Mesh;
 
@@ -51,95 +56,6 @@ struct MeshBuffer
     }
 };
 
-class RenderTarget
-{
-public:
-    RenderTarget() = default;
-
-    RenderTarget(SDL_GPUDevice* device, const SDL_GPUTextureCreateInfo& createInfo)
-        : mDevice(device), mCreateInfo(createInfo)
-    {
-        Create();
-    }
-
-    RenderTarget(const RenderTarget& other)
-    {
-        *this = other;
-    }
-
-    RenderTarget(RenderTarget&& other) noexcept
-    {
-        *this = std::move(other);
-    }
-
-    RenderTarget& operator=(const RenderTarget& other)
-    {
-        mDevice = other.mDevice;
-        mCreateInfo = other.mCreateInfo;
-
-        Create();
-
-        return *this;
-    }
-
-    RenderTarget& operator=(RenderTarget&& other) noexcept
-    {
-        mDevice = std::exchange(other.mDevice, nullptr);
-        mTexture = std::exchange(other.mTexture, nullptr);
-        mCreateInfo = other.mCreateInfo;
-
-        return *this;
-    }
-
-    operator SDL_GPUTexture*() const
-    {
-        return mTexture;
-    }
-
-    [[nodiscard]] SDL_GPUTextureFormat GetFormat() const
-    {
-        return mCreateInfo.format;
-    }
-
-    [[nodiscard]] uint32_t GetWidth() const
-    {
-        return mCreateInfo.width;
-    }
-
-    [[nodiscard]] uint32_t GetHeight() const
-    {
-        return mCreateInfo.height;
-    }
-
-    void Resize(uint32_t width, uint32_t height)
-    {
-        Destroy();
-        mCreateInfo.width = width;
-        mCreateInfo.height = height;
-        Create();
-    }
-
-    void Destroy()
-    {
-        SDL_ReleaseGPUTexture(mDevice, mTexture);
-        mTexture = nullptr;
-    }
-
-private:
-    void Create()
-    {
-        mTexture = SDL_CreateGPUTexture(mDevice, &mCreateInfo);
-        SJ_ASSERT(mTexture,
-                  "Failed to create render target texture. Format {} Usage {}!",
-                  (int)mCreateInfo.format,
-                  (int)mCreateInfo.usage);
-    }
-
-    SDL_GPUTextureCreateInfo mCreateInfo {};
-    SDL_GPUDevice* mDevice = nullptr;
-    SDL_GPUTexture* mTexture = nullptr;
-};
-
 class Renderer
 {
 public:
@@ -153,8 +69,8 @@ public:
 
     void Initialize(auto& program)
     {
-        mPresentCallback = [&program](const RenderTarget& image) -> void {
-            program.template EmitEvent<const RenderTarget&>(image);
+        mPresentCallbackFn = [&program](const PresentEvent& evt) -> void {
+            program.template EmitEvent<const PresentEvent&>(evt);
         };
 
         mDisplay = program.template GetModule<Window>();
@@ -167,80 +83,27 @@ public:
         SJ_ASSERT(mDevice, "Failed to acquire GPU");
         SDL_ClaimWindowForGPUDevice(mDevice, mDisplay->GetWindowHandle());
 
-        mDrawTarget = RenderTarget(
-            mDevice,
-            SDL_GPUTextureCreateInfo {
-                .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
-                .format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-                .usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER,
-                .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
-                .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
-                .layer_count_or_depth = 1,
-                .num_levels = 1});
-
-        mDepthTarget =
-            RenderTarget(mDevice,
-                         SDL_GPUTextureCreateInfo {
-                             .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
-                             .format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_D16_UNORM,
-                             .usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
-                             .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
-                             .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
-                             .layer_count_or_depth = 1,
-                             .num_levels = 1});
-
-        mDefaultVertexShader =
-            UploadShader("Data/Engine/Shaders/Default.vert.spv",
-                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
-                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                                                  .stage = SDL_GPU_SHADERSTAGE_VERTEX,
-                                                  .num_uniform_buffers = 1});
-        mDefaultFragmentShader =
-            UploadShader("Data/Engine/Shaders/Default.frag.spv",
-                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
-                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                                                  .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-                                                  .num_samplers = 1});
+        InitRenderTargets();
+        InitDefaultPipeline();
 
         mDummyMeshBuffer = UploadMesh("Data/Engine/viking_room.sj_mesh");
-        mDummyTexture = UploadSamplerTexture("Data/Engine/viking_room.sj_tex");
-
-        SDL_GPUSamplerCreateInfo samplerInfo {
-            .min_filter = SDL_GPUFilter::SDL_GPU_FILTER_LINEAR,
-            .mag_filter = SDL_GPUFilter::SDL_GPU_FILTER_LINEAR,
-            .mipmap_mode = SDL_GPUSamplerMipmapMode::SDL_GPU_SAMPLERMIPMAPMODE_LINEAR,
-            .address_mode_u = SDL_GPUSamplerAddressMode::SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .address_mode_v = SDL_GPUSamplerAddressMode::SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .address_mode_w = SDL_GPUSamplerAddressMode::SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .mip_lod_bias = 0.0f,
-            .max_anisotropy = 1.0f,
-            .compare_op = SDL_GPU_COMPAREOP_ALWAYS,
-            .min_lod = 0.0f,
-            .max_lod = 1.0f,
-            .enable_anisotropy = false,
-            .enable_compare = false};
-        mDummyTextureSampler = SDL_CreateGPUSampler(mDevice, &samplerInfo);
-
-        mDefaultGraphicsPipeline = CreateDefaultGraphicsPipeline();
+        mDummySampler = UploadSamplerTexture("Data/Engine/viking_room.sj_tex");
     }
 
     ~Renderer()
     {
         SDL_ReleaseGPUGraphicsPipeline(mDevice, mDefaultGraphicsPipeline);
-        SDL_ReleaseGPUSampler(mDevice, mDummyTextureSampler);
-        SDL_ReleaseGPUTexture(mDevice, mDummyTexture);
+        mDummySampler.Release();
         SDL_ReleaseGPUBuffer(mDevice, mDummyMeshBuffer.buffer);
-        SDL_ReleaseGPUShader(mDevice, mDefaultFragmentShader);
-        SDL_ReleaseGPUShader(mDevice, mDefaultVertexShader);
-        mDepthTarget.Destroy();
-        mDrawTarget.Destroy();
+        mDepthTarget.Release();
+        mDrawTarget.Release();
         SDL_ReleaseWindowFromGPUDevice(mDevice, mDisplay->GetWindowHandle());
         SDL_DestroyGPUDevice(mDevice);
     }
 
     // By default, renderer will handle call to present by writing to swapchain.
     // Editor may intercept and put the image into a panel
-    bool ProcessEvent(const RenderTarget& image)
+    bool ProcessEvent(const PresentEvent& evt)
     {
         SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
 
@@ -254,8 +117,7 @@ public:
                                               &swapchainHeight);
 
         SDL_GPUBlitInfo blitInfo {
-            .source =
-                SDL_GPUBlitRegion {.texture = image, .w = image.GetWidth(), .h = image.GetHeight()},
+            .source = SDL_GPUBlitRegion {.texture = evt.image, .w = evt.width, .h = evt.height},
             .destination = SDL_GPUBlitRegion {.texture = swapchainTexture,
                                               .w = swapchainWidth,
                                               .h = swapchainHeight},
@@ -329,7 +191,7 @@ public:
         SDL_PushGPUVertexUniformData(commandBuffer, 0, &tmpGUBO, sizeof(GlobalUniformBufferObject));
 
         SDL_GPUColorTargetInfo colorTargetInfo {
-            .texture = mDrawTarget,
+            .texture = mDrawTarget.Get(),
             .clear_color = {.r = 50 / 255.0f,
                             .g = 50 / 255.0f,
                             .b = 240 / 255.0f,
@@ -338,7 +200,7 @@ public:
             .store_op = SDL_GPU_STOREOP_STORE,
         };
         SDL_GPUDepthStencilTargetInfo depthTargetInfo {
-            .texture = mDepthTarget,
+            .texture = mDepthTarget.Get(),
             .clear_depth = 0.0f,
             .load_op = SDL_GPULoadOp::SDL_GPU_LOADOP_CLEAR,
             .store_op = SDL_GPUStoreOp::SDL_GPU_STOREOP_DONT_CARE};
@@ -349,8 +211,8 @@ public:
 
         SDL_GPUBufferBinding vertexBinding = mDummyMeshBuffer.GetVertexBinding();
         SDL_GPUBufferBinding indexBinding = mDummyMeshBuffer.GetIndexBinding();
-        SDL_GPUTextureSamplerBinding samplerBinding {.texture = mDummyTexture,
-                                                     .sampler = mDummyTextureSampler};
+        SDL_GPUTextureSamplerBinding samplerBinding {.texture = mDummySampler.GetTexture(),
+                                                     .sampler = mDummySampler.GetSampler()};
 
         SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
         SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
@@ -360,7 +222,9 @@ public:
 
         SDL_SubmitGPUCommandBuffer(commandBuffer);
 
-        mPresentCallback(mDrawTarget);
+        mPresentCallbackFn(PresentEvent {.image = mDrawTarget.Get(),
+                                         .width = mDrawTarget.GetWidth(),
+                                         .height = mDrawTarget.GetHeight()});
     }
 
     void RenderImGui(ImDrawData* drawData)
@@ -403,42 +267,38 @@ public:
         return SDL_CreateGPUShader(mDevice, &info);
     }
 
-    template <class MakeDstFn, class StageFn, class UploadFn>
-        requires std::invocable<MakeDstFn, SDL_GPUDevice*> &&
-                 std::invocable<StageFn, std::span<std::byte>> &&
-                 std::invocable<UploadFn,
-                                SDL_GPUCopyPass*,
-                                SDL_GPUTransferBuffer*,
-                                std::invoke_result_t<MakeDstFn, SDL_GPUDevice*>>
-    [[nodiscard]] auto UploadToGPU(size_t stagingBufferSize,
-                                   MakeDstFn&& makeDstFn,
-                                   StageFn&& stageFn,
-                                   UploadFn&& uploadFn)
+    template <class Fn>
+        requires std::invocable<Fn, SDL_GPUCommandBuffer*>
+    void ImmediateCommand(Fn&& f)
     {
-        auto&& destination = std::invoke(std::forward<MakeDstFn>(makeDstFn), mDevice);
-        using DestType = std::remove_cv_t<decltype(destination)>;
-
         SDL_GPUCommandBuffer* immediateBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
-        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(immediateBuffer);
+        std::invoke(std::forward<Fn>(f), immediateBuffer);
+        SDL_SubmitGPUCommandBuffer(immediateBuffer);
+    }
+
+    template <class Fn>
+        requires std::invocable<Fn, SDL_GPUCopyPass*>
+    void CopyPass(SDL_GPUCommandBuffer* cmd, Fn&& f)
+    {
+        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
+        std::invoke(std::forward<Fn>(f), copyPass);
+        SDL_EndGPUCopyPass(copyPass);
+    }
+
+    template <class Fn>
+        requires std::invocable<Fn, std::span<std::byte>>
+    SDL_GPUTransferBuffer* UploadToGPU(size_t bufferSizeBytes, Fn&& uploadFn)
+    {
         SDL_GPUTransferBufferCreateInfo tbInfo {.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-                                                .size = static_cast<Uint32>(stagingBufferSize)};
+                                                .size = static_cast<Uint32>(bufferSizeBytes)};
         SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(mDevice, &tbInfo);
 
         void* uploadPtr = SDL_MapGPUTransferBuffer(mDevice, transferBuffer, false);
-        std::invoke(std::forward<StageFn>(stageFn),
-                    std::span(reinterpret_cast<std::byte*>(uploadPtr), stagingBufferSize));
+        std::invoke(std::forward<Fn>(uploadFn),
+                    std::span(reinterpret_cast<std::byte*>(uploadPtr), bufferSizeBytes));
         SDL_UnmapGPUTransferBuffer(mDevice, transferBuffer);
 
-        std::invoke(std::forward<UploadFn>(uploadFn),
-                    copyPass,
-                    transferBuffer,
-                    std::forward<DestType>(destination));
-
-        SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
-        SDL_EndGPUCopyPass(copyPass);
-        SDL_SubmitGPUCommandBuffer(immediateBuffer);
-
-        return destination;
+        return transferBuffer;
     }
 
     [[nodiscard]]
@@ -453,97 +313,94 @@ public:
         const uint32_t indexBufferSize = (header.indexSize * header.numIndices);
         const uint32_t vertexAndIndexBufferSizeBytes = vertexBufferSize + indexBufferSize;
 
-        auto makeDstFn = [&](SDL_GPUDevice* device) -> MeshBuffer {
-            SDL_GPUBufferCreateInfo info {.usage = SDL_GPU_BUFFERUSAGE_VERTEX |
-                                                   SDL_GPU_BUFFERUSAGE_INDEX,
-                                          .size = vertexAndIndexBufferSizeBytes};
+        SDL_GPUBufferCreateInfo info {.usage =
+                                          SDL_GPU_BUFFERUSAGE_VERTEX | SDL_GPU_BUFFERUSAGE_INDEX,
+                                      .size = vertexAndIndexBufferSizeBytes};
 
-            return MeshBuffer {.buffer = SDL_CreateGPUBuffer(mDevice, &info),
+        MeshBuffer meshBuffer {.buffer = SDL_CreateGPUBuffer(mDevice, &info),
                                .indexBufferOffset = vertexBufferSize,
                                .numIndices = header.numIndices};
-        };
 
-        auto stageFn = [&](std::span<std::byte> uploadBuffer) {
-            char* vertexBufferStart = reinterpret_cast<char*>(uploadBuffer.data());
-            char* indexBufferStart = vertexBufferStart + vertexBufferSize;
+        SDL_GPUTransferBuffer* transferBuffer =
+            UploadToGPU(vertexAndIndexBufferSizeBytes, [&](std::span<std::byte> uploadBuffer) {
+                char* vertexBufferStart = reinterpret_cast<char*>(uploadBuffer.data());
+                char* indexBufferStart = vertexBufferStart + vertexBufferSize;
 
-            file.read(vertexBufferStart, vertexBufferSize);
-            file.read(indexBufferStart, indexBufferSize);
-        };
+                file.read(vertexBufferStart, vertexBufferSize);
+                file.read(indexBufferStart, indexBufferSize);
+            });
 
-        auto uploadFn =
-            [&](SDL_GPUCopyPass* copyPass, SDL_GPUTransferBuffer* srcBuffer, MeshBuffer dstBuffer) {
-                SDL_GPUTransferBufferLocation vertexBufferSrc {.transfer_buffer = srcBuffer,
+        ImmediateCommand([&](SDL_GPUCommandBuffer* cmd) {
+            CopyPass(cmd, [&](SDL_GPUCopyPass* copyPass) {
+                SDL_GPUTransferBufferLocation vertexBufferSrc {.transfer_buffer = transferBuffer,
                                                                .offset = 0};
-                SDL_GPUTransferBufferLocation indexBufferSrc {.transfer_buffer = srcBuffer,
+                SDL_GPUTransferBufferLocation indexBufferSrc {.transfer_buffer = transferBuffer,
                                                               .offset = vertexBufferSize};
 
-                SDL_GPUBufferRegion vertexBufferDest {.buffer = dstBuffer.buffer,
+                SDL_GPUBufferRegion vertexBufferDest {.buffer = meshBuffer.buffer,
                                                       .offset = 0,
                                                       .size = vertexBufferSize};
 
-                SDL_GPUBufferRegion indexBufferDest {.buffer = dstBuffer.buffer,
+                SDL_GPUBufferRegion indexBufferDest {.buffer = meshBuffer.buffer,
                                                      .offset = vertexBufferSize,
                                                      .size = indexBufferSize};
 
                 SDL_UploadToGPUBuffer(copyPass, &vertexBufferSrc, &vertexBufferDest, false);
                 SDL_UploadToGPUBuffer(copyPass, &indexBufferSrc, &indexBufferDest, false);
-            };
+            });
+        });
 
-        return UploadToGPU(vertexAndIndexBufferSizeBytes, makeDstFn, stageFn, uploadFn);
+        SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
+
+        return meshBuffer;
     }
 
     [[nodiscard]]
-    SDL_GPUTexture* UploadSamplerTexture(const char* path)
+    SamplerResource UploadSamplerTexture(const char* path)
     {
         std::ifstream file(path, std::ios::binary);
         TextureHeader textureHeader = {};
         file.read(reinterpret_cast<char*>(&textureHeader), sizeof(TextureHeader));
         SJ_ASSERT(textureHeader.asset_type == AssetType::kTexture, "Invalid texture load");
 
-        size_t bufferSize =
+        SamplerResource res = SamplerResource(mDevice,
+                                              textureHeader.width,
+                                              textureHeader.height,
+                                              gDefaultSamplerCreateInfo);
+
+        const size_t textureBufferSizeBytes =
             textureHeader.height * textureHeader.width * textureHeader.bytesPerPixel;
 
-        auto makeDstFn = [&](SDL_GPUDevice* device) -> SDL_GPUTexture* {
-            SDL_GPUTextureCreateInfo info {
-                .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
-                .format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-                .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
-                .width = static_cast<Uint32>(textureHeader.width),
-                .height = static_cast<Uint32>(textureHeader.height),
-                .layer_count_or_depth = 1,
-                .num_levels = 1};
+        SDL_GPUTransferBuffer* transferBuffer =
+            UploadToGPU(textureBufferSizeBytes, [&](std::span<std::byte> uploadBuffer) {
+                file.read(reinterpret_cast<char*>(uploadBuffer.data()), textureBufferSizeBytes);
+            });
 
-            return SDL_CreateGPUTexture(device, &info);
-        };
+        ImmediateCommand([&](SDL_GPUCommandBuffer* cmd) {
+            CopyPass(cmd, [&](SDL_GPUCopyPass* pass) {
+                SDL_GPUTextureTransferInfo srcInfo {
+                    .transfer_buffer = transferBuffer,
+                    .offset = 0,
+                    .pixels_per_row = static_cast<Uint32>(textureHeader.width),
+                    .rows_per_layer = static_cast<Uint32>(textureHeader.height)};
 
-        auto stageFn = [&](std::span<std::byte> uploadBuffer) {
-            file.read(reinterpret_cast<char*>(uploadBuffer.data()), bufferSize);
-        };
+                SDL_GPUTextureRegion dstRegion {.texture = res.GetTexture(),
+                                                .mip_level = 0,
+                                                .layer = 0,
+                                                .x = 0,
+                                                .y = 0,
+                                                .z = 0,
+                                                .w = static_cast<Uint32>(textureHeader.width),
+                                                .h = static_cast<Uint32>(textureHeader.height),
+                                                .d = 1};
 
-        auto uploadFn = [&](SDL_GPUCopyPass* copyPass,
-                            SDL_GPUTransferBuffer* srcBuffer,
-                            SDL_GPUTexture* dstTexture) {
-            SDL_GPUTextureTransferInfo srcInfo {
-                .transfer_buffer = srcBuffer,
-                .offset = 0,
-                .pixels_per_row = static_cast<Uint32>(textureHeader.width),
-                .rows_per_layer = static_cast<Uint32>(textureHeader.height)};
+                SDL_UploadToGPUTexture(pass, &srcInfo, &dstRegion, false);
+            });
+        });
 
-            SDL_GPUTextureRegion dstRegion {.texture = dstTexture,
-                                            .mip_level = 0,
-                                            .layer = 0,
-                                            .x = 0,
-                                            .y = 0,
-                                            .z = 0,
-                                            .w = static_cast<Uint32>(textureHeader.width),
-                                            .h = static_cast<Uint32>(textureHeader.height),
-                                            .d = 1};
+        SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
 
-            SDL_UploadToGPUTexture(copyPass, &srcInfo, &dstRegion, false);
-        };
-
-        return UploadToGPU(bufferSize, makeDstFn, stageFn, uploadFn);
+        return res;
     }
 
     struct GlobalUniformBufferObject
@@ -554,33 +411,39 @@ public:
     };
 
 private:
-    /**
-     * Computes perpsective projection matrix
-     * @param verticalFOV: Vertical FOV of the view frustrum
-     * @param aspectRatio: Render surface width / height
-     * @param near: Near render plane
-     * @param far: Far render plane
-     *
-     * When you're smarter, see:
-     * https://www.youtube.com/watch?v=U0_ONQQ5ZNM
-     * https://www.youtube.com/watch?v=YO46x8fALzE
-     */
-    Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
+    void InitRenderTargets()
     {
-        const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
+        SDL_GPUTextureCreateInfo targetInfo {
+            .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
+            .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
+            .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
+            .layer_count_or_depth = 1,
+            .num_levels = 1};
 
-        Mat44 res;
-        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
-        res.Set<1, 1>(invTanHalfvFov);
-        res.Set<2, 2>(far / (near - far));
-        res.Set<2, 3>(-1.0f);
-        res.Set<3, 2>((near * far) / (near - far));
+        targetInfo.format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+        targetInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+        mDrawTarget = TextureResource(mDevice, targetInfo);
 
-        return res;
+        targetInfo.format = SDL_GPUTextureFormat::SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+        targetInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+        mDepthTarget = TextureResource(mDevice, targetInfo);
     }
 
-    SDL_GPUGraphicsPipeline* CreateDefaultGraphicsPipeline()
+    void InitDefaultPipeline()
     {
+        SDL_GPUShader* vertexShader =
+            UploadShader("Data/Engine/Shaders/Default.vert.spv",
+                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
+                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
+                                                  .stage = SDL_GPU_SHADERSTAGE_VERTEX,
+                                                  .num_uniform_buffers = 1});
+        SDL_GPUShader* fragmentShader =
+            UploadShader("Data/Engine/Shaders/Default.frag.spv",
+                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
+                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
+                                                  .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
+                                                  .num_samplers = 1});
+
         SDL_GPUVertexBufferDescription vertexDesc {
             .slot = 0,
             .pitch = sizeof(MeshVertex),
@@ -609,8 +472,8 @@ private:
             SDL_GPUColorTargetDescription {.format = mDrawTarget.GetFormat()}};
 
         SDL_GPUGraphicsPipelineCreateInfo info {
-            .vertex_shader = mDefaultVertexShader,
-            .fragment_shader = mDefaultFragmentShader,
+            .vertex_shader = vertexShader,
+            .fragment_shader = fragmentShader,
             .vertex_input_state =
                 SDL_GPUVertexInputState {.vertex_buffer_descriptions = &vertexDesc,
                                          .num_vertex_buffers = 1,
@@ -639,26 +502,49 @@ private:
                 .has_depth_stencil_target = true,
             }};
 
-        return SDL_CreateGPUGraphicsPipeline(mDevice, &info);
+        mDefaultGraphicsPipeline = SDL_CreateGPUGraphicsPipeline(mDevice, &info);
+        SDL_ReleaseGPUShader(mDevice, vertexShader);
+        SDL_ReleaseGPUShader(mDevice, fragmentShader);
     }
 
-    std::function<void(const RenderTarget&)> mPresentCallback;
+    /**
+     * Computes perpsective projection matrix
+     * @param verticalFOV: Vertical FOV of the view frustrum
+     * @param aspectRatio: Render surface width / height
+     * @param near: Near render plane
+     * @param far: Far render plane
+     *
+     * When you're smarter, see:
+     * https://www.youtube.com/watch?v=U0_ONQQ5ZNM
+     * https://www.youtube.com/watch?v=YO46x8fALzE
+     */
+    Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
+    {
+        const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
+
+        Mat44 res;
+        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
+        res.Set<1, 1>(invTanHalfvFov);
+        res.Set<2, 2>(far / (near - far));
+        res.Set<2, 3>(-1.0f);
+        res.Set<3, 2>((near * far) / (near - far));
+
+        return res;
+    }
+
+    std::function<void(const PresentEvent&)> mPresentCallbackFn;
 
     Window* mDisplay = nullptr;
 
     bool mImGuiEnabled = false;
 
     SDL_GPUDevice* mDevice = nullptr;
-    RenderTarget mDepthTarget {};
-    RenderTarget mDrawTarget {};
+    TextureResource mDrawTarget {};
+    TextureResource mDepthTarget {};
 
     MeshBuffer mDummyMeshBuffer = {};
-    SDL_GPUTexture* mDummyTexture = nullptr;
-    SDL_GPUSampler* mDummyTextureSampler = nullptr;
+    SamplerResource mDummySampler;
 
     SDL_GPUGraphicsPipeline* mDefaultGraphicsPipeline = nullptr;
-
-    SDL_GPUShader* mDefaultVertexShader = nullptr;
-    SDL_GPUShader* mDefaultFragmentShader = nullptr;
 };
 } // namespace sj
