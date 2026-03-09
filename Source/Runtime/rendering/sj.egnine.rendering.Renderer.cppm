@@ -22,8 +22,9 @@ module;
 
 export module sj.engine.rendering.Renderer;
 import sj.engine.rendering.Events;
-import sj.engine.rendering.TextureResource;
+import sj.engine.rendering.BufferResource;
 import sj.engine.rendering.SamplerResource;
+import sj.engine.rendering.TextureResource;
 
 import sj.engine.core.Program;
 import sj.engine.core.Window;
@@ -38,23 +39,6 @@ import sj.std;
 
 export namespace sj
 {
-
-struct MeshBuffer
-{
-    SDL_GPUBuffer* buffer = nullptr;
-    uint32_t indexBufferOffset = 0;
-    uint32_t numIndices = 0;
-
-    SDL_GPUBufferBinding GetVertexBinding()
-    {
-        return SDL_GPUBufferBinding {.buffer = buffer};
-    }
-
-    SDL_GPUBufferBinding GetIndexBinding()
-    {
-        return SDL_GPUBufferBinding {.buffer = buffer, .offset = indexBufferOffset};
-    }
-};
 
 class Renderer
 {
@@ -94,7 +78,7 @@ public:
     {
         SDL_ReleaseGPUGraphicsPipeline(mDevice, mDefaultGraphicsPipeline);
         mDummySampler.Release();
-        SDL_ReleaseGPUBuffer(mDevice, mDummyMeshBuffer.buffer);
+        mDummyMeshBuffer.buffer.Release();
         mDepthTarget.Release();
         mDrawTarget.Release();
         SDL_ReleaseWindowFromGPUDevice(mDevice, mDisplay->GetWindowHandle());
@@ -317,9 +301,7 @@ public:
                                           SDL_GPU_BUFFERUSAGE_VERTEX | SDL_GPU_BUFFERUSAGE_INDEX,
                                       .size = vertexAndIndexBufferSizeBytes};
 
-        MeshBuffer meshBuffer {.buffer = SDL_CreateGPUBuffer(mDevice, &info),
-                               .indexBufferOffset = vertexBufferSize,
-                               .numIndices = header.numIndices};
+        BufferResource meshBuffer(mDevice, info);
 
         SDL_GPUTransferBuffer* transferBuffer =
             UploadToGPU(vertexAndIndexBufferSizeBytes, [&](std::span<std::byte> uploadBuffer) {
@@ -337,11 +319,11 @@ public:
                 SDL_GPUTransferBufferLocation indexBufferSrc {.transfer_buffer = transferBuffer,
                                                               .offset = vertexBufferSize};
 
-                SDL_GPUBufferRegion vertexBufferDest {.buffer = meshBuffer.buffer,
+                SDL_GPUBufferRegion vertexBufferDest {.buffer = meshBuffer.GetBuffer(),
                                                       .offset = 0,
                                                       .size = vertexBufferSize};
 
-                SDL_GPUBufferRegion indexBufferDest {.buffer = meshBuffer.buffer,
+                SDL_GPUBufferRegion indexBufferDest {.buffer = meshBuffer.GetBuffer(),
                                                      .offset = vertexBufferSize,
                                                      .size = indexBufferSize};
 
@@ -352,7 +334,9 @@ public:
 
         SDL_ReleaseGPUTransferBuffer(mDevice, transferBuffer);
 
-        return meshBuffer;
+        return MeshBuffer {.buffer = std::move(meshBuffer),
+                           .numIndices = header.numIndices,
+                           .indexBufferOffset = vertexBufferSize};
     }
 
     [[nodiscard]]

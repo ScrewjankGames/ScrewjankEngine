@@ -67,7 +67,7 @@ struct MeshBuffer
 
     [[nodiscard]] SDL_GPUBufferBinding GetVertexBinding() const
     {
-        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer(), .offset = 0};
+        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer() };
     }
 
     [[nodiscard]] SDL_GPUBufferBinding GetIndexBinding() const
