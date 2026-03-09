@@ -15,7 +15,7 @@ export namespace sj
 class BufferResource
 {
 public:
-    BufferResource() = delete;
+    BufferResource() = default;
     BufferResource(SDL_GPUDevice* device, SDL_GPUBufferCreateInfo info)
         : mDevice((device)), mBuffer(SDL_CreateGPUBuffer(device, &info))
     {
@@ -23,11 +23,13 @@ public:
 
     ~BufferResource()
     {
+        Release();
     }
 
     BufferResource(BufferResource&& other) noexcept
     {
-        *this = std::move(other);
+        mDevice = std::exchange(other.mDevice, nullptr);
+        mBuffer = std::exchange(other.mBuffer, nullptr);
     }
 
     BufferResource& operator=(BufferResource&& other) noexcept
@@ -57,25 +59,21 @@ protected:
     SDL_GPUBuffer* mBuffer = nullptr;
 };
 
-template <size_t tNumBindings>
-class BoundBufferResource : public BufferResource
+struct MeshBuffer
 {
-public:
-    using BufferResource::BufferResource;
+    BufferResource buffer;
+    uint32_t numIndices = 0;
+    uint32_t indexBufferOffset = 0;
 
-    void AddBindings(std::span<uint32_t> bindingOffsets)
+    [[nodiscard]] SDL_GPUBufferBinding GetVertexBinding() const
     {
-        SJ_ASSERT(bindingOffsets.size() <= tNumBindings, "Too many buffer bindings");
-        std::ranges::copy(bindingOffsets, mBindings.begin());
+        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer(), .offset = 0};
     }
 
-    SDL_GPUBufferBinding operator[](size_t idx) const
+    [[nodiscard]] SDL_GPUBufferBinding GetIndexBinding() const
     {
-        return SDL_GPUBufferBinding {.buffer = mBuffer, .offset = mBindings.at(idx)};
+        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer(), .offset = indexBufferOffset};
     }
-
-private:
-    std::array<uint32_t, tNumBindings> mBindings;
 };
 
 } // namespace sj

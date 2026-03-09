@@ -24,7 +24,9 @@ public:
 
     TextureResource(TextureResource&& other) noexcept
     {
-        *this = std::move(other);
+        mDevice = std::exchange(other.mDevice, nullptr);
+        mHandle = std::exchange(other.mHandle, nullptr);
+        mInfo = other.mInfo;
     }
 
     TextureResource& operator=(TextureResource&& other) noexcept
@@ -69,7 +71,7 @@ public:
         return mInfo.height;
     }
 
-    SDL_GPUTextureFormat GetFormat() const
+    [[nodiscard]] SDL_GPUTextureFormat GetFormat() const
     {
         return mInfo.format;
     }
