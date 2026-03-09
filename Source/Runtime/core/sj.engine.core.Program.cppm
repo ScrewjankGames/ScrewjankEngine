@@ -14,7 +14,7 @@ module;
 #include <tuple>
 
 export module sj.engine.core.Program;
-export import sj.engine.core.Config;
+export import sj.engine.config;
 export import sj.std.type_info;
 export import sj.std.signal;
 

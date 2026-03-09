@@ -7,8 +7,8 @@ module;
 #include <string_view>
 #include <filesystem>
 
-export module sj.engine.core.Config;
-export import sj.engine.config;
+export module sj.engine.config.Config;
+import sj.engine.config.InputConfig;
 
 import sj.engine.system.threading;
 

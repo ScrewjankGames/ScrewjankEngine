@@ -22,20 +22,15 @@ public:
             SDL_ReleaseGPUTexture(mDevice, mHandle);
     }
 
-    TextureResource& operator=(const TextureResource& other)
+    TextureResource(TextureResource&& other) noexcept
     {
-        if(mHandle)
-            Release();
-
-        mDevice = other.mDevice;
-        mInfo = other.mInfo;
-        mHandle = SDL_CreateGPUTexture(mDevice, &mInfo);
-
-        return *this;
+        *this = std::move(other);
     }
 
     TextureResource& operator=(TextureResource&& other) noexcept
     {
+        Release();
+
         mDevice = std::exchange(other.mDevice, nullptr);
         mHandle = std::exchange(other.mHandle, nullptr);
         mInfo = other.mInfo;
@@ -53,7 +48,9 @@ public:
 
     void Release()
     {
-        SDL_ReleaseGPUTexture(mDevice, mHandle);
+        if(mHandle != nullptr)
+            SDL_ReleaseGPUTexture(mDevice, mHandle);
+
         mHandle = nullptr;
     }
 
