@@ -55,7 +55,13 @@ public:
 
     SamplerResource(SamplerResource&& other) noexcept
     {
-        *this = std::move(other);
+        mDevice = std::exchange(other.mDevice, nullptr);
+        mTexture = std::exchange(other.mTexture, nullptr);
+        mWidth = std::exchange(other.mWidth, 0);
+        mWidth = std::exchange(other.mHeight, 0);
+        mSampler = std::exchange(other.mSampler, nullptr);
+
+        mCreateInfo = std::move(other.mCreateInfo);
     }
 
     SamplerResource& operator=(SamplerResource&& other) noexcept

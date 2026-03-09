@@ -2,7 +2,6 @@ module;
 
 // SJ Headers
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // Library Includes
 #define STB_IMAGE_IMPLEMENTATION
@@ -16,6 +15,7 @@ module;
 #include <span>
 
 export module sj.TextureBuilder;
+import sj.datadefs.assets.AssetType;
 import sj.datadefs.assets.Texture;
 import sj.build.IGlobBuilder;
 

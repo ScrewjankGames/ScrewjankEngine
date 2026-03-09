@@ -1,7 +1,6 @@
 module;
 
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 #include <span>
 #include <filesystem>

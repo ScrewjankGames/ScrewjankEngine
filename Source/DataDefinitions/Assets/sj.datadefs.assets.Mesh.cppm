@@ -1,11 +1,11 @@
 module;
 // SJ Includes
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // STD Includes
 #include <cstdint>
 #include <functional>
 export module sj.datadefs.assets.Mesh;
+export import sj.datadefs.assets.AssetType;
 import sj.std.math;
 
 export namespace sj

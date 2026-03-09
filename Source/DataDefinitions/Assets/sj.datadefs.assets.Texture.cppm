@@ -1,13 +1,8 @@
 module;
-#include <cstddef>
-
-// SJ Includes
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
-
-// STD Includes
 #include <cstdint>
 
 export module sj.datadefs.assets.Texture;
+export import sj.datadefs.assets.AssetType;
 
 export namespace sj
 {

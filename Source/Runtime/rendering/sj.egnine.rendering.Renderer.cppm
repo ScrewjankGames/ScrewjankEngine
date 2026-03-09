@@ -4,7 +4,6 @@ module;
 #include <ScrewjankStd/PlatformDetection.hpp>
 #include <ScrewjankStd/Log.hpp>
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // Library Headers
 #include <SDL3/SDL_gpu.h>
@@ -525,6 +524,9 @@ private:
     SDL_GPUDevice* mDevice = nullptr;
     TextureResource mDrawTarget {};
     TextureResource mDepthTarget {};
+
+    sj::dynamic_flat_map<string_hash, MeshBuffer> mMeshes;
+    sj::dynamic_flat_map<string_hash, SamplerResource> mSamplers;
 
     MeshBuffer mDummyMeshBuffer = {};
     SamplerResource mDummySampler;

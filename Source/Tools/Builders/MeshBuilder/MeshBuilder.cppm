@@ -2,7 +2,6 @@ module;
 
 // SJ Includes
 #include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankDataDefinitions/Assets/AssetType.hpp>
 
 // Library Includes
 #include <ios>
