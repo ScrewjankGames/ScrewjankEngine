@@ -15,6 +15,7 @@ import sj.datadefs;
 
 export namespace sj
 {
+
 class Scene
 {
 public:

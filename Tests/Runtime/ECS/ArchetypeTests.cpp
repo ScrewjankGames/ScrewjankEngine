@@ -44,7 +44,7 @@ TEST(ArchetypeTest, ConstructionTest)
     const type_info& infoC = sj::type_info_of<DummyComponentC>;
 
     Archetype archetype(std::array {&infoA, &infoB, &infoC}, std::pmr::get_default_resource());
-    size_t row0 = archetype.AddRow();
+    size_t row0 = archetype.AddEntry();
 
     {
         DummyComponentA& a0 = archetype.GetComponent<DummyComponentA>(row0);
@@ -53,7 +53,7 @@ TEST(ArchetypeTest, ConstructionTest)
     }
 
     for(int i = 0; i < 100; i++)
-        archetype.AddRow();
+        archetype.AddEntry();
 
     {
         DummyComponentA& a0 = archetype.GetComponent<DummyComponentA>(row0);

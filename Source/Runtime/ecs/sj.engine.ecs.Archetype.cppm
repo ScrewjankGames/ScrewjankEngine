@@ -14,6 +14,7 @@ export module sj.engine.ecs.Archetype;
 import sj.std.containers.array;
 import sj.std.containers.vector;
 import sj.std.containers.type_list;
+import sj.std.hash;
 import sj.std.concepts;
 import sj.std.type_info;
 
@@ -26,114 +27,123 @@ export namespace sj
 class Archetype
 {
 public:
+    using ArchetypeId = uint32_t;
+
     Archetype(range_of<const type_info*> auto componentTypes, std::pmr::memory_resource* resource)
-        : mResource(resource), mComponentTypes(std::from_range_t {}, componentTypes, mResource),
-          mColumns(std::size(componentTypes), mResource)
+        : mResource(resource), mRowDescriptors(resource)
     {
+        auto ids = componentTypes | std::views::transform([](const type_info* info) {
+                       return info->id;
+                   });
+
+        mId = FNV1a_32(ids);
+
+        mRowDescriptors.resize(componentTypes.size());
+        for(int i = 0; Row& row : mRowDescriptors)
+        {
+            row.typeInfo = componentTypes[i];
+            i++;
+        }
     }
 
     ~Archetype()
     {
-        for(size_t idx = 0; auto&& [typeInfo, col] : std::views::zip(mComponentTypes, mColumns))
+        for(size_t idx = 0; auto&& [typeInfo, rowData] : mRowDescriptors)
         {
             if(typeInfo->is_trivially_destructible)
                 continue;
 
-            std::span<std::byte> colBuff {col, typeInfo->size * mCapacity};
-
-            typeInfo->destructor_fn(colBuff, mSize);
+            typeInfo->destructor_fn(rowData);
             idx++;
         }
     }
 
-    template <class T>
-    std::span<T> FindColumn()
+    [[nodiscard]] uint32_t GetId() const
     {
-        auto it = std::ranges::find(mComponentTypes, &type_info_of<T>);
-        SJ_ASSERT(it != mComponentTypes.end(), "Archetype does not contain requested component!");
-
-        size_t colIdx = std::ranges::distance(std::ranges::begin(mComponentTypes), it);
-        return std::span {reinterpret_cast<T*>(mColumns[colIdx]), mSize};
+        return mId;
     }
 
     template <class T>
-    std::span<T> GetColumn(size_t col)
+    std::span<T> GetComponents()
     {
-        SJ_ASSERT(GetTypeInfo<T>() == mComponentTypes[col], "Invalid component cast");
+        auto it = std::ranges::find(mRowDescriptors, &type_info_of<T>, &Row::typeInfo);
+        SJ_ASSERT(it != mRowDescriptors.end(), "Archetype does not contain requested component!");
 
-        return std::span {reinterpret_cast<T*>(mColumns[col]), mSize};
+        return byte_span_cast<T>(it->data);
     }
 
     template <class T>
-    T& GetComponent(size_t row)
+    T& GetComponent(size_t idx)
     {
-        return FindColumn<T>()[row];
+        return GetComponents<T>()[idx];
     }
 
-    size_t AddRow()
+    size_t AddEntry()
     {
         if(mSize == mCapacity)
             Resize(std::max(2uz, mSize * 2));
 
-        for(auto&& [idx, column] : std::views::enumerate(mColumns))
+        for(Row& row : mRowDescriptors)
         {
-            const type_info* colTypeInfo = mComponentTypes[idx];
+            std::byte* newComponentAddr = reinterpret_cast<std::byte*>(
+                uintptr_t(row.data.data()) + (row.typeInfo->size * mSize));
 
-            std::byte* newComponentAddr =
-                reinterpret_cast<std::byte*>(uintptr_t(column) + (colTypeInfo->size * mSize));
-
-            colTypeInfo->constructor_fn(std::span {newComponentAddr, colTypeInfo->size}, 1);
+            row.typeInfo->constructor_fn(std::span {newComponentAddr, row.typeInfo->size});
         }
 
         return mSize++;
     }
 
+private:
     void Resize(size_t newCapacity)
     {
-        range_of<size_t> auto sizes = mComponentTypes | std::views::transform(&type_info::size);
+        range_of<size_t> auto sizes = mRowDescriptors | std::views::transform(&Row::typeInfo) |
+                                      std::views::transform(&type_info::size);
+
         const size_t rowSizeBytes = std::ranges::fold_left(sizes, 0, std::plus {});
 
         std::byte* newBuffer =
             reinterpret_cast<std::byte*>(mResource->allocate(rowSizeBytes * newCapacity));
 
-        // Figure out where columns will be in new buffer
+        // Figure out where rows will be in new buffer
         scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-        dynamic_array<std::byte*> newColumns(mColumns.size(), nullptr, &scratchpad.get_allocator());
+        dynamic_array<std::span<std::byte>> newRows(mRowDescriptors.size(),
+                                                    {},
+                                                    &scratchpad.get_allocator());
 
-        for(size_t idx = 0, cursor = uintptr_t(newBuffer); idx < newColumns.size(); idx++)
+        for(size_t idx = 0, cursor = uintptr_t(newBuffer); idx < newRows.size(); idx++)
         {
-            newColumns[idx] = reinterpret_cast<std::byte*>(cursor);
-            cursor += newCapacity * mComponentTypes[idx]->size;
+            size_t sizeInBytes = newCapacity * mRowDescriptors[idx].typeInfo->size;
+            newRows[idx] = {reinterpret_cast<std::byte*>(cursor), sizeInBytes};
+            cursor += sizeInBytes;
         }
 
         // Move data to new table
-        for(auto&& [typeInfo, oldColumn, newColumn] :
-            std::views::zip(mComponentTypes, mColumns, newColumns))
+        for(auto&& [rowHeader, newRowData] : std::views::zip(mRowDescriptors, newRows))
         {
-            std::span<std::byte> oldCol {oldColumn, typeInfo->size * mCapacity};
-            std::span<std::byte> newCol {newColumn, typeInfo->size * newCapacity};
-
-            typeInfo->move_constructor_fn(oldCol, newCol, mSize);
+            rowHeader.typeInfo->move_constructor_fn(rowHeader.data, newRowData);
+            rowHeader.data = newRowData;
         }
-
-        // Update columns jump table
-        for(auto&& [mColumn, tmp] : std::views::zip(mColumns, newColumns))
-            mColumn = tmp;
 
         mResource->deallocate(mBuffer, rowSizeBytes * mSize);
         mBuffer = newBuffer;
         mCapacity = newCapacity;
     }
 
-private:
     std::pmr::memory_resource* mResource = nullptr;
 
-    dynamic_array<const type_info*> mComponentTypes;
-    dynamic_array<std::byte*> mColumns;
+    struct Row
+    {
+        const type_info* typeInfo;
+        std::span<std::byte> data;
+    };
 
+    dynamic_array<Row> mRowDescriptors;
     std::byte* mBuffer = nullptr;
     size_t mSize = 0;
     size_t mCapacity = 0;
+
+    uint32_t mId = 0;
 };
 
 } // namespace sj
