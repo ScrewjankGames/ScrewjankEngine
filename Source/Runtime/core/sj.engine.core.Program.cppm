@@ -32,22 +32,9 @@ export namespace sj
 {
 
 template <class... Modules>
-class Program;
-
-template <class T, class... Args>
-concept Module = requires(T t, float dt) {
-    t.Initialize(std::declval<Program<>&>());
-    t.NewFrame();
-    t.Process(dt);
-    t.EndFrame();
-};
-
-template <class... Modules>
 class Program
 {
 public:
-    signal<void(SDL_KeyboardEvent&)> gKeyboardInputSignal;
-
     Program(uint64_t rootHeapSize)
     {
         sj::MemorySystem::Init(rootHeapSize);
