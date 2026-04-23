@@ -28,37 +28,35 @@ struct type_info
      * @param buffer: Location to construct new instance(s) of type
      * @param count: How many instances to construct in buffer
      */
-    using ctorFn = void (*)(std::span<std::byte> buffer, size_t count);
+    using ctorFn = void (*)(std::span<std::byte> buffer);
     ctorFn constructor_fn = nullptr;
 
     /**
      * @param buffer: Location to destruct instance(s) of type
      * @param count: How many instances to destroy in buffer
      */
-    using dtorFn = void (*)(std::span<std::byte> buffer, size_t count);
+    using dtorFn = void (*)(std::span<std::byte> buffer);
     dtorFn destructor_fn = nullptr;
 
     /**
      * @param oldBuffer: Element(s) to move-from
      * @param newBuffer: Uninitialized buffer to move to
-     * @param count: How many instances to destroy in buffer
      */
     using moveFn = void (*)(std::span<std::byte> oldBuffer,
-                            std::span<std::byte> newBuffer,
-                            size_t count);
+                            std::span<std::byte> newBuffer);
     moveFn move_constructor_fn = nullptr;
 };
 
 template <class T>
-constexpr std::span<T> byte_span_cast(std::span<std::byte> buf, int expectedCount)
+constexpr std::span<T> byte_span_cast(std::span<std::byte> buf)
 {
     auto name = glz::type_name<T>;
 
-    SJ_ASSERT(buf.size() >= expectedCount * sizeof(T),
-              "Buffer too small! Cannot address {} instances of {} in buffer of size {} bytes",
-              expectedCount,
-              name,
-              buf.size());
+    SJ_ASSERT(
+        buf.size() % sizeof(T) == 0,
+        "Buffer not correct size! Buffer does not divide evenly by contained type {}'s size {}",
+        name,
+        buf.size());
 
     std::span<T> typedBuff {reinterpret_cast<T*>(buf.data()), buf.size() / sizeof(T)};
     return typedBuff;
@@ -71,31 +69,30 @@ template <class T>
 constexpr std::string_view type_name_of = glz::type_name<T>;
 
 template <class T>
-constexpr type_info type_info_of {
-    .name = type_name_of<T>,
-    .id = type_id_of<T>,
-    .size = sizeof(T),
-    .alignment = alignof(T),
-    .is_trivially_destructible = std::is_trivially_destructible_v<T>,
-    .constructor_fn =
-        [](std::span<std::byte> buf, size_t count) {
-            std::span<T> typedBuff = byte_span_cast<T>(buf, count);
-            for(T& uninitialized : typedBuff)
-            {
-                new(&uninitialized) T();
-            }
-        },
-    .destructor_fn =
-        [](std::span<std::byte> buf, size_t count) {
-            std::span<T> typedBuff = byte_span_cast<T>(buf, count);
-            std::ranges::destroy(typedBuff);
-        },
-    .move_constructor_fn =
-        [](std::span<std::byte> oldBuf, std::span<std::byte> newBuf, size_t count) {
-            std::span<T> oldTypedBuf = byte_span_cast<T>(oldBuf, count);
-            std::span<T> newTypedBuf = byte_span_cast<T>(oldBuf, count);
+constexpr type_info type_info_of {.name = type_name_of<T>,
+                                  .id = type_id_of<T>,
+                                  .size = sizeof(T),
+                                  .alignment = alignof(T),
+                                  .is_trivially_destructible = std::is_trivially_destructible_v<T>,
+                                  .constructor_fn =
+                                      [](std::span<std::byte> buf) {
+                                          std::span<T> typedBuff = byte_span_cast<T>(buf);
+                                          for(T& uninitialized : typedBuff)
+                                          {
+                                              new(&uninitialized) T();
+                                          }
+                                      },
+                                  .destructor_fn =
+                                      [](std::span<std::byte> buf) {
+                                          std::span<T> typedBuff = byte_span_cast<T>(buf);
+                                          std::ranges::destroy(typedBuff);
+                                      },
+                                  .move_constructor_fn =
+                                      [](std::span<std::byte> oldBuf, std::span<std::byte> newBuf) {
+                                          std::span<T> oldTypedBuf = byte_span_cast<T>(oldBuf);
+                                          std::span<T> newTypedBuf = byte_span_cast<T>(newBuf);
 
-            std::ranges::uninitialized_move(oldTypedBuf, newTypedBuf);
-        }};
+                                          std::ranges::uninitialized_move(oldTypedBuf, newTypedBuf);
+                                      }};
 
 } // namespace sj

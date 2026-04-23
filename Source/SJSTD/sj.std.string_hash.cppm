@@ -1,24 +1,14 @@
 module;
 
-// STD Includes
 #include <cstdint>
 #include <compare>
 #include <string_view>
 
 export module sj.std.string_hash;
+import sj.std.hash;
 
 export namespace sj
 {
-constexpr uint32_t FNV1a_32(std::string_view str, uint32_t seed = 0x811c9dc5)
-{
-    for(char c : str)
-    {
-        seed = seed ^ uint32_t(c);
-        seed = seed * 0x01000193;
-    }
-
-    return seed;
-}
 
 class string_hash
 {
