@@ -68,11 +68,7 @@ public:
 
     void Process(float deltaSeconds)
     {
-        if(ImGui::BeginMainMenuBar())
-        {
-            ImGui::Button("File");
-            ImGui::EndMainMenuBar();
-        }
+        MainMenuBar();
 
         if(ImGui::Begin("Scene Graph", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
             ImGui::Text("TODO");
@@ -116,8 +112,52 @@ public:
     }
 
 private:
+    void MainMenuBar()
+    {
+        if(ImGui::BeginMainMenuBar())
+        {
+            if(ImGui::BeginMenu("File"))
+            {
+                if(ImGui::MenuItem("New Scene"))
+                {
+                }
+                if(ImGui::MenuItem("Open", "Ctrl+O"))
+                {
+                }
+                if(ImGui::MenuItem("Save", "Ctrl+S"))
+                {
+                }
+                if(ImGui::MenuItem("Save As.."))
+                {
+                }
+                ImGui::EndMenu();
+            }
+            if(ImGui::BeginMenu("Edit"))
+            {
+                if(ImGui::MenuItem("Undo", "Ctrl+Z"))
+                {
+                }
+                if(ImGui::MenuItem("Redo", "Ctrl+Y", false, false))
+                {
+                } // Disabled item
+                ImGui::Separator();
+                if(ImGui::MenuItem("Cut", "Ctrl+X"))
+                {
+                }
+                if(ImGui::MenuItem("Copy", "Ctrl+C"))
+                {
+                }
+                if(ImGui::MenuItem("Paste", "Ctrl+V"))
+                {
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+    }
+
     std::optional<PresentEvent> mPresentEvent;
-    Renderer* mRenderer;
+    Renderer* mRenderer = nullptr;
 };
 
 } // namespace sj
