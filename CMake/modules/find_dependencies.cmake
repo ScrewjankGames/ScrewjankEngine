@@ -41,9 +41,18 @@ FetchContent_Declare(
         tinyobjloader
         SYSTEM
         GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-        GIT_TAG v1.0.7
+        GIT_TAG 966edceaf8cdca7996c4e9a1c5ced2938de63366
 )
 FetchContent_MakeAvailable(tinyobjloader)
+
+## stduuid
+FetchContent_Declare(
+        stduuid
+        SYSTEM
+        GIT_REPOSITORY https://github.com/mariusbancila/stduuid
+        GIT_TAG v1.2.3
+)
+FetchContent_MakeAvailable(stduuid)
 
 ## IMGUI
 FetchContent_Declare(
