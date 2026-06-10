@@ -21,13 +21,13 @@
 
 #ifdef SJ_ENABLE_ASSERTS
     #define SJ_ASSERT(condition, fmt, ...)                                                         \
-        if (!(condition)) {                                                                        \
-            SJ_ENGINE_LOG_FATAL(fmt __VA_OPT__(,) __VA_ARGS__)                                     \
+        if(!(condition)) [[unlikely]]                                                              \
+        {                                                                                          \
+            SJ_ENGINE_LOG_FATAL(fmt __VA_OPT__(, ) __VA_ARGS__)                                    \
             SJ_DEBUGBREAK();                                                                       \
         }
 
-    #define SJ_ASSERT_NOT_IMPLEMENTED(...)                                                         \
-        SJ_DEBUGBREAK();
+    #define SJ_ASSERT_NOT_IMPLEMENTED(...) SJ_DEBUGBREAK();
 #else
     #define SJ_ASSERT(...)
     #define SJ_ASSERT_NOT_IMPLEMENTED(...)

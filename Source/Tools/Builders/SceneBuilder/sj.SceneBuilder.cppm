@@ -6,25 +6,27 @@ module;
 #include <filesystem>
 
 export module sj.SceneBuilder;
-import sj.build.IGlobBuilder;
+import sj.builders;
+
 
 export namespace sj::build
 {
-class SceneBuilder final : public IGlobBuilder
+class SceneBuilder final : public IBuilder
 {
 public:
-    [[nodiscard]] std::span<const char* const> GetExtensions() const override
+    [[nodiscard]] std::span<const std::string_view> GetExtensions() const override
     {
-        static constexpr std::array extensions = {".scene"};
+        using namespace std::literals;
+        static constexpr std::array extensions = {".scene"sv};
         return extensions;
     }
 
-    [[nodiscard]] const char* GetBuilderName() const override
+    [[nodiscard]] std::string_view GetBuilderName() const override
     {
         return "Scene Builder";
     }
 
-    [[nodiscard]] const char* GetOutputExtension() const override
+    [[nodiscard]] std::string_view GetOutputExtension() const override
     {
         return ".sj_scene";
     }

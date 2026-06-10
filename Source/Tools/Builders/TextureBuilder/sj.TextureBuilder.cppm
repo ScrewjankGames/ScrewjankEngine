@@ -17,25 +17,26 @@ module;
 export module sj.TextureBuilder;
 import sj.datadefs.assets.AssetType;
 import sj.datadefs.assets.Texture;
-import sj.build.IGlobBuilder;
+import sj.builders;
 
 export namespace sj::build
 {
-class TextureBuilder final : public IGlobBuilder
+class TextureBuilder final : public IBuilder
 {
 public:
-    [[nodiscard]] std::span<const char* const> GetExtensions() const override
+    [[nodiscard]] std::span<const std::string_view> GetExtensions() const override
     {
-        static constexpr std::array extensions = {".png", ".jpg"};
+        using namespace std::literals;
+        static constexpr std::array extensions = {".png"sv, ".jpg"sv};
         return extensions;
     }
 
-    [[nodiscard]] const char* GetBuilderName() const override
+    [[nodiscard]] std::string_view GetBuilderName() const override
     {
         return "Texture Builder";
     }
 
-    [[nodiscard]] const char* GetOutputExtension() const override
+    [[nodiscard]] std::string_view GetOutputExtension() const override
     {
         return ".sj_tex";
     }

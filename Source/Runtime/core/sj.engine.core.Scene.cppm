@@ -49,7 +49,8 @@ public:
             GameObjectId goId = registry.CreateGameObject();
             for(const DataChunk& componentChunk : goChunk.components)
             {
-                LoadComponentFn createFn = kComponentLoadFns.get(componentChunk.type.get_hash().AsInt());
+                LoadComponentFn createFn =
+                    kComponentLoadFns.get(componentChunk.type.get_hash().AsInt());
                 std::invoke(createFn, registry, goId, componentChunk);
             }
         }

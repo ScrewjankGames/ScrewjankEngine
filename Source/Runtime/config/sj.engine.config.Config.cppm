@@ -9,15 +9,12 @@ module;
 
 export module sj.engine.config.Config;
 import sj.engine.config.InputConfig;
-
 import sj.engine.system.threading;
 
 import sj.datadefs.Serialization;
+import sj.datadefs.AssetDB;
 
-import sj.std.containers.map;
-import sj.std.containers.vector;
-import sj.std.math;
-import sj.std.string_hash;
+import sj.std;
 
 namespace priv
 {
@@ -45,7 +42,7 @@ export namespace sj
 struct Config
 {
     std::string program_name;
-    std::string default_scene;
+    AssetID default_scene;
     Vec2 window_size;
     InputBindings input_bindings;
 };

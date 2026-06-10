@@ -18,15 +18,13 @@ export import sj.engine.config;
 export import sj.std.type_info;
 export import sj.std.signal;
 
+import sj.std;
+import sj.datadefs;
+
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 import sj.engine.system.Timer;
 
-import sj.std.memory.literals;
-import sj.std.containers.map;
-import sj.std.containers.type_list;
-import sj.std.tuple;
-import sj.std.type_traits;
 
 export namespace sj
 {
@@ -41,6 +39,7 @@ public:
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
 
         mConfig = LoadConfig();
+        mAssetDB.Load("Data/.AssetDB");
 
         SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
 
@@ -68,6 +67,11 @@ public:
     [[nodiscard]] const Config& GetConfig() const
     {
         return mConfig;
+    }
+
+    [[nodiscard]] const AssetDB& GetAssetDB() const
+    {
+        return mAssetDB;
     }
 
     template <class T>
@@ -170,6 +174,7 @@ protected:
     static constexpr float kMaxDeltaTime = 1.0f / 15.0f;
     static constexpr size_t kNumModules = std::tuple_size_v<std::tuple<Modules...>>;
 
+    AssetDB mAssetDB;
     Config mConfig;
 
     union

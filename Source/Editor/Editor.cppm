@@ -6,9 +6,14 @@ module;
 #include <implot.h>
 
 #include <optional>
+#include <memory>
 
-export module sj.editor.Editor;
+export module sj.editor:Editor;
+import :IPanel;
+import :AssetDrawer;
+
 import sj.engine;
+import sj.std;
 
 export namespace sj
 {
@@ -20,6 +25,7 @@ public:
     void Initialize(auto& program)
     {
         mRenderer = program.template GetModule<Renderer>();
+        mWindow = program.template GetModule<Window>();
 
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
@@ -34,6 +40,8 @@ public:
         ImGui::StyleColorsDark();
 
         mRenderer->InitImGuiBackend();
+
+        mPanels.emplace_back(new AssetDrawer(mWindow));
     }
 
     ~Editor()
@@ -70,15 +78,18 @@ public:
     {
         MainMenuBar();
 
+        for(std::unique_ptr<IPanel>& panel : mPanels)
+        {
+            if(ImGui::Begin(panel->GetName().data(), nullptr, ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_MenuBar))
+                panel->Draw();
+            ImGui::End();
+        }
+
         if(ImGui::Begin("Scene Graph", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
             ImGui::Text("TODO");
         ImGui::End();
 
         if(ImGui::Begin("Property Editor", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
-            ImGui::Text("TODO");
-        ImGui::End();
-
-        if(ImGui::Begin("Asset Drawer", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
             ImGui::Text("TODO");
         ImGui::End();
 
@@ -156,8 +167,10 @@ private:
         }
     }
 
+    sj::dynamic_vector<std::unique_ptr<IPanel>> mPanels;
     std::optional<PresentEvent> mPresentEvent;
     Renderer* mRenderer = nullptr;
+    Window* mWindow = nullptr;
 };
 
 } // namespace sj

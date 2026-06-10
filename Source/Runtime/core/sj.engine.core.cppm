@@ -4,6 +4,7 @@ export module sj.engine.core;
 export import sj.engine.core.CameraComponent;
 export import sj.engine.core.CameraSystem;
 export import sj.engine.core.Program;
+export import sj.engine.core.RenderSystem;
 export import sj.engine.core.InputSystem;
 export import sj.engine.core.Mesh3DComponent;
 export import sj.engine.core.Scene;

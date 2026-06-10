@@ -11,7 +11,6 @@ set(ScrewjankEngine_VERSION ${ScrewjankEngine_VERSION_MAJOR}.${ScrewjankEngine_V
 
 include(CMake/modules/find_dependencies.cmake)
 
-set(Engine_Asset_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Assets/)
 set(Engine_Shader_Source_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Source/Shaders/)
 
 include(CMake/modules/engine_config.cmake)

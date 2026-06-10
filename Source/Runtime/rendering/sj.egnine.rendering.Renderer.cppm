@@ -12,12 +12,15 @@ module;
 #include <imgui_impl_sdlgpu3.h>
 
 // STD Headers
+#include <algorithm>
 #include <cstddef>
 #include <concepts>
 #include <fstream>
+#include <flat_map>
 #include <functional>
 #include <filesystem>
 #include <type_traits>
+#include <string_view>
 
 export module sj.engine.rendering.Renderer;
 import sj.engine.rendering.Events;
@@ -31,13 +34,27 @@ import sj.engine.core.Window;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
 
-import sj.datadefs.assets.Texture;
-import sj.datadefs.assets.Mesh;
-
 import sj.std;
+import sj.datadefs;
 
 export namespace sj
 {
+struct GlobalUniformBufferObject
+{
+    Mat44 view;
+    Mat44 projection;
+};
+
+struct ModelUniformBufferObject
+{
+    Mat44 modelToWorld;
+};
+
+struct DefaultMaterialUniformBufferObject
+{
+    Vec4 baseAlbedoColor = {};
+    uint32_t useTexSampler = 0;
+};
 
 class Renderer
 {
@@ -57,6 +74,7 @@ public:
         };
 
         mDisplay = program.template GetModule<Window>();
+        mAssetDB = &program.GetAssetDB();
 
         free_list_allocator* workBuffer = WorkBuffer();
         workBuffer->init(4_MiB, *MemorySystem::GetRootMemoryResource());
@@ -69,19 +87,94 @@ public:
         InitRenderTargets();
         InitDefaultPipeline();
 
-        mDummyMeshBuffer = UploadMesh("Data/Engine/viking_room.sj_mesh");
-        mDummySampler = UploadSamplerTexture("Data/Engine/viking_room.sj_tex");
+        // Submit Error Texture
+        {
+            const TextureHeader errorTexHeader = {.asset_type = AssetType::kTexture,
+                                                  .bytesPerPixel = 4,
+                                                  .width = 1,
+                                                  .height = 1};
+
+            mErrorTextureSampler =
+                UploadSamplerTexture(errorTexHeader, [](std::span<std::byte> buff) {
+                    std::ranges::fill(byte_span_cast<uint32_t>(buff), 0xffff00ff);
+                });
+        }
     }
 
     ~Renderer()
     {
         SDL_ReleaseGPUGraphicsPipeline(mDevice, mDefaultGraphicsPipeline);
-        mDummySampler.Release();
-        mDummyMeshBuffer.buffer.Release();
+
+        mErrorTextureSampler.Release();
+        mMeshes.clear();
+        mSamplers.clear();
+
         mDepthTarget.Release();
         mDrawTarget.Release();
         SDL_ReleaseWindowFromGPUDevice(mDevice, mDisplay->GetWindowHandle());
         SDL_DestroyGPUDevice(mDevice);
+    }
+
+    void AddMeshReference(AssetID id)
+    {
+        auto meshIt = mMeshes.find(id);
+        if(meshIt == mMeshes.end())
+            meshIt = mMeshes.emplace(id, UploadMesh(mAssetDB->GetAssetPath(id))).first;
+
+        meshIt->second.refcount_increment();
+    }
+
+    void RemoveMeshReference(AssetID id)
+    {
+        auto meshIt = mMeshes.find(id);
+        SJ_ASSERT(meshIt != mMeshes.end(),
+                  "Mesh asset {} is being used after free!",
+                  mAssetDB->GetAssetPath(id));
+
+        meshIt->second.refcount_decrement();
+    }
+
+    void AddTextureReference(AssetID id)
+    {
+        if(id == kInvalidAssetID)
+            return;
+
+        auto textureIt = mSamplers.find(id);
+        if(textureIt != mSamplers.end())
+        {
+            // Adding reference to already loaded asset
+            textureIt->second.refcount_increment();
+        }
+        else
+        {
+            // Either uploading, or an error
+            std::optional<std::string_view> texturePath = mAssetDB->TryGetAssetPath(id);
+            if(texturePath)
+            {
+                textureIt = mSamplers.emplace(id, UploadSamplerTexture(texturePath.value())).first;
+                textureIt->second.refcount_increment();
+            }
+            else
+            {
+                SJ_ENGINE_LOG_ERROR("Failed to find asset path for asset ID {}", id);
+            }
+        }
+    }
+
+    void RemoveTextureReference(AssetID id)
+    {
+        if(id == kInvalidAssetID)
+            return;
+
+        auto textureIt = mSamplers.find(id);
+        if(textureIt != mSamplers.end())
+        {
+            textureIt->second.refcount_decrement();
+        }
+        else
+        {
+            SJ_ENGINE_LOG_ERROR("Reducing refcount for unkown texture ID {}", id);
+        }
     }
 
     // By default, renderer will handle call to present by writing to swapchain.
@@ -150,7 +243,14 @@ public:
         ImGui_ImplSDLGPU3_Shutdown();
     }
 
-    void Render(const Mat44& cameraMatrix)
+    struct MeshDrawArg
+    {
+        Mat44 modelToWorld = {kIdentityTag};
+        AssetID modelId = {};
+        AssetID textureId = {};
+    };
+
+    void DrawPass(const Mat44& cameraMatrix, std::span<MeshDrawArg> meshes)
     {
         SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
 
@@ -167,10 +267,8 @@ public:
             static_cast<float>(displayWidth) / static_cast<float>(displayHeight);
 
         GlobalUniformBufferObject tmpGUBO {
-            .model = Mat44(kIdentityTag),
             .view = cameraMatrix.AffineInverse(),
             .projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 10000.0f, 0.1f)};
-
         SDL_PushGPUVertexUniformData(commandBuffer, 0, &tmpGUBO, sizeof(GlobalUniformBufferObject));
 
         SDL_GPUColorTargetInfo colorTargetInfo {
@@ -192,19 +290,62 @@ public:
 
         SDL_BindGPUGraphicsPipeline(renderPass, mDefaultGraphicsPipeline);
 
-        SDL_GPUBufferBinding vertexBinding = mDummyMeshBuffer.GetVertexBinding();
-        SDL_GPUBufferBinding indexBinding = mDummyMeshBuffer.GetIndexBinding();
-        SDL_GPUTextureSamplerBinding samplerBinding {.texture = mDummySampler.GetTexture(),
-                                                     .sampler = mDummySampler.GetSampler()};
+        for(const MeshDrawArg& arg : meshes)
+        {
+            auto meshIt = mMeshes.find(arg.modelId);
+            if(meshIt == mMeshes.end())
+            {
+                SJ_ENGINE_LOG_ERROR("Failed to draw mesh ID {}", arg.modelId);
+                continue;
+            }
 
-        SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
-        SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_BindGPUFragmentSamplers(renderPass, 0, &samplerBinding, 1);
-        SDL_DrawGPUIndexedPrimitives(renderPass, mDummyMeshBuffer.numIndices, 1, 0, 0, 0);
+            ModelUniformBufferObject tmpModelUBO {.modelToWorld = Mat44(arg.modelToWorld)};
+            SDL_PushGPUVertexUniformData(commandBuffer,
+                                         1,
+                                         &tmpModelUBO,
+                                         sizeof(ModelUniformBufferObject));
+
+            const bool useTexture = arg.textureId != kInvalidAssetID;
+            DefaultMaterialUniformBufferObject matUBO {
+                .baseAlbedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f),
+                .useTexSampler = useTexture,
+            };
+            SDL_PushGPUFragmentUniformData(commandBuffer,
+                                           0,
+                                           &matUBO,
+                                           sizeof(GlobalUniformBufferObject));
+
+            const ref<MeshBuffer>& meshBuffer = meshIt->second;
+            SDL_GPUBufferBinding vertexBinding = meshBuffer->GetVertexBinding();
+            SDL_GPUBufferBinding indexBinding = meshBuffer->GetIndexBinding();
+            SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
+            SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+
+            const SamplerResource& albedoSampler = [&] -> const SamplerResource& {
+                if(!useTexture)
+                    return mErrorTextureSampler;
+
+                auto textureIt = mSamplers.find(arg.textureId);
+                if(textureIt == mSamplers.end())
+                    return mErrorTextureSampler;
+
+                return *(textureIt->second);
+            }();
+
+            SDL_GPUTextureSamplerBinding samplerBinding {.texture = albedoSampler.GetTexture(),
+                                                         .sampler = albedoSampler.GetSampler()};
+
+            SDL_BindGPUFragmentSamplers(renderPass, 0, &samplerBinding, 1);
+            SDL_DrawGPUIndexedPrimitives(renderPass, meshBuffer->numIndices, 1, 0, 0, 0);
+        }
+
         SDL_EndGPURenderPass(renderPass);
 
         SDL_SubmitGPUCommandBuffer(commandBuffer);
+    }
 
+    void Render()
+    {
         mPresentCallbackFn(PresentEvent {.image = mDrawTarget.Get(),
                                          .width = mDrawTarget.GetWidth(),
                                          .height = mDrawTarget.GetHeight()});
@@ -285,9 +426,9 @@ public:
     }
 
     [[nodiscard]]
-    MeshBuffer UploadMesh(const char* path)
+    MeshBuffer UploadMesh(std::string_view path)
     {
-        std::ifstream file(path, std::ios::binary);
+        std::ifstream file(path.data(), std::ios::binary);
         MeshHeader header = {};
         file.read(reinterpret_cast<char*>(&header), sizeof(MeshHeader));
         SJ_ASSERT(header.type == AssetType::kMesh, "Invalid texture load");
@@ -338,14 +479,11 @@ public:
                            .indexBufferOffset = vertexBufferSize};
     }
 
-    [[nodiscard]]
-    SamplerResource UploadSamplerTexture(const char* path)
+    template <class Fn>
+        requires std::invocable<Fn, std::span<std::byte>>
+    [[nodiscard]] SamplerResource UploadSamplerTexture(const TextureHeader& textureHeader,
+                                                       Fn&& uploadFn)
     {
-        std::ifstream file(path, std::ios::binary);
-        TextureHeader textureHeader = {};
-        file.read(reinterpret_cast<char*>(&textureHeader), sizeof(TextureHeader));
-        SJ_ASSERT(textureHeader.asset_type == AssetType::kTexture, "Invalid texture load");
-
         SamplerResource res = SamplerResource(mDevice,
                                               textureHeader.width,
                                               textureHeader.height,
@@ -355,9 +493,7 @@ public:
             textureHeader.height * textureHeader.width * textureHeader.bytesPerPixel;
 
         SDL_GPUTransferBuffer* transferBuffer =
-            UploadToGPU(textureBufferSizeBytes, [&](std::span<std::byte> uploadBuffer) {
-                file.read(reinterpret_cast<char*>(uploadBuffer.data()), textureBufferSizeBytes);
-            });
+            UploadToGPU(textureBufferSizeBytes, std::forward<Fn>(uploadFn));
 
         ImmediateCommand([&](SDL_GPUCommandBuffer* cmd) {
             CopyPass(cmd, [&](SDL_GPUCopyPass* pass) {
@@ -386,12 +522,18 @@ public:
         return res;
     }
 
-    struct GlobalUniformBufferObject
+    [[nodiscard]]
+    SamplerResource UploadSamplerTexture(std::string_view path)
     {
-        Mat44 model;
-        Mat44 view;
-        Mat44 projection;
-    };
+        std::ifstream file(path.data(), std::ios::binary);
+        TextureHeader textureHeader = {};
+        file.read(reinterpret_cast<char*>(&textureHeader), sizeof(TextureHeader));
+        SJ_ASSERT(textureHeader.asset_type == AssetType::kTexture, "Invalid texture load");
+
+        return UploadSamplerTexture(textureHeader, [&](std::span<std::byte> uploadBuffer) {
+            file.read(reinterpret_cast<char*>(uploadBuffer.data()), uploadBuffer.size());
+        });
+    }
 
 private:
     void InitRenderTargets()
@@ -419,13 +561,14 @@ private:
                          SDL_GPUShaderCreateInfo {.entrypoint = "main",
                                                   .format = SDL_GPU_SHADERFORMAT_SPIRV,
                                                   .stage = SDL_GPU_SHADERSTAGE_VERTEX,
-                                                  .num_uniform_buffers = 1});
+                                                  .num_uniform_buffers = 2});
         SDL_GPUShader* fragmentShader =
             UploadShader("Data/Engine/Shaders/Default.frag.spv",
                          SDL_GPUShaderCreateInfo {.entrypoint = "main",
                                                   .format = SDL_GPU_SHADERFORMAT_SPIRV,
                                                   .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-                                                  .num_samplers = 1});
+                                                  .num_samplers = 1,
+                                                  .num_uniform_buffers = 1});
 
         SDL_GPUVertexBufferDescription vertexDesc {
             .slot = 0,
@@ -518,6 +661,7 @@ private:
     std::function<void(const PresentEvent&)> mPresentCallbackFn;
 
     Window* mDisplay = nullptr;
+    const AssetDB* mAssetDB = nullptr;
 
     bool mImGuiEnabled = false;
 
@@ -525,11 +669,10 @@ private:
     TextureResource mDrawTarget {};
     TextureResource mDepthTarget {};
 
-    sj::dynamic_flat_map<string_hash, MeshBuffer> mMeshes;
-    sj::dynamic_flat_map<string_hash, SamplerResource> mSamplers;
+    std::flat_map<AssetID, ref<MeshBuffer>> mMeshes;
+    std::flat_map<AssetID, ref<SamplerResource>> mSamplers;
 
-    MeshBuffer mDummyMeshBuffer = {};
-    SamplerResource mDummySampler;
+    SamplerResource mErrorTextureSampler;
 
     SDL_GPUGraphicsPipeline* mDefaultGraphicsPipeline = nullptr;
 };

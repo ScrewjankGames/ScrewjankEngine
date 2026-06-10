@@ -9,6 +9,7 @@ export namespace sj
 {
 class typed_ptr
 {
+public:
     template <class T>
     typed_ptr(T* ptr) : mPtr(ptr), mId(type_id_of<T>)
     {
@@ -18,13 +19,13 @@ class typed_ptr
     {
     }
 
-    bool is(TypeId typeId)
+    [[nodiscard]] bool is(TypeId typeId) const
     {
         return mId == typeId;
     }
 
     template <class T>
-    bool is()
+    [[nodiscard]] bool is() const
     {
         return is(type_id_of<T>);
     }
@@ -34,6 +35,11 @@ class typed_ptr
     {
         SJ_ASSERT(is<T>(), "Invalid typed_ptr cast");
         return static_cast<T*>(mPtr);
+    }
+
+    [[nodiscard]] TypeId get_type_id() const
+    {
+        return mId;
     }
 
 private:

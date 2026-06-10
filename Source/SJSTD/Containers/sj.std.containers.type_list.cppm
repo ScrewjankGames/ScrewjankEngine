@@ -14,10 +14,14 @@ import sj.std.type_traits;
 
 export namespace sj
 {
+    struct type_list_tag{};
+
     template<class ... Types>
     class type_list
     {
     public:
+        using is_type_list = type_list_tag;
+
         template<auto F, class ... Args>
         static constexpr void for_each(Args&&... args)
         {
@@ -46,6 +50,9 @@ export namespace sj
             return result;
         }
     };
+
+    template<class T>
+    concept is_type_list = requires(T t){ T::is_type_list;};
 
     template<class...>
     struct concat_type_lists;

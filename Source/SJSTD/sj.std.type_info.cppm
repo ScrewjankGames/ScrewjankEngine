@@ -42,8 +42,7 @@ struct type_info
      * @param oldBuffer: Element(s) to move-from
      * @param newBuffer: Uninitialized buffer to move to
      */
-    using moveFn = void (*)(std::span<std::byte> oldBuffer,
-                            std::span<std::byte> newBuffer);
+    using moveFn = void (*)(std::span<std::byte> oldBuffer, std::span<std::byte> newBuffer);
     moveFn move_constructor_fn = nullptr;
 };
 

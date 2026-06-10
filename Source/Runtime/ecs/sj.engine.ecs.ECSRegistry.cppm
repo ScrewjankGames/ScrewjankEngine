@@ -6,10 +6,7 @@ module;
 
 export module sj.engine.ecs.ECSRegistry;
 
-import sj.std.containers.any;
-import sj.std.containers.sparse_set;
-import sj.std.containers.map;
-import sj.std.type_info;
+import sj.std;
 
 import sj.engine.ecs.ComponentManifest;
 import sj.engine.ecs.Identifiers;
@@ -19,90 +16,170 @@ import sj.datadefs;
 
 export namespace sj
 {
-    class ECSRegistry
+namespace ecs
+{
+
+template <class tSystem>
+concept owns_components = requires { is_type_list<decltype(tSystem::kOwnedComponents)>; };
+
+template <class tSystem, class tComponent>
+concept has_on_component_create =
+    requires(tSystem sys, GameObjectId id, tComponent p) { sys.OnCreate(id, &p); };
+
+template <class tSystem, class tComponent>
+concept has_on_component_destroy =
+    requires(tSystem sys, GameObjectId id, tComponent p) { sys.OnCreate(id, &p); };
+} // namespace ecs
+
+class ECSRegistry
+{
+public:
+    using ComponentEventCallback = std::function<void(GameObjectId, typed_ptr)>;
+
+    ECSRegistry(auto tComponentManifest)
+        : m_memoryResource(sj::MemorySystem::GetRootMemoryResource()),
+          m_gameObjects(100, m_memoryResource), m_componentPools(m_memoryResource),
+          mComponentCreateCallbacks(m_memoryResource), mComponentDestroyCallbacks(m_memoryResource)
+
     {
-    public:
-        ECSRegistry(auto tComponentManifest)
-            : m_memoryResource(sj::MemorySystem::GetRootMemoryResource()), m_gameObjects(100, m_memoryResource),
-              m_componentPools(m_memoryResource)
+        auto registerFn = []<class T>(sj::ECSRegistry& registry) {
+            registry.RegisterComponentType<T>();
+        };
+
+        tComponentManifest.GetComponentTypes().template for_each<registerFn>(*this);
+    }
+
+    ECSRegistry() : ECSRegistry(ComponentManifest {})
+    {
+    }
+
+    template <class tSystem>
+    void RegisterSystem(tSystem* system)
+    {
+        if constexpr(ecs::owns_components<tSystem>)
         {
-            auto registerFn = []<class T>(sj::ECSRegistry& registry) {
-                registry.RegisterComponentType<T>();
+            auto registerOwnedComponentFn = []<class tComponent>(ECSRegistry* self,
+                                                                 tSystem* system) {
+                sj::rtti::register_type<tComponent>();
+
+                if constexpr(ecs::has_on_component_create<tSystem, tComponent>)
+                    self->RegisterComponentCreateCallback<tSystem, tComponent>(system);
+
+                if constexpr(ecs::has_on_component_destroy<tSystem, tComponent>)
+                    self->RegisterComponentDestroyCallback<tSystem, tComponent>(system);
             };
 
-            tComponentManifest.GetComponentTypes().template for_each<registerFn>(*this);
+            tSystem::kOwnedComponents.template for_each<registerOwnedComponentFn>(this, system);
         }
+    }
 
-        ECSRegistry() : ECSRegistry(ComponentManifest{})
+    GameObjectId CreateGameObject()
+    {
+        return m_gameObjects.create();
+    }
+
+    void ReleaseGameObject(GameObjectId go)
+    {
+        m_gameObjects.release(go);
+    }
+
+    template <class T, class... Args>
+    void CreateComponent(GameObjectId goId, Args&&... args)
+    {
+        ComponentPool<T>& pool = GetComponentPool<T>();
+        auto id = pool.create(goId, T {std::forward<Args>(args)...});
+
+        auto createCallbackIt = mComponentCreateCallbacks.find(type_id_of<T>);
+        if(createCallbackIt != mComponentCreateCallbacks.end())
         {
-
+            T* componentPtr = pool.template get<T>(id);
+            createCallbackIt->second(goId, componentPtr);
         }
+    }
 
-        GameObjectId CreateGameObject()
-        {
-            return m_gameObjects.create();
-        }
+    template <class T>
+    T* GetComponent(GameObjectId goId)
+    {
+        ComponentPool<T>& pool = GetComponentPool<T>();
+        return pool.template get<T>(goId);
+    }
 
-        void ReleaseGameObject(GameObjectId go)
-        {
-            m_gameObjects.release(go);
-        }
+    template <class T>
+    void RegisterComponentType()
+    {
+        m_componentPools.emplace(
+            type_id_of<T>,
+            ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
+    }
 
-        template <class T, class... Args>
-        void CreateComponent(GameObjectId goId, Args&&... args)
-        {
-            ComponentPool<T>& pool = GetComponentPool<T>();
-            pool.create(goId, T {std::forward<Args>(args)...});
-        }
+    template <class T>
+    auto GetComponents()
+    {
+        auto& pool = GetComponentPool<T>();
+        return pool.get_all();
+    }
 
-        template <class T>
-        T* GetComponent(GameObjectId goId)
-        {
-            ComponentPool<T>& pool = GetComponentPool<T>();
-            return pool.template get<T>(goId);
-        }
+private:
+    template <class tSystem, class tComponent>
+    void RegisterComponentCreateCallback(tSystem* system)
+    {
+        auto componentCreateWrapperFn = [system](GameObjectId goId, typed_ptr p) {
+            SJ_ASSERT(p.is<tComponent>(),
+                      "Unexpected component type sent to component create event callback");
 
-        template <class T>
-        void RegisterComponentType()
-        {
-            m_componentPools.emplace(
-                type_id_of<T>,
-                ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
-        }
+            tComponent* ptr = p.as<tComponent>();
+            SJ_ASSERT(ptr, "Null component pointer");
 
-        template <class T>
-        auto GetComponents()
-        {
-            auto& pool = GetComponentPool<T>();
-            return pool.get_all();
-        }
+            system->OnCreate(goId, ptr);
+        };
 
-    private:
-        template <class T>
-        using ComponentPool = sparse_set<GameObjectId, T>;
-        using ComponentPoolHandle = sj::static_any<sizeof(ComponentPool<int>)>;
+        mComponentCreateCallbacks[type_id_of<tComponent>] = componentCreateWrapperFn;
+    }
 
-        template <class T>
-        ComponentPool<T>& GetComponentPool()
-        {
-            ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>);
-            SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
+    template <class tSystem, class tComponent>
+    void RegisterComponentDestroyCallback(tSystem* system)
+    {
+        auto componentDestroyWrapperFn = [system](GameObjectId goId, typed_ptr p) {
+            SJ_ASSERT(p.is<tComponent>(),
+                      "Unexpected component type sent to component destroy event callback");
 
-            return handle->get<ComponentPool<T>>();
-        }
+            tComponent* ptr = p.as<tComponent>();
+            SJ_ASSERT(ptr, "Null component pointer");
 
-        auto FindComponentPool(TypeId typeId) -> ComponentPoolHandle*
-        {
-            const auto& componentPoolIt = m_componentPools.find(typeId);
-            if(componentPoolIt == m_componentPools.end())
-                return nullptr;
+            system->OnDestroy(goId, ptr);
+        };
 
-            ComponentPoolHandle& handle = componentPoolIt->second;
-            return &handle;
-        }
+        mComponentDestroyCallbacks[type_id_of<tComponent>] = componentDestroyWrapperFn;
+    }
 
-        std::pmr::memory_resource* m_memoryResource = nullptr;
-        sparse_set<GameObjectId> m_gameObjects;
-        dynamic_flat_map<TypeId, ComponentPoolHandle> m_componentPools;
-    };
+    template <class T>
+    using ComponentPool = sparse_set<GameObjectId, T>;
+    using ComponentPoolHandle = sj::static_any<sizeof(ComponentPool<int>)>;
+
+    template <class T>
+    ComponentPool<T>& GetComponentPool()
+    {
+        ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>);
+        SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
+
+        return handle->get<ComponentPool<T>>();
+    }
+
+    auto FindComponentPool(TypeId typeId) -> ComponentPoolHandle*
+    {
+        const auto& componentPoolIt = m_componentPools.find(typeId);
+        if(componentPoolIt == m_componentPools.end())
+            return nullptr;
+
+        ComponentPoolHandle& handle = componentPoolIt->second;
+        return &handle;
+    }
+
+    std::pmr::memory_resource* m_memoryResource = nullptr;
+    sparse_set<GameObjectId> m_gameObjects;
+    dynamic_flat_map<TypeId, ComponentPoolHandle> m_componentPools;
+
+    dynamic_flat_map<TypeId, ComponentEventCallback> mComponentCreateCallbacks;
+    dynamic_flat_map<TypeId, ComponentEventCallback> mComponentDestroyCallbacks;
+};
 } // namespace sj

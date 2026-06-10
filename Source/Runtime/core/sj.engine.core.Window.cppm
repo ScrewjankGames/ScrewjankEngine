@@ -10,9 +10,6 @@ module;
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan_raii.hpp>
 
-// STD Headers
-#include <span>
-
 export module sj.engine.core.Window;
 import sj.engine.core.Program;
 
@@ -38,10 +35,10 @@ public:
         const Config& config = program.GetConfig();
         SJ_ENGINE_LOG_INFO("Creating window");
         mWindowHandle = SDL_CreateWindow(config.program_name.c_str(),
-                                          static_cast<int>(config.window_size.GetX()),
-                                          static_cast<int>(config.window_size.GetY()),
-                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
-                                              SDL_WINDOW_HIGH_PIXEL_DENSITY);
+                                         static_cast<int>(config.window_size.GetX()),
+                                         static_cast<int>(config.window_size.GetY()),
+                                         SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                             SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
         SJ_ASSERT(mWindowHandle != nullptr, "Failed to create SDL window");
     }

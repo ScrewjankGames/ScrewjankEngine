@@ -16,7 +16,7 @@ module;
 #include <filesystem>
 
 export module sj.MeshBuilder;
-import sj.build.IGlobBuilder;
+import sj.builders;
 import sj.datadefs.assets;
 
 namespace sj::build
@@ -30,21 +30,22 @@ void ExtractBuffers(const char* inputFilePath,
 
 export namespace sj::build
 {
-class MeshBuilder final : public IGlobBuilder
+class MeshBuilder final : public IBuilder
 {
 
 public:
-    [[nodiscard]] std::span<const char* const> GetExtensions() const override
+    [[nodiscard]] std::span<const std::string_view> GetExtensions() const override
     {
-        static constexpr std::array extensions = {".obj"};
+        using namespace std::literals;
+        static constexpr std::array<std::string_view, 1> extensions = {".obj"sv};
         return extensions;
     }
 
-    [[nodiscard]] const char* GetBuilderName() const override
+    [[nodiscard]] std::string_view GetBuilderName() const override
     {
         return "Mesh Builder";
     }
-    [[nodiscard]] const char* GetOutputExtension() const override
+    [[nodiscard]] std::string_view GetOutputExtension() const override
     {
         return ".sj_mesh";
     }
