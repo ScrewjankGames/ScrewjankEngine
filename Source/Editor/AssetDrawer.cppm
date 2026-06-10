@@ -13,7 +13,7 @@ module;
 
 export module sj.editor:AssetDrawer;
 import :IPanel;
-import sj.engine.core.Window;
+import sj.engine.Window;
 
 export namespace sj
 {

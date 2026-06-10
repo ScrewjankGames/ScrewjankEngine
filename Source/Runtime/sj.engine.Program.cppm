@@ -13,7 +13,7 @@ module;
 #include <string_view>
 #include <tuple>
 
-export module sj.engine.core.Program;
+export module sj.engine.Program;
 export import sj.engine.config;
 export import sj.std.type_info;
 export import sj.std.signal;

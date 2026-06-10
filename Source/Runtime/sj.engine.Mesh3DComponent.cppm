@@ -1,6 +1,6 @@
 module;
 
-export module sj.engine.core.Mesh3DComponent;
+export module sj.engine.Mesh3DComponent;
 import sj.datadefs;
 import sj.std.math;
 import sj.engine.ecs.ECSRegistry;

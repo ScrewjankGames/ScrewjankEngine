@@ -28,8 +28,8 @@ import sj.engine.rendering.BufferResource;
 import sj.engine.rendering.SamplerResource;
 import sj.engine.rendering.TextureResource;
 
-import sj.engine.core.Program;
-import sj.engine.core.Window;
+import sj.engine.Program;
+import sj.engine.Window;
 
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;

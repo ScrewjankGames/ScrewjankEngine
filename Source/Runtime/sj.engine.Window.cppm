@@ -10,8 +10,8 @@ module;
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan_raii.hpp>
 
-export module sj.engine.core.Window;
-import sj.engine.core.Program;
+export module sj.engine.Window;
+import sj.engine.Program;
 
 import sj.std.math;
 

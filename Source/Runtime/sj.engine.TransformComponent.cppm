@@ -3,7 +3,7 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 
-export module sj.engine.core.TransformComponent;
+export module sj.engine.TransformComponent;
 import sj.datadefs.DataChunk;
 import sj.std.math;
 import sj.engine.ecs.ECSRegistry;

@@ -17,9 +17,9 @@ module;
 #include <cstddef>
 #include <ranges>
 
-export module sj.engine.core.InputSystem;
-import sj.engine.core.Program;
-import sj.engine.core.Window;
+export module sj.engine.InputSystem;
+import sj.engine.Program;
+import sj.engine.Window;
 
 import sj.engine.config.InputConfig;
 

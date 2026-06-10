@@ -1,9 +1,9 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
 
-export module sj.engine.core.CameraComponent;
+export module sj.engine.CameraComponent;
 import sj.std.math;
-import sj.engine.core.TransformComponent;
+import sj.engine.TransformComponent;
 
 export namespace sj
 {

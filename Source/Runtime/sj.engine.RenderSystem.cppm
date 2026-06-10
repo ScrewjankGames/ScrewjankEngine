@@ -1,13 +1,13 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
 
-export module sj.engine.core.RenderSystem;
+export module sj.engine.RenderSystem;
 import sj.std;
 import sj.datadefs.AssetDB;
 import sj.engine.ecs.ECSRegistry;
 import sj.engine.ecs.Identifiers;
-import sj.engine.core.Mesh3DComponent;
-import sj.engine.core.TransformComponent;
+import sj.engine.Mesh3DComponent;
+import sj.engine.TransformComponent;
 import sj.engine.rendering.Renderer;
 import sj.engine.system.threading.ThreadContext;
 

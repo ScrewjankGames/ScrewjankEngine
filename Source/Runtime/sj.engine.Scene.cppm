@@ -7,7 +7,7 @@ module;
 #include <vector>
 #include <string_view>
 
-export module sj.engine.core.Scene;
+export module sj.engine.Scene;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.ecs;
 import sj.std;

@@ -18,7 +18,7 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
     vec4 lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    vec3 lightDir = normalize(vec3(.25f, -1.0f, .25f));
+    vec3 lightDir = normalize(vec3(1.0f, -1.0f, .25f));
 
     float ambientStrength = 0.1;
     vec4 ambientColor = ambientStrength * lightColor;
