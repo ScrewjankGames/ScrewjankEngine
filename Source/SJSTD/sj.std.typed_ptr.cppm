@@ -37,6 +37,11 @@ public:
         return static_cast<T*>(mPtr);
     }
 
+    void* get_ptr()
+    {
+        return mPtr;
+    }
+
     [[nodiscard]] TypeId get_type_id() const
     {
         return mId;

@@ -1,6 +1,7 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
 
+#include <memory>
 #include <memory_resource>
 #include <ranges>
 
@@ -8,7 +9,7 @@ export module sj.engine.ecs.ECSRegistry;
 
 import sj.std;
 
-import sj.engine.ecs.ComponentManifest;
+import sj.engine.ecs.Archetype;
 import sj.engine.ecs.Identifiers;
 
 import sj.engine.system.memory.MemorySystem;
@@ -18,7 +19,6 @@ export namespace sj
 {
 namespace ecs
 {
-
 template <class tSystem>
 concept owns_components = requires { is_type_list<decltype(tSystem::kOwnedComponents)>; };
 
@@ -34,22 +34,13 @@ concept has_on_component_destroy =
 class ECSRegistry
 {
 public:
-    using ComponentEventCallback = std::function<void(GameObjectId, typed_ptr)>;
+    using ComponentEventCallback = std::move_only_function<void(GameObjectId, typed_ptr)>;
 
-    ECSRegistry(auto tComponentManifest)
-        : m_memoryResource(sj::MemorySystem::GetRootMemoryResource()),
-          m_gameObjects(100, m_memoryResource), m_componentPools(m_memoryResource),
-          mComponentCreateCallbacks(m_memoryResource), mComponentDestroyCallbacks(m_memoryResource)
-
-    {
-        auto registerFn = []<class T>(sj::ECSRegistry& registry) {
-            registry.RegisterComponentType<T>();
-        };
-
-        tComponentManifest.GetComponentTypes().template for_each<registerFn>(*this);
-    }
-
-    ECSRegistry() : ECSRegistry(ComponentManifest {})
+    ECSRegistry()
+        : mMemoryResource(sj::MemorySystem::GetRootMemoryResource()),
+          mGameObjects(100, mMemoryResource), mArchetypes(mMemoryResource),
+          mComponentBindings(mMemoryResource), mComponentCreateCallbacks(mMemoryResource),
+          mComponentDestroyCallbacks(mMemoryResource)
     {
     }
 
@@ -73,53 +64,150 @@ public:
         }
     }
 
-    GameObjectId CreateGameObject()
+    template <std::ranges::range ComponentTypeInfos, std::ranges::range ConstructCallbacks>
+    GameObjectId CreateGameObject(const ComponentTypeInfos& componentTypeInfos,
+                                  ConstructCallbacks&& constructFns)
     {
-        return m_gameObjects.create();
-    }
+        ArchetypeId aId = ComputeArchetypeId(componentTypeInfos);
+        Archetype* archetype = FindOrAddArchetype(aId, componentTypeInfos);
 
-    void ReleaseGameObject(GameObjectId go)
-    {
-        m_gameObjects.release(go);
-    }
+        GameObjectId newGoId = mGameObjects.create(GameObjectRecord {.archetypeId = aId});
+        GameObjectRecord* newRecord = mGameObjects.get<GameObjectRecord>(newGoId);
 
-    template <class T, class... Args>
-    void CreateComponent(GameObjectId goId, Args&&... args)
-    {
-        ComponentPool<T>& pool = GetComponentPool<T>();
-        auto id = pool.create(goId, T {std::forward<Args>(args)...});
+        const auto entryIdx =
+            archetype->AddEntry(newGoId, std::forward<ConstructCallbacks>(constructFns));
 
-        auto createCallbackIt = mComponentCreateCallbacks.find(type_id_of<T>);
-        if(createCallbackIt != mComponentCreateCallbacks.end())
+        newRecord->archetypeLocalIndex = entryIdx;
+
+        for(const type_info* info : componentTypeInfos)
         {
-            T* componentPtr = pool.template get<T>(id);
-            createCallbackIt->second(goId, componentPtr);
+            auto callbackIt = mComponentCreateCallbacks.find(info->id);
+            if(callbackIt == mComponentCreateCallbacks.end())
+                continue;
+
+            std::invoke(callbackIt->second, newGoId, archetype->GetEntry(info->id, entryIdx));
         }
+
+        return newGoId;
+    }
+
+    void ReleaseGameObject(GameObjectId goId)
+    {
+        GameObjectRecord* goRecord = mGameObjects.get<GameObjectRecord>(goId);
+        SJ_ASSERT(goRecord, "Cannot release missing game object");
+
+        Archetype* archetype = GetArchetype(goRecord->archetypeId);
+        SJ_ASSERT(archetype, "Cannot release from null archetype for object ID");
+
+        for(TypeId id : archetype->GetTypeIds())
+        {
+            auto callbackIt = mComponentDestroyCallbacks.find(id);
+            if(callbackIt == mComponentDestroyCallbacks.end())
+                continue;
+
+            std::invoke(callbackIt->second, goId, archetype->GetEntry(id, goRecord->archetypeLocalIndex));
+        }
+
+        archetype->RemoveEntry(goRecord->archetypeLocalIndex);
     }
 
     template <class T>
     T* GetComponent(GameObjectId goId)
     {
-        ComponentPool<T>& pool = GetComponentPool<T>();
-        return pool.template get<T>(goId);
+        const GameObjectRecord* goRecord = mGameObjects.get<GameObjectRecord>(goId);
+        SJ_ASSERT(goRecord, "Component lookup on invalid game object!");
+        auto&& [archetypeId, goIndex] = *goRecord;
+
+        Archetype* archetype = GetArchetype(goRecord->archetypeId);
+        if(!archetype)
+            return nullptr;
+
+        auto componentBinding = mComponentBindings.find(type_id_of<T>);
+
+        return &archetype->GetRow<T>().at(goIndex);
     }
 
     template <class T>
-    void RegisterComponentType()
+    decltype(auto) GetComponents()
     {
-        m_componentPools.emplace(
-            type_id_of<T>,
-            ComponentPool<T>(m_gameObjects.get_sparse_size(), m_memoryResource));
-    }
+        auto componentBinding = mComponentBindings.find(type_id_of<T>);
+        SJ_ASSERT(componentBinding != mComponentBindings.end(),
+                  "No components of type {} exist",
+                  type_name_of<T>);
 
-    template <class T>
-    auto GetComponents()
-    {
-        auto& pool = GetComponentPool<T>();
-        return pool.get_all();
+        auto recordToComponentsFn = [&](ComponentRecord& record) -> std::ranges::range auto {
+            Archetype* archetype = GetArchetype(record.archetypeId);
+            SJ_ASSERT(archetype,
+                      "Component {} is registered to stale archetype id {}",
+                      type_name_of<T>,
+                      record.archetypeId);
+
+            return std::views::zip(archetype->GetGameObjects(),
+                                   archetype->GetRow<T>());
+        };
+
+        return componentBinding->second
+               | std::views::transform(recordToComponentsFn)
+               | std::views::join;
     }
 
 private:
+    struct GameObjectRecord
+    {
+        ArchetypeId archetypeId;
+        size_t archetypeLocalIndex = -1;
+    };
+
+    struct ComponentRecord
+    {
+        ArchetypeId archetypeId;
+        Archetype::RowIdx rowIdx;
+    };
+
+    Archetype* FindOrAddArchetype(ArchetypeId aId, std::ranges::range auto componentTypeInfos)
+    {
+        auto archetypeIt = mArchetypes.find(aId);
+
+        if(archetypeIt == mArchetypes.end())
+        {
+            auto archetype = std::make_unique<Archetype>(componentTypeInfos, mMemoryResource);
+
+            for(const type_info* info : componentTypeInfos)
+            {
+                auto bindingIt = mComponentBindings.find(info->id);
+
+                if(bindingIt == mComponentBindings.end())
+                    bindingIt =
+                        mComponentBindings
+                            .emplace(info->id, dynamic_vector<ComponentRecord> {mMemoryResource})
+                            .first;
+
+                bindingIt->second.emplace_back(ComponentRecord {
+                    .archetypeId = aId,
+                    .rowIdx = archetype->GetRowIdx(info->id),
+                });
+            }
+
+            auto insertResult = mArchetypes.emplace(aId, std::move(archetype));
+            SJ_ASSERT(insertResult.second == true,
+                      "Failed to insert new archetype id {}. It is already present in the map",
+                      aId);
+
+            archetypeIt = insertResult.first;
+        }
+
+        return archetypeIt->second.get();
+    }
+
+    Archetype* GetArchetype(ArchetypeId aId)
+    {
+        auto archetypeIt = mArchetypes.find(aId);
+        if(archetypeIt == mArchetypes.end())
+            return nullptr;
+
+        return archetypeIt->second.get();
+    }
+
     template <class tSystem, class tComponent>
     void RegisterComponentCreateCallback(tSystem* system)
     {
@@ -152,33 +240,14 @@ private:
         mComponentDestroyCallbacks[type_id_of<tComponent>] = componentDestroyWrapperFn;
     }
 
-    template <class T>
-    using ComponentPool = sparse_set<GameObjectId, T>;
-    using ComponentPoolHandle = sj::static_any<sizeof(ComponentPool<int>)>;
+    std::pmr::memory_resource* mMemoryResource = nullptr;
 
-    template <class T>
-    ComponentPool<T>& GetComponentPool()
-    {
-        ComponentPoolHandle* handle = FindComponentPool(type_id_of<T>);
-        SJ_ASSERT(handle != nullptr, "Failed to find component pool!");
+    // Lookup
+    sparse_set<GameObjectId, GameObjectRecord> mGameObjects;
+    dynamic_flat_map<ArchetypeId, std::unique_ptr<Archetype>> mArchetypes;
+    dynamic_flat_map<TypeId, dynamic_vector<ComponentRecord>> mComponentBindings;
 
-        return handle->get<ComponentPool<T>>();
-    }
-
-    auto FindComponentPool(TypeId typeId) -> ComponentPoolHandle*
-    {
-        const auto& componentPoolIt = m_componentPools.find(typeId);
-        if(componentPoolIt == m_componentPools.end())
-            return nullptr;
-
-        ComponentPoolHandle& handle = componentPoolIt->second;
-        return &handle;
-    }
-
-    std::pmr::memory_resource* m_memoryResource = nullptr;
-    sparse_set<GameObjectId> m_gameObjects;
-    dynamic_flat_map<TypeId, ComponentPoolHandle> m_componentPools;
-
+    // Callbacks
     dynamic_flat_map<TypeId, ComponentEventCallback> mComponentCreateCallbacks;
     dynamic_flat_map<TypeId, ComponentEventCallback> mComponentDestroyCallbacks;
 };

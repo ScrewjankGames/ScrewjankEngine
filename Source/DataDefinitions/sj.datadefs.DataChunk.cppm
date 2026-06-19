@@ -27,10 +27,8 @@ struct DataChunk
     [[nodiscard]] auto Get() const -> T
     {
         T val;
-        glz::error_ctx err = glz::read<glz::opts {}>(val, data);
-        SJ_ASSERT(err == glz::error_code::none,
-                  "Failed to load data chunk! Reason: {}",
-                  glz::format_error(err));
+
+        type_info_of<T>.desierialize_json_fn(&val, data);
 
         return val;
     }

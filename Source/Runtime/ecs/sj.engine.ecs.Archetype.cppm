@@ -1,6 +1,7 @@
 module;
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <concepts>
 #include <cstddef>
@@ -9,141 +10,251 @@ module;
 #include <ranges>
 
 #include <ScrewjankStd/Assert.hpp>
+#include "vulkan/vulkan.hpp"
 
 export module sj.engine.ecs.Archetype;
-import sj.std.containers.array;
-import sj.std.containers.vector;
-import sj.std.containers.type_list;
-import sj.std.hash;
-import sj.std.concepts;
-import sj.std.type_info;
-
+import sj.std;
 import sj.engine.ecs.Identifiers;
 import sj.engine.system.threading.ThreadContext;
 
 export namespace sj
 {
+using ArchetypeId = uint32_t;
+
+template <std::ranges::range R>
+ArchetypeId ComputeArchetypeId(R&& componentTypes)
+    requires std::convertible_to<std::ranges::range_value_t<R>, const type_info*>
+{
+    uint32_t hash = 0;
+
+    // XOR associative and commutative - no threat of the same type id
+    // appearing multiple times
+    for(TypeId id : componentTypes | std::views::transform(&type_info::id))
+        hash ^= FNV1a_32(std::as_bytes(std::span {&id, 1}));
+
+    return hash;
+}
 
 class Archetype
 {
 public:
-    using ArchetypeId = uint32_t;
+    using RowIdx = uint8_t;
+    constexpr static RowIdx kMaxRows = std::numeric_limits<RowIdx>::max() - 1;
+    constexpr static RowIdx kInvalidRowIdx = std::numeric_limits<RowIdx>::max();
 
     Archetype(range_of<const type_info*> auto componentTypes, std::pmr::memory_resource* resource)
-        : mResource(resource), mRowDescriptors(resource)
+        : mResource(resource), mGoIds(resource), mRows(resource)
     {
-        auto ids = componentTypes | std::views::transform([](const type_info* info) {
-                       return info->id;
-                   });
+        mRows.resize(componentTypes.size());
 
-        mId = FNV1a_32(ids);
-
-        mRowDescriptors.resize(componentTypes.size());
-        for(int i = 0; Row& row : mRowDescriptors)
-        {
-            row.typeInfo = componentTypes[i];
-            i++;
-        }
+        for(size_t idx = 0; const type_info* info : componentTypes)
+            mRows[idx++] = Row(info);
     }
 
     ~Archetype()
     {
-        for(size_t idx = 0; auto&& [typeInfo, rowData] : mRowDescriptors)
-        {
-            if(typeInfo->is_trivially_destructible)
-                continue;
-
-            typeInfo->destructor_fn(rowData);
-            idx++;
-        }
+        for(Row& r : mRows)
+            mResource->deallocate(r.buffer.data(), r.buffer.size());
     }
 
-    [[nodiscard]] uint32_t GetId() const
+    Archetype(const Archetype&) = delete;
+    Archetype(Archetype&& other) noexcept
+        : mResource(other.mResource), mRows(std::move(other.mRows)),
+          mSize(std::exchange(other.mSize, 0)), mCapacity(std::exchange(other.mCapacity, 0))
     {
-        return mId;
+    }
+
+    std::ranges::range auto GetTypeIds() const
+    {
+        return mRows | std::views::transform([](Row& r) {
+                   return r.typeInfo->id;
+               });
+    }
+
+    RowIdx GetRowIdx(TypeId typeId)
+    {
+        for(RowIdx idx = 0; idx < mRows.size(); idx++)
+            if(mRows[idx].typeInfo->id == typeId)
+                return idx;
+
+        return kInvalidRowIdx;
     }
 
     template <class T>
-    std::span<T> GetComponents()
+    std::span<T> GetRow()
     {
-        auto it = std::ranges::find(mRowDescriptors, &type_info_of<T>, &Row::typeInfo);
-        SJ_ASSERT(it != mRowDescriptors.end(), "Archetype does not contain requested component!");
+        Row* row = FindRow(type_id_of<T>);
+        if(!row)
+            return {};
 
-        return byte_span_cast<T>(it->data);
+        return row->GetElementsView<T>(mSize);
     }
 
     template <class T>
-    T& GetComponent(size_t idx)
+    std::span<T> GetRow(RowIdx rowIdx)
     {
-        return GetComponents<T>()[idx];
+        SJ_ASSERT(rowIdx < mRows.size(), "Row Index {} oor [0, {})]", rowIdx, mRows.size());
+        SJ_ASSERT(mRows[rowIdx].typeInfo->id == type_id_of<T>,
+                  "Requested type {} at row {} but archetype contains {} at that row index",
+                  type_name_of<T>,
+                  rowIdx,
+                  mRows[rowIdx].typeInfo->name);
+
+        return mRows[rowIdx].GetElementsView<T>(mSize);
     }
 
-    size_t AddEntry()
+    typed_ptr GetEntry(TypeId id, size_t entryIdx)
+    {
+        Row* row = FindRow(id);
+
+        SJ_ASSERT(row, "Invalid type id {} passed to archetype", id);
+        SJ_ASSERT(entryIdx < mSize, "Entry index {} oor [0, {}) ", entryIdx, mSize);
+
+        return typed_ptr {(*row)[entryIdx], id};
+    }
+
+    template <class T>
+    T& GetEntry(size_t entryIdx)
+    {
+        return GetRow<T>()[entryIdx];
+    }
+
+    size_t AddEntry(GameObjectId goId)
     {
         if(mSize == mCapacity)
-            Resize(std::max(2uz, mSize * 2));
+            Resize(std::max(1uz, mSize * 2));
 
-        for(Row& row : mRowDescriptors)
-        {
-            std::byte* newComponentAddr = reinterpret_cast<std::byte*>(
-                uintptr_t(row.data.data()) + (row.typeInfo->size * mSize));
+        for(auto&& row : mRows)
+            std::invoke(row.typeInfo->constructor_fn, row[mSize]);
 
-            row.typeInfo->constructor_fn(std::span {newComponentAddr, row.typeInfo->size});
-        }
-
+        mGoIds[mSize] = goId;
         return mSize++;
     }
 
+    template <std::ranges::range CtorCallbacks>
+        requires std::invocable<std::ranges::range_value_t<CtorCallbacks>, typed_ptr>
+    size_t AddEntry(GameObjectId goId, CtorCallbacks&& constructCallbacks)
+    {
+        SJ_ASSERT(constructCallbacks.size() == mRows.size(),
+                  "Incorrect number of constructor callbacks- expected {} got {}",
+                  mRows.size(),
+                  constructCallbacks.size());
+
+        if(mSize == mCapacity)
+            Resize(std::max(1uz, mSize * 2));
+
+        for(auto&& [row, ctorCallback] : std::views::zip(mRows, constructCallbacks))
+            std::invoke(ctorCallback, row[mSize]);
+
+        mGoIds[mSize] = goId;
+        return mSize++;
+    }
+
+    void RemoveEntry(size_t idx)
+    {
+        for(Row& row : mRows)
+        {
+            if(!row.typeInfo->is_trivially_destructible)
+                row.typeInfo->destructor_fn(row[idx]);
+
+            // Move last element to deleted location
+            if(mSize > 1)
+            {
+                row.typeInfo->move_constructor_fn(row[idx], row[mSize - 1]);
+                mGoIds[idx] = mGoIds[mSize - 1];
+            }
+        }
+
+        mSize--;
+    }
+
+    std::span<const GameObjectId> GetGameObjects()
+    {
+        return std::span(mGoIds.data(), mSize);
+    }
+
 private:
+    struct Row
+    {
+        Row() = default;
+        Row(const Row&) = delete;
+        Row(Row&& other) noexcept
+            : typeInfo(other.typeInfo), buffer(std::exchange(other.buffer, std::span<std::byte> {}))
+        {
+        }
+
+        Row(const type_info* info) : typeInfo(info)
+        {
+        }
+
+        void* operator[](size_t idx)
+        {
+            return &buffer[idx * typeInfo->size];
+        }
+
+        Row& operator=(Row&& other) noexcept
+        {
+            typeInfo = other.typeInfo;
+            buffer = std::exchange(other.buffer, std::span<std::byte> {});
+            return *this;
+        }
+
+        template <class T>
+        std::span<T> GetElementsView(size_t mElementCount)
+        {
+            std::span<std::byte> activeView = buffer.subspan(0, typeInfo->size * mElementCount);
+            return byte_span_cast<T>(activeView);
+        }
+
+        const type_info* typeInfo = nullptr;
+        std::span<std::byte> buffer;
+    };
+
     void Resize(size_t newCapacity)
     {
-        range_of<size_t> auto sizes = mRowDescriptors | std::views::transform(&Row::typeInfo) |
-                                      std::views::transform(&type_info::size);
+        mGoIds.resize(newCapacity);
 
-        const size_t rowSizeBytes = std::ranges::fold_left(sizes, 0, std::plus {});
-
-        std::byte* newBuffer =
-            reinterpret_cast<std::byte*>(mResource->allocate(rowSizeBytes * newCapacity));
-
-        // Figure out where rows will be in new buffer
-        scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-        dynamic_array<std::span<std::byte>> newRows(mRowDescriptors.size(),
-                                                    {},
-                                                    &scratchpad.get_allocator());
-
-        for(size_t idx = 0, cursor = uintptr_t(newBuffer); idx < newRows.size(); idx++)
+        for(Row& row : mRows)
         {
-            size_t sizeInBytes = newCapacity * mRowDescriptors[idx].typeInfo->size;
-            newRows[idx] = {reinterpret_cast<std::byte*>(cursor), sizeInBytes};
-            cursor += sizeInBytes;
+            const size_t newSizeBytes = newCapacity * row.typeInfo->size;
+            void* newBufferAddr = mResource->allocate(newSizeBytes, row.typeInfo->alignment);
+            std::span<std::byte> newBuffer = {
+                reinterpret_cast<std::byte*>(newBufferAddr),
+                newSizeBytes,
+            };
+
+            for(size_t elementIdx = 0; elementIdx < mSize; elementIdx++)
+            {
+                row.typeInfo->move_constructor_fn(&newBuffer[elementIdx * row.typeInfo->size],
+                                                  row[elementIdx]);
+            }
+
+            if(row.buffer.data())
+                mResource->deallocate(row.buffer.data(), row.buffer.size());
+
+            row.buffer = newBuffer;
         }
 
-        // Move data to new table
-        for(auto&& [rowHeader, newRowData] : std::views::zip(mRowDescriptors, newRows))
-        {
-            rowHeader.typeInfo->move_constructor_fn(rowHeader.data, newRowData);
-            rowHeader.data = newRowData;
-        }
-
-        mResource->deallocate(mBuffer, rowSizeBytes * mSize);
-        mBuffer = newBuffer;
         mCapacity = newCapacity;
     }
 
-    std::pmr::memory_resource* mResource = nullptr;
-
-    struct Row
+    Row* FindRow(TypeId id)
     {
-        const type_info* typeInfo;
-        std::span<std::byte> data;
-    };
+        auto it = std::ranges::find(mRows, id, [](const Row& r) {
+            return r.typeInfo->id;
+        });
 
-    dynamic_array<Row> mRowDescriptors;
-    std::byte* mBuffer = nullptr;
+        if(it == mRows.end())
+            return nullptr;
+
+        return &(*it);
+    }
+
+    std::pmr::memory_resource* mResource = nullptr;
+    dynamic_array<GameObjectId> mGoIds;
+    dynamic_array<Row> mRows;
     size_t mSize = 0;
     size_t mCapacity = 0;
-
-    uint32_t mId = 0;
 };
 
 } // namespace sj

@@ -2,11 +2,10 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 export module sj.engine.CameraSystem;
+import sj.std;
+
 import sj.engine.CameraComponent;
 import sj.engine.TransformComponent;
-
-import sj.std.rtti;
-import sj.std.math;
 import sj.engine.ecs.ECSRegistry;
 
 export namespace sj
@@ -14,29 +13,29 @@ export namespace sj
 class CameraSystem
 {
 public:
-    CameraSystem()
-    {
-        sj::rtti::register_type<CameraComponent>();
-    }
-    
+    static constexpr type_list<CameraComponent> kOwnedComponents;
+
+    CameraSystem() = default;
+
     void Process(ECSRegistry& registry, [[maybe_unused]] float deltaTime)
     {
         auto components = registry.GetComponents<CameraComponent>();
-        SJ_ASSERT(components.size() > 0, "Scene has no camera component");
 
         for(const auto& [goId, cameraComponent] : components)
         {
             // TODO: What if there's multiple
             Mat44 localToGoTransform = cameraComponent.localToGoTransform;
             const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);
-            const Mat44& goWorldSpaceTransform = goTransform->localToParentTransform;
+            const Mat44& goWorldSpaceTransform = goTransform->localToParent;
 
             Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
 
             m_outputCameraMatrix = outputTransform;
 
-            break;
+            return;
         }
+        
+        SJ_ASSERT(false, "Scene has no camera component");
     }
 
     [[nodiscard]] Mat44 GetOutputCameraMatrix() const

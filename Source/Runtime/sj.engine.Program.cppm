@@ -16,7 +16,6 @@ module;
 export module sj.engine.Program;
 export import sj.engine.config;
 export import sj.std.type_info;
-export import sj.std.signal;
 
 import sj.std;
 import sj.datadefs;

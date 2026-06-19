@@ -93,6 +93,18 @@ struct from<BEVE, sj::string_hash>
 };
 
 template <>
+struct from<JSON, sj::Vec4>
+{
+    template <auto Opts>
+    static void op(sj::Vec4& vec, auto&&... args)
+    {
+        std::array<float, 4> data = {};
+        glz::parse<JSON>::op<Opts>(data, args...);
+        vec = sj::Vec4(data[0], data[1], data[2], data[3]);
+    }
+};
+
+template <>
 struct from<JSON, sj::Vec3>
 {
     template <auto Opts>

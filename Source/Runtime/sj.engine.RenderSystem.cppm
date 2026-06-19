@@ -7,6 +7,7 @@ import sj.datadefs.AssetDB;
 import sj.engine.ecs.ECSRegistry;
 import sj.engine.ecs.Identifiers;
 import sj.engine.Mesh3DComponent;
+import sj.engine.DirectionalLightComponent;
 import sj.engine.TransformComponent;
 import sj.engine.rendering.Renderer;
 import sj.engine.system.threading.ThreadContext;
@@ -16,7 +17,7 @@ export namespace sj
 class RenderSystem
 {
 public:
-    static constexpr type_list<Mesh3DComponent> kOwnedComponents;
+    static constexpr type_list<Mesh3DComponent, DirectionalLightComponent> kOwnedComponents;
 
     RenderSystem()
     {
@@ -44,8 +45,6 @@ public:
     void Process(ECSRegistry& ecs, Renderer& renderer, const Mat44& cameraMatrix, float deltaTime)
     {
         auto components = ecs.GetComponents<Mesh3DComponent>();
-        if(components.empty())
-            return;
 
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
@@ -55,7 +54,7 @@ public:
             sj::TransformComponent* goTransform = ecs.GetComponent<sj::TransformComponent>(goId);
 
             meshDrawArgs.emplace_back(
-                Renderer::MeshDrawArg {.modelToWorld = goTransform->localToParentTransform,
+                Renderer::MeshDrawArg {.modelToWorld = goTransform->localToParent,
                                         .modelId = mesh3D.model_id,
                                         .textureId = mesh3D.texture_id});
         }

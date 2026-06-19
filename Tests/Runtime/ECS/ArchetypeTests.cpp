@@ -13,6 +13,8 @@
 #include <ScrewjankStd/Log.hpp>
 
 import sj.engine.ecs.Archetype;
+import sj.engine.ecs.Identifiers;
+
 import sj.std.type_info;
 
 using namespace sj;
@@ -44,19 +46,19 @@ TEST(ArchetypeTest, ConstructionTest)
     const type_info& infoC = sj::type_info_of<DummyComponentC>;
 
     Archetype archetype(std::array {&infoA, &infoB, &infoC}, std::pmr::get_default_resource());
-    size_t row0 = archetype.AddEntry();
+    size_t row0 = archetype.AddEntry(GameObjectId {.sparseIndex = 0, .generation = 0});
 
     {
-        DummyComponentA& a0 = archetype.GetComponent<DummyComponentA>(row0);
+        DummyComponentA& a0 = archetype.GetEntry<DummyComponentA>(row0);
         ASSERT_EQ(a0.a, 1234.4321f);
         a0.a = 1.0f;
     }
 
-    for(int i = 0; i < 100; i++)
-        archetype.AddEntry();
+    for(unsigned int i = 0; i < 100; i++)
+        archetype.AddEntry(GameObjectId {.sparseIndex = i + 1, .generation = 0});
 
     {
-        DummyComponentA& a0 = archetype.GetComponent<DummyComponentA>(row0);
+        DummyComponentA& a0 = archetype.GetEntry<DummyComponentA>(row0);
         ASSERT_EQ(a0.a, 1.0f);
     }
 

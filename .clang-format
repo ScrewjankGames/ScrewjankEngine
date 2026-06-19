@@ -36,6 +36,8 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
+BreakBeforeBinaryOperators : NonAssignment
+BreakBinaryOperations : OnePerLine
 BreakBeforeBraces : Custom
 BreakBeforeInheritanceComma: false
 BreakConstructorInitializers: BeforeColon

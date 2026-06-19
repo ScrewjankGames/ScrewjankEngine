@@ -211,7 +211,27 @@ public:
         return self.m_array + self.m_capacity;
     }
 
-    void resize(size_type newCapacity, const T& defaultValue = T())
+    void resize(size_type newCapacity)
+    {
+        resize_impl(newCapacity, [](T* addr) {
+            new(addr) T();
+        });
+    }
+
+    void resize(size_type newCapacity, const T& defaultValue)
+    {
+        resize_impl(newCapacity, [&defaultValue](T* addr) {
+            new(addr) T(defaultValue);
+        });
+    }
+
+    auto&& get_allocator(this auto&& self)
+    {
+        return self.m_allocator;
+    }
+
+private:
+    void resize_impl(size_type newCapacity, auto&& defaultConstructFn)
     {
         T* newArray = nullptr;
         if(newCapacity > 0)
@@ -228,7 +248,7 @@ public:
             if(newCapacity > m_capacity)
             {
                 for(size_type i = m_capacity; i < newCapacity; i++)
-                    new(std::addressof(newArray[i])) T(defaultValue);
+                    std::invoke(defaultConstructFn, std::addressof(newArray[i]));
             }
         }
 
@@ -250,7 +270,6 @@ public:
         m_capacity = newCapacity;
     }
 
-private:
     Allocator m_allocator = Allocator();
 
     T* m_array = nullptr;

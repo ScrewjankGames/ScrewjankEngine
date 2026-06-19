@@ -4,6 +4,7 @@ module;
 
 #include <glaze/glaze.hpp>
 
+#include <functional>
 #include <vector>
 #include <string_view>
 
@@ -19,20 +20,8 @@ export namespace sj
 class Scene
 {
 public:
-    Scene(std::string_view path, ECSRegistry& registry, auto ComponentManifest)
+    Scene(std::string_view path, ECSRegistry& registry)
     {
-        // Map chunk type to function that creates runtime component
-        constinit static type_map<ComponentManifest.GetComponentTypes(),
-                                  TypeId,
-                                  LoadComponentFn,
-                                  []<class T>() -> TypeId {
-                                      return type_id_of<T>;
-                                  },
-                                  []<class T>() -> LoadComponentFn {
-                                      return LoadComponent<T>;
-                                  }>
-            kComponentLoadFns = {};
-
         auto scope = ThreadContext::GetScratchpad();
         std::pmr::vector<char> buffer(&scope.get_allocator());
         SceneChunk chunk;
@@ -46,13 +35,28 @@ public:
 
         for(const GameObjectChunk& goChunk : chunk.game_objects)
         {
-            GameObjectId goId = registry.CreateGameObject();
-            for(const DataChunk& componentChunk : goChunk.components)
-            {
-                LoadComponentFn createFn =
-                    kComponentLoadFns.get(componentChunk.type.get_hash().AsInt());
-                std::invoke(createFn, registry, goId, componentChunk);
-            }
+            dynamic_vector<const type_info*> infos =
+                goChunk.components
+                | std::views::transform([](const DataChunk& chunk) -> const type_info* {
+                      const type_info* info = rtti::find_type_info(chunk.type.get_hash().AsInt());
+                      SJ_ASSERT(info, "Failed to find type info");
+                      return info;
+                  })
+                | std::ranges::to<dynamic_vector<const type_info*>>(&scope.get_allocator());
+
+            auto&& deserializeFns =
+                std::views::zip(infos, goChunk.components)
+                | std::views::transform(
+                    [](auto&& pair) -> std::move_only_function<void(typed_ptr)> {
+                        auto&& [typeInfo, dataChunk] = pair;
+                        return [&](typed_ptr dst) {
+                            std::invoke(typeInfo->desierialize_json_fn,
+                                        dst.get_ptr(),
+                                        dataChunk.data);
+                        };
+                    });
+
+            registry.CreateGameObject(infos, deserializeFns);
         }
     }
 
