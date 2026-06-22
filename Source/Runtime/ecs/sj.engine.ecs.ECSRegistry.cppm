@@ -114,6 +114,31 @@ public:
     {
         CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
 
+        using ResultType = std::tuple<std::add_lvalue_reference<ComponentTypes>...>;
+        auto archetypeToTupleRangeFn = [&](Archetype* archetype) {
+            SJ_ASSERT(archetype, "Invalid archetype");
+
+            auto&& rows = std::make_tuple(archetype->GetRow<ComponentTypes>()...);
+
+            auto&& tupleOfRanges = std::apply(
+                [](auto&&... ranges) {
+                    return std::views::zip(std::forward<decltype(ranges)>(ranges)...);
+                },
+                rows);
+
+            return tupleOfRanges;
+        };
+
+        return query.matchedArchetypes
+               | std::views::transform(archetypeToTupleRangeFn)
+               | std::views::join;
+    }
+
+    template <class... ComponentTypes>
+    std::ranges::range auto QueryWithIds()
+    {
+        CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
+
         using ResultType = std::tuple<GameObjectId, std::add_lvalue_reference<ComponentTypes>...>;
         auto archetypeToTupleRangeFn = [&](Archetype* archetype) {
             SJ_ASSERT(archetype, "Invalid archetype");
@@ -166,12 +191,6 @@ private:
     {
         ArchetypeId archetypeId;
         size_t archetypeLocalIndex = -1;
-    };
-
-    struct ComponentRecord
-    {
-        ArchetypeId archetypeId;
-        Archetype::RowIdx rowIdx;
     };
 
     Archetype* FindOrAddArchetype(ArchetypeId aId, std::ranges::range auto componentTypeInfos)

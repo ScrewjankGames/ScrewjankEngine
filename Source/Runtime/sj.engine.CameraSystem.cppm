@@ -6,7 +6,7 @@ import sj.std;
 
 import sj.engine.CameraComponent;
 import sj.engine.TransformComponent;
-import sj.engine.ecs.ECSRegistry;
+import sj.engine.ecs;
 
 export namespace sj
 {
@@ -19,18 +19,18 @@ public:
 
     void Process(ECSRegistry& registry, [[maybe_unused]] float deltaTime)
     {
-        auto components = registry.Query<CameraComponent>();
+        auto query = registry.QueryWithIds<TransformComponent, CameraComponent>();
 
-        for(const auto& [goId, cameraComponent] : components)
+        for(auto&& [goId, transform, camera] : query)
         {
             // TODO: What if there's multiple
-            Mat44 localToGoTransform = cameraComponent.localToGoTransform;
-            const TransformComponent* goTransform = registry.GetComponent<TransformComponent>(goId);
-            const Mat44& goWorldSpaceTransform = goTransform->localToParent;
+            Mat44 localToGoTransform = camera.localToGoTransform;
+            const Mat44& goWorldSpaceTransform = transform.localToParent;
 
             Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
 
-            m_outputCameraMatrix = outputTransform;
+            mOutputCameraGo = goId;
+            mOutputCameraLW = outputTransform;
 
             return;
         }
@@ -40,10 +40,11 @@ public:
 
     [[nodiscard]] Mat44 GetOutputCameraMatrix() const
     {
-        return m_outputCameraMatrix;
+        return mOutputCameraLW;
     }
 
 private:
-    Mat44 m_outputCameraMatrix = Mat44(kIdentityTag);
+    GameObjectId mOutputCameraGo {};
+    Mat44 mOutputCameraLW = Mat44(kIdentityTag);
 };
 } // namespace sj

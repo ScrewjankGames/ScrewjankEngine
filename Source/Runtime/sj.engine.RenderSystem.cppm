@@ -48,7 +48,7 @@ public:
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
 
-        for(const auto& [goId, transform, mesh3D] : components)
+        for(const auto& [transform, mesh3D] : components)
         {
             meshDrawArgs.emplace_back(
                 Renderer::MeshDrawArg {.modelToWorld = transform.localToParent,
