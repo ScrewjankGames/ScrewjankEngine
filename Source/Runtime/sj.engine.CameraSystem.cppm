@@ -13,13 +13,13 @@ export namespace sj
 class CameraSystem
 {
 public:
-    static constexpr type_list<CameraComponent> kOwnedComponents;
+    static constexpr type_list<CameraComponent> kRegisteredComponents;
 
     CameraSystem() = default;
 
     void Process(ECSRegistry& registry, [[maybe_unused]] float deltaTime)
     {
-        auto components = registry.GetComponents<CameraComponent>();
+        auto components = registry.Query<CameraComponent>();
 
         for(const auto& [goId, cameraComponent] : components)
         {

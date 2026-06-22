@@ -1,9 +1,11 @@
 module;
 #include <ScrewjankStd/Assert.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <memory_resource>
 #include <ranges>
+#include <type_traits>
 
 export module sj.engine.ecs.ECSRegistry;
 
@@ -20,7 +22,11 @@ export namespace sj
 namespace ecs
 {
 template <class tSystem>
-concept owns_components = requires { is_type_list<decltype(tSystem::kOwnedComponents)>; };
+concept registers_components = requires { is_type_list<decltype(tSystem::kRegisteredComponents)>; };
+
+template <class tSystem>
+concept registers_lifetime_callbacks =
+    requires { is_type_list<decltype(tSystem::kRequestedLifetimeCallbacks)>; };
 
 template <class tSystem, class tComponent>
 concept has_on_component_create =
@@ -39,7 +45,7 @@ public:
     ECSRegistry()
         : mMemoryResource(sj::MemorySystem::GetRootMemoryResource()),
           mGameObjects(100, mMemoryResource), mArchetypes(mMemoryResource),
-          mComponentBindings(mMemoryResource), mComponentCreateCallbacks(mMemoryResource),
+          mCachedQueries(mMemoryResource), mComponentCreateCallbacks(mMemoryResource),
           mComponentDestroyCallbacks(mMemoryResource)
     {
     }
@@ -47,21 +53,11 @@ public:
     template <class tSystem>
     void RegisterSystem(tSystem* system)
     {
-        if constexpr(ecs::owns_components<tSystem>)
-        {
-            auto registerOwnedComponentFn = []<class tComponent>(ECSRegistry* self,
-                                                                 tSystem* system) {
-                sj::rtti::register_type<tComponent>();
+        if constexpr(ecs::registers_components<tSystem>)
+            RegisterComponents(system);
 
-                if constexpr(ecs::has_on_component_create<tSystem, tComponent>)
-                    self->RegisterComponentCreateCallback<tSystem, tComponent>(system);
-
-                if constexpr(ecs::has_on_component_destroy<tSystem, tComponent>)
-                    self->RegisterComponentDestroyCallback<tSystem, tComponent>(system);
-            };
-
-            tSystem::kOwnedComponents.template for_each<registerOwnedComponentFn>(this, system);
-        }
+        if constexpr(ecs::registers_lifetime_callbacks<tSystem>)
+            RegisterComponentLifetimeCallbacks(system);
     }
 
     template <std::ranges::range ComponentTypeInfos, std::ranges::range ConstructCallbacks>
@@ -105,10 +101,38 @@ public:
             if(callbackIt == mComponentDestroyCallbacks.end())
                 continue;
 
-            std::invoke(callbackIt->second, goId, archetype->GetEntry(id, goRecord->archetypeLocalIndex));
+            std::invoke(callbackIt->second,
+                        goId,
+                        archetype->GetEntry(id, goRecord->archetypeLocalIndex));
         }
 
         archetype->RemoveEntry(goRecord->archetypeLocalIndex);
+    }
+
+    template <class... ComponentTypes>
+    std::ranges::range auto Query()
+    {
+        CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
+
+        using ResultType = std::tuple<GameObjectId, std::add_lvalue_reference<ComponentTypes>...>;
+        auto archetypeToTupleRangeFn = [&](Archetype* archetype) {
+            SJ_ASSERT(archetype, "Invalid archetype");
+
+            auto&& rows = std::make_tuple(archetype->GetGameObjects(),
+                                          archetype->GetRow<ComponentTypes>()...);
+
+            auto&& tupleOfRanges = std::apply(
+                [](auto&&... ranges) {
+                    return std::views::zip(std::forward<decltype(ranges)>(ranges)...);
+                },
+                rows);
+
+            return tupleOfRanges;
+        };
+
+        return query.matchedArchetypes
+               | std::views::transform(archetypeToTupleRangeFn)
+               | std::views::join;
     }
 
     template <class T>
@@ -122,36 +146,22 @@ public:
         if(!archetype)
             return nullptr;
 
-        auto componentBinding = mComponentBindings.find(type_id_of<T>);
-
         return &archetype->GetRow<T>().at(goIndex);
     }
 
-    template <class T>
-    decltype(auto) GetComponents()
-    {
-        auto componentBinding = mComponentBindings.find(type_id_of<T>);
-        SJ_ASSERT(componentBinding != mComponentBindings.end(),
-                  "No components of type {} exist",
-                  type_name_of<T>);
-
-        auto recordToComponentsFn = [&](ComponentRecord& record) -> std::ranges::range auto {
-            Archetype* archetype = GetArchetype(record.archetypeId);
-            SJ_ASSERT(archetype,
-                      "Component {} is registered to stale archetype id {}",
-                      type_name_of<T>,
-                      record.archetypeId);
-
-            return std::views::zip(archetype->GetGameObjects(),
-                                   archetype->GetRow<T>());
-        };
-
-        return componentBinding->second
-               | std::views::transform(recordToComponentsFn)
-               | std::views::join;
-    }
-
 private:
+    using QueryId = uint64_t;
+    struct CachedQuery
+    {
+        dynamic_array<TypeId> types;
+        dynamic_vector<Archetype*> matchedArchetypes;
+
+        bool MatchesArchetype(Archetype* a)
+        {
+            return a->MatchesQuery(types);
+        }
+    };
+
     struct GameObjectRecord
     {
         ArchetypeId archetypeId;
@@ -172,20 +182,10 @@ private:
         {
             auto archetype = std::make_unique<Archetype>(componentTypeInfos, mMemoryResource);
 
-            for(const type_info* info : componentTypeInfos)
+            for(CachedQuery& q : mCachedQueries.values())
             {
-                auto bindingIt = mComponentBindings.find(info->id);
-
-                if(bindingIt == mComponentBindings.end())
-                    bindingIt =
-                        mComponentBindings
-                            .emplace(info->id, dynamic_vector<ComponentRecord> {mMemoryResource})
-                            .first;
-
-                bindingIt->second.emplace_back(ComponentRecord {
-                    .archetypeId = aId,
-                    .rowIdx = archetype->GetRowIdx(info->id),
-                });
+                if(q.MatchesArchetype(archetype.get()))
+                    q.matchedArchetypes.push_back(archetype.get());
             }
 
             auto insertResult = mArchetypes.emplace(aId, std::move(archetype));
@@ -206,6 +206,60 @@ private:
             return nullptr;
 
         return archetypeIt->second.get();
+    }
+
+    template <class... Ts>
+    CachedQuery& FindOrAddCachedQuery()
+    {
+        std::hash<TypeId> hasher;
+        QueryId queryId = 0 ^ (... ^ hasher(type_id_of<Ts>));
+
+        auto queryIt = mCachedQueries.find(queryId);
+        if(queryIt != mCachedQueries.end())
+            return queryIt->second;
+
+        CachedQuery& query = mCachedQueries[queryId];
+        {
+            query.types.resize(sizeof...(Ts));
+            size_t idx = 0;
+            (void(query.types[idx++] = type_id_of<Ts>), ...);
+        }
+
+        for(std::unique_ptr<Archetype>& archetype : mArchetypes.values())
+        {
+            if(query.MatchesArchetype(archetype.get()))
+                query.matchedArchetypes.push_back(archetype.get());
+        }
+
+        return query;
+    }
+
+    template <ecs::registers_components tSystem>
+    void RegisterComponents(tSystem* system)
+    {
+        tSystem::kRegisteredComponents
+            .template for_each<[]<class tComponent>(ECSRegistry* self, tSystem* system) {
+                sj::rtti::register_type<tComponent>();
+            }>(this, system);
+    }
+
+    template <class tSystem>
+    void RegisterComponentLifetimeCallbacks(tSystem* system)
+    {
+        auto registerCreateDestroy = []<class tComponent>(ECSRegistry* self, tSystem* system) {
+            static_assert(ecs::has_on_component_create<tSystem, tComponent>,
+                          "System requested lifetime callbacks for component type, but does not "
+                          "provide a valid member OnCreate(GameObjectId, ComponentType*) function");
+            self->RegisterComponentCreateCallback<tSystem, tComponent>(system);
+
+            static_assert(
+                ecs::has_on_component_destroy<tSystem, tComponent>,
+                "System requested lifetime callbacks for component type, but does not "
+                "provide a valid member OnDestroy(GameObjectId, ComponentType*) function");
+            self->RegisterComponentDestroyCallback<tSystem, tComponent>(system);
+        };
+
+        tSystem::kRequestedLifetimeCallbacks.template for_each<registerCreateDestroy>(this, system);
     }
 
     template <class tSystem, class tComponent>
@@ -245,7 +299,7 @@ private:
     // Lookup
     sparse_set<GameObjectId, GameObjectRecord> mGameObjects;
     dynamic_flat_map<ArchetypeId, std::unique_ptr<Archetype>> mArchetypes;
-    dynamic_flat_map<TypeId, dynamic_vector<ComponentRecord>> mComponentBindings;
+    dynamic_flat_map<QueryId, CachedQuery> mCachedQueries;
 
     // Callbacks
     dynamic_flat_map<TypeId, ComponentEventCallback> mComponentCreateCallbacks;

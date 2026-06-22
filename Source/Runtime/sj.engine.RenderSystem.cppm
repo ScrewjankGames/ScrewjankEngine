@@ -17,11 +17,10 @@ export namespace sj
 class RenderSystem
 {
 public:
-    static constexpr type_list<Mesh3DComponent, DirectionalLightComponent> kOwnedComponents;
+    static constexpr type_list<Mesh3DComponent, DirectionalLightComponent> kRegisteredComponents;
+    static constexpr type_list<Mesh3DComponent> kRequestedLifetimeCallbacks;
 
-    RenderSystem()
-    {
-    }
+    RenderSystem() = default;
 
     void Initialize(Renderer* renderer)
     {
@@ -44,19 +43,17 @@ public:
 
     void Process(ECSRegistry& ecs, Renderer& renderer, const Mat44& cameraMatrix, float deltaTime)
     {
-        auto components = ecs.GetComponents<Mesh3DComponent>();
+        auto components = ecs.Query<TransformComponent, Mesh3DComponent>();
 
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
 
-        for(const auto& [goId, mesh3D] : components)
+        for(const auto& [goId, transform, mesh3D] : components)
         {
-            sj::TransformComponent* goTransform = ecs.GetComponent<sj::TransformComponent>(goId);
-
             meshDrawArgs.emplace_back(
-                Renderer::MeshDrawArg {.modelToWorld = goTransform->localToParent,
-                                        .modelId = mesh3D.model_id,
-                                        .textureId = mesh3D.texture_id});
+                Renderer::MeshDrawArg {.modelToWorld = transform.localToParent,
+                                       .modelId = mesh3D.model_id,
+                                       .textureId = mesh3D.texture_id});
         }
 
         renderer.DrawPass(cameraMatrix, meshDrawArgs);

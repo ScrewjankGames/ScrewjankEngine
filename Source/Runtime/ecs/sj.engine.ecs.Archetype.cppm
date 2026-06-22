@@ -64,11 +64,23 @@ public:
     {
     }
 
-    std::ranges::range auto GetTypeIds() const
+    [[nodiscard]] std::ranges::range auto GetTypeIds() const
     {
         return mRows | std::views::transform([](Row& r) {
                    return r.typeInfo->id;
                });
+    }
+    
+    bool MatchesQuery(std::ranges::range auto&& queryIds)
+    {
+        auto&& archetypeIds = GetTypeIds();
+        for(TypeId id : queryIds)
+        {
+            if(!std::ranges::contains(archetypeIds, id))
+                return false;
+        }
+
+        return true;
     }
 
     RowIdx GetRowIdx(TypeId typeId)

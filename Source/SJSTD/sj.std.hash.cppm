@@ -68,7 +68,7 @@ constexpr uint64_t FNV1a_64(std::string_view str, uint64_t hash = fnv_offset_bas
     return hash;
 }
 
-constexpr uint64_t Range_FNV1a_64(std::ranges::range auto elems, uint64_t hash = fnv_offset_basis_64)
+constexpr uint64_t FNV1a_64(std::ranges::range auto elems, uint64_t hash = fnv_offset_basis_64)
 {
     for(auto&& elem : elems)
     {
