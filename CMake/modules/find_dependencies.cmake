@@ -45,15 +45,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinyobjloader)
 
-## stduuid
-FetchContent_Declare(
-        stduuid
-        SYSTEM
-        GIT_REPOSITORY https://github.com/mariusbancila/stduuid
-        GIT_TAG v1.2.3
-)
-FetchContent_MakeAvailable(stduuid)
-
 ## IMGUI
 FetchContent_Declare(
         imgui

@@ -34,7 +34,6 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankStd
         ScrewjankDataDefs
         spdlog::spdlog
-        stduuid
         imgui
         implot
         glaze::glaze
