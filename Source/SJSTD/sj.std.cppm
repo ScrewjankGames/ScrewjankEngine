@@ -8,6 +8,7 @@ export import sj.std.memory;
 export import sj.std.concepts;
 export import sj.std.signal;
 export import sj.std.hash;
+export import sj.std.primitives;
 export import sj.std.ref;
 export import sj.std.rtti;
 export import sj.std.string_hash;
