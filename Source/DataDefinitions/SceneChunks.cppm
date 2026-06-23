@@ -1,8 +1,10 @@
 module;
 
-// STD Includes
+#include <glaze/glaze.hpp>
+
 #include <cstdint>
 #include <cstddef>
+#include <utility>
 
 export module sj.datadefs:SceneChunks;
 import sj.std.string_hash;
@@ -12,11 +14,12 @@ import sj.datadefs.DataChunk;
 
 export namespace sj
 {
+using ComponentChunk = std::pair<hashed_string_sv, glz::generic_u64>;
 
 struct GameObjectChunk
 {
     hashed_string_sv id;
-    sj::dynamic_vector<DataChunk> components;
+    sj::dynamic_vector<ComponentChunk> components;
 };
 
 struct SceneChunk

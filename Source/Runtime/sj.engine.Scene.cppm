@@ -35,10 +35,11 @@ public:
 
         for(const GameObjectChunk& goChunk : chunk.game_objects)
         {
+
             dynamic_vector<const type_info*> infos =
                 goChunk.components
-                | std::views::transform([](const DataChunk& chunk) -> const type_info* {
-                      const type_info* info = rtti::find_type_info(chunk.type.get_hash().AsInt());
+                | std::views::transform([](const ComponentChunk& chunk) -> const type_info* {
+                      const type_info* info = rtti::find_type_info(chunk.first.get_hash().AsInt());
                       SJ_ASSERT(info, "Failed to find type info");
                       return info;
                   })
@@ -48,11 +49,11 @@ public:
                 std::views::zip(infos, goChunk.components)
                 | std::views::transform(
                     [](auto&& pair) -> std::move_only_function<void(typed_ptr)> {
-                        auto&& [typeInfo, dataChunk] = pair;
+                        auto&& [typeInfo, componentChunk] = pair;
                         return [&](typed_ptr dst) {
                             std::invoke(typeInfo->desierialize_json_fn,
                                         dst.get_ptr(),
-                                        dataChunk.data);
+                                        componentChunk.second);
                         };
                     });
 

@@ -43,12 +43,11 @@ public:
 
     void Process(ECSRegistry& ecs, Renderer& renderer, const Mat44& cameraMatrix, float deltaTime)
     {
-        auto components = ecs.Query<TransformComponent, Mesh3DComponent>();
-
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
-
-        for(const auto& [transform, mesh3D] : components)
+        
+        auto drawables = ecs.Query<TransformComponent, Mesh3DComponent>();
+        for(const auto&& [transform, mesh3D] : drawables)
         {
             meshDrawArgs.emplace_back(
                 Renderer::MeshDrawArg {.modelToWorld = transform.localToParent,
