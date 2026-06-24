@@ -5,7 +5,7 @@ layout(set = 1, binding = 0) uniform UniformBufferObject {
     mat4 proj;
 } ubo;
 
-layout(set = 1, binding = 1) uniform ModelToWorldBufforObject
+layout(set = 1, binding = 1) uniform ModelToWorldBufferObject
 {
     mat4 modelToWorld;
 } modelUBO;

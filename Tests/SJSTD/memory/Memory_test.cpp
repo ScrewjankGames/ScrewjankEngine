@@ -58,7 +58,7 @@ namespace system_tests
         std_aligned = std::align(alignof(DummyClass), sizeof(DummyClass), std_aligned, space);
         ASSERT_NE(unaligned, std_aligned);
 
-        sj_aligned = AlignMemory(alignof(DummyClass),
+        sj_aligned = align_memory(alignof(DummyClass),
                                  sizeof(DummyClass),
                                  sj_aligned,
                                  (sizeof(DummyClass) * 2) - 1);
@@ -68,44 +68,44 @@ namespace system_tests
         ASSERT_EQ(std_aligned, sj_aligned);
     }
 
-    TEST(MemoryTests, IsMemoryAlignedTest)
+    TEST(MemoryTests, is_memory_alignedTest)
     {
 
         uintptr_t memory_location = 0;
         ASSERT_TRUE(
-            IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(std::max_align_t)));
+            is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(std::max_align_t)));
 
         memory_location = 2;
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
-        ASSERT_FALSE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
-        ASSERT_FALSE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
+        ASSERT_FALSE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
+        ASSERT_FALSE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
 
         memory_location = 4;
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
-        ASSERT_FALSE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
+        ASSERT_FALSE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
 
         memory_location = 8;
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
-        ASSERT_TRUE(IsMemoryAligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int16_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int32_t)));
+        ASSERT_TRUE(is_memory_aligned(reinterpret_cast<void*>(memory_location), alignof(int64_t)));
     }
 
-    TEST(MemoryTests, GetAlignmentAdjustmentTest)
+    TEST(MemoryTests, get_alignment_adjustmentTest)
     {
 
         uintptr_t memory_location = 0;
         ASSERT_EQ(
             0,
-            GetAlignmentAdjustment(alignof(double), reinterpret_cast<void*>(memory_location)));
+            get_alignment_adjustment(alignof(double), reinterpret_cast<void*>(memory_location)));
 
         memory_location = 3;
         ASSERT_EQ(
             1,
-            GetAlignmentAdjustment(alignof(int32_t), reinterpret_cast<void*>(memory_location)));
+            get_alignment_adjustment(alignof(int32_t), reinterpret_cast<void*>(memory_location)));
         ASSERT_EQ(
             5,
-            GetAlignmentAdjustment(alignof(int64_t), reinterpret_cast<void*>(memory_location)));
+            get_alignment_adjustment(alignof(int64_t), reinterpret_cast<void*>(memory_location)));
     }
 
 } // namespace system_tests

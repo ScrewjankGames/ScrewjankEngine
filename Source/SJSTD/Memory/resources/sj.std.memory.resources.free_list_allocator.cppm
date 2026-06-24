@@ -83,7 +83,7 @@ export namespace sj
 
         bool contains_ptr(void* memory) const override
         {
-            return IsPointerInAddressSpace(memory, m_bufferStart, m_bufferEnd);
+            return is_pointer_in_address_space(memory, m_bufferStart, m_bufferEnd);
         }
 
     private:
@@ -128,10 +128,10 @@ export namespace sj
             // !!!This operation overwrites the data pointed to by best_fit_block!!!
             auto payload_space = old_block_info.size - sizeof(AllocationHeader) - header_padding;
 
-            SJ_ASSERT(IsMemoryAligned(header_address, alignof(AllocationHeader)),
+            SJ_ASSERT(is_memory_aligned(header_address, alignof(AllocationHeader)),
                       "Allocation header memory is misaligned");
 
-            SJ_ASSERT(IsMemoryAligned(payload_address, alignment),
+            SJ_ASSERT(is_memory_aligned(payload_address, alignment),
                       "Allocation payload memory is misaligned");
 
             // Place the header into memory just before the user's data
@@ -143,7 +143,7 @@ export namespace sj
 
             // Padding required to align a new free block after the end of the user payload
             auto new_block_adjustment =
-                GetAlignmentAdjustment(alignof(FreeBlock), reinterpret_cast<void*>(payload_end));
+                get_alignment_adjustment(alignof(FreeBlock), reinterpret_cast<void*>(payload_end));
 
             // Padding bytes for the new block would be left at the end of the current block
             auto unused_space = block_end - (payload_end + new_block_adjustment);
@@ -185,7 +185,7 @@ export namespace sj
             void* block_start =
                 reinterpret_cast<void*>(uintptr_t(block_header) - block_header->padding);
 
-            SJ_ASSERT(IsMemoryAligned(block_start, alignof(FreeBlock)),
+            SJ_ASSERT(is_memory_aligned(block_start, alignof(FreeBlock)),
                       "Free block is mis-aligned");
 
             FreeBlock* new_block = new(block_start) FreeBlock(block_size);
@@ -268,7 +268,7 @@ export namespace sj
 
                 // Get the padding needed to align payload from first possible playload addresss
                 size_t required_padding =
-                    GetAlignmentAdjustment(alignment_requirement, fist_possible_payload_address);
+                    get_alignment_adjustment(alignment_requirement, fist_possible_payload_address);
                 size_t total_allocation_size = header_and_payload_size + required_padding;
 
                 // If the current free block is large enough to support allocation

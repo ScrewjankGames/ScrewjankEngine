@@ -76,7 +76,7 @@ export namespace sj
 
         bool contains_ptr(void* memory) const override
         {
-            return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
+            return is_pointer_in_address_space(memory, m_BufferStart, m_BufferEnd);
         }
 
     private:
@@ -115,7 +115,7 @@ export namespace sj
 
             // Take the first available free block
             FreeBlock* free_block = &(m_FreeList.front());
-            SJ_ASSERT(IsMemoryAligned(free_block, alignment),
+            SJ_ASSERT(is_memory_aligned(free_block, alignment),
                       "pool_allocator does not support over-aligned types");
 
             // Remove the free block from the free list

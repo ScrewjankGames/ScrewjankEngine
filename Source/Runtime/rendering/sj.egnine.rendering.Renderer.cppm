@@ -23,10 +23,12 @@ module;
 #include <string_view>
 
 export module sj.engine.rendering.Renderer;
+import sj.engine.rendering.materials;
 import sj.engine.rendering.Events;
 import sj.engine.rendering.BufferResource;
 import sj.engine.rendering.SamplerResource;
 import sj.engine.rendering.TextureResource;
+import sj.engine.rendering.Pipeline;
 
 import sj.engine.Program;
 import sj.engine.Window;
@@ -85,7 +87,7 @@ public:
         SDL_ClaimWindowForGPUDevice(mDevice, mDisplay->GetWindowHandle());
 
         InitRenderTargets();
-        InitDefaultPipeline();
+        mDefaultGraphicsPipeline = MakePipeline(gDefaultMaterialPipeline, mDrawTarget, &mDepthTarget);
 
         // Submit Error Texture
         {
@@ -377,10 +379,11 @@ public:
     }
 
     [[nodiscard]]
-    SDL_GPUShader* UploadShader(const char* path, SDL_GPUShaderCreateInfo info)
+    SDL_GPUShader* UploadShader(std::string_view path_str, SDL_GPUShaderCreateInfo info)
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
 
+        std::filesystem::path path(path_str);
         info.code_size = std::filesystem::file_size(path);
         dynamic_array<char> code(info.code_size, &scope.get_allocator());
 
@@ -554,83 +557,53 @@ private:
         mDepthTarget = TextureResource(mDevice, targetInfo);
     }
 
-    void InitDefaultPipeline()
+    SDL_GPUGraphicsPipeline*
+    MakePipeline(const Pipeline& p, TextureResource& drawTarget, TextureResource* depthTarget)
     {
         SDL_GPUShader* vertexShader =
-            UploadShader("Data/Engine/Shaders/Default.vert.spv",
-                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
-                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                                                  .stage = SDL_GPU_SHADERSTAGE_VERTEX,
-                                                  .num_uniform_buffers = 2});
+            UploadShader(p.vertexShaderPath,
+                         SDL_GPUShaderCreateInfo {
+                             .entrypoint = "main",
+                             .format = SDL_GPU_SHADERFORMAT_SPIRV,
+                             .stage = SDL_GPU_SHADERSTAGE_VERTEX,
+                             .num_uniform_buffers = p.numVertexUniformBuffers,
+                         });
+
         SDL_GPUShader* fragmentShader =
-            UploadShader("Data/Engine/Shaders/Default.frag.spv",
-                         SDL_GPUShaderCreateInfo {.entrypoint = "main",
-                                                  .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                                                  .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-                                                  .num_samplers = 1,
-                                                  .num_uniform_buffers = 1});
+            UploadShader(p.fragmentShaderPath,
+                         SDL_GPUShaderCreateInfo {
+                             .entrypoint = "main",
+                             .format = SDL_GPU_SHADERFORMAT_SPIRV,
+                             .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
+                             .num_samplers = p.numFragSamplers,
+                             .num_uniform_buffers = p.numFragUniformBuffers,
+                         });
 
-        SDL_GPUVertexBufferDescription vertexDesc {
-            .slot = 0,
-            .pitch = sizeof(MeshVertex),
-            .input_rate = SDL_GPUVertexInputRate::SDL_GPU_VERTEXINPUTRATE_VERTEX,
-            .instance_step_rate = 0};
-
-        std::array<SDL_GPUVertexAttribute, 3> vertexAttribs = {
-            SDL_GPUVertexAttribute {
-                .location = 0,
-                .buffer_slot = 0,
-                .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                .offset = offsetof(MeshVertex, pos)},
-            SDL_GPUVertexAttribute {
-                .location = 1,
-                .buffer_slot = 0,
-                .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                .offset = offsetof(MeshVertex, normal)},
-            SDL_GPUVertexAttribute {
-                .location = 2,
-                .buffer_slot = 0,
-                .format = SDL_GPUVertexElementFormat::SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-                .offset = offsetof(MeshVertex, uv)},
+        std::array colorTargets {
+            SDL_GPUColorTargetDescription {.format = drawTarget.GetFormat()},
         };
-
-        std::array<SDL_GPUColorTargetDescription, 1> colorTargets {
-            SDL_GPUColorTargetDescription {.format = mDrawTarget.GetFormat()}};
 
         SDL_GPUGraphicsPipelineCreateInfo info {
             .vertex_shader = vertexShader,
             .fragment_shader = fragmentShader,
-            .vertex_input_state =
-                SDL_GPUVertexInputState {.vertex_buffer_descriptions = &vertexDesc,
-                                         .num_vertex_buffers = 1,
-                                         .vertex_attributes = vertexAttribs.data(),
-                                         .num_vertex_attributes = vertexAttribs.size()},
-            .primitive_type = SDL_GPUPrimitiveType::SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
-            .rasterizer_state =
-                SDL_GPURasterizerState {.fill_mode = SDL_GPUFillMode::SDL_GPU_FILLMODE_FILL,
-                                        .cull_mode = SDL_GPUCullMode::SDL_GPU_CULLMODE_BACK,
-                                        .front_face =
-                                            SDL_GPUFrontFace::SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
-                                        .enable_depth_clip = true},
-            .multisample_state =
-                SDL_GPUMultisampleState {.sample_count = SDL_GPUSampleCount::SDL_GPU_SAMPLECOUNT_1,
-                                         .sample_mask = 0,
-                                         .enable_mask = false,
-                                         .enable_alpha_to_coverage = false},
-            .depth_stencil_state =
-                SDL_GPUDepthStencilState {.compare_op = SDL_GPU_COMPAREOP_GREATER,
-                                          .enable_depth_test = true,
-                                          .enable_depth_write = true},
+            .vertex_input_state = p.vertexState,
+            .primitive_type = p.primitiveType,
+            .rasterizer_state = p.rasterizerState,
+            .multisample_state = p.multisampleState,
+            .depth_stencil_state = p.depthState,
             .target_info = SDL_GPUGraphicsPipelineTargetInfo {
                 .color_target_descriptions = colorTargets.data(),
                 .num_color_targets = colorTargets.size(),
-                .depth_stencil_format = mDepthTarget.GetFormat(),
-                .has_depth_stencil_target = true,
+                .depth_stencil_format =
+                    depthTarget ? depthTarget->GetFormat() : SDL_GPUTextureFormat {},
+                .has_depth_stencil_target = depthTarget != nullptr,
             }};
 
-        mDefaultGraphicsPipeline = SDL_CreateGPUGraphicsPipeline(mDevice, &info);
+        SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(mDevice, &info);
         SDL_ReleaseGPUShader(mDevice, vertexShader);
         SDL_ReleaseGPUShader(mDevice, fragmentShader);
+
+        return pipeline;
     }
 
     /**

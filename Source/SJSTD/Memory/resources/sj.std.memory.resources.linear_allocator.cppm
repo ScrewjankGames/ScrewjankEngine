@@ -54,7 +54,7 @@ export namespace sj
 
         bool contains_ptr(void* memory) const override
         {
-            return IsPointerInAddressSpace(memory, m_BufferStart, m_BufferEnd);
+            return is_pointer_in_address_space(memory, m_BufferStart, m_BufferEnd);
         }
 
         void* data() 
@@ -76,14 +76,14 @@ export namespace sj
             SJ_ASSERT(is_initialized(), "Trying to allocate with uninitialized allocator!");
 
             // Ensure there is enough space to satisfy allocation
-            if(free_space < size + GetAlignmentOffset(alignment, m_CurrFrameStart))
+            if(free_space < size + get_alignment_offset(alignment, m_CurrFrameStart))
             {
                 SJ_ENGINE_LOG_FATAL(
                     "Allocator has insufficient memory to perform requested allocation");
                 return nullptr;
             }
 
-            auto allocated_memory = AlignMemory(alignment, size, m_CurrFrameStart, free_space);
+            auto allocated_memory = align_memory(alignment, size, m_CurrFrameStart, free_space);
 
             SJ_ASSERT(uintptr_t(allocated_memory) + size <= uintptr_t(m_BufferEnd), "Linear Allocator is out of memory!");
 

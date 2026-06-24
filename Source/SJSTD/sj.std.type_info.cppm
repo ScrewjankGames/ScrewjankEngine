@@ -15,10 +15,10 @@ export namespace sj
 using TypeId = uint32_t;
 
 template <class T>
-constexpr TypeId type_id_of = string_hash(glz::type_name<T>).AsInt();
+constexpr TypeId type_id_of = string_hash(glz::type_name<std::remove_cvref_t<T>>).AsInt();
 
 template <class T>
-constexpr std::string_view type_name_of = glz::type_name<T>;
+constexpr std::string_view type_name_of = glz::type_name<std::remove_cvref_t<T>>;
 
 struct type_info
 {

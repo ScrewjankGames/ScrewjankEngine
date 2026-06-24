@@ -33,17 +33,17 @@ namespace system_tests {
         auto mem_loc1 = allocator.allocate(1);
 
         ASSERT_NE(nullptr, mem_loc1); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
-        ASSERT_TRUE(IsMemoryAligned(mem_loc1, alignof(FreeListDummy)));
+        ASSERT_TRUE(is_memory_aligned(mem_loc1, alignof(FreeListDummy)));
 
         auto Dummy1 = new (mem_loc1) FreeListDummy {.Label='a', .Value=3.14};
 
         FreeListDummy* Dummy2 = allocator.new_object<FreeListDummy>('b', 3.14);
         ASSERT_NE(nullptr, Dummy2); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
-        ASSERT_TRUE(IsMemoryAligned(Dummy2, alignof(FreeListDummy)));
+        ASSERT_TRUE(is_memory_aligned(Dummy2, alignof(FreeListDummy)));
 
         FreeListDummy* Dummy3 = allocator.new_object<FreeListDummy>('c', 3.14);
         ASSERT_NE(nullptr, Dummy3); // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
-        ASSERT_TRUE(IsMemoryAligned(Dummy3, alignof(FreeListDummy)));
+        ASSERT_TRUE(is_memory_aligned(Dummy3, alignof(FreeListDummy)));
 
         // Make sure no memory was stomped by the subsequent allocations
         ASSERT_EQ('a', Dummy1->Label);

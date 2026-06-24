@@ -51,7 +51,7 @@ export namespace sj
 
         bool contains_ptr(void* memory) const override
         {
-            return IsPointerInAddressSpace(
+            return is_pointer_in_address_space(
                 memory,
                 m_BufferStart,
                 reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(m_BufferStart) + m_Capacity));
@@ -88,7 +88,7 @@ export namespace sj
                 reinterpret_cast<void*>(currOffset + sizeof(stack_allocatorHeader));
 
             size_t required_padding =
-                GetAlignmentAdjustment(alignment_requirement, fist_possible_payload_address);
+                get_alignment_adjustment(alignment_requirement, fist_possible_payload_address);
 
             size_t total_allocation_size = required_padding + sizeof(stack_allocatorHeader) + size;
 
@@ -104,7 +104,7 @@ export namespace sj
             // Allocate the header
             void* header_memory = reinterpret_cast<void*>(currOffset + required_padding);
 
-            SJ_ASSERT(IsMemoryAligned(header_memory, alignof(stack_allocatorHeader)),
+            SJ_ASSERT(is_memory_aligned(header_memory, alignof(stack_allocatorHeader)),
                       "Attempting to place allocation header at unaligned address!");
 
             auto old_header = m_CurrentHeader;
