@@ -6,11 +6,11 @@ module;
 #include <glaze/core/context.hpp>
 #include <glaze/core/opts.hpp>
 #include <glaze/glaze.hpp>
+#include <glaze/json/write.hpp>
 
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <glaze/json/write.hpp>
 #include <random>
 #include <string>
 #include <string_view>

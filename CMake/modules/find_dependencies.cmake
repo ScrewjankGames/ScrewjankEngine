@@ -5,7 +5,7 @@ FetchContent_Declare(
   SDL3
   SYSTEM
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-  GIT_TAG release-3.4.0
+  GIT_TAG release-3.4.10
 )
 if(UNIX)
     set(SDL_X11 OFF)
@@ -17,7 +17,7 @@ FetchContent_Declare(
   spdlog
   SYSTEM
   GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.16.0
+  GIT_TAG v1.17.0
 )
 option(SPDLOG_USE_STD_FORMAT ON)
 FetchContent_MakeAvailable(spdlog)
@@ -50,7 +50,7 @@ FetchContent_Declare(
         imgui
         SYSTEM
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.92.6-docking
+        GIT_TAG v1.92.8-docking
 )
 FetchContent_MakeAvailable(imgui)
 set(imgui_src
@@ -73,7 +73,7 @@ FetchContent_Declare(
         implot
         SYSTEM
         GIT_REPOSITORY https://github.com/epezent/implot.git
-        GIT_TAG v0.17
+        GIT_TAG v1.0
 )
 FetchContent_MakeAvailable(implot)
 set(implot_src
@@ -91,7 +91,7 @@ FetchContent_Declare(
         glaze
         SYSTEM
         GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-        GIT_TAG v7.7.0
+        GIT_TAG v7.8.3
 )
 FetchContent_MakeAvailable(glaze)
 
@@ -105,3 +105,12 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+## FastGLTF
+FetchContent_Declare(
+        fastgltf
+        SYSTEM
+        GIT_REPOSITORY https://github.com/spnda/fastgltf.git
+        GIT_TAG v0.9.0
+)
+FetchContent_MakeAvailable(fastgltf)
