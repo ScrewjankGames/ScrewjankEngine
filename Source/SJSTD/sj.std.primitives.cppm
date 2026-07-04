@@ -14,4 +14,5 @@ export namespace sj
     using i32 = std::int32_t;
     using u64 = std::uint64_t;
     using i64 = std::int64_t;
+    using uZ = std::size_t;
 }

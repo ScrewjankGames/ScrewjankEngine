@@ -7,9 +7,12 @@ module;
 export module sj.datadefs.assets.Mesh;
 export import sj.datadefs.assets.AssetType;
 import sj.std.math;
+import sj.std.primitives;
 
 export namespace sj
 {
+    using MeshIndexType = u32;
+    
     struct MeshVertex
     {
         Vec3 pos;

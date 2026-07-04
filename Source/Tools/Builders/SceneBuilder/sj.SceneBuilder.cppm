@@ -8,7 +8,6 @@ module;
 export module sj.SceneBuilder;
 import sj.builders;
 
-
 export namespace sj::build
 {
 class SceneBuilder final : public IBuilder
@@ -31,13 +30,16 @@ public:
         return ".sj_scene";
     }
 
-    bool BuildItem(const std::filesystem::path& item,
-                   const std::filesystem::path& output_path) override
+    bool BuildItem(BuildContext& in_ctx, const std::filesystem::path& item) override
     {
+        auto&& [output_path, id] =
+            in_ctx.Import(item, item.filename().replace_extension(".sj_scene"));
 
-        return std::filesystem::copy_file(item,
-                                          output_path,
-                                          std::filesystem::copy_options::overwrite_existing);
+        bool success =
+            std::filesystem::copy_file(item,
+                                       output_path,
+                                       std::filesystem::copy_options::overwrite_existing);
+        return success;
     }
 };
 } // namespace sj::build

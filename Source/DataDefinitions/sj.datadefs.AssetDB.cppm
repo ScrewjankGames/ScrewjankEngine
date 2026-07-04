@@ -2,17 +2,13 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 
-#include <glaze/beve/write.hpp>
-#include <glaze/core/context.hpp>
-#include <glaze/core/opts.hpp>
 #include <glaze/glaze.hpp>
-#include <glaze/json/write.hpp>
 
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <random>
 #include <string>
+#include <flat_map>
 #include <string_view>
 
 export module sj.datadefs.AssetDB;
@@ -23,26 +19,9 @@ export namespace sj
 using AssetID = uint64_t;
 inline constexpr AssetID kInvalidAssetID = 0;
 
-struct ImportRecord
-{
-    AssetID asset_id = 0;
-};
-
 class AssetDB
 {
 public:
-    static ImportRecord LoadImport(std::string_view importPath)
-    {
-        ImportRecord record;
-        std::vector<char> buffer;
-        glz::error_ctx ctx = glz::read_file_json(record, importPath, buffer);
-        SJ_ASSERT(ctx.ec == glz::error_code::none,
-                  "Failed to load import record from path {}",
-                  importPath);
-
-        return record;
-    }
-
     AssetDB() : mAssetIdDistribution(1) // 0 is not a valid asset ID
     {
         std::random_device device;
@@ -90,11 +69,6 @@ public:
 
     void AddImport(AssetID id, std::string_view path)
     {
-        SJ_ASSERT(!mDB.contains(id),
-                  "Duplicate asset id disovered when registering {}. Currently used by {}",
-                  path,
-                  mDB[id]);
-
         mDB[id] = path;
     }
 

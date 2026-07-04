@@ -25,6 +25,7 @@ target_link_libraries(${PROJECT_NAME}
         ScrewjankStd
         ScrewjankDataDefs
         glaze::glaze
+        stb
 )
 
 target_include_directories(${PROJECT_NAME} 

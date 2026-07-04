@@ -2,9 +2,9 @@
 # Define project-wide locations
 ################################################################################
 # Assets
+set(Game_Proj_Dir ${CMAKE_SOURCE_DIR} CACHE PATH "Where the game lives")
 set(Game_Asset_Dir ${CMAKE_SOURCE_DIR}/Assets/ CACHE PATH "Where the assets live")
 set(Game_Built_Data_Dir ${CMAKE_SOURCE_DIR}/Data/ CACHE PATH "Where the built data goes")
-set(Game_Tmp_Data_Dir ${CMAKE_BINARY_DIR}/sj_tmp/ CACHE PATH "Where intermediate data build artifacts go")
 
 # Shaders
 set(Game_Shader_Source_Dir ${CMAKE_SOURCE_DIR}/Source/Shaders/ )
