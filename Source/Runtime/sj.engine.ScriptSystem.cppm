@@ -10,6 +10,7 @@ module;
 
 #include <flat_map>
 #include <optional>
+#include <memory>
 #include <string_view>
 
 export module sj.engine.ScriptSystem;
@@ -58,16 +59,16 @@ public:
     static constexpr type_list<ScriptComponent> kRegisteredComponents;
     static constexpr type_list<ScriptComponent> kRequestedLifetimeCallbacks;
 
-    ScriptSystem() : L(luaL_newstate())
+    ScriptSystem()
+        : L(luaL_newstate(), [](lua_State* l) {
+              lua_close(l);
+          })
     {
-        luaL_openlibs(L);
-        SetupEnv(L);
+        luaL_openlibs(L.get());
+        SetupEnv(L.get());
     }
 
-    ~ScriptSystem()
-    {
-        lua_close(L);
-    }
+    ~ScriptSystem() = default;
 
     void Initialize(const AssetDB* adb, ECSRegistry* ecs)
     {
@@ -88,8 +89,8 @@ public:
 
         scriptIt->second.refcount_increment();
 
-        [[maybe_unused]] luabridge::Result res = luabridge::push(L, GameObject(goId, mEcs));
-        scriptIt->second->call(luabridge::LuaRef::fromStack(L));
+        [[maybe_unused]] luabridge::Result res = luabridge::push(L.get(), GameObject(goId, mEcs));
+        scriptIt->second->call(luabridge::LuaRef::fromStack(L.get()));
     }
 
     void OnDestroy(GameObjectId goId, ScriptComponent* component)
@@ -172,13 +173,12 @@ private:
         std::pmr::string chunkName(&scope.get_allocator());
         chunkName = scriptPath;
 
-        luau_load(L, chunkName.c_str(), bytecode.data(), bytecode.size(), 0);
-        return luabridge::LuaRef::fromStack(L, -1);
+        luau_load(L.get(), chunkName.c_str(), bytecode.data(), bytecode.size(), 0);
+        return luabridge::LuaRef::fromStack(L.get(), -1);
     }
 
-    lua_State* L;
+    std::unique_ptr<lua_State, void (*)(lua_State*)> L;
     ProcessSignal mProcessCallbacks;
-
     std::flat_map<AssetID, ref<luabridge::LuaRef>> mScripts;
 
     const AssetDB* mAssetDB = nullptr;
