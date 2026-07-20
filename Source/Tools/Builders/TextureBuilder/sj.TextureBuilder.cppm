@@ -32,11 +32,6 @@ public:
         return "Texture Builder";
     }
 
-    [[nodiscard]] std::string_view GetOutputExtension() const override
-    {
-        return ".sj_tex";
-    }
-
     bool BuildItem(BuildContext& in_ctx, const std::filesystem::path& item) override
     {
         auto&& [output_path, id] =

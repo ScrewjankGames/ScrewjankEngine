@@ -20,6 +20,8 @@ import sj.TextureBuilder;
 import sj.SceneBuilder;
 import sj.MeshBuilder;
 import sj.build.GlbBuilder;
+import sj.build.ScriptBuilder;
+
 
 using namespace sj::build;
 
@@ -74,7 +76,7 @@ int main(int argc, const char* argv[])
     SJ_ENGINE_LOG_INFO("Arguments: {}", *glz::write<glz::opts {.format = glz::JSON}>(args));
 
     BuildContext buildCtx =
-        BuildContext::Create<SceneBuilder, MeshBuilder, TextureBuilder, GlbBuilder>(
+        BuildContext::Create<SceneBuilder, MeshBuilder, TextureBuilder, GlbBuilder, ScriptBuilder>(
             args.projectDir,
             args.assetDir,
             args.installDir);

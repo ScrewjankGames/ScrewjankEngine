@@ -114,3 +114,25 @@ FetchContent_Declare(
         GIT_TAG v0.9.0
 )
 FetchContent_MakeAvailable(fastgltf)
+
+
+## Luau
+FetchContent_Declare(
+        luau
+        SYSTEM
+        GIT_REPOSITORY https://github.com/luau-lang/luau.git
+        GIT_TAG 0.728
+)
+FetchContent_MakeAvailable(luau)
+target_compile_definitions(Luau.VM PUBLIC LUA_VECTOR_SIZE=4)
+target_compile_definitions(Luau.Compiler PUBLIC LUA_VECTOR_SIZE=4)
+
+
+## Lua Bridge 3
+FetchContent_Declare(
+        LuaBridge
+        SYSTEM
+        GIT_REPOSITORY https://github.com/kunitoki/LuaBridge3.git
+        GIT_TAG 3.0-rc12
+)
+FetchContent_MakeAvailable(LuaBridge)

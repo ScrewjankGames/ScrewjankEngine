@@ -10,5 +10,6 @@ export import sj.engine.RenderSystem;
 export import sj.engine.InputSystem;
 export import sj.engine.Mesh3DComponent;
 export import sj.engine.Scene;
+export import sj.engine.ScriptSystem;
 export import sj.engine.TransformComponent;
 export import sj.engine.Window;

@@ -16,8 +16,6 @@ module;
 #include <span>
 
 export module sj.build.GlbBuilder;
-import sj.TextureBuilder;
-
 import sj.builders;
 import sj.datadefs;
 import sj.std;
@@ -39,11 +37,6 @@ public:
     [[nodiscard]] std::string_view GetBuilderName() const override
     {
         return "GLB Builder";
-    }
-
-    [[nodiscard]] std::string_view GetOutputExtension() const override
-    {
-        return ".sj_???";
     }
 
     bool BuildItem(BuildContext& in_ctx, const stdfs::path& item) override
@@ -86,26 +79,6 @@ public:
                 std::string primName = std::format("{}_{}", mesh.name, primIdx);
                 auto&& [primOutputPath, assetId] = in_ctx.Import(item, primName + ".sj_tex");
                 BuildMesh(asset.get(), prim, primOutputPath);
-            }
-        }
-
-        for(fastgltf::Scene& scene : asset->scenes)
-        {
-            std::string sceneName = item.string();
-            SceneChunk chunk {
-                .scene_name = std::string_view(sceneName),
-            };
-
-            for(auto nodeIdx : scene.nodeIndices)
-            {
-                fastgltf::Node& node = asset->nodes[nodeIdx];
-                if(node.meshIndex)
-                {
-                    fastgltf::Mesh& mesh = asset->meshes[*node.meshIndex];
-                    for(fastgltf::Primitive& p : mesh.primitives)
-                    {
-                    }
-                }
             }
         }
 
@@ -186,7 +159,8 @@ private:
             fastgltf::iterateAccessor<fastgltf::math::fvec2>(asset,
                                                              texCoordAccessor,
                                                              [&](fastgltf::math::fvec2 uv) {
-                                                                 res.emplace_back(uv.x(), 1.0 - uv.y());
+                                                                 res.emplace_back(uv.x(),
+                                                                                  1.0 - uv.y());
                                                              });
             return res;
         }();

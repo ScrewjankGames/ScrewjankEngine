@@ -42,10 +42,6 @@ public:
     {
         return "Mesh Builder";
     }
-    [[nodiscard]] std::string_view GetOutputExtension() const override
-    {
-        return ".sj_mesh";
-    }
 
     bool BuildItem(BuildContext& in_ctx, const std::filesystem::path& item) override
     {

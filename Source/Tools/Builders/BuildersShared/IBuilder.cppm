@@ -18,7 +18,6 @@ public:
 
     [[nodiscard]] virtual std::span<const std::string_view> GetExtensions() const = 0;
     [[nodiscard]] virtual std::string_view GetBuilderName() const = 0;
-    [[nodiscard]] virtual std::string_view GetOutputExtension() const = 0;
 
     [[nodiscard]] virtual bool BuildItem(BuildContext& in_ctx,
                                          const std::filesystem::path& item) = 0;

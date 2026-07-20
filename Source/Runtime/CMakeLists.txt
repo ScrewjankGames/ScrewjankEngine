@@ -37,6 +37,8 @@ target_link_libraries(${PROJECT_NAME}
         imgui
         implot
         glaze::glaze
+        Luau.VM
+        LuaBridge
 )
 
 ################################################################################
