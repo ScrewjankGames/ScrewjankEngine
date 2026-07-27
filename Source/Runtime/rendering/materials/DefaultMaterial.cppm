@@ -16,7 +16,7 @@ export namespace sj
 
 struct DefaultMaterial
 {
-    Vec4 baseAlbedo {1.0f, 1.0f, 1.0f, 1.0f};
+    vec4 baseAlbedo {1.0f, 1.0f, 1.0f, 1.0f};
     AssetID albedoTexture = kInvalidAssetID;
 };
 

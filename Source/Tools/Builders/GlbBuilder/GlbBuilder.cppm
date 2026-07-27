@@ -110,21 +110,21 @@ private:
                   "A mesh primitive is required to hold the POSITION attribute.");
 
         auto& positionAccessor = asset.accessors[positionAttrIt->accessorIndex];
-        const auto positions = [&] -> std::vector<Vec3> {
-            std::vector<Vec3> res;
+        const auto positions = [&] -> std::vector<vec3> {
+            std::vector<vec3> res;
             res.reserve(positionAccessor.count);
             fastgltf::iterateAccessor<fastgltf::math::fvec3>(
                 asset,
                 positionAccessor,
                 [&](fastgltf::math::fvec3 pos) {
-                    res.emplace_back(Vec3(pos.x(), pos.y(), pos.z()));
+                    res.emplace_back(vec3(pos.x(), pos.y(), pos.z()));
                 });
             return res;
         }();
         const uZ vertexCount = positions.size();
 
-        const auto normals = [&] -> std::vector<Vec3> {
-            std::vector<Vec3> res;
+        const auto normals = [&] -> std::vector<vec3> {
+            std::vector<vec3> res;
             auto* normalsAttrIt = meshPrim.findAttribute("NORMAL");
             if(normalsAttrIt == meshPrim.attributes.end())
             {
@@ -139,13 +139,13 @@ private:
                 asset,
                 positionAccessor,
                 [&](fastgltf::math::fvec3 pos) {
-                    res.emplace_back(Vec3(pos.x(), pos.y(), pos.z()));
+                    res.emplace_back(vec3(pos.x(), pos.y(), pos.z()));
                 });
             return res;
         }();
 
-        const auto uvs = [&] -> std::vector<Vec2> {
-            std::vector<Vec2> res;
+        const auto uvs = [&] -> std::vector<vec2> {
+            std::vector<vec2> res;
             std::string attrName = std::format("TEXCOORD_{}", baseColorTexcoordIndex);
             auto texcoordAttrIt = meshPrim.findAttribute(attrName);
             if(texcoordAttrIt == meshPrim.attributes.end())

@@ -35,8 +35,8 @@ public:
         const Config& config = program.GetConfig();
         SJ_ENGINE_LOG_INFO("Creating window");
         mWindowHandle = SDL_CreateWindow(config.program_name.c_str(),
-                                         static_cast<int>(config.window_size.GetX()),
-                                         static_cast<int>(config.window_size.GetY()),
+                                         static_cast<int>(config.window_size.get_x()),
+                                         static_cast<int>(config.window_size.get_y()),
                                          SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
                                              SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
@@ -58,14 +58,14 @@ public:
     /**
      * @return Window size in pixels
      */
-    [[nodiscard]] Vec2 GetViewportSize() const
+    [[nodiscard]] vec2 GetViewportSize() const
     {
         int width = 0;
         int height = 0;
 
         SDL_GetWindowSize(mWindowHandle, &width, &height);
 
-        return Vec2(static_cast<float>(width), static_cast<float>(height));
+        return vec2(static_cast<float>(width), static_cast<float>(height));
     }
 
     SDL_Window* GetWindowHandle()

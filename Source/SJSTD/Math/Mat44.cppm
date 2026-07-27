@@ -4,309 +4,312 @@ module;
 #include <numbers>
 #include <array>
 
-export module sj.std.math:Mat44;
+export module sj.std.math:mat44;
 import :Vec3;
 import :Vec4;
 import :Tags;
 
 export namespace sj
 {
-    class Mat44;
+class mat44;
 
-    constexpr Mat44 operator*(float s, const Mat44& m);
-    constexpr Vec4 operator*(const Vec4& v, const Mat44& m);
-    constexpr Mat44 operator*(const Mat44& a, const Mat44& b);
-    constexpr Mat44 operator*(const Mat44& m, float s);
-    constexpr Mat44 operator+(const Mat44& a, const Mat44& b);
+constexpr mat44 operator*(float s, const mat44& m);
+constexpr vec4 operator*(const vec4& v, const mat44& m);
+constexpr mat44 operator*(const mat44& a, const mat44& b);
+constexpr mat44 operator*(const mat44& m, float s);
+constexpr mat44 operator+(const mat44& a, const mat44& b);
 
-    class alignas(16) Mat44
+class alignas(16) mat44
+{
+public:
+    constexpr mat44() = default;
+    constexpr mat44(IdentityTagT)
+        : m_rows {vec4(1, 0, 0, 0), vec4(0, 1, 0, 0), vec4(0, 0, 1, 0), vec4(0, 0, 0, 1)}
     {
-    public:
-        constexpr Mat44() = default;
-        constexpr Mat44(IdentityTagT)
-            : m_rows {Vec4(1, 0, 0, 0), Vec4(0, 1, 0, 0), Vec4(0, 0, 1, 0), Vec4(0, 0, 0, 1)}
+    }
+
+    constexpr mat44(vec4 x, vec4 y, vec4 z, vec4 w) : m_rows {x, y, z, w}
+    {
+    }
+
+    template <int tRow>
+    [[nodiscard]] constexpr auto get_row() const -> vec4
+    {
+        static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
+        return m_rows[tRow];
+    }
+
+    template <int tCol>
+    [[nodiscard]] constexpr auto get_col() const -> vec4
+    {
+        static_assert(tCol >= 0 && tCol <= 3, "Column index OOR");
+
+        return {m_rows[0].get<tCol>(),
+                m_rows[1].get<tCol>(),
+                m_rows[2].get<tCol>(),
+                m_rows[3].get<tCol>()};
+    }
+
+    template <int tRow>
+    mat44& set_row(vec4 v)
+    {
+        static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
+        m_rows[tRow] = v;
+        return *this;
+    }
+
+    template <int tRow, int tCol>
+    [[nodiscard]] constexpr auto get() const -> float
+    {
+        return get_row<tRow>().template get<tCol>();
+    }
+
+    template <int tRow, int tCol>
+    constexpr auto set(float value) -> mat44&
+    {
+        static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
+        m_rows[tRow].set<tCol>(value);
+        return *this;
+    }
+
+    [[nodiscard]] constexpr const vec4& get_x() const
+    {
+        return m_rows[0];
+    }
+
+    [[nodiscard]] constexpr const vec4& get_y() const
+    {
+        return m_rows[1];
+    }
+
+    [[nodiscard]] constexpr const vec4& get_z() const
+    {
+        return m_rows[2];
+    }
+
+    [[nodiscard]] constexpr const vec4& get_w() const
+    {
+        return m_rows[3];
+    }
+
+    constexpr auto set_x(vec4 v) -> mat44&
+    {
+        m_rows[0] = v;
+        return *this;
+    }
+
+    constexpr auto set_y(vec4 v) -> mat44&
+    {
+        m_rows[1] = v;
+        return *this;
+    }
+
+    constexpr auto set_z(vec4 v) -> mat44&
+    {
+        m_rows[2] = v;
+        return *this;
+    }
+
+    constexpr auto set_w(vec4 v) -> mat44&
+    {
+        m_rows[3] = v;
+        return *this;
+    }
+
+    constexpr auto set_rot_euler_xyz(const vec3& eulers) -> mat44&
+    {
+        float xScale = m_rows[0].magnitude();
+        float yScale = m_rows[1].magnitude();
+        float zScale = m_rows[2].magnitude();
+
+        mat44 rotation = mat44::from_euler_xyz(eulers);
+        m_rows[0] = rotation.m_rows[0] * xScale;
+        m_rows[1] = rotation.m_rows[1] * yScale;
+        m_rows[2] = rotation.m_rows[2] * zScale;
+
+        return *this;
+    }
+
+    [[nodiscard]] auto affine_inverse() const -> mat44
+    {
+        const float invScaleX = 1.0f / get_x().magnitude();
+        const float invScaleY = 1.0f / get_y().magnitude();
+        const float invScaleZ = 1.0f / get_z().magnitude();
+
+        const vec4 unitX = get_x() * invScaleX;
+        const vec4 unitY = get_y() * invScaleY;
+        const vec4 unitZ = get_z() * invScaleZ;
+
+        mat44 inverseRot {
+            {unitX.get_x() * invScaleX, unitY.get_x() * invScaleX, unitZ.get_x() * invScaleX, 0},
+            {unitX.get_y() * invScaleY, unitY.get_y() * invScaleY, unitZ.get_y() * invScaleY, 0},
+            {unitX.get_z() * invScaleZ, unitY.get_z() * invScaleZ, unitZ.get_z() * invScaleZ, 0},
+            {0.0f, 0.0f, 0.0f, 1}};
+
+        vec4 inverseT = (-get_w()) * inverseRot;
+        inverseT.set_w(1.0f);
+
+        return {inverseRot.get_x(), inverseRot.get_y(), inverseRot.get_z(), inverseT};
+    }
+
+    [[nodiscard]] static auto from_euler_xyz(const vec3& eulers) -> mat44
+    {
+        mat44 x {
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, std::cosf(eulers[0]), std::sinf(eulers[0]), 0.0f},
+            {0.0f, -std::sinf(eulers[0]), std::cosf(eulers[0]), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        mat44 y {
+            {std::cosf(eulers[1]), 0.0f, -std::sinf(eulers[1]), 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {std::sinf(eulers[1]), 0.0f, std::cosf(eulers[1]), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        mat44 z {
+            {std::cosf(eulers[2]), std::sinf(eulers[2]), 0.0f, 0.0f},
+            {-std::sinf(eulers[2]), std::cosf(eulers[2]), 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+
+        return x * y * z;
+    }
+
+    [[nodiscard]] static auto from_euler_xyz(const vec3& eulers, const vec4& translation) -> mat44
+    {
+        mat44 output = from_euler_xyz(eulers);
+        output.set_w(translation);
+        return output;
+    }
+
+    [[nodiscard]] constexpr auto get_euler_angles() const -> vec3
+    {
+        vec4 xAxis = m_rows[0].normalize3_w0();
+        vec4 yAxis = m_rows[1].normalize3_w0();
+        vec4 zAxis = m_rows[2].normalize3_w0();
+
+        if(!(xAxis.get<2>() == 1 || xAxis.get<2>() == -1))
         {
+            float yRot = -std::asin(xAxis.get<2>());
+            float invCosY = 1.0f / std::cos(yRot);
+
+            float xRot = std::atan2(yAxis.get<2>() * invCosY, zAxis.get<2>() * invCosY);
+            float zRot = std::atan2(xAxis.get<1>() * invCosY, xAxis.get<0>() * invCosY);
+
+            return sj::vec3 {.x = xRot, .y = yRot, .z = zRot};
         }
-
-        constexpr Mat44(Vec4 x, Vec4 y, Vec4 z, Vec4 w) : m_rows {x, y, z, w}
+        else
         {
-        }
-
-        template <int tRow>
-        [[nodiscard]] constexpr auto GetRow() const -> Vec4
-        {
-            static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
-            return m_rows[tRow];
-        }
-
-        template <int tCol>
-        [[nodiscard]] constexpr auto GetCol() const -> Vec4
-        {
-            static_assert(tCol >= 0 && tCol <= 3, "Column index OOR");
-
-            return {m_rows[0].Get<tCol>(),
-                    m_rows[1].Get<tCol>(),
-                    m_rows[2].Get<tCol>(),
-                    m_rows[3].Get<tCol>()};
-        }
-
-        template<int tRow>
-        Mat44& SetRow(Vec4 v)
-        {
-            static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
-            m_rows[tRow] = v;
-            return *this;
-        }
-
-        template <int tRow, int tCol>
-        [[nodiscard]] constexpr auto Get() const -> float
-        {
-            return GetRow<tRow>().template Get<tCol>();
-        }
-
-        template <int tRow, int tCol>
-        constexpr auto Set(float value) -> Mat44&
-        {
-            static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
-            m_rows[tRow].Set<tCol>(value);
-            return *this;
-        }
-
-        [[nodiscard]] constexpr const Vec4& GetX() const
-        {
-            return m_rows[0];
-        }
-
-        [[nodiscard]] constexpr const Vec4& GetY() const
-        {
-            return m_rows[1];
-        }
-
-        [[nodiscard]] constexpr const Vec4& GetZ() const
-        {
-            return m_rows[2];
-        }
-
-        [[nodiscard]] constexpr const Vec4& GetW() const
-        {
-            return m_rows[3];
-        }
-
-        constexpr auto SetX(Vec4 v) -> Mat44&
-        {
-            m_rows[0] = v;
-            return *this;
-        }
-
-        constexpr auto SetY(Vec4 v) -> Mat44&
-        {
-            m_rows[1] = v;
-            return *this;
-        }
-
-        constexpr auto SetZ(Vec4 v) -> Mat44&
-        {
-            m_rows[2] = v;
-            return *this;
-        }
-
-        constexpr auto SetW(Vec4 v) -> Mat44&
-        {
-            m_rows[3] = v;
-            return *this;
-        }
-
-        constexpr auto SetRotationEulerXYZ(const Vec3& eulers) -> Mat44&
-        {
-            float xScale = m_rows[0].Magnitude();
-            float yScale = m_rows[1].Magnitude();
-            float zScale = m_rows[2].Magnitude();
-
-            Mat44 rotation = Mat44::FromEulerXYZ(eulers);
-            m_rows[0] = rotation.m_rows[0] * xScale;
-            m_rows[1] = rotation.m_rows[1] * yScale;
-            m_rows[2] = rotation.m_rows[2] * zScale;
-
-            return *this;
-        }
-
-        [[nodiscard]] auto AffineInverse() const -> Mat44
-        {
-            const float invScaleX = 1.0f / GetX().Magnitude();
-            const float invScaleY = 1.0f / GetY().Magnitude();
-            const float invScaleZ = 1.0f / GetZ().Magnitude();
-
-            const Vec4 unitX = GetX() * invScaleX;
-            const Vec4 unitY = GetY() * invScaleY;
-            const Vec4 unitZ = GetZ() * invScaleZ;
-
-            Mat44 inverseRot {
-                {unitX.GetX() * invScaleX, unitY.GetX() * invScaleX, unitZ.GetX() * invScaleX, 0},
-                {unitX.GetY() * invScaleY, unitY.GetY() * invScaleY, unitZ.GetY() * invScaleY, 0},
-                {unitX.GetZ() * invScaleZ, unitY.GetZ() * invScaleZ, unitZ.GetZ() * invScaleZ, 0},
-                {0.0f, 0.0f, 0.0f, 1}};
-
-            Vec4 inverseT = (-GetW()) * inverseRot;
-            inverseT.SetW(1.0f);
-
-            return {inverseRot.GetX(), inverseRot.GetY(), inverseRot.GetZ(), inverseT};
-        }
-
-        [[nodiscard]] static auto FromEulerXYZ(const Vec3& eulers) -> Mat44
-        {
-            Mat44 x {
-                {1.0f, 0.0f, 0.0f, 0.0f},
-                {0.0f, std::cosf(eulers[0]), std::sinf(eulers[0]), 0.0f},
-                {0.0f, -std::sinf(eulers[0]), std::cosf(eulers[0]), 0.0f},
-                {0.0f, 0.0f, 0.0f, 1.0f},
-            };
-
-            Mat44 y {
-                {std::cosf(eulers[1]), 0.0f, -std::sinf(eulers[1]), 0.0f},
-                {0.0f, 1.0f, 0.0f, 0.0f},
-                {std::sinf(eulers[1]), 0.0f, std::cosf(eulers[1]), 0.0f},
-                {0.0f, 0.0f, 0.0f, 1.0f},
-            };
-
-            Mat44 z {
-                {std::cosf(eulers[2]), std::sinf(eulers[2]), 0.0f, 0.0f},
-                {-std::sinf(eulers[2]), std::cosf(eulers[2]), 0.0f, 0.0f},
-                {0.0f, 0.0f, 1.0f, 0.0f},
-                {0.0f, 0.0f, 0.0f, 1.0f},
-            };
-
-            return x * y * z;
-        }
-
-        [[nodiscard]] static auto FromEulerXYZ(const Vec3& eulers, const Vec4& translation) -> Mat44
-        {
-            Mat44 output = FromEulerXYZ(eulers);
-            output.SetW(translation);
-            return output;
-        }
-
-        [[nodiscard]] constexpr auto GetEulerAngles() const -> Vec3
-        {
-            Vec4 xAxis = m_rows[0].Normalize3_W0();
-            Vec4 yAxis = m_rows[1].Normalize3_W0();
-            Vec4 zAxis = m_rows[2].Normalize3_W0();
-
-            if(!(xAxis.Get<2>() == 1 || xAxis.Get<2>() == -1))
+            constexpr float pi_over_2 = std::numbers::pi_v<float> / 2.0f;
+            float zRot = 0;
+            if(xAxis.get<2>() == -1)
             {
-                float yRot = -std::asin(xAxis.Get<2>());
-                float invCosY = 1.0f / std::cos(yRot);
-
-                float xRot = std::atan2(yAxis.Get<2>() * invCosY, zAxis.Get<2>() * invCosY);
-                float zRot = std::atan2(xAxis.Get<1>() * invCosY, xAxis.Get<0>() * invCosY);
-
-                return sj::Vec3 {.x = xRot, .y = yRot, .z = zRot};
+                float yRot = pi_over_2;
+                float xRot = std::atan2(yAxis.get<0>(), zAxis.get<0>());
+                return sj::vec3 {.x = xRot, .y = yRot, .z = zRot};
             }
             else
             {
-                constexpr float pi_over_2 = std::numbers::pi_v<float> / 2.0f;
-                float zRot = 0;
-                if(xAxis.Get<2>() == -1)
-                {
-                    float yRot = pi_over_2;
-                    float xRot = std::atan2(yAxis.Get<0>(), zAxis.Get<0>());
-                    return sj::Vec3 {.x = xRot, .y = yRot, .z = zRot};
-                }
-                else
-                {
-                    float yRot = -pi_over_2;
-                    float xRot = std::atan2(-yAxis.Get<0>(), -zAxis.Get<0>());
-                    return sj::Vec3 {.x = xRot, .y = yRot, .z = zRot};
-                }
+                float yRot = -pi_over_2;
+                float xRot = std::atan2(-yAxis.get<0>(), -zAxis.get<0>());
+                return sj::vec3 {.x = xRot, .y = yRot, .z = zRot};
             }
         }
+    }
 
-        [[nodiscard]] auto Data() -> std::array<Vec4, 4>&
-        {
-            return m_rows;
-        }
+    [[nodiscard]] auto&& data(this auto&& self) //-> std::array<(const?)vec4, 4>&
+    {
+        return self.m_rows;
+    }
 
-        [[nodiscard]] auto Data() const -> const std::array<Vec4, 4>&
-        {
-            return m_rows;
-        }
-        
-    private:
-        std::array<Vec4, 4> m_rows;
+private:
+    std::array<vec4, 4> m_rows;
+};
+
+constexpr mat44 operator*(float s, const mat44& m)
+{
+    return m * s;
+};
+
+constexpr vec4 operator*(const vec4& v, const mat44& m)
+{
+    float xPrime = (v.get_x() * m.get<0, 0>())
+                   + (v.get_y() * m.get<1, 0>())
+                   + (v.get_z() * m.get<2, 0>())
+                   + (v.get_w() * m.get<3, 0>());
+    float yPrime = (v.get_x() * m.get<0, 1>())
+                   + (v.get_y() * m.get<1, 1>())
+                   + (v.get_z() * m.get<2, 1>())
+                   + (v.get_w() * m.get<3, 1>());
+    float zPrime = (v.get_x() * m.get<0, 2>())
+                   + (v.get_y() * m.get<1, 2>())
+                   + (v.get_z() * m.get<2, 2>())
+                   + (v.get_w() * m.get<3, 2>());
+    float wPrime = (v.get_x() * m.get<0, 3>())
+                   + (v.get_y() * m.get<1, 3>())
+                   + (v.get_z() * m.get<2, 3>())
+                   + (v.get_w() * m.get<3, 3>());
+
+    return {xPrime, yPrime, zPrime, wPrime};
+}
+
+constexpr mat44 operator*(const mat44& a, const mat44& b)
+{
+    const vec4 aX = a.get_x();
+    const vec4 aY = a.get_y();
+    const vec4 aZ = a.get_z();
+    const vec4 aW = a.get_w();
+
+    return mat44 {{aX.dot(b.get_col<0>()),
+                   aX.dot(b.get_col<1>()),
+                   aX.dot(b.get_col<2>()),
+                   aX.dot(b.get_col<3>())},
+                  {aY.dot(b.get_col<0>()),
+                   aY.dot(b.get_col<1>()),
+                   aY.dot(b.get_col<2>()),
+                   aY.dot(b.get_col<3>())},
+                  {aZ.dot(b.get_col<0>()),
+                   aZ.dot(b.get_col<1>()),
+                   aZ.dot(b.get_col<2>()),
+                   aZ.dot(b.get_col<3>())},
+                  {aW.dot(b.get_col<0>()),
+                   aW.dot(b.get_col<1>()),
+                   aW.dot(b.get_col<2>()),
+                   aW.dot(b.get_col<3>())}};
+}
+
+constexpr mat44 operator*(const mat44& m, float s)
+{
+    return {m.get_row<0>() * s, m.get_row<1>() * s, m.get_row<2>() * s, m.get_row<3>() * s};
+}
+
+constexpr mat44 operator+(const mat44& a, const mat44& b)
+{
+    return {a.get_row<0>() + b.get_row<0>(),
+            a.get_row<1>() + b.get_row<1>(),
+            a.get_row<2>() + b.get_row<2>(),
+            a.get_row<3>() + b.get_row<3>()};
+}
+
+[[nodiscard]] mat44 constexpr build_transform(const vec4 scale,
+                                             const vec3& eulers,
+                                             const vec4& translation)
+{
+    mat44 r = mat44::from_euler_xyz(eulers);
+
+    mat44 s = mat44 {
+        {scale.get<0>(), 0, 0, 0},
+        {0, scale.get<1>(), 0, 0},
+        {0, 0, scale.get<2>(), 0},
+        {0, 0, 0, 1},
     };
 
-    constexpr Mat44 operator*(float s, const Mat44& m)
-    {
-        return m * s;
-    };
+    mat44 t(Vec4_UnitX, Vec4_UnitY, Vec4_UnitZ, translation);
 
-    constexpr Vec4 operator*(const Vec4& v, const Mat44& m)
-    {
-        float xPrime = (v.GetX() * m.Get<0, 0>()) + (v.GetY() * m.Get<1, 0>()) +
-                       (v.GetZ() * m.Get<2, 0>()) + (v.GetW() * m.Get<3, 0>());
-        float yPrime = (v.GetX() * m.Get<0, 1>()) + (v.GetY() * m.Get<1, 1>()) +
-                       (v.GetZ() * m.Get<2, 1>()) + (v.GetW() * m.Get<3, 1>());
-        float zPrime = (v.GetX() * m.Get<0, 2>()) + (v.GetY() * m.Get<1, 2>()) +
-                       (v.GetZ() * m.Get<2, 2>()) + (v.GetW() * m.Get<3, 2>());
-        float wPrime = (v.GetX() * m.Get<0, 3>()) + (v.GetY() * m.Get<1, 3>()) +
-                       (v.GetZ() * m.Get<2, 3>()) + (v.GetW() * m.Get<3, 3>());
-
-        return {xPrime, yPrime, zPrime, wPrime};
-    }
-
-    constexpr Mat44 operator*(const Mat44& a, const Mat44& b)
-    {
-        const Vec4 aX = a.GetX();
-        const Vec4 aY = a.GetY();
-        const Vec4 aZ = a.GetZ();
-        const Vec4 aW = a.GetW();
-
-        return Mat44 {{aX.Dot(b.GetCol<0>()),
-                       aX.Dot(b.GetCol<1>()),
-                       aX.Dot(b.GetCol<2>()),
-                       aX.Dot(b.GetCol<3>())},
-                      {aY.Dot(b.GetCol<0>()),
-                       aY.Dot(b.GetCol<1>()),
-                       aY.Dot(b.GetCol<2>()),
-                       aY.Dot(b.GetCol<3>())},
-                      {aZ.Dot(b.GetCol<0>()),
-                       aZ.Dot(b.GetCol<1>()),
-                       aZ.Dot(b.GetCol<2>()),
-                       aZ.Dot(b.GetCol<3>())},
-                      {aW.Dot(b.GetCol<0>()),
-                       aW.Dot(b.GetCol<1>()),
-                       aW.Dot(b.GetCol<2>()),
-                       aW.Dot(b.GetCol<3>())}};
-    }
-
-    constexpr Mat44 operator*(const Mat44& m, float s)
-    {
-        return {m.GetRow<0>() * s, m.GetRow<1>() * s, m.GetRow<2>() * s, m.GetRow<3>() * s};
-    }
-
-    constexpr Mat44 operator+(const Mat44& a, const Mat44& b)
-    {
-        return {a.GetRow<0>() + b.GetRow<0>(),
-                a.GetRow<1>() + b.GetRow<1>(),
-                a.GetRow<2>() + b.GetRow<2>(),
-                a.GetRow<3>() + b.GetRow<3>()};
-    }
-
-    [[nodiscard]] Mat44 constexpr BuildTransform(const Vec4 scale,
-                                                 const Vec3& eulers,
-                                                 const Vec4& translation)
-    {
-        Mat44 r = Mat44::FromEulerXYZ(eulers);
-
-        Mat44 s = Mat44 {
-            {scale.Get<0>(), 0, 0, 0},
-            {0, scale.Get<1>(), 0, 0},
-            {0, 0, scale.Get<2>(), 0},
-            {0, 0, 0, 1},
-        };
-
-        Mat44 t(Vec4_UnitX, Vec4_UnitY, Vec4_UnitZ, translation);
-
-        return s * r * t;
-    }
+    return s * r * t;
+}
 
 } // namespace sj

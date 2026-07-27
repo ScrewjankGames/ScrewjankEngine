@@ -15,9 +15,9 @@ export namespace sj
     
     struct MeshVertex
     {
-        Vec3 pos;
-        Vec3 normal;
-        Vec2 uv;
+        vec3 pos;
+        vec3 normal;
+        vec2 uv;
 
         inline bool operator==(const MeshVertex& other) const
         {
@@ -41,8 +41,8 @@ export namespace std
     {
         size_t operator()(sj::MeshVertex const& vertex) const
         {
-            return ((hash<sj::Vec3>()(vertex.pos) ^ (hash<sj::Vec3>()(vertex.normal) << 1)) >> 1) ^
-                   (hash<sj::Vec2>()(vertex.uv) << 1);
+            return ((hash<sj::vec3>()(vertex.pos) ^ (hash<sj::vec3>()(vertex.normal) << 1)) >> 1) ^
+                   (hash<sj::vec2>()(vertex.uv) << 1);
         }
     };
 } // namespace std

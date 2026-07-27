@@ -2,28 +2,28 @@ export module sj.std.math:Vec3;
 
 export namespace sj
 {
-    class Vec3
+class vec3
+{
+public:
+    auto&& operator[](this auto&& self, int idx) // -> float& or const float&
     {
-    public:
-        auto&& operator[](this auto&& self, int idx) // -> float& or const float&
-        {
-            return (&(self.x))[idx];
-        }
+        return (&(self.x))[idx];
+    }
 
-        Vec3& operator+=(const Vec3& other)
-        {
-            x += other.x;
-            y += other.y;
-            z += other.z;
+    vec3& operator+=(const vec3& other)
+    {
+        x += other.x;
+        y += other.y;
+        z += other.z;
 
-            return *this;
-        }
+        return *this;
+    }
 
-        inline bool operator==(const Vec3& other) const
-        {
-            return x == other.x && y == other.y && z == other.z;
-        }
+    inline bool operator==(const vec3& other) const
+    {
+        return x == other.x && y == other.y && z == other.z;
+    }
 
-        float x, y, z;
-    };
+    float x, y, z;
+};
 } // namespace sj

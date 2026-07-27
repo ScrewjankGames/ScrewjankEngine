@@ -43,18 +43,18 @@ export namespace sj
 {
 struct GlobalUniformBufferObject
 {
-    Mat44 view;
-    Mat44 projection;
+    mat44 view;
+    mat44 projection;
 };
 
 struct ModelUniformBufferObject
 {
-    Mat44 modelToWorld;
+    mat44 modelToWorld;
 };
 
 struct DefaultMaterialUniformBufferObject
 {
-    Vec4 baseAlbedoColor = {};
+    vec4 baseAlbedoColor = {};
     uint32_t useTexSampler = 0;
 };
 
@@ -247,17 +247,17 @@ public:
 
     struct MeshDrawArg
     {
-        Mat44 modelToWorld = {kIdentityTag};
+        mat44 modelToWorld = {kIdentityTag};
         AssetID modelId = {};
         AssetID textureId = {};
     };
 
-    void DrawPass(const Mat44& cameraMatrix, std::span<MeshDrawArg> meshes)
+    void DrawPass(const mat44& cameraMatrix, std::span<MeshDrawArg> meshes)
     {
         SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(mDevice);
 
-        uint32_t displayWidth = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX());
-        uint32_t displayHeight = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY());
+        uint32_t displayWidth = static_cast<uint32_t>(mDisplay->GetViewportSize().get_x());
+        uint32_t displayHeight = static_cast<uint32_t>(mDisplay->GetViewportSize().get_y());
 
         if(displayWidth != mDepthTarget.GetWidth() || displayHeight != mDepthTarget.GetHeight())
         {
@@ -269,8 +269,8 @@ public:
             static_cast<float>(displayWidth) / static_cast<float>(displayHeight);
 
         GlobalUniformBufferObject tmpGUBO {
-            .view = cameraMatrix.AffineInverse(),
-            .projection = PerspectiveProjection(ToRadians(45.0f), aspectRatio, 10000.0f, 0.1f)};
+            .view = cameraMatrix.affine_inverse(),
+            .projection = PerspectiveProjection(to_rads(45.0f), aspectRatio, 10000.0f, 0.1f)};
         SDL_PushGPUVertexUniformData(commandBuffer, 0, &tmpGUBO, sizeof(GlobalUniformBufferObject));
 
         SDL_GPUColorTargetInfo colorTargetInfo {
@@ -301,7 +301,7 @@ public:
                 continue;
             }
 
-            ModelUniformBufferObject tmpModelUBO {.modelToWorld = Mat44(arg.modelToWorld)};
+            ModelUniformBufferObject tmpModelUBO {.modelToWorld = mat44(arg.modelToWorld)};
             SDL_PushGPUVertexUniformData(commandBuffer,
                                          1,
                                          &tmpModelUBO,
@@ -309,7 +309,7 @@ public:
 
             const bool useTexture = arg.textureId != kInvalidAssetID;
             DefaultMaterialUniformBufferObject matUBO {
-                .baseAlbedoColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f),
+                .baseAlbedoColor = vec4(1.0f, 1.0f, 1.0f, 1.0f),
                 .useTexSampler = useTexture,
             };
             SDL_PushGPUFragmentUniformData(commandBuffer,
@@ -543,8 +543,8 @@ private:
     {
         SDL_GPUTextureCreateInfo targetInfo {
             .type = SDL_GPUTextureType::SDL_GPU_TEXTURETYPE_2D,
-            .width = static_cast<uint32_t>(mDisplay->GetViewportSize().GetX()),
-            .height = static_cast<uint32_t>(mDisplay->GetViewportSize().GetY()),
+            .width = static_cast<uint32_t>(mDisplay->GetViewportSize().get_x()),
+            .height = static_cast<uint32_t>(mDisplay->GetViewportSize().get_y()),
             .layer_count_or_depth = 1,
             .num_levels = 1};
 
@@ -617,16 +617,16 @@ private:
      * https://www.youtube.com/watch?v=U0_ONQQ5ZNM
      * https://www.youtube.com/watch?v=YO46x8fALzE
      */
-    Mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
+    mat44 PerspectiveProjection(float verticalFOV, float aspectRatio, float near, float far)
     {
         const float invTanHalfvFov = 1.0f / std::tan(verticalFOV / 2.0f);
 
-        Mat44 res;
-        res.Set<0, 0>(invTanHalfvFov / aspectRatio);
-        res.Set<1, 1>(invTanHalfvFov);
-        res.Set<2, 2>(far / (near - far));
-        res.Set<2, 3>(-1.0f);
-        res.Set<3, 2>((near * far) / (near - far));
+        mat44 res;
+        res.set<0, 0>(invTanHalfvFov / aspectRatio);
+        res.set<1, 1>(invTanHalfvFov);
+        res.set<2, 2>(far / (near - far));
+        res.set<2, 3>(-1.0f);
+        res.set<3, 2>((near * far) / (near - far));
 
         return res;
     }

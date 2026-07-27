@@ -20,11 +20,11 @@ constexpr SDL_GPUVertexElementFormat GetVertexElementFormat()
 {
     switch(type_id_of<T>)
     {
-        case type_id_of<Vec2>:
+        case type_id_of<vec2>:
             return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-        case type_id_of<Vec3>:
+        case type_id_of<vec3>:
             return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-        case type_id_of<Vec4>:
+        case type_id_of<vec4>:
             return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
     }
 

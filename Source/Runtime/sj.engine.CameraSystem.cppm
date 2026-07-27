@@ -24,10 +24,10 @@ public:
         for(auto&& [goId, transform, camera] : query)
         {
             // TODO: What if there's multiple
-            Mat44 localToGoTransform = camera.localToGoTransform;
-            const Mat44& goWorldSpaceTransform = transform.localToParent;
+            mat44 localToGoTransform = camera.localToGoTransform;
+            const mat44& goWorldSpaceTransform = transform.localToParent;
 
-            Mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
+            mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
 
             mOutputCameraGo = goId;
             mOutputCameraLW = outputTransform;
@@ -38,13 +38,13 @@ public:
         SJ_ASSERT(false, "Scene has no camera component");
     }
 
-    [[nodiscard]] Mat44 GetOutputCameraMatrix() const
+    [[nodiscard]] mat44 GetOutputCameraMatrix() const
     {
         return mOutputCameraLW;
     }
 
 private:
     GameObjectId mOutputCameraGo {};
-    Mat44 mOutputCameraLW = Mat44(kIdentityTag);
+    mat44 mOutputCameraLW = mat44(kIdentityTag);
 };
 } // namespace sj

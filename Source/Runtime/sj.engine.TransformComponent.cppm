@@ -13,6 +13,6 @@ export namespace sj
 {
 struct TransformComponent
 {
-    Mat44 localToParent = Mat44(kIdentityTag);
+    mat44 localToParent = mat44(kIdentityTag);
 };
 } // namespace sj

@@ -43,7 +43,7 @@ struct Config
 {
     std::string program_name;
     AssetID default_scene;
-    Vec2 window_size;
+    vec2 window_size;
     InputBindings input_bindings;
 };
 

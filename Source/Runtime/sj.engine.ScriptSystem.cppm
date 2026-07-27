@@ -23,20 +23,20 @@ import sj.engine.InputSystem;
 namespace luabridge
 {
 template <>
-struct Stack<sj::Vec4>
+struct Stack<sj::vec4>
 {
-    static Result push(lua_State* L, const sj::Vec4& vec)
+    static Result push(lua_State* L, const sj::vec4& vec)
     {
         // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.GetX(), vec.GetY(), vec.GetZ(), vec.GetW());
+        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), vec.get_w());
         return Result {};
     }
 
-    static TypeResult<sj::Vec4> get(lua_State* L, int index)
+    static TypeResult<sj::vec4> get(lua_State* L, int index)
     {
         // Retrieve Luau vector from the stack
         const float* vec = lua_tovector(L, index);
-        return sj::Vec4(vec[0], vec[1], vec[2], vec[3]);
+        return sj::vec4(vec[0], vec[1], vec[2], vec[3]);
     }
 
     static bool isInstance(lua_State* L, int index)
@@ -46,20 +46,20 @@ struct Stack<sj::Vec4>
 };
 
 template <>
-struct Stack<sj::Vec3>
+struct Stack<sj::vec3>
 {
-    static Result push(lua_State* L, const sj::Vec4& vec)
+    static Result push(lua_State* L, const sj::vec4& vec)
     {
         // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.GetX(), vec.GetY(), vec.GetZ(), 0.0f);
+        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), 0.0f);
         return Result {};
     }
 
-    static TypeResult<sj::Vec3> get(lua_State* L, int index)
+    static TypeResult<sj::vec3> get(lua_State* L, int index)
     {
         // Retrieve Luau vector from the stack
         const float* vec = lua_tovector(L, index);
-        return sj::Vec3(vec[0], vec[1], vec[2]);
+        return sj::vec3(vec[0], vec[1], vec[2]);
     }
 
     static bool isInstance(lua_State* L, int index)
@@ -172,30 +172,30 @@ private:
     }
 
     template <size_t tRow>
-    static void Mat44SetterHelper(Mat44* m, const Vec4& v)
+    static void mat44SetterHelper(mat44* m, const vec4& v)
     {
-        m->SetRow<tRow>(v);
+        m->set_row<tRow>(v);
     }
 
     void SetupEnv(lua_State* L)
     {
         luabridge::getGlobalNamespace(L)
-            .beginClass<Mat44>("Mat44")
-            .addProperty("x", &Mat44::GetRow<0>, Mat44SetterHelper<0>)
-            .addProperty("y", &Mat44::GetRow<1>, Mat44SetterHelper<1>)
-            .addProperty("z", &Mat44::GetRow<2>, Mat44SetterHelper<2>)
-            .addProperty("w", &Mat44::GetRow<3>, Mat44SetterHelper<3>)
-            .addFunction("GetEulerAngles", &Mat44::GetEulerAngles)
-            .addFunction("SetRotationEulerXYZ", &Mat44::SetRotationEulerXYZ)
+            .beginClass<mat44>("mat44")
+            .addProperty("x", &mat44::get_row<0>, mat44SetterHelper<0>)
+            .addProperty("y", &mat44::get_row<1>, mat44SetterHelper<1>)
+            .addProperty("z", &mat44::get_row<2>, mat44SetterHelper<2>)
+            .addProperty("w", &mat44::get_row<3>, mat44SetterHelper<3>)
+            .addFunction("get_euler_angles", &mat44::get_euler_angles)
+            .addFunction("set_rot_euler_xyz", &mat44::set_rot_euler_xyz)
             .endClass()
 
             .beginClass<GameObject>("GameObject")
             .addProperty(
                 "TransformWS",
-                [](GameObject& go) -> Mat44 {
+                [](GameObject& go) -> mat44 {
                     return go.GetComponent<TransformComponent>()->localToParent;
                 },
-                [](GameObject& go, const Mat44& ws) {
+                [](GameObject& go, const mat44& ws) {
                     go.GetComponent<TransformComponent>()->localToParent = ws;
                 })
             .endClass()

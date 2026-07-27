@@ -9,7 +9,7 @@ export namespace sj
 {
 struct CameraComponent
 {
-    Mat44 localToGoTransform;
+    mat44 localToGoTransform;
     float fov = 0;
     float nearPlane = 0;
     float farPlane = 0;

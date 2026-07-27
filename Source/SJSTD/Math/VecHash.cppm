@@ -9,40 +9,40 @@ import :Vec3;
 
 export namespace sj
 {
-    inline void HashCombine(size_t& seed, size_t hash)
-    {
-        hash += 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= hash;
-    }
+inline void HashCombine(size_t& seed, size_t hash)
+{
+    hash += 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= hash;
 }
+} // namespace sj
 
 export namespace std
 {
-    template <>
-    struct hash<sj::Vec2>
+template <>
+struct hash<sj::vec2>
+{
+    size_t operator()(sj::vec2 const& v) const
     {
-        size_t operator()(sj::Vec2 const& v) const
-        {
-            size_t seed = 0;
-            hash<float> hasher;
-            sj::HashCombine(seed, hasher(v.GetX()));
-            sj::HashCombine(seed, hasher(v.GetY()));
-            return seed;
-        }
-    };
+        size_t seed = 0;
+        hash<float> hasher;
+        sj::HashCombine(seed, hasher(v.get_x()));
+        sj::HashCombine(seed, hasher(v.get_y()));
+        return seed;
+    }
+};
 
-    template <>
-    struct hash<sj::Vec3>
+template <>
+struct hash<sj::vec3>
+{
+    size_t operator()(sj::vec3 const& v) const
     {
-        size_t operator()(sj::Vec3 const& v) const
-        {
-            size_t seed = 0;
-            hash<float> hasher;
-            sj::HashCombine(seed, hasher(v[0]));
-            sj::HashCombine(seed, hasher(v[1]));
-            sj::HashCombine(seed, hasher(v[2]));
-            return seed;
-        }
-    };
+        size_t seed = 0;
+        hash<float> hasher;
+        sj::HashCombine(seed, hasher(v[0]));
+        sj::HashCombine(seed, hasher(v[1]));
+        sj::HashCombine(seed, hasher(v[2]));
+        return seed;
+    }
+};
 
 } // namespace std

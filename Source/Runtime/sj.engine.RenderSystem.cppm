@@ -41,7 +41,7 @@ public:
         mRenderer->RemoveTextureReference(component->texture_id);
     }
 
-    void Process(ECSRegistry& ecs, Renderer& renderer, const Mat44& cameraMatrix, float deltaTime)
+    void Process(ECSRegistry& ecs, Renderer& renderer, const mat44& cameraMatrix, float deltaTime)
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());

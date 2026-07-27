@@ -93,22 +93,22 @@ struct from<BEVE, sj::string_hash>
 };
 
 template <>
-struct from<JSON, sj::Vec4>
+struct from<JSON, sj::vec4>
 {
     template <auto Opts>
-    static void op(sj::Vec4& vec, auto&&... args)
+    static void op(sj::vec4& vec, auto&&... args)
     {
         std::array<float, 4> data = {};
         glz::parse<JSON>::op<Opts>(data, args...);
-        vec = sj::Vec4(data[0], data[1], data[2], data[3]);
+        vec = sj::vec4(data[0], data[1], data[2], data[3]);
     }
 };
 
 template <>
-struct from<JSON, sj::Vec3>
+struct from<JSON, sj::vec3>
 {
     template <auto Opts>
-    static void op(sj::Vec3& vec, auto&&... args)
+    static void op(sj::vec3& vec, auto&&... args)
     {
         std::array<float, 3> data = {};
         glz::parse<JSON>::op<Opts>(data, args...);
@@ -117,22 +117,22 @@ struct from<JSON, sj::Vec3>
 };
 
 template <>
-struct from<JSON, sj::Vec2>
+struct from<JSON, sj::vec2>
 {
     template <auto Opts>
-    static void op(sj::Vec2& vec, auto&&... args)
+    static void op(sj::vec2& vec, auto&&... args)
     {
         std::array<float, 2> data = {};
         glz::parse<JSON>::op<Opts>(data, args...);
-        vec = sj::Vec2(data[0], data[1]);
+        vec = sj::vec2(data[0], data[1]);
     }
 };
 
 template <>
-struct to<BEVE, sj::Vec3>
+struct to<BEVE, sj::vec3>
 {
     template <auto Opts>
-    static void op(const sj::Vec3& vec, auto&&... args)
+    static void op(const sj::vec3& vec, auto&&... args)
     {
         std::array<float, 3> data = {vec.x, vec.y, vec.z};
         glz::serialize<BEVE>::op<Opts>(data, args...);
@@ -140,67 +140,67 @@ struct to<BEVE, sj::Vec3>
 };
 
 template <>
-struct to<BEVE, sj::Vec4>
+struct to<BEVE, sj::vec4>
 {
     template <auto Opts>
-    static void op(const sj::Vec4& vec, auto&&... args)
+    static void op(const sj::vec4& vec, auto&&... args)
     {
-        std::array<float, 4> data = vec.Data();
+        std::array<float, 4> data = vec.data();
         glz::serialize<BEVE>::op<Opts>(data, args...);
     }
 };
 
 template <>
-struct from<BEVE, sj::Vec4>
+struct from<BEVE, sj::vec4>
 {
     template <auto Opts>
-    static void op(sj::Vec4& vec, auto&&... args)
+    static void op(sj::vec4& vec, auto&&... args)
     {
-        glz::parse<BEVE>::op<Opts>(vec.Data(), args...);
+        glz::parse<BEVE>::op<Opts>(vec.data(), args...);
     }
 };
 
 template <>
-struct from<JSON, sj::Mat44>
+struct from<JSON, sj::mat44>
 {
     template <auto Opts>
-    static void op(sj::Mat44& transform, auto&&... args)
+    static void op(sj::mat44& transform, auto&&... args)
     {
         struct MatLayout
         {
-            sj::Vec3 translation;
-            sj::Vec3 rotation;
-            sj::Vec3 scale;
+            sj::vec3 translation;
+            sj::vec3 rotation;
+            sj::vec3 scale;
         } layout;
 
         glz::parse<JSON>::op<Opts>(layout, args...);
 
-        layout.rotation.x = sj::ToRadians(layout.rotation.x);
-        layout.rotation.y = sj::ToRadians(layout.rotation.y);
-        layout.rotation.z = sj::ToRadians(layout.rotation.z);
+        layout.rotation.x = sj::to_rads(layout.rotation.x);
+        layout.rotation.y = sj::to_rads(layout.rotation.y);
+        layout.rotation.z = sj::to_rads(layout.rotation.z);
 
         transform =
-            sj::BuildTransform(layout.scale, layout.rotation, sj::Vec4(layout.translation, 1));
+            sj::build_transform(layout.scale, layout.rotation, sj::vec4(layout.translation, 1));
     }
 };
 
 template <>
-struct to<BEVE, sj::Mat44>
+struct to<BEVE, sj::mat44>
 {
     template <auto Opts>
-    static void op(const sj::Mat44& m, auto&&... args)
+    static void op(const sj::mat44& m, auto&&... args)
     {
-        glz::serialize<BEVE>::op<Opts>(m.Data(), args...);
+        glz::serialize<BEVE>::op<Opts>(m.data(), args...);
     }
 };
 
 template <>
-struct from<BEVE, sj::Mat44>
+struct from<BEVE, sj::mat44>
 {
     template <auto Opts>
-    static void op(sj::Mat44& m, auto&&... args)
+    static void op(sj::mat44& m, auto&&... args)
     {
-        glz::parse<BEVE>::op<Opts>(m.Data(), args...);
+        glz::parse<BEVE>::op<Opts>(m.data(), args...);
     }
 };
 } // namespace glz

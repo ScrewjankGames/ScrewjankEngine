@@ -9,205 +9,213 @@ import :Vec3;
 
 export namespace sj
 {
-    // Forward Declares
-    class Vec2;
-    class Vec3;
-    class Quat;
+// Forward Declares
+class vec2;
+class vec3;
+class quat;
 
-    class alignas(16) Vec4
+class alignas(16) vec4
+{
+public:
+    constexpr vec4() = default;
+    constexpr vec4(const vec2& v, float z = 0.0f, float w = 0.0f)
+        : m_elements {v.get_x(), v.get_y(), z, w}
     {
-    public:
-        constexpr Vec4() = default;
-        constexpr Vec4(const Vec2& v, float z = 0.0f, float w = 0.0f)
-            : m_elements {v.GetX(), v.GetY(), z, w}
-        {
-        }
-
-        constexpr Vec4(const Vec3& v, float w = 0.0f) : m_elements {v[0], v[1], v[2], w}
-        {
-        }
-
-        constexpr Vec4(float x, float y, float z, float w) : m_elements {x, y, z, w}
-        {
-        }
-
-        template<int tCol>
-        [[nodiscard]] constexpr auto Get() const -> float
-        {
-            static_assert(tCol >= 0 && tCol <= 3, "Index out of range");
-
-            return m_elements[tCol];
-        }
-
-        template<int tCol>
-        constexpr auto Set(float v) -> Vec4&
-        {
-            static_assert(tCol >= 0 && tCol <= 3, "Index out of range");
-
-            m_elements[tCol] = v;
-            return *this;
-        }
-
-        constexpr Vec4& operator+=(const Vec4& other)
-        {
-            m_elements[0] += other.m_elements[0];
-            m_elements[1] += other.m_elements[1];
-            m_elements[2] += other.m_elements[2];
-            m_elements[3] += other.m_elements[3];
-
-            return *this;
-        }
-
-        [[nodiscard]] constexpr Vec4 operator/(const float s) const
-        {
-            return {m_elements[0] / s, m_elements[1] / s, m_elements[2] / s, m_elements[3] / s};
-        }
-
-        [[nodiscard]] constexpr Vec4 operator-(const Vec4& other) const
-        {
-            return {m_elements[0] - other.m_elements[0],
-                    m_elements[1] - other.m_elements[1],
-                    m_elements[2] - other.m_elements[2],
-                    m_elements[3] - other.m_elements[3]};
-        }
-
-        constexpr Vec4& operator*=(float scalar)
-        {
-            m_elements[0] *= scalar;
-            m_elements[1] *= scalar;
-            m_elements[2] *= scalar;
-            m_elements[3] *= scalar;
-
-            return *this;
-        }
-
-        [[nodiscard]] constexpr Vec4 operator-() const
-        {
-            return {GetX() * -1.0f, GetY() * -1.0f, GetZ() * -1.0f, GetW() * -1.0f};
-        }
-
-        [[nodiscard]] constexpr bool operator==(const Vec4& other) const
-        {
-            return (m_elements[0] == other.m_elements[0]) &&
-                   (m_elements[1] == other.m_elements[1]) &&
-                   (m_elements[2] == other.m_elements[2]) && (m_elements[3] == other.m_elements[3]);
-        }
-
-        [[nodiscard]] constexpr float Dot(const Vec4& other) const
-        {
-            return (m_elements[0] * other.m_elements[0]) + (m_elements[1] * other.m_elements[1]) +
-                   (m_elements[2] * other.m_elements[2]) + (m_elements[3] * other.m_elements[3]);
-        }
-
-        [[nodiscard]] constexpr Vec4 Cross(const Vec4& b) const
-        {
-            return {(m_elements[1] * b.m_elements[2]) - (m_elements[2] * b.m_elements[1]),
-                    (m_elements[2] * b.m_elements[0]) - (m_elements[0] * b.m_elements[2]),
-                    (m_elements[0] * b.m_elements[1]) - (m_elements[1] * b.m_elements[0]),
-                    0};
-        }
-
-        [[nodiscard]] constexpr float GetX() const
-        {
-            return m_elements[0];
-        }
-
-        [[nodiscard]] constexpr float GetY() const
-        {
-            return m_elements[1];
-        }
-
-        [[nodiscard]] constexpr float GetZ() const
-        {
-            return m_elements[2];
-        }
-
-        [[nodiscard]] constexpr float GetW() const
-        {
-            return m_elements[3];
-        }
-
-        constexpr Vec4& SetX(float x) 
-        {
-            m_elements[0] = x;
-            return *this;
-        }
-
-        constexpr Vec4& SetY(float y)
-        {
-            m_elements[1] = y;
-            return *this;
-        }
-
-        constexpr Vec4& SetZ(float z)
-        {
-            m_elements[2] = z;
-            return *this;
-        }
-
-        constexpr Vec4& SetW(float w)
-        {
-            m_elements[3] = w;
-            return *this;
-        }
-
-        [[nodiscard]] auto Data() -> std::array<float, 4>&
-        {
-            return m_elements;
-        }
-
-        [[nodiscard]] auto Data() const -> const std::array<float, 4>&
-        {
-            return m_elements;
-        }
-
-        [[nodiscard]] constexpr auto MagnitudeSqr() const -> float
-        {
-            return this->Dot(*this);
-        }
-
-        [[nodiscard]] auto Magnitude() const -> float
-        {
-            return std::sqrtf(this->MagnitudeSqr());
-        }
-
-        [[nodiscard]] auto Normalize() const -> Vec4 // Not reference!
-        {
-            return *this / Magnitude();
-        }
-
-        [[nodiscard]] auto Normalize3_W0() const -> Vec4 // Not reference!
-        {
-            Vec4 tmp = *this;
-            tmp.SetW(0);
-            return tmp.Normalize();
-        }
-
-    private:
-        std::array<float, 4> m_elements = {};
-    };
-
-    constexpr inline Vec4 Vec4_UnitX = Vec4(1, 0, 0, 0);
-    constexpr inline Vec4 Vec4_UnitY = Vec4(0, 1, 0, 0);
-    constexpr inline Vec4 Vec4_UnitZ = Vec4(0, 0, 1, 0);
-    constexpr inline Vec4 Vec4_UnitW = Vec4(0, 0, 0, 1);
-    constexpr inline Vec4 Vec4_Right = Vec4_UnitX;
-    constexpr inline Vec4 Vec4_Up = Vec4_UnitY;
-    constexpr inline Vec4 Vec4_Forward = -Vec4_UnitZ;
-
-    [[nodiscard]] constexpr Vec4 operator*(const Vec4& v, const float s)
-    {
-        return {v.GetX() * s, v.GetY() * s, v.GetZ() * s, v.GetW() * s};
     }
 
-    [[nodiscard]] constexpr Vec4 operator*(const float s, const Vec4& v)
+    constexpr vec4(const vec3& v, float w = 0.0f) : m_elements {v[0], v[1], v[2], w}
     {
-        return v * s;
     }
 
-    [[nodiscard]] constexpr Vec4 operator+(const Vec4& a, const Vec4& b)
+    constexpr vec4(float x, float y, float z, float w) : m_elements {x, y, z, w}
     {
-        return {a.GetX() + b.GetX(), a.GetY() + b.GetY(), a.GetZ() + b.GetZ(), a.GetW() + b.GetW()};
     }
+
+    template <int tCol>
+    [[nodiscard]] constexpr auto get() const -> float
+    {
+        static_assert(tCol >= 0 && tCol <= 3, "Index out of range");
+
+        return m_elements[tCol];
+    }
+
+    template <int tCol>
+    constexpr auto set(float v) -> vec4&
+    {
+        static_assert(tCol >= 0 && tCol <= 3, "Index out of range");
+
+        m_elements[tCol] = v;
+        return *this;
+    }
+
+    constexpr vec4& operator+=(const vec4& other)
+    {
+        m_elements[0] += other.m_elements[0];
+        m_elements[1] += other.m_elements[1];
+        m_elements[2] += other.m_elements[2];
+        m_elements[3] += other.m_elements[3];
+
+        return *this;
+    }
+
+    [[nodiscard]] constexpr vec4 operator/(const float s) const
+    {
+        return {m_elements[0] / s, m_elements[1] / s, m_elements[2] / s, m_elements[3] / s};
+    }
+
+    [[nodiscard]] constexpr vec4 operator-(const vec4& other) const
+    {
+        return {m_elements[0] - other.m_elements[0],
+                m_elements[1] - other.m_elements[1],
+                m_elements[2] - other.m_elements[2],
+                m_elements[3] - other.m_elements[3]};
+    }
+
+    constexpr vec4& operator*=(float scalar)
+    {
+        m_elements[0] *= scalar;
+        m_elements[1] *= scalar;
+        m_elements[2] *= scalar;
+        m_elements[3] *= scalar;
+
+        return *this;
+    }
+
+    [[nodiscard]] constexpr vec4 operator-() const
+    {
+        return {get_x() * -1.0f, get_y() * -1.0f, get_z() * -1.0f, get_w() * -1.0f};
+    }
+
+    [[nodiscard]] constexpr bool operator==(const vec4& other) const
+    {
+        return (m_elements[0] == other.m_elements[0])
+               && (m_elements[1] == other.m_elements[1])
+               && (m_elements[2] == other.m_elements[2])
+               && (m_elements[3] == other.m_elements[3]);
+    }
+
+    [[nodiscard]] constexpr float dot(const vec4& other) const
+    {
+        return (m_elements[0] * other.m_elements[0])
+               + (m_elements[1] * other.m_elements[1])
+               + (m_elements[2] * other.m_elements[2])
+               + (m_elements[3] * other.m_elements[3]);
+    }
+
+    [[nodiscard]] constexpr vec4 cross(const vec4& b) const
+    {
+        return {(m_elements[1] * b.m_elements[2]) - (m_elements[2] * b.m_elements[1]),
+                (m_elements[2] * b.m_elements[0]) - (m_elements[0] * b.m_elements[2]),
+                (m_elements[0] * b.m_elements[1]) - (m_elements[1] * b.m_elements[0]),
+                0};
+    }
+
+    [[nodiscard]] constexpr float get_x() const
+    {
+        return m_elements[0];
+    }
+
+    [[nodiscard]] constexpr float get_y() const
+    {
+        return m_elements[1];
+    }
+
+    [[nodiscard]] constexpr float get_z() const
+    {
+        return m_elements[2];
+    }
+
+    [[nodiscard]] constexpr float get_w() const
+    {
+        return m_elements[3];
+    }
+
+    constexpr vec4& set_x(float x)
+    {
+        m_elements[0] = x;
+        return *this;
+    }
+
+    constexpr vec4& set_y(float y)
+    {
+        m_elements[1] = y;
+        return *this;
+    }
+
+    constexpr vec4& set_z(float z)
+    {
+        m_elements[2] = z;
+        return *this;
+    }
+
+    constexpr vec4& set_w(float w)
+    {
+        m_elements[3] = w;
+        return *this;
+    }
+
+    [[nodiscard]] constexpr auto&& data(this auto&& self) // -> std::array<(const?) float, 4>&,
+    {
+        return std::forward<decltype(self)>(self).m_elements;
+    }
+
+    [[nodiscard]] constexpr auto magnitude_sqr() const -> float
+    {
+        return this->dot(*this);
+    }
+
+    [[nodiscard]] auto magnitude() const -> float
+    {
+        return std::sqrtf(this->magnitude_sqr());
+    }
+
+    [[nodiscard]] auto normalize() const -> vec4 // Not reference!
+    {
+        return *this / magnitude();
+    }
+
+    [[nodiscard]] auto normalize3() const -> vec4 // Not reference!
+    {
+        vec4 tmp = *this;
+        tmp.set_w(0);
+        return tmp / tmp.magnitude();
+    }
+
+    [[nodiscard]] auto normalize3_w0() const -> vec4 // Not reference!
+    {
+        vec4 tmp = *this;
+        tmp.set_w(0);
+        return tmp.normalize();
+    }
+
+private:
+    std::array<float, 4> m_elements = {};
+};
+
+constexpr inline vec4 Vec4_UnitX = vec4(1, 0, 0, 0);
+constexpr inline vec4 Vec4_UnitY = vec4(0, 1, 0, 0);
+constexpr inline vec4 Vec4_UnitZ = vec4(0, 0, 1, 0);
+constexpr inline vec4 Vec4_UnitW = vec4(0, 0, 0, 1);
+constexpr inline vec4 Vec4_Right = Vec4_UnitX;
+constexpr inline vec4 Vec4_Up = Vec4_UnitY;
+constexpr inline vec4 Vec4_Forward = -Vec4_UnitZ;
+
+[[nodiscard]] constexpr vec4 operator*(const vec4& v, const float s)
+{
+    return {v.get_x() * s, v.get_y() * s, v.get_z() * s, v.get_w() * s};
+}
+
+[[nodiscard]] constexpr vec4 operator*(const float s, const vec4& v)
+{
+    return v * s;
+}
+
+[[nodiscard]] constexpr vec4 operator+(const vec4& a, const vec4& b)
+{
+    return {a.get_x() + b.get_x(),
+            a.get_y() + b.get_y(),
+            a.get_z() + b.get_z(),
+            a.get_w() + b.get_w()};
+}
 
 } // namespace sj

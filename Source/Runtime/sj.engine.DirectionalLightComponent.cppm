@@ -7,7 +7,7 @@ export namespace sj
 {
 struct DirectionalLightComponent
 {
-    Vec4 dir;
-    Vec4 color;
+    vec4 dir;
+    vec4 color;
 };
 } // namespace sj

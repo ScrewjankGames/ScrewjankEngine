@@ -1,5 +1,5 @@
 
-declare extern type Mat44 with
+declare extern type mat44 with
     x: vector
     y: vector
     z: vector
@@ -7,5 +7,5 @@ declare extern type Mat44 with
 end
 
 declare extern type GameObject with
-    function GetTransform(self): Mat44
+    function GetTransform(self): mat44
 end
