@@ -12,62 +12,16 @@ module;
 #include <memory>
 #include <string_view>
 
-export module sj.engine.ScriptSystem;
+export module sj.engine.scripting:ScriptSystem;
+import :Signal;
+import :LuauStack;
+import :TypeRegistration;
+
 import sj.std;
 import sj.datadefs;
 import sj.engine.ecs;
-import sj.engine.TransformComponent;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.InputSystem;
-
-namespace luabridge
-{
-template <>
-struct Stack<sj::vec4>
-{
-    static Result push(lua_State* L, const sj::vec4& vec)
-    {
-        // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), vec.get_w());
-        return Result {};
-    }
-
-    static TypeResult<sj::vec4> get(lua_State* L, int index)
-    {
-        // Retrieve Luau vector from the stack
-        const float* vec = lua_tovector(L, index);
-        return sj::vec4(vec[0], vec[1], vec[2], vec[3]);
-    }
-
-    static bool isInstance(lua_State* L, int index)
-    {
-        return lua_isvector(L, index);
-    }
-};
-
-template <>
-struct Stack<sj::vec3>
-{
-    static Result push(lua_State* L, const sj::vec4& vec)
-    {
-        // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), 0.0f);
-        return Result {};
-    }
-
-    static TypeResult<sj::vec3> get(lua_State* L, int index)
-    {
-        // Retrieve Luau vector from the stack
-        const float* vec = lua_tovector(L, index);
-        return sj::vec3(vec[0], vec[1], vec[2]);
-    }
-
-    static bool isInstance(lua_State* L, int index)
-    {
-        return lua_isvector(L, index);
-    }
-};
-} // namespace luabridge
 
 export namespace sj
 {
@@ -128,28 +82,6 @@ public:
     }
 
 private:
-    template <class... Args>
-    class LuauSignal
-    {
-    public:
-        // Store the callback using luabridge::LuaRef
-        void Connect(luabridge::LuaRef callback)
-        {
-            SJ_ASSERT(callback.isFunction(), "Can only connect function to luau signals");
-            slots.emplace_back(std::move(callback));
-        }
-
-        void Trigger(Args&... args)
-        {
-            for(luabridge::LuaRef& slot : slots)
-                slot(args...);
-        }
-
-    private:
-        std::vector<luabridge::LuaRef> slots;
-    };
-
-    using ProcessSignal = LuauSignal<float>;
 
     static luabridge::LuaRef LoadScript(lua_State* L, std::string_view scriptPath)
     {
@@ -171,46 +103,17 @@ private:
         return res;
     }
 
-    template <size_t tRow>
-    static void mat44SetterHelper(mat44* m, const vec4& v)
-    {
-        m->set_row<tRow>(v);
-    }
-
     void SetupEnv(lua_State* L)
     {
+        RegisterTypes(L);
+        
+        // Additional Types
         luabridge::getGlobalNamespace(L)
-            .beginClass<mat44>("mat44")
-            .addProperty("x", &mat44::get_row<0>, mat44SetterHelper<0>)
-            .addProperty("y", &mat44::get_row<1>, mat44SetterHelper<1>)
-            .addProperty("z", &mat44::get_row<2>, mat44SetterHelper<2>)
-            .addProperty("w", &mat44::get_row<3>, mat44SetterHelper<3>)
-            .addFunction("get_euler_angles", &mat44::get_euler_angles)
-            .addFunction("set_rot_euler_xyz", &mat44::set_rot_euler_xyz)
-            .endClass()
-
-            .beginClass<GameObject>("GameObject")
-            .addProperty(
-                "TransformWS",
-                [](GameObject& go) -> mat44 {
-                    return go.GetComponent<TransformComponent>()->localToParent;
-                },
-                [](GameObject& go, const mat44& ws) {
-                    go.GetComponent<TransformComponent>()->localToParent = ws;
-                })
-            .endClass()
-
-            .beginClass<InputSystem>("InputSystem")
-            .addFunction("GetAxisValue",
-                         [](InputSystem* input, const std::string_view& str) -> float {
-                             return input->GetAxisValue(str);
-                         })
-            .endClass()
-
             .beginClass<ProcessSignal>("ProcessSignal")
             .addFunction("Connect", &ProcessSignal::Connect)
             .endClass();
 
+        // Globals
         luabridge::getGlobalNamespace(L)
             .beginNamespace("Game")
             .addVariable("Process", &mProcessCallbacks)

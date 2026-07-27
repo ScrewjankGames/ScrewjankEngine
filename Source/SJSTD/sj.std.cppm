@@ -13,6 +13,7 @@ export import sj.std.ref;
 export import sj.std.rtti;
 export import sj.std.string_hash;
 export import sj.std.string_literal;
+export import sj.std.timer;
 export import sj.std.tuple;
 export import sj.std.type_info;
 export import sj.std.type_traits;

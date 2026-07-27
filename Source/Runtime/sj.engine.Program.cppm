@@ -22,8 +22,6 @@ import sj.datadefs;
 
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
-import sj.engine.system.Timer;
-
 
 export namespace sj
 {
@@ -121,12 +119,12 @@ protected:
 
     void Run()
     {
-        Timer timer;
-        auto previousTime = timer.Now();
+        timer timer;
+        auto previousTime = timer.now();
 
         while(!mTerminated)
         {
-            mDeltaSeconds = timer.Elapsed();
+            mDeltaSeconds = timer.elapsed();
             if(mDeltaSeconds > kMaxDeltaTime)
             {
                 SJ_ENGINE_LOG_WARN("Large delta time detected- {}. Capping at {}",
@@ -134,7 +132,7 @@ protected:
                                    kMaxDeltaTime)
                 mDeltaSeconds = kMaxDeltaTime;
             }
-            timer.Reset();
+            timer.reset();
 
             ProcessEvents();
 
