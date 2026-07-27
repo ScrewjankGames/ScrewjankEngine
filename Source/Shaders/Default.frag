@@ -18,7 +18,7 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
     vec4 lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    vec3 lightPos = vec3(0,2,0);
+    vec3 lightPos = vec3(0,0,0);
     vec3 lightDir = normalize(lightPos - inFragPos);
 
     float ambientStrength = 0.1;
@@ -32,6 +32,6 @@ void main()
     float diffuseAmt = max(dot(inNormal, lightDir), 0.0);
     vec4 diffuseColor = diffuseAmt * lightColor;
 
-    //outColor = (ambientColor + diffuseColor) * albedoColor;
-    outColor = albedoColor;
+    outColor = (ambientColor + diffuseColor) * albedoColor;
+    //outColor = albedoColor;
 }

@@ -67,6 +67,7 @@ export namespace sj
         template <int tRow, int tCol>
         constexpr auto Set(float value) -> Mat44&
         {
+            static_assert(tRow >= 0 && tRow <= 3, "Row index out of range!");
             m_rows[tRow].Set<tCol>(value);
             return *this;
         }
@@ -112,6 +113,20 @@ export namespace sj
         constexpr auto SetW(Vec4 v) -> Mat44&
         {
             m_rows[3] = v;
+            return *this;
+        }
+
+        constexpr auto SetRotationEulerXYZ(const Vec3& eulers) -> Mat44&
+        {
+            float xScale = m_rows[0].Magnitude();
+            float yScale = m_rows[1].Magnitude();
+            float zScale = m_rows[2].Magnitude();
+
+            Mat44 rotation = Mat44::FromEulerXYZ(eulers);
+            m_rows[0] = rotation.m_rows[0] * xScale;
+            m_rows[1] = rotation.m_rows[1] * yScale;
+            m_rows[2] = rotation.m_rows[2] * zScale;
+
             return *this;
         }
 

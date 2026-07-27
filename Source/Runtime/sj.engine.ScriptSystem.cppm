@@ -9,7 +9,6 @@ module;
 #include <LuaBridge/detail/LuaRef.h>
 
 #include <flat_map>
-#include <optional>
 #include <memory>
 #include <string_view>
 
@@ -19,6 +18,7 @@ import sj.datadefs;
 import sj.engine.ecs;
 import sj.engine.TransformComponent;
 import sj.engine.system.threading.ThreadContext;
+import sj.engine.InputSystem;
 
 namespace luabridge
 {
@@ -37,6 +37,29 @@ struct Stack<sj::Vec4>
         // Retrieve Luau vector from the stack
         const float* vec = lua_tovector(L, index);
         return sj::Vec4(vec[0], vec[1], vec[2], vec[3]);
+    }
+
+    static bool isInstance(lua_State* L, int index)
+    {
+        return lua_isvector(L, index);
+    }
+};
+
+template <>
+struct Stack<sj::Vec3>
+{
+    static Result push(lua_State* L, const sj::Vec4& vec)
+    {
+        // Push as a native vector (Luau's internal vector type)
+        lua_pushvector(L, vec.GetX(), vec.GetY(), vec.GetZ(), 0.0f);
+        return Result {};
+    }
+
+    static TypeResult<sj::Vec3> get(lua_State* L, int index)
+    {
+        // Retrieve Luau vector from the stack
+        const float* vec = lua_tovector(L, index);
+        return sj::Vec3(vec[0], vec[1], vec[2]);
     }
 
     static bool isInstance(lua_State* L, int index)
@@ -65,15 +88,16 @@ public:
           })
     {
         luaL_openlibs(L.get());
-        SetupEnv(L.get());
     }
 
     ~ScriptSystem() = default;
 
-    void Initialize(const AssetDB* adb, ECSRegistry* ecs)
+    void Initialize(const AssetDB* adb, ECSRegistry* ecs, InputSystem* input)
     {
         mAssetDB = adb;
         mEcs = ecs;
+        mInputSystem = input;
+        SetupEnv(L.get());
     }
 
     void Process(ECSRegistry& ecs, float deltaTime)
@@ -83,9 +107,13 @@ public:
 
     void OnCreate(GameObjectId goId, ScriptComponent* component)
     {
-        auto scriptIt = mScripts.find(component->script_id);
+        AssetID scriptId = component->script_id;
+
+        auto scriptIt = mScripts.find(scriptId);
         if(scriptIt == mScripts.end())
-            mScripts.emplace(component->script_id, LoadScript(component->script_id));
+            scriptIt =
+                mScripts.emplace(scriptId, LoadScript(L.get(), mAssetDB->GetAssetPath(scriptId)))
+                    .first;
 
         scriptIt->second.refcount_increment();
 
@@ -123,6 +151,26 @@ private:
 
     using ProcessSignal = LuauSignal<float>;
 
+    static luabridge::LuaRef LoadScript(lua_State* L, std::string_view scriptPath)
+    {
+        std::ifstream file(scriptPath.data(), std::ios::binary | std::ios::ate);
+        SJ_ASSERT(file.is_open(), "Unable to load script component- file not found");
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        auto scope = ThreadContext::GetScratchpad();
+        std::pmr::vector<char> bytecode(&scope.get_allocator());
+        bytecode.reserve(size);
+        file.read(bytecode.data(), size);
+
+        std::pmr::string chunkName(&scope.get_allocator());
+        chunkName = scriptPath;
+
+        luau_load(L, chunkName.c_str(), bytecode.data(), bytecode.size(), 0);
+        luabridge::LuaRef res = luabridge::LuaRef::fromStack(L, -1);
+        return res;
+    }
+
     template <size_t tRow>
     static void Mat44SetterHelper(Mat44* m, const Vec4& v)
     {
@@ -137,12 +185,25 @@ private:
             .addProperty("y", &Mat44::GetRow<1>, Mat44SetterHelper<1>)
             .addProperty("z", &Mat44::GetRow<2>, Mat44SetterHelper<2>)
             .addProperty("w", &Mat44::GetRow<3>, Mat44SetterHelper<3>)
+            .addFunction("GetEulerAngles", &Mat44::GetEulerAngles)
+            .addFunction("SetRotationEulerXYZ", &Mat44::SetRotationEulerXYZ)
             .endClass()
 
             .beginClass<GameObject>("GameObject")
-            .addFunction("GetTransformLw",
-                         [](GameObject& go) -> Mat44& {
-                             return go.GetComponent<TransformComponent>()->localToParent;
+            .addProperty(
+                "TransformWS",
+                [](GameObject& go) -> Mat44 {
+                    return go.GetComponent<TransformComponent>()->localToParent;
+                },
+                [](GameObject& go, const Mat44& ws) {
+                    go.GetComponent<TransformComponent>()->localToParent = ws;
+                })
+            .endClass()
+
+            .beginClass<InputSystem>("InputSystem")
+            .addFunction("GetAxisValue",
+                         [](InputSystem* input, const std::string_view& str) -> float {
+                             return input->GetAxisValue(str);
                          })
             .endClass()
 
@@ -153,28 +214,8 @@ private:
         luabridge::getGlobalNamespace(L)
             .beginNamespace("Game")
             .addVariable("Process", &mProcessCallbacks)
+            .addVariable("InputSystem", mInputSystem)
             .endNamespace();
-    }
-
-    luabridge::LuaRef LoadScript(AssetID id)
-    {
-        std::string_view scriptPath = mAssetDB->GetAssetPath(id);
-
-        std::ifstream file(scriptPath.data(), std::ios::binary | std::ios::ate);
-        SJ_ASSERT(file.is_open(), "Unable to load script component- file not found");
-        std::streamsize size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        auto scope = ThreadContext::GetScratchpad();
-        std::pmr::vector<char> bytecode(&scope.get_allocator());
-        bytecode.reserve(size);
-        file.read(bytecode.data(), size);
-
-        std::pmr::string chunkName(&scope.get_allocator());
-        chunkName = scriptPath;
-
-        luau_load(L.get(), chunkName.c_str(), bytecode.data(), bytecode.size(), 0);
-        return luabridge::LuaRef::fromStack(L.get(), -1);
     }
 
     std::unique_ptr<lua_State, void (*)(lua_State*)> L;
@@ -183,6 +224,7 @@ private:
 
     const AssetDB* mAssetDB = nullptr;
     ECSRegistry* mEcs = nullptr;
+    InputSystem* mInputSystem = nullptr;
 };
 
 } // namespace sj
