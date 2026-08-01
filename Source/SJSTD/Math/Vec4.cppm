@@ -218,4 +218,12 @@ constexpr inline vec4 Vec4_Forward = -Vec4_UnitZ;
             a.get_w() + b.get_w()};
 }
 
+[[nodiscard]] constexpr vec4 operator*(const vec4& a, const vec4& b)
+{
+    return {a.get_x() * b.get_x(),
+            a.get_y() * b.get_y(),
+            a.get_z() * b.get_z(),
+            a.get_w() * b.get_w()};
+}
+
 } // namespace sj

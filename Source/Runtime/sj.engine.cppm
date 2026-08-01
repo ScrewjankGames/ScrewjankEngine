@@ -2,6 +2,7 @@ export module sj.engine;
 
 export import sj.engine.config;
 export import sj.engine.ecs;
+export import sj.engine.physics;
 export import sj.engine.rendering;
 export import sj.engine.scripting;
 export import sj.engine.system;

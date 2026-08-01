@@ -15,7 +15,6 @@ module;
 export module sj.engine.ecs.Archetype;
 import sj.std;
 import sj.engine.ecs.Identifiers;
-import sj.engine.system.threading.ThreadContext;
 
 export namespace sj
 {

@@ -171,7 +171,12 @@ public:
         if(!archetype)
             return nullptr;
 
-        return &archetype->GetRow<T>().at(goIndex);
+        auto&& row = archetype->GetRow<T>();
+
+        if(row.empty())
+            return nullptr;
+
+        return &row.at(goIndex);
     }
 
 private:

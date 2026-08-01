@@ -92,6 +92,11 @@ public:
         return m_rows[3];
     }
 
+    [[nodiscard]] const vec4 get_unsigned_scale() const
+    {
+        return vec4(get_x().magnitude(), get_y().magnitude(), get_z().magnitude(), 0.0f);
+    }
+
     constexpr auto set_x(vec4 v) -> mat44&
     {
         m_rows[0] = v;
@@ -225,6 +230,11 @@ public:
         return self.m_rows;
     }
 
+    [[nodiscard]] mat44 normalized() const
+    {
+        return mat44 {get_x().normalize(), get_y().normalize(), get_z().normalize(), get_w()};
+    }
+
 private:
     std::array<vec4, 4> m_rows;
 };
@@ -295,8 +305,8 @@ constexpr mat44 operator+(const mat44& a, const mat44& b)
 }
 
 [[nodiscard]] mat44 constexpr build_transform(const vec4 scale,
-                                             const vec3& eulers,
-                                             const vec4& translation)
+                                              const vec3& eulers,
+                                              const vec4& translation)
 {
     mat44 r = mat44::from_euler_xyz(eulers);
 
