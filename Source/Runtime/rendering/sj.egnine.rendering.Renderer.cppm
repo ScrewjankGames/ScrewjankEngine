@@ -23,20 +23,19 @@ module;
 #include <string_view>
 
 export module sj.engine.rendering.Renderer;
+import sj.engine.Program;
+import sj.engine.Window;
+
+import sj.engine.rendering.Events;
+import sj.engine.rendering.Upload;
+import sj.engine.system.threading.ThreadContext;
+import sj.engine.system.memory.MemorySystem;
+
 import sj.engine.rendering.materials;
 import sj.engine.rendering.pipelines;
 import sj.engine.rendering.resources;
 
-import sj.engine.rendering.Debug;
-import sj.engine.rendering.Events;
-import sj.engine.rendering.Upload;
-
-import sj.engine.Program;
-import sj.engine.Window;
-
-import sj.engine.system.threading.ThreadContext;
-import sj.engine.system.memory.MemorySystem;
-
+import sj.engine.debug;
 import sj.std;
 import sj.datadefs;
 

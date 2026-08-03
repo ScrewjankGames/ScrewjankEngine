@@ -11,8 +11,9 @@ import :CollisionTests;
 import :RigidbodyComponent;
 
 import sj.engine.system.threading.ThreadContext;
-import sj.engine.rendering.Debug;
 import sj.engine.TransformComponent;
+
+import sj.engine.debug;
 import sj.engine.ecs;
 import sj.std;
 

@@ -7,7 +7,7 @@ module;
 #include <span>
 #include <vector>
 
-module sj.engine.rendering.Debug;
+module sj.engine.debug.DebugDraw;
 import sj.engine.system.memory.MemorySystem;
 import sj.std;
 

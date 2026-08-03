@@ -4,7 +4,7 @@ module;
 
 #include <span>
 
-export module sj.engine.rendering.Debug;
+export module sj.engine.debug.DebugDraw;
 
 import sj.engine.rendering.pipelines;
 import sj.std;
