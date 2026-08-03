@@ -11,6 +11,7 @@ import :CollisionTests;
 import :RigidbodyComponent;
 
 import sj.engine.system.threading.ThreadContext;
+import sj.engine.rendering.Debug;
 import sj.engine.TransformComponent;
 import sj.engine.ecs;
 import sj.std;
@@ -58,7 +59,8 @@ public:
                 const mat44& iLw = t.localToParent;
                 return Sphere {
                     .position = iLw.get_w() + s.center,
-                    .radius = s.radius * iLw.get_x().magnitude(), // Assuming uniform scale. TODO: Assert it
+                    .radius = s.radius
+                              * iLw.get_x().magnitude(), // Assuming uniform scale. TODO: Assert it
                 };
             };
 
@@ -74,6 +76,18 @@ public:
             {
                 auto&& [iGo, iTrans, iSphereComponent] = spheres[i];
                 Sphere iSphere = toSphereFn(iTrans, iSphereComponent);
+
+                sj::debug::DrawLine(iSphere.position,
+                                    iSphere.position + vec4(0, 1.0, 0, 0) * iSphere.radius,
+                                    sj::colors::green);
+
+                sj::debug::DrawLine(iSphere.position,
+                                    iSphere.position + vec4(1.0, 0.0, 0, 0) * iSphere.radius,
+                                    sj::colors::red);
+
+                sj::debug::DrawLine(iSphere.position,
+                                    iSphere.position + vec4(0.0, 0.0, -1.0, 0) * iSphere.radius,
+                                    sj::colors::blue);
 
                 for(int j = i + 1; j < spheres.size(); j++)
                 {

@@ -4,11 +4,9 @@ module;
 
 #include <SDL3/SDL_gpu.h>
 
-#include <array>
 #include <utility>
-#include <span>
 
-export module sj.engine.rendering.BufferResource;
+export module sj.engine.rendering.resources:BufferResource;
 
 export namespace sj
 {

@@ -1,13 +1,9 @@
 module;
 
-#include <bit>
-#include <cstddef>
-#include <cstdint>
 #include <glaze/core/reflect.hpp>
 #include <glaze/glaze.hpp>
 #include <SDL3/SDL_gpu.h>
 
-#include <tuple>
 #include <type_traits>
 
 export module sj.engine.rendering.VertexDescription;
@@ -25,6 +21,8 @@ constexpr SDL_GPUVertexElementFormat GetVertexElementFormat()
         case type_id_of<vec3>:
             return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
         case type_id_of<vec4>:
+            return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
+        case type_id_of<color>:
             return SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
     }
 

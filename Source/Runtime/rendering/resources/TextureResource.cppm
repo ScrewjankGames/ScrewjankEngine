@@ -1,9 +1,10 @@
 module;
+
 #include <SDL3/SDL_gpu.h>
 
 #include <utility>
 
-export module sj.engine.rendering.TextureResource;
+export module sj.engine.rendering.resources:TextureResource;
 
 export namespace sj
 {

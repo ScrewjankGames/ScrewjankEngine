@@ -9,6 +9,7 @@ import sj.engine.ecs.Identifiers;
 import sj.engine.Mesh3DComponent;
 import sj.engine.DirectionalLightComponent;
 import sj.engine.TransformComponent;
+import sj.engine.rendering.Debug;
 import sj.engine.rendering.Renderer;
 import sj.engine.system.threading.ThreadContext;
 
@@ -55,7 +56,7 @@ public:
                                        .textureId = mesh3D.texture_id});
         }
 
-        renderer.DrawPass(cameraMatrix, meshDrawArgs);
+        renderer.ExecuteMainDrawPass(cameraMatrix, meshDrawArgs);
     }
 
 private:

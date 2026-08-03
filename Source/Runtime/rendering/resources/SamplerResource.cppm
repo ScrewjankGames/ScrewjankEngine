@@ -2,7 +2,7 @@ module;
 #include <SDL3/SDL_gpu.h>
 #include <utility>
 
-export module sj.engine.rendering.SamplerResource;
+export module sj.engine.rendering.resources:SamplerResource;
 
 export namespace sj
 {

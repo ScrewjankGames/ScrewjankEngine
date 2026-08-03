@@ -34,11 +34,11 @@ public:
     {
         const Config& config = program.GetConfig();
         SJ_ENGINE_LOG_INFO("Creating window");
-        mWindowHandle = SDL_CreateWindow(config.program_name.c_str(),
-                                         static_cast<int>(config.window_size.get_x()),
-                                         static_cast<int>(config.window_size.get_y()),
-                                         SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
-                                             SDL_WINDOW_HIGH_PIXEL_DENSITY);
+        mWindowHandle = SDL_CreateWindow(
+            config.program_name.c_str(),
+            static_cast<int>(config.window_size.get_x()),
+            static_cast<int>(config.window_size.get_y()),
+            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
         SJ_ASSERT(mWindowHandle != nullptr, "Failed to create SDL window");
     }
@@ -71,6 +71,12 @@ public:
     SDL_Window* GetWindowHandle()
     {
         return mWindowHandle;
+    }
+
+    [[nodiscard]] float GetAspectRatio() const
+    {
+        vec2 viewport = GetViewportSize();
+        return viewport.get_x() / viewport.get_y();
     }
 
 private:
