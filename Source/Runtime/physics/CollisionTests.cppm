@@ -27,6 +27,7 @@ struct Collision
 {
     vec4 position = vec4();
     vec4 normal = vec4();
+
 };
 
 std::optional<Collision> TestSphereSphereCollision(const Sphere& a, const Sphere& b)

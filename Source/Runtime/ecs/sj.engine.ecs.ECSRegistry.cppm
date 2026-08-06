@@ -206,7 +206,7 @@ private:
         {
             auto archetype = std::make_unique<Archetype>(componentTypeInfos, mMemoryResource);
 
-            for(CachedQuery& q : mCachedQueries.values())
+            for(auto&& [id, q] : mCachedQueries)
             {
                 if(q.MatchesArchetype(archetype.get()))
                     q.matchedArchetypes.push_back(archetype.get());
@@ -242,14 +242,15 @@ private:
         if(queryIt != mCachedQueries.end())
             return queryIt->second;
 
-        CachedQuery& query = mCachedQueries[queryId];
+        queryIt = mCachedQueries.emplace(queryId, CachedQuery()).first;
+        CachedQuery& query = queryIt->second;
         {
             query.types.resize(sizeof...(Ts));
             size_t idx = 0;
             (void(query.types[idx++] = type_id_of<Ts>), ...);
         }
 
-        for(std::unique_ptr<Archetype>& archetype : mArchetypes.values())
+        for(auto&& [aId, archetype] : mArchetypes)
         {
             if(query.MatchesArchetype(archetype.get()))
                 query.matchedArchetypes.push_back(archetype.get());

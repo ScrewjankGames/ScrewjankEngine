@@ -94,7 +94,7 @@ public:
         // Fill gaps in dense arrays
         std::apply(
             [releasedDenseIndex](auto&&... containers) {
-                (containers.erase_unordered(containers.begin() + releasedDenseIndex), ...);
+                (erase_unordered(containers, containers.begin() + releasedDenseIndex), ...);
             },
             m_denseElements);
 
@@ -208,7 +208,7 @@ private:
     dynamic_array<InternalIdType, IndexType, AllocatorType<InternalIdType>> m_sparse;
 
     template <class T>
-    using DenseContainer = dynamic_vector<T, {}, AllocatorType<T>>;
+    using DenseContainer = dynamic_vector<T, AllocatorType<T>>;
 
     std::tuple<DenseContainer<IdType>, DenseContainer<DenseElements>...> m_denseElements;
 };

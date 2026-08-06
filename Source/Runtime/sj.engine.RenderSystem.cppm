@@ -6,8 +6,6 @@ import sj.std;
 import sj.datadefs.AssetDB;
 import sj.engine.ecs.ECSRegistry;
 import sj.engine.ecs.Identifiers;
-import sj.engine.Mesh3DComponent;
-import sj.engine.DirectionalLightComponent;
 import sj.engine.TransformComponent;
 import sj.engine.debug.DebugDraw;
 import sj.engine.rendering.Renderer;
@@ -15,6 +13,18 @@ import sj.engine.system.threading.ThreadContext;
 
 export namespace sj
 {
+struct Mesh3DComponent
+{
+    AssetID model_id;
+    AssetID texture_id;
+};
+
+struct DirectionalLightComponent
+{
+    vec4 dir;
+    vec4 color;
+};
+
 class RenderSystem
 {
 public:
@@ -46,7 +56,7 @@ public:
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
-        
+
         auto drawables = ecs.Query<TransformComponent, Mesh3DComponent>();
         for(const auto&& [transform, mesh3D] : drawables)
         {

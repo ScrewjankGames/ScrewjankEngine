@@ -78,17 +78,9 @@ public:
                 auto&& [iGo, iTrans, iSphereComponent] = spheres[i];
                 Sphere iSphere = toSphereFn(iTrans, iSphereComponent);
 
-                sj::debug::DrawLine(iSphere.position,
-                                    iSphere.position + vec4(0, 1.0, 0, 0) * iSphere.radius,
-                                    sj::colors::green);
-
-                sj::debug::DrawLine(iSphere.position,
-                                    iSphere.position + vec4(1.0, 0.0, 0, 0) * iSphere.radius,
-                                    sj::colors::red);
-
-                sj::debug::DrawLine(iSphere.position,
-                                    iSphere.position + vec4(0.0, 0.0, -1.0, 0) * iSphere.radius,
-                                    sj::colors::blue);
+#ifndef SJ_GOLD
+                sj::debug::DrawMatrix(iTrans.localToParent);
+#endif
 
                 for(int j = i + 1; j < spheres.size(); j++)
                 {

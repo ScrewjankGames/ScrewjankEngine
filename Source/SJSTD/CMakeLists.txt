@@ -23,6 +23,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         spdlog::spdlog
         glaze::glaze
+        beman::inplace_vector
 )
 
 ################################################################################

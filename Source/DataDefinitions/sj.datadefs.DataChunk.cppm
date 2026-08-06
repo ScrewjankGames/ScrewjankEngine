@@ -41,7 +41,7 @@ struct DataChunk
 };
 } // namespace sj
 
-export template <>
+template <>
 struct glz::meta<sj::DataChunk>
 {
     using T = sj::DataChunk;

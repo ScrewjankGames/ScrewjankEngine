@@ -183,6 +183,3 @@ private:
 };
 
 } // namespace sj
-
-module : private; 
-sj::MemorySystem* sj::MemorySystem::s_instance = nullptr;

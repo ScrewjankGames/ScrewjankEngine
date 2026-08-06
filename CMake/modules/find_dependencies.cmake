@@ -136,3 +136,13 @@ FetchContent_Declare(
         GIT_TAG 3.0-rc12
 )
 FetchContent_MakeAvailable(LuaBridge)
+
+## inplace_vector
+FetchContent_Declare(
+        beeman_inplace_vector
+        SYSTEM
+        GIT_REPOSITORY https://github.com/bemanproject/inplace_vector.git
+        GIT_TAG 63569fe8502c3504d7d81bb6d378f3ec21fb1e95
+)
+FetchContent_MakeAvailable(beeman_inplace_vector)
+

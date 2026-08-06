@@ -20,7 +20,9 @@ inline constexpr uZ kDebugPrimBufferSize =
     (sizeof(DebugVertex) * kMaxDebugVerts) + (sizeof(u32) * kMaxDebugIndices);
 
 void InitDebugDraw(sj::memory_resource* resource);
+
 void DrawLine(const vec4& start, const vec4& end, const color& c);
+void DrawMatrix(const mat44& m);
 
 struct DebugDrawCPUData
 {

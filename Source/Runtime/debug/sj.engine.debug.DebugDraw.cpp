@@ -6,6 +6,7 @@ module;
 #include <cstring>
 #include <span>
 #include <vector>
+#include <numbers>
 
 module sj.engine.debug.DebugDraw;
 import sj.engine.system.memory.MemorySystem;
@@ -27,7 +28,7 @@ void InitDebugDraw(sj::memory_resource* resource)
     SJ_ASSERT(!gInitialized, "Don't double initialize the debug drawing api");
     std::destroy_at(&gDebugVertexBuffer);
     std::construct_at(&gDebugVertexBuffer, resource);
-    
+
     std::destroy_at(&gDebugIndexBuffer);
     std::construct_at(&gDebugIndexBuffer, resource);
 
@@ -55,6 +56,13 @@ void DrawLine(const vec4& start, const vec4& end, const color& c)
     gDebugIndexBuffer.emplace_back(1);
 
     gDebugPrims.emplace_back(vertexOffset, indexOffset, 2);
+}
+
+void DrawMatrix(const mat44& m)
+{
+    DrawLine(m.get_w(), m.get_w() + m.get_x(), sj::colors::red);
+    DrawLine(m.get_w(), m.get_w() + m.get_y(), sj::colors::green);
+    DrawLine(m.get_w(), m.get_w() - m.get_z(), sj::colors::blue);
 }
 
 DebugDrawCPUData GetDebugDrawCPUData()

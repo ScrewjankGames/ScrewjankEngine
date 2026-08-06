@@ -1,5 +1,6 @@
 module;
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_scancode.h>
 
 export module sj.engine.config.InputConfig;
 import sj.std.string_hash;
@@ -14,6 +15,8 @@ enum class KeyboardButton
     A = SDL_SCANCODE_A,
     S = SDL_SCANCODE_S,
     D = SDL_SCANCODE_D,
+    SPACE = SDL_SCANCODE_SPACE,
+    LCTRL = SDL_SCANCODE_LCTRL
 };
 inline constexpr size_t kNumKeyboardButtons = SDL_Scancode::SDL_SCANCODE_COUNT;
 

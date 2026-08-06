@@ -40,7 +40,7 @@ public:
                 goChunk.components
                 | std::views::transform([](const ComponentChunk& chunk) -> const type_info* {
                       const type_info* info = rtti::find_type_info(chunk.first.get_hash().AsInt());
-                      SJ_ASSERT(info, "Failed to find type info");
+                      SJ_ASSERT(info, "Failed to find type info for chunk {}", chunk.first.get_string());
                       return info;
                   })
                 | std::ranges::to<dynamic_vector<const type_info*>>(&scope.get_allocator());

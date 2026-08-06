@@ -92,6 +92,18 @@ public:
         }
     }
 
+    dynamic_array& operator=(const dynamic_array& other)
+    {
+        resize(0);
+        resize_uninitialized(other.size());
+        for(size_type i = 0; i < other.size(); i++)
+        {
+            new(&m_array[i]) T(other[i]);
+        }
+
+        return *this;
+    }
+
     /**
      * Move Constructor
      */
@@ -101,6 +113,18 @@ public:
     {
         other.m_array = nullptr;
         other.m_capacity = 0;
+    }
+
+    dynamic_array& operator=(dynamic_array&& other)
+    {
+        resize(0);
+        resize_uninitialized(other.size());
+        for(size_type i = 0; i < other.size(); i++)
+        {
+            new(&m_array[i]) T(std::move(other[i]));
+        }
+
+        return *this;
     }
 
     /**
@@ -222,6 +246,12 @@ public:
     {
         resize_impl(newCapacity, [&defaultValue](T* addr) {
             new(addr) T(defaultValue);
+        });
+    }
+
+    void resize_uninitialized(size_type newCapacity)
+    {
+        resize_impl(newCapacity, [](T* addr) {
         });
     }
 
