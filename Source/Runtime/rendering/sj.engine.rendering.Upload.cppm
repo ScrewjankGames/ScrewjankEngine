@@ -70,7 +70,7 @@ UploadShader(SDL_GPUDevice* device, std::string_view path_str, SDL_GPUShaderCrea
 
     std::filesystem::path path(path_str);
     info.code_size = std::filesystem::file_size(path);
-    dynamic_array<char> code(info.code_size, &scope.get_allocator());
+    dynamic_array<char> code(info.code_size, &scope);
 
     std::ifstream shaderFile(path, std::ios::binary);
     shaderFile.read(code.data(), info.code_size);

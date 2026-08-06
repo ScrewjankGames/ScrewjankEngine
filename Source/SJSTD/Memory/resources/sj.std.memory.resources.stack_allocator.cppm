@@ -30,7 +30,7 @@ export namespace sj
          */
         ~stack_allocator() override = default;
 
-        void init(size_t buffer_size, std::byte* memory) override
+        void init(size_t buffer_size, std::byte* memory)
         {
             m_BufferStart = memory;
             m_Offset = m_BufferStart;

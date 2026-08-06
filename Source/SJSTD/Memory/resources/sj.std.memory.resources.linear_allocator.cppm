@@ -21,7 +21,7 @@ export namespace sj
             init(buffer_size, memory);
         }
 
-        void init(size_t buffer_size, std::byte* memory) override
+        void init(size_t buffer_size, std::byte* memory)
         {
             m_BufferStart = memory;
             m_BufferEnd =

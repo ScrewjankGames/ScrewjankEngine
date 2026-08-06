@@ -23,7 +23,7 @@ public:
     Scene(std::string_view path, ECSRegistry& registry)
     {
         auto scope = ThreadContext::GetScratchpad();
-        std::pmr::vector<char> buffer(&scope.get_allocator());
+        std::pmr::vector<char> buffer(&scope);
         SceneChunk chunk;
 
         glz::error_ctx errorCtx =
@@ -43,7 +43,7 @@ public:
                       SJ_ASSERT(info, "Failed to find type info for chunk {}", chunk.first.get_string());
                       return info;
                   })
-                | std::ranges::to<dynamic_vector<const type_info*>>(&scope.get_allocator());
+                | std::ranges::to<dynamic_vector<const type_info*>>(&scope);
 
             auto&& deserializeFns =
                 std::views::zip(infos, goChunk.components)

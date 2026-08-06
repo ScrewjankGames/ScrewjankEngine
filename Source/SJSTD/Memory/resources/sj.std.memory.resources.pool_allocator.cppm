@@ -36,7 +36,7 @@ export namespace sj
          */
         ~pool_allocator() final = default;
 
-        void init(size_t buffer_size, std::byte* memory) override
+        void init(size_t buffer_size, std::byte* memory)
         {
             m_BufferStart = memory;
             m_BufferEnd =

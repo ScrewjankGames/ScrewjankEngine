@@ -112,7 +112,7 @@ namespace system_tests
 
         {
             scratchpad_scope scratchpad(test_resource);
-            auto _ = scratchpad.get_allocator().allocate(256, alignof(std::byte));
+            auto _ = scratchpad.allocate(256, alignof(std::byte));
             size_t new_offset = test_resource.get_current_offset();
             ASSERT_NE(watermark, new_offset);
         }

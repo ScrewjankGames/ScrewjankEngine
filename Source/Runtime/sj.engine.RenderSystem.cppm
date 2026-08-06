@@ -55,7 +55,7 @@ public:
     void Process(ECSRegistry& ecs, Renderer& renderer, const mat44& cameraMatrix, float deltaTime)
     {
         scratchpad_scope scope = ThreadContext::GetScratchpad();
-        sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope.get_allocator());
+        sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope);
 
         auto drawables = ecs.Query<TransformComponent, Mesh3DComponent>();
         for(const auto&& [transform, mesh3D] : drawables)

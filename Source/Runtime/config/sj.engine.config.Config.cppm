@@ -54,7 +54,7 @@ Config LoadConfig()
     Config config;
     
     scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
-    sj::dynamic_vector<char> buffer(&scratchpad.get_allocator());
+    sj::dynamic_vector<char> buffer(&scratchpad);
     glz::error_ctx ctx = glz::read_file_json(config, path.c_str(), buffer);
 
     if(ctx.ec != glz::error_code::none)

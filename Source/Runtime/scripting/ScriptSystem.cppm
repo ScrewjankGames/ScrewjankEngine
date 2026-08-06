@@ -91,11 +91,11 @@ private:
         file.seekg(0, std::ios::beg);
 
         auto scope = ThreadContext::GetScratchpad();
-        std::pmr::vector<char> bytecode(&scope.get_allocator());
+        std::pmr::vector<char> bytecode(&scope);
         bytecode.reserve(size);
         file.read(bytecode.data(), size);
 
-        std::pmr::string chunkName(&scope.get_allocator());
+        std::pmr::string chunkName(&scope);
         chunkName = scriptPath;
 
         luau_load(L, chunkName.c_str(), bytecode.data(), bytecode.size(), 0);
