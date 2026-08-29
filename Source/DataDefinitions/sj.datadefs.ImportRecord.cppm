@@ -26,6 +26,13 @@ struct ImportRecord
         return record;
     }
 
+    void Save(std::string_view importPath)
+    {
+        glz::error_ctx err = glz::write_file_json(*this, importPath, std::vector<char> {});
+        if(err != glz::error_code::none)
+            SJ_ENGINE_LOG_ERROR("Failed to write import {}", importPath);
+    }
+
     // Install filename to AssetID
     std::flat_map<std::filesystem::path, AssetID> installed_assets;
 };

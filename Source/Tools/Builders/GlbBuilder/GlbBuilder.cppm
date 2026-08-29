@@ -77,7 +77,7 @@ public:
             for(auto&& [primIdx, prim] : std::views::enumerate(mesh.primitives))
             {
                 std::string primName = std::format("{}_{}", mesh.name, primIdx);
-                auto&& [primOutputPath, assetId] = in_ctx.Import(item, primName + ".sj_tex");
+                auto&& [primOutputPath, assetId] = in_ctx.Import(item, primName + ".sj_mesh");
                 BuildMesh(asset.get(), prim, primOutputPath);
             }
         }

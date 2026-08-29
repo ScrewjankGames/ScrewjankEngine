@@ -73,4 +73,5 @@ SpacesInAngles: false
 SpacesInParentheses: false
 SpacesInSquareBrackets : false
 TabWidth: 4
+PenaltyReturnTypeOnItsOwnLine: 1000000
 ...

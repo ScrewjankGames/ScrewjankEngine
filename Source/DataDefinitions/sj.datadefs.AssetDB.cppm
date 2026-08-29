@@ -67,6 +67,12 @@ public:
         SJ_ASSERT(res.ec == glz::error_code::none, "Failed to load asset DB from location {path}");
     }
 
+    void ReserveId(AssetID id)
+    {
+        auto res = mDB.try_emplace(id, "");
+        SJ_ASSERT(res.second == true, "Trying to reserve already used asset ID");
+    }
+
     void AddImport(AssetID id, std::string_view path)
     {
         mDB[id] = path;
@@ -82,6 +88,14 @@ public:
             assetID = mAssetIdDistribution(mAssetIdGenerator);
 
         return assetID;
+    }
+
+    void ClearUnusedReservations()
+    {
+        std::erase_if(mDB, [](auto&& it) {
+            auto&& [id, path] = it;
+            return path == "";
+        });
     }
 
 private:

@@ -7,10 +7,9 @@ module;
 #include <filesystem>
 #include <string>
 #include <vector>
-#include <optional>
 #include <memory>
 #include <string_view>
-#include <unordered_map>
+#include <unordered_set>
 
 export module sj.builders:BuildContext;
 import :IBuilder;
@@ -27,8 +26,9 @@ class BuildContext
 {
 public:
     template <class... Builders>
-    static BuildContext
-    Create(std::string_view projectDir, std::string_view assetDir, std::string_view installDir)
+    static BuildContext Create(std::string_view projectDir,
+                               std::string_view assetDir,
+                               std::string_view installDir)
     {
         std::vector<std::unique_ptr<IBuilder>> builders;
         (builders.emplace_back(new Builders()), ...);
@@ -57,7 +57,7 @@ public:
                 record.importRecord = ImportRecord::Load(record.importPath.string());
 
                 for(auto&& [file_name, id] : record.importRecord.installed_assets)
-                    mAssetDb.AddImport(id, ComputeInstallFilename(file_name, id).string());
+                    mAssetDb.ReserveId(id);
             }
         }
     }
@@ -65,6 +65,7 @@ public:
     void Build()
     {
         std::vector<char> importWriteBuffer;
+
         // Build data
         for(const auto&& [itemPath, record] : mBuildDb)
         {
@@ -78,16 +79,20 @@ public:
                 SJ_ENGINE_LOG_ERROR("Failed to build item {}", itemPath.string());
                 continue;
             }
-
-            glz::error_ctx err = glz::write_file_json(record.importRecord,
-                                                      record.importPath.string(),
-                                                      importWriteBuffer);
-            if(err != glz::error_code::none)
-                SJ_ENGINE_LOG_ERROR("Failed to write import {} for item {}",
-                                    record.importPath.string(),
-                                    itemPath.string());
         }
 
+        // Clear stale entries from import records
+        for(const auto&& [itemPath, buildRecord] : mBuildDb)
+        {
+            ImportRecord& importRecord = buildRecord.importRecord;
+            std::erase_if(importRecord.installed_assets, [&](auto&& assetEntry) {
+                return !buildRecord.discoveredFiles.contains(assetEntry.first);
+            });
+            importRecord.Save(buildRecord.importPath.string());
+        }
+
+        // Clean then save out asset db
+        mAssetDb.ClearUnusedReservations();
         mAssetDb.Save((mAbsInstallDir / ".AssetDB").string());
         mAssetDb.Save<glz::JSON>((mAbsInstallDir / "human.AssetDB").string());
     }
@@ -96,8 +101,10 @@ public:
     {
         SJ_ENGINE_LOG_INFO("Importing asset: {}", fileName.string());
 
-        ImportRecord& record = mBuildDb[parentFilePath].importRecord;
+        BuildRecord& buildRecord = mBuildDb[parentFilePath];
+        buildRecord.discoveredFiles.insert(fileName);
 
+        ImportRecord& record = buildRecord.importRecord;
         auto installIt = record.installed_assets.find(fileName);
         if(installIt == record.installed_assets.end())
             installIt = record.installed_assets.emplace(fileName, mAssetDb.NewAssetID()).first;
@@ -121,8 +128,12 @@ public:
 private:
     struct BuildRecord
     {
-        stdfs::path importPath;
-        ImportRecord importRecord;
+        stdfs::path importPath; // Location import state is saved and loaded from
+        ImportRecord importRecord; // Record of assets imported for this build record, loaded from
+                                   // disk to provide stable ids
+        std::unordered_set<stdfs::path>
+            discoveredFiles; // files discovered this build- used to clean out stale entries from
+                             // import record
     };
 
     static std::filesystem::path ComputeInstallFilename(const std::filesystem::path& fileName,
