@@ -266,6 +266,7 @@ public:
 
 #ifndef SJ_GOLD
         debug::DebugDrawCPUData debugData = debug::GetDebugDrawCPUData();
+        if(!debugData.prims.empty())
         {
             const uZ vertsSizeBytes = debugData.vertexBufferSizeBytes;
             const uZ indicesSizeBytes = debugData.indexBufferSizeBytes;
