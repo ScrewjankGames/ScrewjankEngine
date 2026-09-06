@@ -5,6 +5,7 @@ module;
 #include <array>
 
 export module sj.std.math:mat44;
+import :sqt;
 import :Vec3;
 import :Vec4;
 import :Tags;
@@ -92,7 +93,7 @@ public:
         return m_rows[3];
     }
 
-    [[nodiscard]] const vec4 get_unsigned_scale() const
+    [[nodiscard]] auto get_unsigned_scale() const -> vec4
     {
         return vec4(get_x().magnitude(), get_y().magnitude(), get_z().magnitude(), 0.0f);
     }
@@ -188,6 +189,34 @@ public:
         mat44 output = from_euler_xyz(eulers);
         output.set_w(translation);
         return output;
+    }
+
+    [[nodiscard]] static auto from_quat(const quat& q) -> mat44
+    {
+        vec4 row0(1.0f - 2.0f * q.get_y() * q.get_y() - 2.0f * q.get_z() * q.get_z(),
+                  2.0f * q.get_x() * q.get_y() - 2.0f * q.get_z() * q.get_w(),
+                  2.0f * q.get_x() * q.get_z() + 2.0f * q.get_y() * q.get_w(),
+                  0.0f);
+        vec4 row1(2.0f * q.get_x() * q.get_y() + 2.0f * q.get_z() * q.get_w(),
+                  1.0f - 2.0f * q.get_x() * q.get_x() - 2.0f * q.get_z() * q.get_z(),
+                  2.0f * q.get_y() * q.get_z() - 2.0f * q.get_x() * q.get_w(),
+                  0.0f);
+        vec4 row2(2.0f * q.get_x() * q.get_z() - 2.0f * q.get_y() * q.get_w(),
+                  2.0f * q.get_y() * q.get_z() + 2.0f * q.get_x() * q.get_w(),
+                  1.0f - 2.0f * q.get_x() * q.get_x() - 2.0f * q.get_y() * q.get_y(),
+                  0.0f);
+        vec4 row3(0.0f, 0.0f, 0.0f, 1.0f);
+        return mat44(row0, row1, row2, row3);
+    }
+
+    [[nodiscard]] static auto from_sqt(const sqt& sqt) -> mat44
+    {
+        mat44 t = from_quat(sqt.q);
+        t.set_row<0>(t.get_row<0>() * sqt.s.get_x());
+        t.set_row<1>(t.get_row<1>() * sqt.s.get_y());
+        t.set_row<2>(t.get_row<2>() * sqt.s.get_z());
+        t.set_row<3>(sqt.t);
+        return t;
     }
 
     [[nodiscard]] constexpr auto get_euler_angles() const -> vec3

@@ -9,3 +9,4 @@ export import :Tags;
 export import :VecHash;
 export import :Helpers;
 export import :Quat;
+export import :sqt;
