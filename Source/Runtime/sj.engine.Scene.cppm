@@ -35,7 +35,6 @@ public:
 
         for(const GameObjectChunk& goChunk : chunk.game_objects)
         {
-
             dynamic_vector<const type_info*> infos =
                 goChunk.components
                 | std::views::transform([](const ComponentChunk& chunk) -> const type_info* {

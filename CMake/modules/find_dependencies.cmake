@@ -146,3 +146,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(beeman_inplace_vector)
 
+## Box3D
+include(FetchContent)
+FetchContent_Declare(box3d
+  GIT_REPOSITORY https://github.com/erincatto/box3d.git
+  GIT_TAG v0.1.0)
+FetchContent_MakeAvailable(box3d)

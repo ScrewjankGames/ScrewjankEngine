@@ -28,17 +28,18 @@ endif()
 # Link dependencies
 ################################################################################
 target_link_libraries(${PROJECT_NAME} 
-    PRIVATE 
-        SDL3::SDL3
     PUBLIC
         ScrewjankStd
         ScrewjankDataDefs
-        spdlog::spdlog
         imgui
         implot
         glaze::glaze
+    PRIVATE
+        SDL3::SDL3
+        spdlog::spdlog
         Luau.VM
         LuaBridge
+        box3d::box3d
 )
 
 ################################################################################
