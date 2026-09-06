@@ -83,7 +83,11 @@ constexpr type_info type_info_of {
         },
     .desierialize_json_fn =
         [](void* dst, const glz::generic_u64& data) {
-            glz::error_ctx err = glz::read<glz::opts {}>(*reinterpret_cast<T*>(dst), data);
+            T& chunk = *reinterpret_cast<T*>(dst);
+            
+            new (&chunk) T(); // default initialize chunk
+
+            glz::error_ctx err = glz::read<glz::opts {}>(chunk, data);
             SJ_ASSERT(err == glz::error_code::none,
                       "Failed to desierialize json data for type {}! Reason: {}",
                       type_name_of<T>,
