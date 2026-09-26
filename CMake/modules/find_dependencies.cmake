@@ -2,10 +2,10 @@ include(FetchContent)
 
 ## SDL3
 FetchContent_Declare(
-  SDL3
-  SYSTEM
-  GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-  GIT_TAG release-3.4.10
+        SDL3
+        SYSTEM
+        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+        GIT_TAG release-3.4.16
 )
 if(UNIX)
     set(SDL_X11 OFF)
@@ -14,20 +14,20 @@ FetchContent_MakeAvailable(SDL3)
 
 ## Spdlog
 FetchContent_Declare(
-  spdlog
-  SYSTEM
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.17.0
+        spdlog
+        SYSTEM
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.17.0
 )
 option(SPDLOG_USE_STD_FORMAT ON)
 FetchContent_MakeAvailable(spdlog)
 
 ## STB
 FetchContent_Declare(
-  stb
-  SYSTEM
-  GIT_REPOSITORY https://github.com/nothings/stb.git
-  GIT_BRANCH master
+        stb
+        SYSTEM
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_BRANCH master
 )
 FetchContent_MakeAvailable(stb)
 set(stb_src
@@ -50,7 +50,7 @@ FetchContent_Declare(
         imgui
         SYSTEM
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.92.8-docking
+        GIT_TAG v1.92.9b-docking
 )
 FetchContent_MakeAvailable(imgui)
 set(imgui_src
@@ -91,16 +91,16 @@ FetchContent_Declare(
         glaze
         SYSTEM
         GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-        GIT_TAG v7.8.3
+        GIT_TAG v9.0.0
 )
 FetchContent_MakeAvailable(glaze)
 
 ## Gtest
 FetchContent_Declare(
-  googletest
-  SYSTEM
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG v1.17.0
+        googletest
+        SYSTEM
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.18.0
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -123,6 +123,8 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/luau-lang/luau.git
         GIT_TAG 0.728
 )
+option(LUAU_BUILD_TESTS OFF)
+
 FetchContent_MakeAvailable(luau)
 target_compile_definitions(Luau.VM PUBLIC LUA_VECTOR_SIZE=4)
 target_compile_definitions(Luau.Compiler PUBLIC LUA_VECTOR_SIZE=4)
@@ -148,7 +150,9 @@ FetchContent_MakeAvailable(beeman_inplace_vector)
 
 ## Box3D
 include(FetchContent)
-FetchContent_Declare(box3d
-  GIT_REPOSITORY https://github.com/erincatto/box3d.git
-  GIT_TAG v0.1.0)
+FetchContent_Declare(
+        box3d
+        SYSTEM
+        GIT_REPOSITORY https://github.com/erincatto/box3d.git
+        GIT_TAG v0.1.0)
 FetchContent_MakeAvailable(box3d)
