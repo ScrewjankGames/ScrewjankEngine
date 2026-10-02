@@ -37,16 +37,6 @@ public:
         return *this;
     }
 
-    [[nodiscard]] constexpr vec2 operator*(float s) const
-    {
-        return {m_elements[0] * s, m_elements[1] * s};
-    }
-
-    [[nodiscard]] constexpr vec2 operator/(float s) const
-    {
-        return (*this) * (1 / s);
-    }
-
     constexpr inline bool operator==(const vec2& other) const
     {
         return m_elements[0] == other.m_elements[0] && m_elements[1] == other.m_elements[1];
@@ -59,6 +49,26 @@ private:
 inline constexpr vec2 Vec2_Zero = vec2(0.0f, 0.0f);
 inline constexpr vec2 Vec2_UnitX = vec2(1.0f, 0.0f);
 inline constexpr vec2 Vec2_UnitY = vec2(0.0f, 0.1f);
+
+[[nodiscard]] constexpr vec2 operator*(const vec2& v, const float s)
+{
+    return vec2(v.get_x() * s, v.get_y() * s);
+}
+
+[[nodiscard]] constexpr vec2 operator*(const float s, const vec2& v)
+{
+    return v * s;
+}
+
+[[nodiscard]] constexpr vec2 operator/(const vec2& v, const float s)
+{
+    return vec2(v.get_x() / s, v.get_y() / s);
+}
+
+[[nodiscard]] constexpr vec2 operator+(const vec2& a, const vec2& b)
+{
+    return vec2(a.get_x() + b.get_x(), a.get_y() + b.get_y());
+}
 
 [[nodiscard]] constexpr float magnitude_sqr(const vec2& v)
 {

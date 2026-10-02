@@ -1,10 +1,5 @@
 module;
 
-// Engine Includes
-#include <ScrewjankStd/Assert.hpp>
-#include <ScrewjankStd/Log.hpp>
-#include <ScrewjankStd/PlatformDetection.hpp>
-
 // Library Includes
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
@@ -13,16 +8,16 @@ module;
 #include <SDL3/SDL_scancode.h>
 #include <imgui_impl_sdl3.h>
 
-// STD Includes
-#include <cstddef>
-#include <ranges>
-
+#include <span>
+#include <optional>
 export module sj.engine.InputSystem;
 import sj.engine.Program;
 import sj.engine.Window;
 
 import sj.engine.config.InputConfig;
 
+import sj.std.primitives;
+import sj.std.math;
 import sj.std.string_hash;
 import sj.std.containers.map;
 import sj.std.containers.vector;
@@ -35,100 +30,34 @@ class InputSystem
 public:
     InputSystem() = default;
 
-    void Initialize(const InputBindings& bindings)
-    {
-        mBindings = &bindings;
+    void Initialize(const InputBindings& bindings);
 
-        auto allAxes =
-            std::views::concat(bindings.keyboard_axes.keys(), bindings.gamepad_axes.keys());
+    bool ProcessEvent(const SDL_Event& evt);
 
-        for(const hashed_string_sv& axis : allAxes)
-            mInputAxes[axis.get_hash()] = 0;
-    }
+    [[nodiscard]] float GetAxisValue(string_hash name) const;
 
-    bool ProcessEvent(const SDL_Event& evt)
-    {
-        switch(evt.type)
-        {
-            case SDL_EVENT_KEY_UP:
-            case SDL_EVENT_KEY_DOWN:
-                mProcessKeyboardInput = true;
-                break;
-            case SDL_EVENT_MOUSE_BUTTON_UP:
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            case SDL_EVENT_MOUSE_MOTION:
-                mProcessMouseInput = true;
-                break;
-        }
-        
-        return false;
-    }
+    [[nodiscard]] vec2 GetAxisValue2D(string_hash name) const;
 
-    [[nodiscard]] float GetAxisValue(string_hash name) const
-    {
-        auto it = mInputAxes.find(name);
-        SJ_ASSERT(it != mInputAxes.end(), "Failed to find input binding");
-        return it->second;
-    }
-
-    void Process(float _)
-    {
-        if(mProcessKeyboardInput)
-        {
-            std::span<const bool> keyboardState = GetKeyboardState();
-
-            for(auto&& [axis_name, axis_value] : mInputAxes)
-            {
-                axis_value = PollKeyboardAxis(axis_name)
-                                 .or_else([this, axis_name]() {
-                                     return PollGamepadAxis(axis_name);
-                                 })
-                                 .value_or(0.0f);
-            }
-
-            mProcessKeyboardInput = false;
-        }
-    }
+    // TODO: see
+    // https://blog.hypersect.com/interpreting-analog-sticks/?_sp=e3a301c9-0451-4b5d-9651-0f353db0d26f.1790467267574
+    void Process(float _);
 
 private:
-    std::span<const bool> GetKeyboardState() const
-    {
-        int numKeys = -1;
-        const bool* keys = SDL_GetKeyboardState(&numKeys);
+    void OnGamepadConnected(SDL_JoystickID id);
+    void OnGamepadDisconnected(SDL_JoystickID id);
 
-        return std::span(keys, numKeys);
-    }
+    std::span<const bool> GetKeyboardState() const;
 
-    std::optional<float> PollKeyboardAxis(string_hash axisName)
-    {
-        std::span<const bool> keyboardState = GetKeyboardState();
-        std::optional<float> axisValue;
+    std::optional<float> PollKeyboardAxis(string_hash axisName);
+    std::optional<vec2> PollKeyboardAxis2D(string_hash axisName);
 
-        // Poll Keyboard
-        auto keyboardBindingsIt = mBindings->keyboard_axes.find(hashed_string_sv(axisName));
-        if(keyboardBindingsIt != mBindings->keyboard_axes.end())
-        {
-            const AxisBindings<KeyboardButton>& bindings = keyboardBindingsIt->second;
-            for(const AxisBinding<KeyboardButton>& binding : bindings)
-            {
-                const bool active = keyboardState.at(static_cast<size_t>(binding.input));
-                if(active)
-                    axisValue = axisValue.value_or(0.0f) + binding.modifier;
-            }
-        }
-
-        return axisValue;
-    }
-
-    std::optional<float> PollGamepadAxis(string_hash axisName)
-    {
-        return {};
-    }
-
-    bool mProcessKeyboardInput = false;
-    bool mProcessMouseInput = false;
+    std::optional<float> PollGamepadAxis(string_hash axisName);
+    std::optional<vec2> PollGamepadAxis2D(string_hash axisName);
 
     const InputBindings* mBindings = nullptr;
     sj::dynamic_flat_map<string_hash, float> mInputAxes;
+    sj::dynamic_flat_map<string_hash, vec2> mInputAxes2D;
+
+    SDL_Gamepad* mGamepad = nullptr;
 };
 } // namespace sj
