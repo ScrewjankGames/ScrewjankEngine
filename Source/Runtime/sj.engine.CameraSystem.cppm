@@ -31,9 +31,11 @@ public:
 
         for(auto&& [goId, transform, camera] : query)
         {
+            GameObject cameraGo(goId, registry);
+            const mat44& goWorldSpaceTransform = cameraGo.GetTransformLW();
+
             // TODO: What if there's multiple
             mat44 localToGoTransform = camera.localToGoTransform;
-            const mat44& goWorldSpaceTransform = transform.localToParent;
 
             mat44 outputTransform = localToGoTransform * goWorldSpaceTransform;
 

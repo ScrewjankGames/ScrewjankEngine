@@ -71,7 +71,7 @@ public:
 
         scriptIt->second.refcount_increment();
 
-        [[maybe_unused]] luabridge::Result res = luabridge::push(L.get(), GameObject(goId, mEcs));
+        [[maybe_unused]] luabridge::Result res = luabridge::push(L.get(), GameObject(goId, *mEcs));
         scriptIt->second->call(luabridge::LuaRef::fromStack(L.get()));
     }
 

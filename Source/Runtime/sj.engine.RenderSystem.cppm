@@ -3,9 +3,8 @@ module;
 
 export module sj.engine.RenderSystem;
 import sj.std;
+import sj.engine.ecs;
 import sj.datadefs.AssetDB;
-import sj.engine.ecs.ECSRegistry;
-import sj.engine.ecs.Identifiers;
 import sj.engine.TransformComponent;
 import sj.engine.debug.DebugDraw;
 import sj.engine.rendering.Renderer;
@@ -57,11 +56,12 @@ public:
         scratchpad_scope scope = ThreadContext::GetScratchpad();
         sj::dynamic_vector<Renderer::MeshDrawArg> meshDrawArgs(&scope);
 
-        auto drawables = ecs.Query<TransformComponent, Mesh3DComponent>();
-        for(const auto&& [transform, mesh3D] : drawables)
+        auto drawables = ecs.QueryWithIds<TransformComponent, Mesh3DComponent>();
+        for(const auto&& [goId, transform, mesh3D] : drawables)
         {
+            GameObject go(goId, ecs);
             meshDrawArgs.emplace_back(
-                Renderer::MeshDrawArg {.modelToWorld = transform.localToParent,
+                Renderer::MeshDrawArg {.modelToWorld = go.GetTransformLW(),
                                        .modelId = mesh3D.model_id,
                                        .textureId = mesh3D.texture_id});
         }

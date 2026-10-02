@@ -20,6 +20,7 @@ struct GameObjectChunk
 {
     hashed_string_sv id;
     sj::dynamic_vector<ComponentChunk> components;
+    sj::dynamic_vector<GameObjectChunk> children;
 };
 
 struct SceneChunk

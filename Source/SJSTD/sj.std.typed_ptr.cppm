@@ -11,6 +11,7 @@ class typed_ptr
 {
 public:
     template <class T>
+        requires(!std::is_void_v<T>)
     typed_ptr(T* ptr) : mPtr(ptr), mId(type_id_of<T>)
     {
     }

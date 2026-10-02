@@ -14,7 +14,6 @@ import sj.engine.TransformComponent;
 import sj.std;
 import sj.engine.ecs;
 
-
 export namespace sj
 {
 
@@ -40,10 +39,10 @@ void RegisterTypes(lua_State* L)
         .addProperty(
             "TransformWS",
             [](GameObject& go) -> mat44 {
-                return go.GetComponent<TransformComponent>()->localToParent;
+                return go.GetTransformLW();
             },
             [](GameObject& go, const mat44& ws) {
-                go.GetComponent<TransformComponent>()->localToParent = ws;
+                go.SetTransformLW(ws);
             })
         .endClass()
 
@@ -51,6 +50,10 @@ void RegisterTypes(lua_State* L)
         .addFunction("GetAxisValue",
                      [](InputSystem* input, const std::string_view& str) -> float {
                          return input->GetAxisValue(str);
+                     })
+        .addFunction("GetAxisValue2D",
+                     [](InputSystem* input, const std::string_view& str) -> vec4 {
+                         return input->GetAxisValue2D(str);
                      })
         .endClass();
 }

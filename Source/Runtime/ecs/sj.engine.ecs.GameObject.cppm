@@ -10,9 +10,12 @@ export namespace sj
 class GameObject
 {
 public:
-    GameObject(GameObjectId id, ECSRegistry* r) : mGoId(id), mRegistry(r)
+    GameObject(GameObjectId id, ECSRegistry& r) : mGoId(id), mRegistry(&r)
     {
     }
+
+    [[nodiscard]] mat44 GetTransformLW() const;
+    void SetTransformLW(const mat44& m);
 
     template <class T>
     T* GetComponent()

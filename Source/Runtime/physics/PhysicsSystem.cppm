@@ -56,11 +56,10 @@ public:
 
         def.type = static_cast<b3BodyType>(component->body_type);
         def.gravityScale = component->gravity_scale;
+        GameObject go(goId, *mECS);
+        mat44 goTransform = go.GetTransformLW();
 
-        TransformComponent* goTransform = mECS->GetComponent<TransformComponent>(goId);
-        SJ_ASSERT(goTransform, "Rigid bodies need transforms");
-
-        def.position = vec4ToB3Vec3(goTransform->localToParent.get_row<3>());
+        def.position = vec4ToB3Vec3(goTransform.get_row<3>());
         def.linearVelocity = vec4ToB3Vec3(component->linear_velocity);
 
         component->runtime_body_id = b3CreateBody(mPhysicsWorld, &def);
@@ -74,9 +73,10 @@ public:
     void OnCreate(GameObjectId goId, SphereShape* component)
     {
         auto* rb = mECS->GetComponent<RigidbodyComponent>(goId);
-        TransformComponent* goTransform = mECS->GetComponent<TransformComponent>(goId);
+        GameObject go(goId, *mECS);
+        mat44 goTransform = go.GetTransformLW();
 
-        float scale = goTransform->localToParent.get_unsigned_scale().get_x();
+        float scale = goTransform.get_unsigned_scale().get_x();
 
         b3ShapeDef shapeDef = b3DefaultShapeDef();
         shapeDef.filter.categoryBits = static_cast<u64>(component->filter.collision_types);
@@ -95,19 +95,20 @@ public:
 
     void OnCreate(GameObjectId goId, BoxShape* component)
     {
-        auto* rb = mECS->GetComponent<RigidbodyComponent>(goId);
-        TransformComponent* goTransform = mECS->GetComponent<TransformComponent>(goId);
+        GameObject go(goId, *mECS);
+        auto* rb = go.GetComponent<RigidbodyComponent>();
+        mat44 goTransform = go.GetTransformLW();
 
         b3ShapeDef shapeDef = b3DefaultShapeDef();
         shapeDef.filter.categoryBits = static_cast<u64>(component->filter.collision_types);
         shapeDef.filter.maskBits = static_cast<u64>(component->filter.collides_with);
 
-        vec4 scales = goTransform->localToParent.get_unsigned_scale();
+        vec4 scales = goTransform.get_unsigned_scale();
         vec4 scaledExtents = component->extents * scales;
 
         b3BoxHull box =
             b3MakeBoxHull(scaledExtents.get_x(), scaledExtents.get_y(), scaledExtents.get_z());
-            
+
         box.base.center = vec4ToB3Vec3(component->center);
         component->runtime_shape_id = b3CreateHullShape(rb->runtime_body_id, &shapeDef, &box.base);
     }
@@ -127,12 +128,13 @@ public:
             mTimeAccumulator -= mFixedTimeStep;
         }
 
-        auto bodies = ecs.Query<TransformComponent, RigidbodyComponent>();
-        for(auto&& [transform, body] : bodies)
+        auto bodies = ecs.QueryWithIds<TransformComponent, RigidbodyComponent>();
+        for(auto&& [goId, transform, body] : bodies)
         {
+            GameObject go(goId, ecs);
             b3Transform simTransform = b3Body_GetTransform(body.runtime_body_id);
-            transform.localToParent =
-                b3TransformToMat44(simTransform, transform.localToParent.get_unsigned_scale());
+            go.SetTransformLW(
+                b3TransformToMat44(simTransform, go.GetTransformLW().get_unsigned_scale()));
         }
     }
 

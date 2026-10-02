@@ -46,6 +46,14 @@
             }
         },
         {
+            "inherits": "ClangRelease",
+            "name": "ClangGold",
+            "displayName": "Gold - Clang",
+            "cacheVariables": {
+                "SJ_GOLD_OPT": true
+            }
+        },
+        {
             "inherits": "base",
             "name": "GccDebug",
             "displayName": "Debug - GCC",

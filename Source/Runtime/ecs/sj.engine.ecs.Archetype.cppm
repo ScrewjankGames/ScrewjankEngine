@@ -69,7 +69,7 @@ public:
                    return r.typeInfo->id;
                });
     }
-    
+
     bool MatchesQuery(std::ranges::range auto&& queryIds)
     {
         auto&& archetypeIds = GetTypeIds();
@@ -155,7 +155,7 @@ public:
             Resize(std::max(1uz, mSize * 2));
 
         for(auto&& [row, ctorCallback] : std::views::zip(mRows, constructCallbacks))
-            std::invoke(ctorCallback, row[mSize]);
+            std::invoke(ctorCallback, typed_ptr(row[mSize], row.typeInfo->id));
 
         mGoIds[mSize] = goId;
         return mSize++;

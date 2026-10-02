@@ -38,7 +38,13 @@ public:
         mConfig = LoadConfig();
         mAssetDB.Load("Data/.AssetDB");
 
-        SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
+        bool success = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD);
+        if(!success)
+        {
+            const char* err = SDL_GetError();
+            SJ_ASSERT(false, "Failed to initialize SDL: {}", err);
+            mTerminated = true;
+        }
 
         new(&mModules) std::tuple<Modules...>();
     }
