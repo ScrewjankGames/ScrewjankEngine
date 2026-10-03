@@ -37,7 +37,7 @@ public:
         mRenderer = renderer;
     }
 
-    void OnCreate(GameObjectId goId, Mesh3DComponent* component)
+    void OnCreate(GameObject go, Mesh3DComponent* component)
     {
         mRenderer->AddMeshReference(component->model_id);
 
@@ -45,7 +45,7 @@ public:
             mRenderer->AddTextureReference(component->texture_id);
     }
 
-    void OnDestroy(GameObjectId goId, Mesh3DComponent* component)
+    void OnDestroy(GameObject go, Mesh3DComponent* component)
     {
         mRenderer->RemoveMeshReference(component->model_id);
         mRenderer->RemoveTextureReference(component->texture_id);

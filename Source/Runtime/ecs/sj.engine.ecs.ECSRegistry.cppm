@@ -19,6 +19,26 @@ import sj.datadefs;
 
 export namespace sj
 {
+
+class ECSRegistry;
+class GameObject
+{
+public:
+    GameObject(GameObjectId id, ECSRegistry& r) : mGoId(id), mRegistry(&r)
+    {
+    }
+
+    [[nodiscard]] mat44 GetTransformLW() const;
+    void SetTransformLW(const mat44& m);
+
+    template <class T>
+    T* GetComponent();
+
+private:
+    GameObjectId mGoId;
+    ECSRegistry* mRegistry;
+};
+
 namespace ecs
 {
 template <class tSystem>
@@ -30,11 +50,11 @@ concept registers_lifetime_callbacks =
 
 template <class tSystem, class tComponent>
 concept has_on_component_create =
-    requires(tSystem sys, GameObjectId id, tComponent p) { sys.OnCreate(id, &p); };
+    requires(tSystem sys, GameObject go, tComponent p) { sys.OnCreate(go, &p); };
 
 template <class tSystem, class tComponent>
 concept has_on_component_destroy =
-    requires(tSystem sys, GameObjectId id, tComponent p) { sys.OnCreate(id, &p); };
+    requires(tSystem sys, GameObject go, tComponent p) { sys.OnDestroy(go, &p); };
 } // namespace ecs
 
 class ECSRegistry
@@ -87,27 +107,7 @@ public:
         return newGoId;
     }
 
-    void ReleaseGameObject(GameObjectId goId)
-    {
-        GameObjectRecord* goRecord = mGameObjects.get<GameObjectRecord>(goId);
-        SJ_ASSERT(goRecord, "Cannot release missing game object");
-
-        Archetype* archetype = GetArchetype(goRecord->archetypeId);
-        SJ_ASSERT(archetype, "Cannot release from null archetype for object ID");
-
-        for(TypeId id : archetype->GetTypeIds())
-        {
-            auto callbackIt = mComponentDestroyCallbacks.find(id);
-            if(callbackIt == mComponentDestroyCallbacks.end())
-                continue;
-
-            std::invoke(callbackIt->second,
-                        goId,
-                        archetype->GetEntry(id, goRecord->archetypeLocalIndex));
-        }
-
-        archetype->RemoveEntry(goRecord->archetypeLocalIndex);
-    }
+    void ReleaseGameObject(GameObjectId goId);
 
     template <class... ComponentTypes>
     std::ranges::range auto Query()
@@ -223,14 +223,7 @@ private:
         return archetypeIt->second.get();
     }
 
-    Archetype* GetArchetype(ArchetypeId aId)
-    {
-        auto archetypeIt = mArchetypes.find(aId);
-        if(archetypeIt == mArchetypes.end())
-            return nullptr;
-
-        return archetypeIt->second.get();
-    }
+    Archetype* GetArchetype(ArchetypeId aId);
 
     template <class... Ts>
     CachedQuery& FindOrAddCachedQuery()
@@ -274,7 +267,7 @@ private:
         auto registerCreateDestroy = []<class tComponent>(ECSRegistry* self, tSystem* system) {
             static_assert(ecs::has_on_component_create<tSystem, tComponent>,
                           "System requested lifetime callbacks for component type, but does not "
-                          "provide a valid member OnCreate(GameObjectId, ComponentType*) function");
+                          "provide a valid member OnCreate(GameObject, ComponentType*) function");
             self->RegisterComponentCreateCallback<tSystem, tComponent>(system);
 
             static_assert(
@@ -290,14 +283,15 @@ private:
     template <class tSystem, class tComponent>
     void RegisterComponentCreateCallback(tSystem* system)
     {
-        auto componentCreateWrapperFn = [system](GameObjectId goId, typed_ptr p) {
+        auto componentCreateWrapperFn = [self = this, system](GameObjectId goId, typed_ptr p) {
+            GameObject go(goId, *self);
             SJ_ASSERT(p.is<tComponent>(),
                       "Unexpected component type sent to component create event callback");
 
             tComponent* ptr = p.as<tComponent>();
             SJ_ASSERT(ptr, "Null component pointer");
 
-            system->OnCreate(goId, ptr);
+            system->OnCreate(go, ptr);
         };
 
         mComponentCreateCallbacks[type_id_of<tComponent>] = componentCreateWrapperFn;
@@ -306,14 +300,16 @@ private:
     template <class tSystem, class tComponent>
     void RegisterComponentDestroyCallback(tSystem* system)
     {
-        auto componentDestroyWrapperFn = [system](GameObjectId goId, typed_ptr p) {
+        auto componentDestroyWrapperFn = [self = this, system](GameObjectId goId, typed_ptr p) {
+            GameObject go(goId, *self);
+
             SJ_ASSERT(p.is<tComponent>(),
                       "Unexpected component type sent to component destroy event callback");
 
             tComponent* ptr = p.as<tComponent>();
             SJ_ASSERT(ptr, "Null component pointer");
 
-            system->OnDestroy(goId, ptr);
+            system->OnDestroy(go, ptr);
         };
 
         mComponentDestroyCallbacks[type_id_of<tComponent>] = componentDestroyWrapperFn;
@@ -330,4 +326,11 @@ private:
     dynamic_flat_map<TypeId, ComponentEventCallback> mComponentCreateCallbacks;
     dynamic_flat_map<TypeId, ComponentEventCallback> mComponentDestroyCallbacks;
 };
+
+template <class T>
+T* GameObject::GetComponent()
+{
+    return mRegistry->GetComponent<T>(mGoId);
+}
+
 } // namespace sj

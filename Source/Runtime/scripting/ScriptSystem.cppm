@@ -59,7 +59,7 @@ public:
         mProcessCallbacks.Trigger(deltaTime);
     }
 
-    void OnCreate(GameObjectId goId, ScriptComponent* component)
+    void OnCreate(GameObject go, ScriptComponent* component)
     {
         AssetID scriptId = component->script_id;
 
@@ -71,11 +71,11 @@ public:
 
         scriptIt->second.refcount_increment();
 
-        [[maybe_unused]] luabridge::Result res = luabridge::push(L.get(), GameObject(goId, *mEcs));
+        [[maybe_unused]] luabridge::Result res = luabridge::push(L.get(), go);
         scriptIt->second->call(luabridge::LuaRef::fromStack(L.get()));
     }
 
-    void OnDestroy(GameObjectId goId, ScriptComponent* component)
+    void OnDestroy(GameObject go, ScriptComponent* component)
     {
         auto scriptIt = mScripts.find(component->script_id);
         scriptIt->second.refcount_decrement();

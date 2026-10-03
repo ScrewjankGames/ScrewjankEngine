@@ -50,13 +50,12 @@ public:
         mECS = &ecs;
     }
 
-    void OnCreate(GameObjectId goId, RigidbodyComponent* component)
+    void OnCreate(GameObject go, RigidbodyComponent* component)
     {
         b3BodyDef def = b3DefaultBodyDef();
 
         def.type = static_cast<b3BodyType>(component->body_type);
         def.gravityScale = component->gravity_scale;
-        GameObject go(goId, *mECS);
         mat44 goTransform = go.GetTransformLW();
 
         def.position = vec4ToB3Vec3(goTransform.get_row<3>());
@@ -65,15 +64,14 @@ public:
         component->runtime_body_id = b3CreateBody(mPhysicsWorld, &def);
     }
 
-    void OnDestroy(GameObjectId goId, RigidbodyComponent* component)
+    void OnDestroy(GameObject go, RigidbodyComponent* component)
     {
         b3DestroyBody(component->runtime_body_id);
     }
 
-    void OnCreate(GameObjectId goId, SphereShape* component)
+    void OnCreate(GameObject go, SphereShape* component)
     {
-        auto* rb = mECS->GetComponent<RigidbodyComponent>(goId);
-        GameObject go(goId, *mECS);
+        auto* rb = go.GetComponent<RigidbodyComponent>();
         mat44 goTransform = go.GetTransformLW();
 
         float scale = goTransform.get_unsigned_scale().get_x();
@@ -88,14 +86,13 @@ public:
         component->runtime_shape_id = b3CreateSphereShape(rb->runtime_body_id, &shapeDef, &sphere);
     }
 
-    void OnDestroy(GameObjectId goId, SphereShape* component)
+    void OnDestroy(GameObject go, SphereShape* component)
     {
         b3DestroyShape(component->runtime_shape_id, true);
     }
 
-    void OnCreate(GameObjectId goId, BoxShape* component)
+    void OnCreate(GameObject go, BoxShape* component)
     {
-        GameObject go(goId, *mECS);
         auto* rb = go.GetComponent<RigidbodyComponent>();
         mat44 goTransform = go.GetTransformLW();
 
@@ -113,7 +110,7 @@ public:
         component->runtime_shape_id = b3CreateHullShape(rb->runtime_body_id, &shapeDef, &box.base);
     }
 
-    void OnDestroy(GameObjectId goId, BoxShape* component)
+    void OnDestroy(GameObject go, BoxShape* component)
     {
         b3DestroyShape(component->runtime_shape_id, true);
     }
