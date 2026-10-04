@@ -31,8 +31,7 @@ export namespace sj
         {
             size_t incoming_length = std::size(sv);
             size_t copy_size = std::min(incoming_length, tExtent - 1);
-
-            CharT* outIt = std::copy(std::begin(sv), std::begin(sv) + copy_size, m_data.begin());
+            auto outIt = std::ranges::copy(sv,  m_data.begin()).out;
             if(*(outIt - 1) != CharT(0))
             {
                 *outIt = CharT(0);

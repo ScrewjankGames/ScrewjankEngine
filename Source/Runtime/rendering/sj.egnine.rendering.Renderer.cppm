@@ -21,6 +21,7 @@ module;
 #include <filesystem>
 #include <type_traits>
 #include <string_view>
+#include <span>
 
 export module sj.engine.rendering.Renderer;
 import sj.engine.Program;

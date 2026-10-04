@@ -7,6 +7,7 @@ module;
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <span>
 
 export module sj.engine.rendering.Upload;
 import sj.engine.rendering.resources;

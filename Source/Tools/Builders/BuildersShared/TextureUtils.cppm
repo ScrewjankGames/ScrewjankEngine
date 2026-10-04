@@ -31,7 +31,7 @@ void WriteTextureToFile(const std::filesystem::path& outputFilePath,
 
     std::ofstream outputFile;
     outputFile.open(outputFilePath, std::ios::out | std::ios::binary);
-    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", outputFilePath.c_str());
+    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", outputFilePath.string().c_str());
 
     outputFile.write(reinterpret_cast<char*>(&texture), sizeof(texture));
     outputFile.write(reinterpret_cast<char*>(pixels), imageBytes);
@@ -70,7 +70,7 @@ void BuildTextureFromFile(const std::filesystem::path& inputFilePath,
     int texChannels = 0;
     stbi_set_flip_vertically_on_load(true);
     stbi_uc* pixels =
-        stbi_load(inputFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_load(inputFilePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     WriteTextureToFile(outputFilePath, texWidth, texHeight, texChannels, pixels);
 

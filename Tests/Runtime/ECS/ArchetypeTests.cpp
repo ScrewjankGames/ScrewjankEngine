@@ -41,9 +41,9 @@ struct DummyComponentC
 
 TEST(ArchetypeTest, ConstructionTest)
 {
-    const type_info& infoA = sj::type_info_of<DummyComponentA>;
-    const type_info& infoB = sj::type_info_of<DummyComponentB>;
-    const type_info& infoC = sj::type_info_of<DummyComponentC>;
+    const sj::type_info& infoA = sj::type_info_of<DummyComponentA>;
+    const sj::type_info& infoB = sj::type_info_of<DummyComponentB>;
+    const sj::type_info& infoC = sj::type_info_of<DummyComponentC>;
 
     Archetype archetype(std::array {&infoA, &infoB, &infoC}, std::pmr::get_default_resource());
     size_t row0 = archetype.AddEntry(GameObjectId {.sparseIndex = 0, .generation = 0});

@@ -55,13 +55,13 @@ Config LoadConfig()
     
     scratchpad_scope scratchpad = ThreadContext::GetScratchpad();
     sj::dynamic_vector<char> buffer(&scratchpad);
-    glz::error_ctx ctx = glz::read_file_json(config, path.c_str(), buffer);
+    glz::error_ctx ctx = glz::read_file_json(config, path.string().c_str(), buffer);
 
     if(ctx.ec != glz::error_code::none)
     {
         std::string error = glz::format_error(ctx);
         SJ_ENGINE_LOG_FATAL("Failed to load configuration file @ {}. Resaon: {}",
-                            path.c_str(),
+                            path.string().c_str(),
                             error);
     }
 

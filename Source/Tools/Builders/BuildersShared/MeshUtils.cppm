@@ -34,7 +34,7 @@ void WriteMeshToFile(std::vector<MeshVertex> verts,
 
     std::ofstream outputFile;
     outputFile.open(outputFilePath, std::ios::out | std::ios::binary);
-    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", outputFilePath.c_str());
+    SJ_ASSERT(outputFile.is_open(), "Failed to open output file {}", outputFilePath.string().c_str());
     outputFile.write(reinterpret_cast<char*>(&mesh), sizeof(mesh));
 
     SJ_ASSERT(vertexMemSize < std::numeric_limits<std::streamsize>::max(),

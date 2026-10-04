@@ -1,6 +1,7 @@
 module;
 
 #include <cstdint>
+#include <cstddef>
 
 export module sj.std.primitives;
 

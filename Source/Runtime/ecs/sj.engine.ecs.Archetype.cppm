@@ -10,7 +10,6 @@ module;
 #include <ranges>
 
 #include <ScrewjankStd/Assert.hpp>
-#include "vulkan/vulkan.hpp"
 
 export module sj.engine.ecs.Archetype;
 import sj.std;

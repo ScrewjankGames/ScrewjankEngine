@@ -50,7 +50,7 @@ public:
 
         std::vector<MeshVertex> verts;
         std::vector<MeshIndexType> indices;
-        ExtractBuffers(item.c_str(), verts, indices);
+        ExtractBuffers(item.string().c_str(), verts, indices);
         WriteMeshToFile(verts, indices, output_path);
         return true;
     }

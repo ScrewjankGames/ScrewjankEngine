@@ -287,7 +287,7 @@ namespace container_tests
         ASSERT_EQ(5, vec[3]);
 
         // Erase 3
-        dynamic_vector<int>::iterator middle(&vec[1]);
+        auto middle = vec.begin() + 1;
         middle = vec.erase(middle);
         ASSERT_EQ(3, vec.size());
         ASSERT_EQ(4, *middle);

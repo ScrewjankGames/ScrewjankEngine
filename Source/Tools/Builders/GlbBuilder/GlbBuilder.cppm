@@ -14,6 +14,7 @@ module;
 #include <string_view>
 #include <flat_map>
 #include <span>
+#include <ranges>
 
 export module sj.build.GlbBuilder;
 import sj.builders;

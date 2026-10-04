@@ -16,6 +16,7 @@ module;
 #include <algorithm>
 #include <ranges>
 #include <cmath>
+#include <span>
 
 module sj.engine.InputSystem;
 import sj.engine.config.InputConfig;
@@ -26,17 +27,23 @@ void InputSystem::Initialize(const InputBindings& bindings)
 {
     mBindings = &bindings;
 
-    auto inputAxes =
-        std::views::concat(bindings.keyboard_axes.keys(), bindings.gamepad_axes.keys());
+    // 1D axes
+    {
+        for(const hashed_string_sv& axis : bindings.keyboard_axes.keys())
+            mInputAxes[axis.get_hash()] = 0;
+    
+        for(const hashed_string_sv& axis : bindings.gamepad_axes.keys())
+            mInputAxes[axis.get_hash()] = 0;
+    }
 
-    for(const hashed_string_sv& axis : inputAxes)
-        mInputAxes[axis.get_hash()] = 0;
-
-    auto inputAxes2D =
-        std::views::concat(bindings.keyboard_axes_2D.keys(), bindings.gamepad_axes_2D.keys());
-
-    for(const hashed_string_sv& axis : inputAxes2D)
-        mInputAxes2D[axis.get_hash()] = vec2(0.0f, 0.0f);
+    // 2D Axes
+    {
+        for(const hashed_string_sv& axis : bindings.keyboard_axes_2D.keys())
+            mInputAxes2D[axis.get_hash()] = vec2(0.0f, 0.0f);
+    
+        for(const hashed_string_sv& axis : bindings.gamepad_axes_2D.keys())
+            mInputAxes2D[axis.get_hash()] = vec2(0.0f, 0.0f);
+    }   
 }
 
 bool InputSystem::ProcessEvent(const SDL_Event& evt)
@@ -138,7 +145,7 @@ std::optional<float> InputSystem::PollKeyboardAxis(string_hash axisName)
     const AxisBindings<AxisBinding<KeyboardButton>>& bindings = keyboardBindingsIt->second;
     for(const AxisBinding<KeyboardButton>& binding : bindings)
     {
-        const bool active = keyboardState.at(static_cast<size_t>(binding.input));
+        const bool active = keyboardState[static_cast<size_t>(binding.input)];
         if(active)
             axisValue = axisValue.value_or(0.0f) + binding.modifier;
     }
@@ -158,12 +165,12 @@ std::optional<vec2> InputSystem::PollKeyboardAxis2D(string_hash axisName)
     const AxisBindings<KeyboardAxisBinding2D>& bindings = keyboardBindingsIt->second;
     for(const KeyboardAxisBinding2D& binding : bindings)
     {
-        const bool xActiveL = keyboardState.at(static_cast<size_t>(binding.x_input_l));
-        const bool xActiveR = keyboardState.at(static_cast<size_t>(binding.x_input_r));
+        const bool xActiveL = keyboardState[static_cast<size_t>(binding.x_input_l)];
+        const bool xActiveR = keyboardState[static_cast<size_t>(binding.x_input_r)];
         const float x = (-1.0f * xActiveL) + (1.0f * xActiveR);
 
-        const bool yActiveL = keyboardState.at(static_cast<size_t>(binding.y_input_l));
-        const bool yActiveR = keyboardState.at(static_cast<size_t>(binding.y_input_r));
+        const bool yActiveL = keyboardState[static_cast<size_t>(binding.y_input_l)];
+        const bool yActiveR = keyboardState[static_cast<size_t>(binding.y_input_r)];
         
         const float y = (1.0f * yActiveL) + (-1.0f * yActiveR);
         

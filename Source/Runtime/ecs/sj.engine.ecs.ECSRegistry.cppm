@@ -2,10 +2,11 @@ module;
 #include <ScrewjankStd/Assert.hpp>
 
 #include <algorithm>
+#include <vector>
 #include <memory>
 #include <memory_resource>
-#include <ranges>
 #include <type_traits>
+#include <ranges>
 
 export module sj.engine.ecs.ECSRegistry;
 
@@ -140,7 +141,7 @@ public:
         CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
 
         using ResultType = std::tuple<GameObjectId, std::add_lvalue_reference<ComponentTypes>...>;
-        auto archetypeToTupleRangeFn = [&](Archetype* archetype) {
+        auto archetypeToTupleRangeFn = [](Archetype* archetype) {
             SJ_ASSERT(archetype, "Invalid archetype");
 
             auto&& rows = std::make_tuple(archetype->GetGameObjects(),
@@ -155,9 +156,7 @@ public:
             return tupleOfRanges;
         };
 
-        return query.matchedArchetypes
-               | std::views::transform(archetypeToTupleRangeFn)
-               | std::views::join;
+        return std::views::join( std::ranges::views::transform(query.matchedArchetypes, archetypeToTupleRangeFn) );
     }
 
     template <class T>
@@ -176,7 +175,7 @@ public:
         if(row.empty())
             return nullptr;
 
-        return &row.at(goIndex);
+        return &row[goIndex];
     }
 
 private:
