@@ -6,10 +6,12 @@
 #if defined(SJ_PLATFORM_LINUX) && !defined(SJ_GOLD)
     #include <signal.h>
 #endif
-
+#if defined(SJ_PLATFORM_WINDOWS) && !defined(SJ_GOLD)
+    #include <intrin.h>
+#endif
 #ifndef SJ_GOLD
     #ifdef SJ_PLATFORM_WINDOWS
-        #define SJ_DEBUGBREAK() __debugbreak()
+        #define SJ_DEBUGBREAK() __builtin_trap();
     #elif defined(SJ_PLATFORM_LINUX)
         #define SJ_DEBUGBREAK() raise(SIGTRAP)
     #else

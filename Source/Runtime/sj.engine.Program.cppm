@@ -111,16 +111,10 @@ public:
 protected:
     void Initialize(this auto&& self)
     {
-        auto doInitializeFn = [&]<class T>(T& m) {
-            SJ_ENGINE_LOG_INFO("Initializing module: {}", type_name_of<T>);
-            m.Initialize(self);
-        };
-
-        std::apply(
-            [&](auto&... args) {
-                ((doInitializeFn(args)), ...);
-            },
-            self.mModules);
+        template for(auto&& m : self.mModules)
+        {
+            m.initialize(self);
+        }
     }
 
     void Run()
@@ -142,23 +136,20 @@ protected:
 
             ProcessEvents();
 
-            std::apply(
-                [&](auto&... args) {
-                    ((args.NewFrame()), ...);
-                },
-                mModules);
+            template for (auto&& m : mModules)
+            {
+                m.NewFrame();
+            }
 
-            std::apply(
-                [&](auto&... args) {
-                    ((args.Process(mDeltaSeconds)), ...);
-                },
-                mModules);
+            template for (auto&& m : mModules)
+            {
+                m.Process(mDeltaSeconds);
+            }
 
-            std::apply(
-                [&](auto&... args) {
-                    ((args.EndFrame()), ...);
-                },
-                mModules);
+            template for (auto&& m : mModules)
+            {
+                m.EndFrame();
+            }
         }
     }
 

@@ -48,11 +48,10 @@ public:
           m_denseElements {std::make_tuple<>(DenseContainer<IdType>(memoryResource),
                                              DenseContainer<DenseElements>(memoryResource)...)}
     {
-        std::apply(
-            [capacity](auto&&... containers) {
-                (containers.reserve(capacity), ...);
-            },
-            m_denseElements);
+        template for(auto&& container : m_denseElements)
+        {
+            container.reserve(capacity);
+        }
 
         LinkFreeList(0, capacity);
     }
@@ -92,11 +91,10 @@ public:
         }
 
         // Fill gaps in dense arrays
-        std::apply(
-            [releasedDenseIndex](auto&&... containers) {
-                (erase_unordered(containers, containers.begin() + releasedDenseIndex), ...);
-            },
-            m_denseElements);
+        template for(auto&& container : m_denseElements)
+        {
+            erase_unordered(container, container.begin() + releasedDenseIndex);
+        }
 
         auto& denseIdList = std::get<0>(m_denseElements);
         if(releasedDenseIndex < denseIdList.size())
@@ -136,7 +134,8 @@ public:
 
     auto get_all()
     {
-        return std::apply(std::views::zip, m_denseElements);
+        auto&& [...elems] = m_denseElements;
+        return std::views::zip(std::forward<decltype(elems)>(elems)...);
     }
 
 private:

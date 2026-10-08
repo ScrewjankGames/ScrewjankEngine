@@ -116,22 +116,15 @@ public:
         CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
 
         using ResultType = std::tuple<std::add_lvalue_reference<ComponentTypes>...>;
-        auto archetypeToTupleRangeFn = [&](Archetype* archetype) {
+        auto archetypeToRangeOfTuplesFn = [&](Archetype* archetype) {
             SJ_ASSERT(archetype, "Invalid archetype");
 
-            auto&& rows = std::make_tuple(archetype->GetRow<ComponentTypes>()...);
-
-            auto&& tupleOfRanges = std::apply(
-                [](auto&&... ranges) {
-                    return std::views::zip(std::forward<decltype(ranges)>(ranges)...);
-                },
-                rows);
-
-            return tupleOfRanges;
+            auto&& [...rows] = std::make_tuple(archetype->GetRow<ComponentTypes>()...);
+            return std::views::zip(std::forward<decltype(rows)>(rows)...);
         };
 
         return query.matchedArchetypes
-               | std::views::transform(archetypeToTupleRangeFn)
+               | std::views::transform(archetypeToRangeOfTuplesFn)
                | std::views::join;
     }
 
@@ -141,22 +134,16 @@ public:
         CachedQuery& query = FindOrAddCachedQuery<ComponentTypes...>();
 
         using ResultType = std::tuple<GameObjectId, std::add_lvalue_reference<ComponentTypes>...>;
-        auto archetypeToTupleRangeFn = [](Archetype* archetype) {
+        auto archetypeToRangeOfTuplesFn = [](Archetype* archetype) {
             SJ_ASSERT(archetype, "Invalid archetype");
 
-            auto&& rows = std::make_tuple(archetype->GetGameObjects(),
-                                          archetype->GetRow<ComponentTypes>()...);
-
-            auto&& tupleOfRanges = std::apply(
-                [](auto&&... ranges) {
-                    return std::views::zip(std::forward<decltype(ranges)>(ranges)...);
-                },
-                rows);
-
-            return tupleOfRanges;
+            auto&& [...rows] = std::make_tuple(archetype->GetGameObjects(), archetype->GetRow<ComponentTypes>()...);
+            return std::views::zip(std::forward<decltype(rows)>(rows)...);
         };
 
-        return std::views::join( std::ranges::views::transform(query.matchedArchetypes, archetypeToTupleRangeFn) );
+        return query.matchedArchetypes
+               | std::views::transform(archetypeToRangeOfTuplesFn)
+               | std::views::join;
     }
 
     template <class T>
