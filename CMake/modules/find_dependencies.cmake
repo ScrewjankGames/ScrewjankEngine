@@ -126,8 +126,8 @@ FetchContent_Declare(
 option(LUAU_BUILD_TESTS OFF)
 
 FetchContent_MakeAvailable(luau)
-target_compile_definitions(Luau.VM PUBLIC LUA_VECTOR_SIZE=4)
-target_compile_definitions(Luau.Compiler PUBLIC LUA_VECTOR_SIZE=4)
+# target_compile_definitions(Luau.VM PUBLIC LUA_VECTOR_SIZE=4)
+# target_compile_definitions(Luau.Compiler PUBLIC LUA_VECTOR_SIZE=4)
 
 
 ## Lua Bridge 3

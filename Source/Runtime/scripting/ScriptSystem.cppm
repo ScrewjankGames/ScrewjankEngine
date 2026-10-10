@@ -107,12 +107,6 @@ private:
     {
         RegisterTypes(L);
         
-        // Additional Types
-        luabridge::getGlobalNamespace(L)
-            .beginClass<ProcessSignal>("ProcessSignal")
-            .addFunction("Connect", &ProcessSignal::Connect)
-            .endClass();
-
         // Globals
         luabridge::getGlobalNamespace(L)
             .beginNamespace("Game")

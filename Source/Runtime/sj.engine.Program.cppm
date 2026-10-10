@@ -45,7 +45,7 @@ public:
             SJ_ASSERT(false, "Failed to initialize SDL: {}", err);
             mTerminated = true;
         }
-
+        
         new(&mModules) std::tuple<Modules...>();
     }
 
@@ -113,7 +113,7 @@ protected:
     {
         template for(auto&& m : self.mModules)
         {
-            m.initialize(self);
+            m.Initialize(self);
         }
     }
 

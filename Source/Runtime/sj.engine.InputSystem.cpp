@@ -220,8 +220,8 @@ std::optional<vec2> InputSystem::PollGamepadAxis2D(string_hash axisName)
             SDL_GetGamepadAxis(mGamepad, static_cast<SDL_GamepadAxis>(binding.x_input));
         const i16 ySample =
             SDL_GetGamepadAxis(mGamepad, static_cast<SDL_GamepadAxis>(binding.y_input));
-        const float rawX = float(xSample) * kInvStickMax * binding.x_modifier;
-        const float rawY = float(ySample) * kInvStickMax * binding.y_modifier;
+        const float rawX = static_cast<float>(xSample) * kInvStickMax * binding.x_modifier;
+        const float rawY = static_cast<float>(ySample) * kInvStickMax * binding.y_modifier;
         const vec2 rawInput(rawX, rawY);
 
         const float rawMagnitude = magnitude(rawInput);
@@ -232,7 +232,7 @@ std::optional<vec2> InputSystem::PollGamepadAxis2D(string_hash axisName)
             }
             else if(rawMagnitude >= binding.outer_radial_deadzone)
             {
-                return 0.0f;
+                return 1.0f;
             }
             else
             {
@@ -242,9 +242,8 @@ std::optional<vec2> InputSystem::PollGamepadAxis2D(string_hash axisName)
             }
         }();
         
-        vec2 remappedInput = normalized(rawInput) * outputMagnitude;
-
-        axisValue = axisValue.value_or(vec2(0.0f, 0.0f)) + vec2(rawX, rawY);
+        const vec2 remappedInput = normalized(rawInput) * outputMagnitude;
+        axisValue = axisValue.value_or(vec2(0.0f, 0.0f)) + remappedInput;
     }
 
     return axisValue;

@@ -17,7 +17,7 @@ struct Stack<sj::vec4>
     static Result push(lua_State* L, const sj::vec4& vec)
     {
         // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), vec.get_w());
+        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z());
         return Result {};
     }
 
@@ -40,7 +40,7 @@ struct Stack<sj::vec3>
     static Result push(lua_State* L, const sj::vec4& vec)
     {
         // Push as a native vector (Luau's internal vector type)
-        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z(), 0.0f);
+        lua_pushvector(L, vec.get_x(), vec.get_y(), vec.get_z());
         return Result {};
     }
 
