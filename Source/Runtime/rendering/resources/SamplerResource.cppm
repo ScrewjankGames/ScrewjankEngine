@@ -66,6 +66,9 @@ public:
 
     SamplerResource& operator=(SamplerResource&& other) noexcept
     {
+        if(this == &other)
+            return *this;
+        
         Release();
 
         mDevice = std::exchange(other.mDevice, nullptr);

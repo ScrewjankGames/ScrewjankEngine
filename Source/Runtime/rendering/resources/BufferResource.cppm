@@ -24,6 +24,9 @@ public:
         Release();
     }
 
+    BufferResource(const BufferResource& other) = delete;
+    BufferResource& operator=(const BufferResource& other) = delete;
+
     BufferResource(BufferResource&& other) noexcept
     {
         mDevice = std::exchange(other.mDevice, nullptr);
@@ -32,6 +35,9 @@ public:
 
     BufferResource& operator=(BufferResource&& other) noexcept
     {
+        if(this == &other)
+            return *this;
+
         Release();
         mDevice = std::exchange(other.mDevice, nullptr);
         mBuffer = std::exchange(other.mBuffer, nullptr);
@@ -65,7 +71,7 @@ struct MeshBuffer
 
     [[nodiscard]] SDL_GPUBufferBinding GetVertexBinding() const
     {
-        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer() };
+        return SDL_GPUBufferBinding {.buffer = buffer.GetBuffer()};
     }
 
     [[nodiscard]] SDL_GPUBufferBinding GetIndexBinding() const

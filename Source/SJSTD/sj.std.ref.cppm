@@ -32,11 +32,13 @@ public:
 
     ref<T>& operator=(ref<T>&& other) noexcept
     {
-        if(this != &other)
-        {
-            mRefCnt.exchange(other.mRefCnt);
-            other.mRefCnt.store(0);
-        }
+        if(this == &other)
+            return *this;
+        
+        mRefCnt.exchange(other.mRefCnt);
+        other.mRefCnt.store(0);
+
+        mData = std::move(other.mData);
 
         return *this;
     }
