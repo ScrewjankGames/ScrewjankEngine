@@ -121,7 +121,7 @@ FetchContent_Declare(
         luau
         SYSTEM
         GIT_REPOSITORY https://github.com/luau-lang/luau.git
-        GIT_TAG 0.728
+        GIT_TAG 0.744
 )
 option(LUAU_BUILD_TESTS OFF)
 
@@ -135,7 +135,7 @@ FetchContent_Declare(
         LuaBridge
         SYSTEM
         GIT_REPOSITORY https://github.com/kunitoki/LuaBridge3.git
-        GIT_TAG 3.0-rc12
+        GIT_TAG 3.0-rc13
 )
 FetchContent_MakeAvailable(LuaBridge)
 
