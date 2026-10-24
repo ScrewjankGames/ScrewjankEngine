@@ -42,11 +42,23 @@ void RegisterTypes(lua_State* L)
         .addProperty("y", mat44GetterHelper<1>, mat44SetterHelper<1>)
         .addProperty("z", mat44GetterHelper<2>, mat44SetterHelper<2>)
         .addProperty("w", mat44GetterHelper<3>, mat44SetterHelper<3>)
-        .addFunction("get_euler_angles", &mat44::get_euler_angles)
+        .addFunction("get_euler_angles_xyz", &mat44::get_euler_angles_xyz)
+        .addFunction("get_euler_angles_yxz", &mat44::get_euler_angles_yxz)
+
         .addFunction("set_rot_euler_xyz", &mat44::set_rot_euler_xyz)
+        .addFunction("set_rot_euler_zyx", &mat44::set_rot_euler_zyx)
+        .addFunction("set_rot_euler_yxz", &mat44::set_rot_euler_yxz)
         .endClass()
 
         .beginClass<GameObject>("GameObject")
+        .addFunction("get_transform_ls",
+                     [](GameObject& go) -> mat44 {
+                         return go.GetTransformLS();
+                     })
+        .addFunction("set_transform_ls",
+                     [](GameObject& go, const mat44& ws) {
+                         go.SetTransformLS(ws);
+                     })
         .addFunction("get_transform_ws",
                      [](GameObject& go) -> mat44 {
                          return go.GetTransformLW();

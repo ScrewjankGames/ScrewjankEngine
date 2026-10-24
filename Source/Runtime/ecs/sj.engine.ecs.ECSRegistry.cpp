@@ -39,10 +39,22 @@ Archetype* ECSRegistry::GetArchetype(ArchetypeId aId)
     return archetypeIt->second.get();
 }
 
-mat44 GameObject::GetTransformLW() const
+mat44 GameObject::GetTransformLS() const
 {
     TransformComponent* transform = mRegistry->GetComponent<TransformComponent>(mGoId);
     SJ_ASSERT(transform, "GameObject has no transform!");
+    return transform->localToParent;
+}
+
+void GameObject::SetTransformLS(const mat44& m)
+{
+    TransformComponent* transform = mRegistry->GetComponent<TransformComponent>(mGoId);
+    SJ_ASSERT(transform, "GameObject has no transform!");
+    transform->localToParent = m;
+}
+
+mat44 GameObject::GetTransformLW() const
+{
     ParentComponent* parent = mRegistry->GetComponent<ParentComponent>(mGoId);
 
     mat44 parentLW = kIdentityTag;
@@ -52,24 +64,21 @@ mat44 GameObject::GetTransformLW() const
         parentLW = parentGo.GetTransformLW();
     }
 
-    return transform->localToParent * parentLW;
+    return GetTransformLS() * parentLW;
 }
 
 void GameObject::SetTransformLW(const mat44& m)
 {
-    TransformComponent* transform = mRegistry->GetComponent<TransformComponent>(mGoId);
-    SJ_ASSERT(transform, "GameObject has no transform!");
-
     ParentComponent* parent = mRegistry->GetComponent<ParentComponent>(mGoId);
     if(parent)
     {
         GameObject parentGo(parent->parentGoId, *mRegistry);
         mat44 worldToParent = parentGo.GetTransformLW().affine_inverse();
-        transform->localToParent = m * worldToParent;
+        SetTransformLS(m * worldToParent);
     }
     else
     {
-        transform->localToParent = m;
+        SetTransformLS(m);
     }
 }
 } // namespace sj

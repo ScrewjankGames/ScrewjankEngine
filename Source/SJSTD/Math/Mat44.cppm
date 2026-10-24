@@ -1,5 +1,6 @@
 module;
 
+#include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <array>
@@ -98,6 +99,15 @@ public:
         return vec4(get_x().magnitude(), get_y().magnitude(), get_z().magnitude(), 0.0f);
     }
 
+    template <int tRow, int tCol>
+    [[nodiscard]] constexpr auto set(float val) const -> void
+    {
+        static_assert(tRow > 0 && tRow <= 3, "Row index out of bounds");
+        static_assert(tCol > 0 && tCol <= 3, "Column index out of bounds");
+
+        m_rows[tRow].set<tCol>(val);
+    }
+
     constexpr auto set_x(vec4 v) -> mat44&
     {
         m_rows[0] = v;
@@ -136,6 +146,34 @@ public:
         return *this;
     }
 
+    constexpr auto set_rot_euler_zyx(const vec3& eulers) -> mat44&
+    {
+        float xScale = m_rows[0].magnitude();
+        float yScale = m_rows[1].magnitude();
+        float zScale = m_rows[2].magnitude();
+
+        mat44 rotation = mat44::from_euler_zyx(eulers);
+        m_rows[0] = rotation.m_rows[0] * xScale;
+        m_rows[1] = rotation.m_rows[1] * yScale;
+        m_rows[2] = rotation.m_rows[2] * zScale;
+
+        return *this;
+    }
+
+    constexpr auto set_rot_euler_yxz(const vec3& eulers) -> mat44&
+    {
+        float xScale = m_rows[0].magnitude();
+        float yScale = m_rows[1].magnitude();
+        float zScale = m_rows[2].magnitude();
+
+        mat44 rotation = mat44::from_euler_yxz(eulers);
+        m_rows[0] = rotation.m_rows[0] * xScale;
+        m_rows[1] = rotation.m_rows[1] * yScale;
+        m_rows[2] = rotation.m_rows[2] * zScale;
+
+        return *this;
+    }
+
     [[nodiscard]] auto affine_inverse() const -> mat44
     {
         const float invScaleX = 1.0f / get_x().magnitude();
@@ -146,40 +184,82 @@ public:
         const vec4 unitY = get_y() * invScaleY;
         const vec4 unitZ = get_z() * invScaleZ;
 
-        mat44 inverseRot {
-            {unitX.get_x() * invScaleX, unitY.get_x() * invScaleX, unitZ.get_x() * invScaleX, 0},
-            {unitX.get_y() * invScaleY, unitY.get_y() * invScaleY, unitZ.get_y() * invScaleY, 0},
-            {unitX.get_z() * invScaleZ, unitY.get_z() * invScaleZ, unitZ.get_z() * invScaleZ, 0},
+        mat44 inverseRotScale {
+            {unitX.get_x() * invScaleX, unitY.get_x() * invScaleY, unitZ.get_x() * invScaleZ, 0},
+            {unitX.get_y() * invScaleX, unitY.get_y() * invScaleY, unitZ.get_y() * invScaleZ, 0},
+            {unitX.get_z() * invScaleX, unitY.get_z() * invScaleY, unitZ.get_z() * invScaleZ, 0},
             {0.0f, 0.0f, 0.0f, 1}};
 
-        vec4 inverseT = (-get_w()) * inverseRot;
+        vec4 inverseT = (-get_w()) * inverseRotScale;
         inverseT.set_w(1.0f);
 
-        return {inverseRot.get_x(), inverseRot.get_y(), inverseRot.get_z(), inverseT};
+        return {inverseRotScale.get_x(),
+                inverseRotScale.get_y(),
+                inverseRotScale.get_z(),
+                inverseT};
+    }
+
+    static auto from_rotate_x(float x) -> mat44
+    {
+        return mat44 {
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, std::cosf(x), std::sinf(x), 0.0f},
+            {0.0f, -std::sinf(x), std::cosf(x), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+    }
+
+    static auto from_rotate_y(float y) -> mat44
+    {
+        return mat44 {
+            {std::cosf(y), 0.0f, -std::sinf(y), 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {std::sinf(y), 0.0f, std::cosf(y), 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+    }
+
+    static auto from_rotate_z(float z) -> mat44
+    {
+        return mat44 {
+            {std::cosf(z), std::sinf(z), 0.0f, 0.0f},
+            {-std::sinf(z), std::cosf(z), 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+    }
+
+    // W is interpreted as angle spun about axis
+    [[nodiscard]] static auto from_axis_angle(const vec4& axisAndAngle) -> mat44
+    {
+        const float sinTheta = std::sinf(axisAndAngle.get_w());
+        const float cosTheta = std::cosf(axisAndAngle.get_w());
+        const float versine = 1.0f - cosTheta;
+
+        const float kx = axisAndAngle.get_x();
+        const float ky = axisAndAngle.get_y();
+        const float kz = axisAndAngle.get_z();
+
+        return mat44(vec4(cosTheta + kx * kx * versine,
+                          kx * ky * versine + kz * sinTheta,
+                          kx * kz * versine - ky * sinTheta,
+                          0.0f),
+                     vec4(ky * kx * versine - kz * sinTheta,
+                          cosTheta + ky * ky * versine,
+                          ky * kz * versine + kx * sinTheta,
+                          0.0f),
+                     vec4(kz * kx * versine + ky * sinTheta,
+                          kz * ky * versine - kx * sinTheta,
+                          cosTheta + kz * kz * versine,
+                          0.0f),
+                     vec4(0.0f, 0.0f, 0.0f, 1.0f));
     }
 
     [[nodiscard]] static auto from_euler_xyz(const vec3& eulers) -> mat44
     {
-        mat44 x {
-            {1.0f, 0.0f, 0.0f, 0.0f},
-            {0.0f, std::cosf(eulers[0]), std::sinf(eulers[0]), 0.0f},
-            {0.0f, -std::sinf(eulers[0]), std::cosf(eulers[0]), 0.0f},
-            {0.0f, 0.0f, 0.0f, 1.0f},
-        };
-
-        mat44 y {
-            {std::cosf(eulers[1]), 0.0f, -std::sinf(eulers[1]), 0.0f},
-            {0.0f, 1.0f, 0.0f, 0.0f},
-            {std::sinf(eulers[1]), 0.0f, std::cosf(eulers[1]), 0.0f},
-            {0.0f, 0.0f, 0.0f, 1.0f},
-        };
-
-        mat44 z {
-            {std::cosf(eulers[2]), std::sinf(eulers[2]), 0.0f, 0.0f},
-            {-std::sinf(eulers[2]), std::cosf(eulers[2]), 0.0f, 0.0f},
-            {0.0f, 0.0f, 1.0f, 0.0f},
-            {0.0f, 0.0f, 0.0f, 1.0f},
-        };
+        mat44 x = from_rotate_x(eulers.x);
+        mat44 y = from_rotate_y(eulers.y);
+        mat44 z = from_rotate_z(eulers.z);
 
         return x * y * z;
     }
@@ -191,19 +271,56 @@ public:
         return output;
     }
 
+    [[nodiscard]] static auto from_euler_zyx(const vec3& eulers) -> mat44
+    {
+        mat44 x = from_rotate_x(eulers.x);
+        mat44 y = from_rotate_y(eulers.y);
+        mat44 z = from_rotate_z(eulers.z);
+
+        return z * y * x;
+    }
+
+    [[nodiscard]] static auto from_euler_zyx(const vec3& eulers, const vec4& translation) -> mat44
+    {
+        mat44 output = from_euler_zyx(eulers);
+        output.set_w(translation);
+        return output;
+    }
+
+    [[nodiscard]] static auto from_euler_yxz(const vec3& eulers) -> mat44
+    {
+        mat44 pitch = from_rotate_x(eulers.x);
+        mat44 yaw = from_rotate_y(eulers.y);
+        mat44 roll = from_rotate_z(eulers.z);
+
+        return yaw * pitch * roll;
+    }
+
+    [[nodiscard]] static auto from_euler_yxz(const vec3& eulers, const vec4& translation) -> mat44
+    {
+        mat44 output = from_euler_yxz(eulers);
+        output.set_w(translation);
+        return output;
+    }
+
     [[nodiscard]] static auto from_quat(const quat& q) -> mat44
     {
-        vec4 row0(1.0f - 2.0f * q.get_y() * q.get_y() - 2.0f * q.get_z() * q.get_z(),
-                  2.0f * q.get_x() * q.get_y() - 2.0f * q.get_z() * q.get_w(),
-                  2.0f * q.get_x() * q.get_z() + 2.0f * q.get_y() * q.get_w(),
+        const float x = q.get_x();
+        const float y = q.get_y();
+        const float z = q.get_z();
+        const float w = q.get_w();
+
+        vec4 row0(1.0f - 2.0f * y * y - 2.0f * z * z,
+                  2.0f * x * y + 2.0f * z * w,
+                  2.0f * x * z - 2.0f * y * w,
                   0.0f);
-        vec4 row1(2.0f * q.get_x() * q.get_y() + 2.0f * q.get_z() * q.get_w(),
-                  1.0f - 2.0f * q.get_x() * q.get_x() - 2.0f * q.get_z() * q.get_z(),
-                  2.0f * q.get_y() * q.get_z() - 2.0f * q.get_x() * q.get_w(),
+        vec4 row1(2.0f * x * y - 2.0f * z * w,
+                  1.0f - 2.0f * x * x - 2.0f * z * z,
+                  2.0f * y * z + 2.0f * x * w,
                   0.0f);
-        vec4 row2(2.0f * q.get_x() * q.get_z() - 2.0f * q.get_y() * q.get_w(),
-                  2.0f * q.get_y() * q.get_z() + 2.0f * q.get_x() * q.get_w(),
-                  1.0f - 2.0f * q.get_x() * q.get_x() - 2.0f * q.get_y() * q.get_y(),
+        vec4 row2(2.0f * x * z + 2.0f * y * w,
+                  2.0f * y * z - 2.0f * x * w,
+                  1.0f - 2.0f * x * x - 2.0f * y * y,
                   0.0f);
         vec4 row3(0.0f, 0.0f, 0.0f, 1.0f);
         return mat44(row0, row1, row2, row3);
@@ -216,22 +333,24 @@ public:
         t.set_row<1>(t.get_row<1>() * sqt.s.get_y());
         t.set_row<2>(t.get_row<2>() * sqt.s.get_z());
         t.set_row<3>(sqt.t);
+        t.set<3, 3>(1.0f);
         return t;
     }
 
-    [[nodiscard]] constexpr auto get_euler_angles() const -> vec3
+    [[nodiscard]] constexpr auto get_euler_angles_xyz() const -> vec3
     {
         vec4 xAxis = m_rows[0].normalize3_w0();
         vec4 yAxis = m_rows[1].normalize3_w0();
         vec4 zAxis = m_rows[2].normalize3_w0();
 
-        if(!(xAxis.get<2>() == 1 || xAxis.get<2>() == -1))
-        {
-            float yRot = -std::asin(xAxis.get<2>());
-            float invCosY = 1.0f / std::cos(yRot);
+        float sinY = std::clamp(-xAxis.get<2>(), -1.0f, 1.0f);
 
-            float xRot = std::atan2(yAxis.get<2>() * invCosY, zAxis.get<2>() * invCosY);
-            float zRot = std::atan2(xAxis.get<1>() * invCosY, xAxis.get<0>() * invCosY);
+        if(sinY < 0.9999f && sinY > -0.9999f)
+        {
+            float yRot = std::asin(sinY);
+
+            float xRot = std::atan2(yAxis.get<2>(), zAxis.get<2>());
+            float zRot = std::atan2(xAxis.get<1>(), xAxis.get<0>());
 
             return sj::vec3 {.x = xRot, .y = yRot, .z = zRot};
         }
@@ -239,7 +358,7 @@ public:
         {
             constexpr float pi_over_2 = std::numbers::pi_v<float> / 2.0f;
             float zRot = 0;
-            if(xAxis.get<2>() == -1)
+            if(sinY >= 0.9999f)
             {
                 float yRot = pi_over_2;
                 float xRot = std::atan2(yAxis.get<0>(), zAxis.get<0>());
@@ -252,6 +371,37 @@ public:
                 return sj::vec3 {.x = xRot, .y = yRot, .z = zRot};
             }
         }
+    }
+
+    [[nodiscard]] auto get_euler_angles_yxz() const -> vec3
+    {
+        constexpr float pi_over_2 = std::numbers::pi_v<float> / 2.0f;
+
+        vec4 xAxis = m_rows[0].normalize3_w0();
+        vec4 yAxis = m_rows[1].normalize3_w0();
+        vec4 zAxis = m_rows[2].normalize3_w0();
+        mat44 noScale(xAxis, yAxis, zAxis, vec4(0, 0, 0, 1));
+
+        float sinX = noScale.get<1, 2>();
+
+        if(sinX < 0.9999f && sinX > -0.9999f)
+        {
+            return vec3(std::asin(sinX),
+                        std::atan2(-noScale.get<0, 2>(), noScale.get<2, 2>()),
+                        std::atan2(-noScale.get<1, 0>(), noScale.get<1, 1>()));
+        }
+        else
+        {
+            if(sinX >= 0.9999f)
+            {
+                return vec3(pi_over_2, std::atan2(noScale.get<0, 1>(), noScale.get<0, 0>()), 0.0f);
+            }
+            else
+            {
+                return vec3(-pi_over_2, std::atan2(-noScale.get<0, 1>(), noScale.get<0, 0>()), 0.0f);
+            }
+        }
+
     }
 
     [[nodiscard]] auto&& data(this auto&& self) //-> std::array<(const?)vec4, 4>&

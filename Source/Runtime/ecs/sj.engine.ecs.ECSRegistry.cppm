@@ -29,6 +29,9 @@ public:
     {
     }
 
+    [[nodiscard]] mat44 GetTransformLS() const;
+    void SetTransformLS(const mat44& m);
+
     [[nodiscard]] mat44 GetTransformLW() const;
     void SetTransformLW(const mat44& m);
 
