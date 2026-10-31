@@ -2,6 +2,7 @@ module;
 
 #include <optional>
 #include <string_view>
+#include <span>
 
 export module sj.engine.Scene;
 import sj.engine.system.threading.ThreadContext;
@@ -19,6 +20,8 @@ public:
     ~Scene() = default;
 
 private:
-    GameObjectId SpawnGameObject(ECSRegistry& registry, std::optional<GameObjectId> parentId, const GameObjectChunk& goChunk );
+    void LoadGameObject(ChunkReader& reader,
+                        ECSRegistry& registry,
+                        std::optional<GameObjectId> parentId);
 };
 } // namespace sj

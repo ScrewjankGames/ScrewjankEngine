@@ -27,7 +27,7 @@ ArchetypeId ComputeArchetypeId(R&& componentTypes)
 
     // XOR associative and commutative - no threat of the same type id
     // appearing multiple times
-    for(TypeId id : componentTypes | std::views::transform(&type_info::id))
+    for(TypeId id : std::forward<R>(componentTypes) | std::views::transform(&type_info::id))
         hash ^= FNV1a_32(std::as_bytes(std::span {&id, 1}));
 
     return hash;
@@ -129,16 +129,23 @@ public:
         return GetRow<T>()[entryIdx];
     }
 
-    size_t AddEntry(GameObjectId goId)
+    size_t AddEntryUninitialized(GameObjectId goId)
     {
         if(mSize == mCapacity)
             Resize(std::max(1uz, mSize * 2));
 
-        for(auto&& row : mRows)
-            std::invoke(row.typeInfo->constructor_fn, row[mSize]);
-
         mGoIds[mSize] = goId;
         return mSize++;
+    }
+
+    size_t AddEntry(GameObjectId goId)
+    {
+        size_t idx = AddEntryUninitialized(goId);
+
+        for(auto&& row : mRows)
+            std::invoke(row.typeInfo->constructor_fn, row[idx]);
+
+        return idx;
     }
 
     template <std::ranges::range CtorCallbacks>

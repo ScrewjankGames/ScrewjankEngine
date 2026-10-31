@@ -7,10 +7,10 @@ module;
 #include <utility>
 
 export module sj.datadefs:SceneChunks;
+import sj.std.primitives;
 import sj.std.string_hash;
 import sj.std.type_info;
 import sj.std.containers.vector;
-import sj.datadefs.DataChunk;
 
 export namespace sj
 {
@@ -26,9 +26,26 @@ struct GameObjectChunk
 struct SceneChunk
 {
     hashed_string_sv scene_name;
-    uint32_t memory; // Free ram allocated to this scene
 
     sj::dynamic_vector<GameObjectChunk> game_objects;
+};
+
+struct SceneChunkHeader
+{
+    hashed_string_sv scene_name;
+    u32 num_game_objects = 0;
+};
+
+struct GameObjectChunkHeader
+{
+    hashed_string_sv name;
+    u32 num_components = 0;
+    u32 num_children = 0;
+};
+
+struct ComponentChunkHeader
+{
+    std::span<const TypeId> load_chunk_type_ids;
 };
 
 } // namespace sj

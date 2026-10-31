@@ -34,7 +34,6 @@ target_link_libraries(${PROJECT_NAME}
         imgui
         implot
         glaze::glaze
-    PRIVATE
         SDL3::SDL3
         spdlog::spdlog
         Luau.VM

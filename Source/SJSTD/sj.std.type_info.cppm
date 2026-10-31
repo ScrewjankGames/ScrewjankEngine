@@ -1,5 +1,8 @@
 module;
 #include <cstddef>
+#include <glaze/beve/read.hpp>
+#include <glaze/json/generic.hpp>
+#include <glaze/json/generic_fwd.hpp>
 #include <string_view>
 #include <span>
 #include <type_traits>
@@ -8,11 +11,12 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 export module sj.std.type_info;
+import sj.std.primitives;
 import sj.std.string_hash;
 
 export namespace sj
 {
-using TypeId = uint32_t;
+using TypeId = u32;
 
 template <class T>
 constexpr TypeId type_id_of = string_hash(glz::type_name<std::remove_cvref_t<T>>).AsInt();
@@ -25,8 +29,8 @@ struct type_info
     std::string_view name = "";
     TypeId id = 0;
 
-    size_t size = 0;
-    size_t alignment = 0;
+    uZ size = 0;
+    uZ alignment = 0;
 
     bool is_trivially_destructible = false;
 
@@ -45,6 +49,9 @@ struct type_info
 
     using deserializeJsonFn = void (*)(void* dst, const glz::generic_u64& data);
     deserializeJsonFn desierialize_json_fn = nullptr;
+
+    using deserializeBeveFn = void (*)(void* dst, std::span<const u8> data);
+    deserializeBeveFn desierialize_beve_fn = nullptr;
 };
 
 template <class T>
@@ -84,14 +91,27 @@ constexpr type_info type_info_of {
     .desierialize_json_fn =
         [](void* dst, const glz::generic_u64& data) {
             T& chunk = *reinterpret_cast<T*>(dst);
-            
-            new (&chunk) T(); // default initialize chunk
+
+            new(&chunk) T(); // default initialize chunk
 
             glz::error_ctx err = glz::read<glz::opts {}>(chunk, data);
             SJ_ASSERT(err == glz::error_code::none,
                       "Failed to desierialize json data for type {}! Reason: {}",
                       type_name_of<T>,
                       glz::format_error(err));
+        },
+    .desierialize_beve_fn =
+        [](void* dst, std::span<const u8> data) {
+            T& chunk = *reinterpret_cast<T*>(dst);
+
+            new(&chunk) T(); // default initialize chunk
+
+            std::expected<uZ, glz::error_ctx> res = glz::read_beve_at(chunk, data, 0);
+
+            SJ_ASSERT(res,
+                      "Failed to desierialize payload for type {}! Reason: {}",
+                      type_name_of<T>,
+                      glz::format_error(res.error()));
         },
 };
 

@@ -5,6 +5,7 @@ module;
 #include <vector>
 #include <memory>
 #include <memory_resource>
+#include <optional>
 #include <type_traits>
 #include <ranges>
 
@@ -84,33 +85,7 @@ public:
             RegisterComponentLifetimeCallbacks(system);
     }
 
-    template <std::ranges::range ComponentTypeInfos, std::ranges::range ConstructCallbacks>
-    GameObjectId CreateGameObject(const ComponentTypeInfos& componentTypeInfos,
-                                  ConstructCallbacks&& constructFns)
-    {
-        ArchetypeId aId = ComputeArchetypeId(componentTypeInfos);
-        Archetype* archetype = FindOrAddArchetype(aId, componentTypeInfos);
-
-        GameObjectId newGoId = mGameObjects.create(GameObjectRecord {.archetypeId = aId});
-        GameObjectRecord* newRecord = mGameObjects.get<GameObjectRecord>(newGoId);
-
-        const auto entryIdx =
-            archetype->AddEntry(newGoId, std::forward<ConstructCallbacks>(constructFns));
-
-        newRecord->archetypeLocalIndex = entryIdx;
-
-        for(const type_info* info : componentTypeInfos)
-        {
-            auto callbackIt = mComponentCreateCallbacks.find(info->id);
-            if(callbackIt == mComponentCreateCallbacks.end())
-                continue;
-
-            std::invoke(callbackIt->second, newGoId, archetype->GetEntry(info->id, entryIdx));
-        }
-
-        return newGoId;
-    }
-
+    GameObjectId CreateGameObject(std::span<const TypeId> typeIds, std::span<const std::span<const u8>> chunks, std::optional<GameObjectId> parent);
     void ReleaseGameObject(GameObjectId goId);
 
     template <class... ComponentTypes>

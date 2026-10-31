@@ -1,13 +1,57 @@
 module;
 
 #include <ScrewjankStd/Assert.hpp>
+#include <ranges>
 
 module sj.engine.ecs.ECSRegistry;
 import sj.std;
+import sj.engine.system.threading;
 import sj.engine.TransformComponent;
 
 namespace sj
 {
+GameObjectId ECSRegistry::CreateGameObject(std::span<const TypeId> typeIds,
+                                           std::span<const std::span<const u8>> chunks,
+                                           std::optional<GameObjectId> parent)
+{
+    auto scratchpad = ThreadContext::GetScratchpad();
+
+    dynamic_vector<const sj::type_info*> typeInfos(&scratchpad);
+    typeInfos.reserve(typeIds.size() + (parent.has_value() ? 1 : 0));
+
+    for(TypeId id : typeIds)
+    {
+        const type_info* info = rtti::find_type_info(id);
+        SJ_ASSERT(info, "Failed to find type info for type id {}", id);
+        typeInfos.emplace_back(info);
+    }
+
+    if(parent)
+        typeInfos.emplace_back(&type_info_of<ParentComponent>);
+
+    ArchetypeId aId = ComputeArchetypeId(typeInfos);
+    GameObjectId newGoId = mGameObjects.create(GameObjectRecord {.archetypeId = aId});
+
+    Archetype* archetype = FindOrAddArchetype(aId, typeInfos);
+    uZ row = archetype->AddEntryUninitialized(newGoId);
+
+    std::span serializedChunkInfos =
+        parent ? std::span(typeInfos).subspan(0, typeInfos.size() - 1) : std::span(typeInfos);
+    for(auto&& [typeInfo, chunk] : std::views::zip(serializedChunkInfos, chunks))
+    {
+        typed_ptr componentDst = archetype->GetEntry(typeInfo->id, row);
+        typeInfo->desierialize_beve_fn(componentDst.get_ptr(), chunk);
+    }
+
+    if(parent)
+    {
+        typed_ptr parentComponentDst = archetype->GetEntry(type_info_of<ParentComponent>.id, row);
+        new(parentComponentDst.as<ParentComponent>()) ParentComponent(parent.value());
+    }
+
+    return newGoId;
+}
+
 void ECSRegistry::ReleaseGameObject(GameObjectId goId)
 {
     GameObjectRecord* goRecord = mGameObjects.get<GameObjectRecord>(goId);

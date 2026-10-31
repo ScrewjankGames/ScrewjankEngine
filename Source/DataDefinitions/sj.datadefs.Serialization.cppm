@@ -70,6 +70,29 @@ struct to<JSON, sj::hashed_string_sv>
 };
 
 template <>
+struct from<BEVE, sj::hashed_string_sv>
+{
+    template <auto Opts>
+    static void op(sj::hashed_string_sv& strHash, glz::is_context auto&& ctx, auto&& it, auto&& end)
+    {
+        std::string_view str;
+        glz::parse<BEVE>::op<Opts>(str, ctx, it, end);
+
+        strHash = sj::hashed_string_sv(str);
+    }
+};
+
+template <>
+struct to<BEVE, sj::hashed_string_sv>
+{
+    template <auto Opts>
+    static void op(const sj::hashed_string_sv& hashedStr, auto&&... args)
+    {
+        glz::serialize<BEVE>::op<Opts>(hashedStr.get_string(), args...);
+    }
+};
+
+template <>
 struct to<BEVE, sj::string_hash>
 {
     template <auto Opts>

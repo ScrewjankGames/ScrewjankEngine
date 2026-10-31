@@ -1,11 +1,11 @@
 module;
-#include <glaze/glaze.hpp>
-
 #include <ScrewjankStd/Assert.hpp>
 
+#include <glaze/glaze.hpp>
+
+#include <tuple>
 export module sj.engine.TransformComponent;
 import sj.std;
-import sj.datadefs.DataChunk;
 import sj.engine.ecs.ECSRegistry;
 import sj.engine.ecs.Identifiers;
 
@@ -21,9 +21,9 @@ struct ParentComponent
     GameObjectId parentGoId;
 };
 
-struct ChildrenComponent
-{
-    sj::dynamic_vector<GameObjectId> children;
-};
+// struct ChildrenComponent
+// {
+//     sj::dynamic_vector<GameObjectId> children;
+// };
 
 } // namespace sj
