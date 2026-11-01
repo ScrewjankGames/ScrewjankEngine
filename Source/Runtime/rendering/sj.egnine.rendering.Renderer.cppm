@@ -36,9 +36,12 @@ import sj.engine.rendering.materials;
 import sj.engine.rendering.pipelines;
 import sj.engine.rendering.resources;
 
+import sj.datadefs.assets.AssetID;
+import sj.datadefs.assets.Texture;
+import sj.datadefs.AssetDB;
+
 import sj.engine.debug;
 import sj.std;
-import sj.datadefs;
 
 export namespace sj
 {

@@ -4,12 +4,12 @@ module;
 
 #include <box3d/box3d.h>
 #include <box3d/types.h>
+#include <box3d/collision.h>
 
 #include <cmath>
 #include <tuple>
 #include <ranges>
 #include <vector>
-#include "box3d/collision.h"
 
 export module sj.engine.physics:PhysicsSystem;
 import :Conversions;

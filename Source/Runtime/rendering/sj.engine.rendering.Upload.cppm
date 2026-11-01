@@ -12,7 +12,11 @@ module;
 export module sj.engine.rendering.Upload;
 import sj.engine.rendering.resources;
 import sj.engine.system.threading.ThreadContext;
-import sj.datadefs;
+
+import sj.datadefs.assets.AssetType;
+import sj.datadefs.assets.Texture;
+import sj.datadefs.assets.Mesh;
+
 import sj.std;
 
 export namespace sj

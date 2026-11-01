@@ -6,30 +6,13 @@ module;
 #include <cstddef>
 #include <utility>
 
-export module sj.datadefs:SceneChunks;
-import sj.std.primitives;
+export module sj.datadefs.assets.SceneChunks;
 import sj.std.string_hash;
+import sj.std.primitives;
 import sj.std.type_info;
-import sj.std.containers.vector;
 
 export namespace sj
 {
-using ComponentChunk = std::pair<hashed_string_sv, glz::generic_u64>;
-
-struct GameObjectChunk
-{
-    hashed_string_sv id;
-    sj::dynamic_vector<ComponentChunk> components;
-    sj::dynamic_vector<GameObjectChunk> children;
-};
-
-struct SceneChunk
-{
-    hashed_string_sv scene_name;
-
-    sj::dynamic_vector<GameObjectChunk> game_objects;
-};
-
 struct SceneChunkHeader
 {
     hashed_string_sv scene_name;

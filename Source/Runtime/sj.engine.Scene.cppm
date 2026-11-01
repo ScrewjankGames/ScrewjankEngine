@@ -8,7 +8,7 @@ export module sj.engine.Scene;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.ecs;
 import sj.std;
-import sj.datadefs;
+import sj.datadefs.ChunkReader;
 
 export namespace sj
 {

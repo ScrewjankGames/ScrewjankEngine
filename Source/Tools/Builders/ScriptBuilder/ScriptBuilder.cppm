@@ -17,7 +17,6 @@ module;
 export module sj.build.ScriptBuilder;
 import sj.std;
 import sj.builders;
-import sj.datadefs;
 
 namespace stdfs = std::filesystem;
 

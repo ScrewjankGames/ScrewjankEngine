@@ -8,6 +8,8 @@ module;
 
 module sj.engine.Scene;
 import sj.datadefs.components.TransformComponent;
+import sj.datadefs.assets.SceneChunks;
+import sj.datadefs.Serialization;
 
 namespace sj
 {

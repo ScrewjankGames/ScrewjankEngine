@@ -16,7 +16,7 @@ module;
 export module sj.MeshBuilder;
 import sj.std.primitives;
 import sj.builders;
-import sj.datadefs.assets;
+import sj.datadefs.assets.Mesh;
 
 namespace sj::build
 {

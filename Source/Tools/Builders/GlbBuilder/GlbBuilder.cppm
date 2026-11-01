@@ -18,7 +18,8 @@ module;
 
 export module sj.build.GlbBuilder;
 import sj.builders;
-import sj.datadefs;
+import sj.datadefs.assets.AssetID;
+import sj.datadefs.assets.Mesh;
 import sj.std;
 
 namespace stdfs = std::filesystem;

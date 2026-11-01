@@ -5,7 +5,6 @@ module;
 #include <string_view>
 
 export module sj.builders:IBuilder;
-import sj.datadefs;
 
 export namespace sj::build
 {

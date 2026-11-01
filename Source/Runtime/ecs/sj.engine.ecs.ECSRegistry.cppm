@@ -17,7 +17,6 @@ import sj.engine.ecs.Archetype;
 import sj.engine.ecs.Identifiers;
 
 import sj.engine.system.memory.MemorySystem;
-import sj.datadefs;
 
 export namespace sj
 {

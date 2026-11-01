@@ -9,7 +9,8 @@ module;
 #include <span>
 
 export module sj.builders:MeshUtils;
-import sj.datadefs;
+import sj.datadefs.assets.AssetType;
+import sj.datadefs.assets.Mesh;
 
 export namespace sj::build
 {

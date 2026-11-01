@@ -2,22 +2,40 @@ module;
 
 #include <ScrewjankStd/Assert.hpp>
 
-#include <glaze/json/read.hpp>
-#include <glaze/beve/write.hpp>
-#include <glaze/core/context.hpp>
+#include <glaze/glaze.hpp>
 
 #include <span>
 #include <filesystem>
 
 export module sj.SceneBuilder;
 import sj.builders;
-import sj.datadefs;
+import sj.datadefs.ChunkWriter;
+import sj.datadefs.assets.SceneChunks;
 import sj.datadefs.Registration;
+
+import sj.std.containers.vector;
 import sj.std.primitives;
+import sj.std.string_hash;
 import sj.std.type_info;
 
 export namespace sj::build
 {
+using ComponentChunk = std::pair<hashed_string_sv, glz::generic_u64>;
+
+struct GameObjectChunk
+{
+    hashed_string_sv id;
+    sj::dynamic_vector<ComponentChunk> components;
+    sj::dynamic_vector<GameObjectChunk> children;
+};
+
+struct SceneChunk
+{
+    hashed_string_sv scene_name;
+
+    sj::dynamic_vector<GameObjectChunk> game_objects;
+};
+
 class SceneBuilder final : public IBuilder
 {
 public:

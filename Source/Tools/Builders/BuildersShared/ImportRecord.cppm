@@ -4,12 +4,11 @@ module;
 
 #include <glaze/glaze.hpp>
 
-#include <filesystem>
 #include <flat_map>
 #include <string_view>
 
-export module sj.datadefs.ImportRecord;
-import sj.datadefs.AssetDB;
+export module sj.builders:ImportRecord;
+import sj.datadefs.assets.AssetID;
 
 export namespace sj
 {

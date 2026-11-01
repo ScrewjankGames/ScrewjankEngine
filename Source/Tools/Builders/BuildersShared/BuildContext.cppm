@@ -14,9 +14,12 @@ module;
 export module sj.builders:BuildContext;
 import :IBuilder;
 import :Utils;
+import :ImportRecord;
+
+import sj.datadefs.AssetDB;
+import sj.datadefs.assets.AssetID;
 
 import sj.std;
-import sj.datadefs;
 
 namespace stdfs = std::filesystem;
 

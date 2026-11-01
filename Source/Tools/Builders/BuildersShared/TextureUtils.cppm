@@ -11,7 +11,8 @@ module;
 #include <span>
 
 export module sj.builders:TextureUtils;
-import sj.datadefs;
+import sj.datadefs.assets.AssetType;
+import sj.datadefs.assets.Texture;
 
 namespace sj::build
 {
