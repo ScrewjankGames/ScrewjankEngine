@@ -22,6 +22,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
         ScrewjankStd
         glaze::glaze
+        box3d::box3d
 )
 
 ################################################################################

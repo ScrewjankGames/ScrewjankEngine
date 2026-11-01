@@ -5,29 +5,19 @@ export module sj.engine.RenderSystem;
 import sj.std;
 import sj.engine.ecs;
 import sj.datadefs.AssetDB;
-import sj.engine.TransformComponent;
+import sj.datadefs.components.TransformComponent;
+import sj.datadefs.components.Mesh3DComponent;
+import sj.datadefs.components.DirectionalLightComponent;
 import sj.engine.debug.DebugDraw;
 import sj.engine.rendering.Renderer;
 import sj.engine.system.threading.ThreadContext;
 
 export namespace sj
 {
-struct Mesh3DComponent
-{
-    AssetID model_id;
-    AssetID texture_id;
-};
-
-struct DirectionalLightComponent
-{
-    vec4 dir;
-    vec4 color;
-};
 
 class RenderSystem
 {
 public:
-    static constexpr type_list<Mesh3DComponent, DirectionalLightComponent> kRegisteredComponents;
     static constexpr type_list<Mesh3DComponent> kRequestedLifetimeCallbacks;
 
     RenderSystem() = default;

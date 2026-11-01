@@ -7,7 +7,7 @@ module;
 #include <string>
 
 module sj.engine.Scene;
-import sj.engine.TransformComponent;
+import sj.datadefs.components.TransformComponent;
 
 namespace sj
 {

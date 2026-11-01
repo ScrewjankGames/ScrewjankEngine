@@ -7,8 +7,6 @@ module;
 #include <span>
 #include <type_traits>
 
-#include <glaze/glaze.hpp>
-
 #include <ScrewjankStd/Assert.hpp>
 export module sj.std.type_info;
 import sj.std.primitives;
@@ -46,12 +44,6 @@ struct type_info
      */
     using moveFn = void (*)(void* oldAddr, void* newAddr);
     moveFn move_constructor_fn = nullptr;
-
-    using deserializeJsonFn = void (*)(void* dst, const glz::generic_u64& data);
-    deserializeJsonFn desierialize_json_fn = nullptr;
-
-    using deserializeBeveFn = void (*)(void* dst, std::span<const u8> data);
-    deserializeBeveFn desierialize_beve_fn = nullptr;
 };
 
 template <class T>
@@ -87,32 +79,7 @@ constexpr type_info type_info_of {
     .move_constructor_fn =
         [](void* newAddr, void* oldAddr) {
             new(newAddr) T(std::move(*reinterpret_cast<T*>(oldAddr)));
-        },
-    .desierialize_json_fn =
-        [](void* dst, const glz::generic_u64& data) {
-            T& chunk = *reinterpret_cast<T*>(dst);
-
-            new(&chunk) T(); // default initialize chunk
-
-            glz::error_ctx err = glz::read<glz::opts {}>(chunk, data);
-            SJ_ASSERT(err == glz::error_code::none,
-                      "Failed to desierialize json data for type {}! Reason: {}",
-                      type_name_of<T>,
-                      glz::format_error(err));
-        },
-    .desierialize_beve_fn =
-        [](void* dst, std::span<const u8> data) {
-            T& chunk = *reinterpret_cast<T*>(dst);
-
-            new(&chunk) T(); // default initialize chunk
-
-            std::expected<uZ, glz::error_ctx> res = glz::read_beve_at(chunk, data, 0);
-
-            SJ_ASSERT(res,
-                      "Failed to desierialize payload for type {}! Reason: {}",
-                      type_name_of<T>,
-                      glz::format_error(res.error()));
-        },
+        }
 };
 
 } // namespace sj

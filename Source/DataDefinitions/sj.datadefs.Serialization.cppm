@@ -1,12 +1,63 @@
 module;
 
+#include <ScrewjankStd/Assert.hpp>
+
 #include <glaze/glaze.hpp>
 
 #include <string_view>
 
 export module sj.datadefs.Serialization;
+export import sj.std.typed_ptr;
+
+import sj.datadefs.ChunkWriter;
+
+import sj.std.primitives;
 import sj.std.string_hash;
+import sj.std.type_info;
 import sj.std.math;
+
+export namespace sj::datadefs
+{
+template <class T>
+void LoadFromJson(typed_ptr dst, const glz::generic_u64& json)
+{
+    T* addr = dst.as<T>();
+
+    T* data = new(addr) T(); // default initialize chunk
+
+    glz::error_ctx err = glz::read<glz::opts {}>(*data, json);
+    SJ_ASSERT(err == glz::error_code::none,
+              "Failed to desierialize json data for type {}! Reason: {}",
+              type_name_of<T>,
+              glz::format_error(err));
+}
+
+template <class T>
+void LoadFromBeve(typed_ptr dst, std::span<const u8> beve)
+{
+    T* addr = dst.as<T>();
+
+    T* data = new(addr) T(); // default initialize chunk
+
+    std::expected<uZ, glz::error_ctx> res = glz::read_beve_at(*data, beve, 0);
+
+    SJ_ASSERT(res,
+              "Failed to desierialize payload for type {}! Reason: {}",
+              type_name_of<T>,
+              glz::format_error(res.error()));
+}
+
+template <class T>
+void JsonToBeve(const glz::generic_u64& src, ChunkWriter& dst)
+{
+    T item;
+    glz::error_ctx result = glz::read_json(item, src);
+    SJ_ASSERT(result.ec == glz::error_code::none,
+              "Failed to convert generic json to beve for type {}",
+              type_name_of<T>)
+    dst.Write(item);
+}
+} // namespace sj::datadefs
 
 export namespace glz
 {

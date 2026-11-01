@@ -4,49 +4,71 @@ module;
 #include <ranges>
 
 module sj.engine.ecs.ECSRegistry;
-import sj.std;
+import sj.engine.ecs.ParentComponent;
 import sj.engine.system.threading;
-import sj.engine.TransformComponent;
+
+import sj.datadefs.Registration;
+import sj.datadefs.components.TransformComponent;
+
+import sj.std;
 
 namespace sj
 {
+
 GameObjectId ECSRegistry::CreateGameObject(std::span<const TypeId> typeIds,
                                            std::span<const std::span<const u8>> chunks,
                                            std::optional<GameObjectId> parent)
 {
     auto scratchpad = ThreadContext::GetScratchpad();
 
-    dynamic_vector<const sj::type_info*> typeInfos(&scratchpad);
-    typeInfos.reserve(typeIds.size() + (parent.has_value() ? 1 : 0));
+    dynamic_vector<const datadefs::DatadefTypeInfo*> datadefTypeInfos(&scratchpad);
+    datadefTypeInfos.reserve(typeIds.size() + (parent.has_value() ? 1 : 0));
 
     for(TypeId id : typeIds)
     {
-        const type_info* info = rtti::find_type_info(id);
+        const datadefs::DatadefTypeInfo* info = datadefs::FindTypeInfo(id);
         SJ_ASSERT(info, "Failed to find type info for type id {}", id);
-        typeInfos.emplace_back(info);
+        datadefTypeInfos.emplace_back(info);
     }
 
     if(parent)
-        typeInfos.emplace_back(&type_info_of<ParentComponent>);
+        datadefTypeInfos.emplace_back(&datadefs::DataDefTypeInfoOf<ParentComponent>);
+
+    std::ranges::range auto typeInfos =
+        datadefTypeInfos | std::views::transform(&datadefs::DatadefTypeInfo::typeInfo);
 
     ArchetypeId aId = ComputeArchetypeId(typeInfos);
     GameObjectId newGoId = mGameObjects.create(GameObjectRecord {.archetypeId = aId});
+    GameObjectRecord* newRecord = mGameObjects.get<GameObjectRecord>(newGoId);
 
     Archetype* archetype = FindOrAddArchetype(aId, typeInfos);
+
     uZ row = archetype->AddEntryUninitialized(newGoId);
 
+    newRecord->archetypeLocalIndex = row;
+
     std::span serializedChunkInfos =
-        parent ? std::span(typeInfos).subspan(0, typeInfos.size() - 1) : std::span(typeInfos);
-    for(auto&& [typeInfo, chunk] : std::views::zip(serializedChunkInfos, chunks))
+        parent ? std::span(datadefTypeInfos).subspan(0, datadefTypeInfos.size() - 1)
+               : std::span(datadefTypeInfos);
+    for(auto&& [datadefInfo, chunk] : std::views::zip(serializedChunkInfos, chunks))
     {
-        typed_ptr componentDst = archetype->GetEntry(typeInfo->id, row);
-        typeInfo->desierialize_beve_fn(componentDst.get_ptr(), chunk);
+        typed_ptr componentDst = archetype->GetEntry(datadefInfo->typeInfo->id, row);
+        datadefInfo->deserializeBeve(componentDst, chunk);
     }
 
     if(parent)
     {
         typed_ptr parentComponentDst = archetype->GetEntry(type_info_of<ParentComponent>.id, row);
         new(parentComponentDst.as<ParentComponent>()) ParentComponent(parent.value());
+    }
+
+    for(const type_info* info : typeInfos)
+    {
+        auto callbackIt = mComponentCreateCallbacks.find(info->id);
+        if(callbackIt == mComponentCreateCallbacks.end())
+            continue;
+
+        std::invoke(callbackIt->second, newGoId, archetype->GetEntry(info->id, row));
     }
 
     return newGoId;

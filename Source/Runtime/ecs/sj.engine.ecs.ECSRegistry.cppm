@@ -47,9 +47,6 @@ private:
 namespace ecs
 {
 template <class tSystem>
-concept registers_components = requires { is_type_list<decltype(tSystem::kRegisteredComponents)>; };
-
-template <class tSystem>
 concept registers_lifetime_callbacks =
     requires { is_type_list<decltype(tSystem::kRequestedLifetimeCallbacks)>; };
 
@@ -78,9 +75,6 @@ public:
     template <class tSystem>
     void RegisterSystem(tSystem* system)
     {
-        if constexpr(ecs::registers_components<tSystem>)
-            RegisterComponents(system);
-
         if constexpr(ecs::registers_lifetime_callbacks<tSystem>)
             RegisterComponentLifetimeCallbacks(system);
     }
@@ -214,15 +208,6 @@ private:
         }
 
         return query;
-    }
-
-    template <ecs::registers_components tSystem>
-    void RegisterComponents(tSystem* system)
-    {
-        tSystem::kRegisteredComponents
-            .template for_each<[]<class tComponent>(ECSRegistry* self, tSystem* system) {
-                sj::rtti::register_type<tComponent>();
-            }>(this, system);
     }
 
     template <class tSystem>

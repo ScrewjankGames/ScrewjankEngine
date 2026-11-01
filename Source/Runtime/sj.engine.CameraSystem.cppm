@@ -4,24 +4,16 @@ module;
 export module sj.engine.CameraSystem;
 import sj.std;
 
-import sj.engine.TransformComponent;
+import sj.datadefs.components.CameraComponent;
+import sj.datadefs.components.TransformComponent;
 import sj.engine.ecs;
 
 export namespace sj
 {
-    
-struct CameraComponent
-{
-    mat44 localToGoTransform;
-    float fov = 0;
-    float nearPlane = 0;
-    float farPlane = 0;
-};
 
 class CameraSystem
 {
 public:
-    static constexpr type_list<CameraComponent> kRegisteredComponents;
 
     CameraSystem() = default;
 

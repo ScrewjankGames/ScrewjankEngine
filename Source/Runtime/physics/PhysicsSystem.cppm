@@ -14,14 +14,14 @@ module;
 export module sj.engine.physics:PhysicsSystem;
 import :Conversions;
 import :CollisionTests;
-import :RigidbodyComponent;
-import :Shapes;
-
-import sj.engine.system.threading.ThreadContext;
-import sj.engine.TransformComponent;
 
 import sj.engine.debug;
 import sj.engine.ecs;
+import sj.engine.system.threading.ThreadContext;
+
+import sj.datadefs.components.TransformComponent;
+import sj.datadefs.components.PhysicsComponents;
+
 import sj.std;
 
 export namespace sj
@@ -30,7 +30,6 @@ export namespace sj
 class PhysicsSystem
 {
 public:
-    static constexpr type_list<RigidbodyComponent, SphereShape, BoxShape> kRegisteredComponents;
     static constexpr type_list<RigidbodyComponent, SphereShape, BoxShape>
         kRequestedLifetimeCallbacks;
 

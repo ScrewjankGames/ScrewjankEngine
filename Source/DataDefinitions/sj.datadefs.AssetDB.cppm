@@ -11,11 +11,12 @@ module;
 #include <string_view>
 
 export module sj.datadefs.AssetDB;
-import sj.std;
+export import sj.datadefs.assets.AssetID;
+
+import sj.std.containers;
 
 export namespace sj
 {
-using AssetID = uint64_t;
 inline constexpr AssetID kInvalidAssetID = 0;
 
 class AssetDB

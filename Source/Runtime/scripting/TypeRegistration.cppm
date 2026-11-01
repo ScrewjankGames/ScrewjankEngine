@@ -10,7 +10,7 @@ import :LuauStack;
 import :Signal;
 
 import sj.engine.InputSystem;
-import sj.engine.TransformComponent;
+import sj.datadefs.components.TransformComponent;
 
 import sj.std;
 import sj.engine.ecs;

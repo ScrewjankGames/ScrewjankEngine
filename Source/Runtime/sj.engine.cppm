@@ -12,5 +12,4 @@ export import sj.engine.Program;
 export import sj.engine.RenderSystem;
 export import sj.engine.InputSystem;
 export import sj.engine.Scene;
-export import sj.engine.TransformComponent;
 export import sj.engine.Window;

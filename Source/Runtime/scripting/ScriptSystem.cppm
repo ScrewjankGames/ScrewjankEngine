@@ -18,22 +18,18 @@ import :LuauStack;
 import :TypeRegistration;
 
 import sj.std;
-import sj.datadefs;
+import sj.datadefs.AssetDB;
+import sj.datadefs.components.ScriptComponent;
 import sj.engine.ecs;
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.InputSystem;
 
 export namespace sj
 {
-struct ScriptComponent
-{
-    AssetID script_id;
-};
 
 class ScriptSystem
 {
 public:
-    static constexpr type_list<ScriptComponent> kRegisteredComponents;
     static constexpr type_list<ScriptComponent> kRequestedLifetimeCallbacks;
 
     ScriptSystem()
@@ -82,7 +78,6 @@ public:
     }
 
 private:
-
     static luabridge::LuaRef LoadScript(lua_State* L, std::string_view scriptPath)
     {
         std::ifstream file(scriptPath.data(), std::ios::binary | std::ios::ate);
@@ -106,7 +101,7 @@ private:
     void SetupEnv(lua_State* L)
     {
         RegisterTypes(L);
-        
+
         // Globals
         luabridge::getGlobalNamespace(L)
             .beginNamespace("Game")

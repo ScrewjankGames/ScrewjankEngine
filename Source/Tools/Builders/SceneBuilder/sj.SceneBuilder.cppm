@@ -12,6 +12,7 @@ module;
 export module sj.SceneBuilder;
 import sj.builders;
 import sj.datadefs;
+import sj.datadefs.Registration;
 import sj.std.primitives;
 import sj.std.type_info;
 
@@ -97,7 +98,11 @@ private:
         chunkWriter.Write(componentsHeader);
 
         for(const ComponentChunk& componentDef : goDef.components)
-            chunkWriter.Write(componentDef.second);
+        {
+            TypeId id = componentDef.first.get_hash().AsInt();
+            const datadefs::DatadefTypeInfo* info = datadefs::FindTypeInfo(id);
+            info->jsonToBeve(componentDef.second, chunkWriter);
+        }
 
         for(const GameObjectChunk& child : goDef.children)
             WriteGameObject(child, chunkWriter);

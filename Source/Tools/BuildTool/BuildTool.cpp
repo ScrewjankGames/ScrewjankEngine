@@ -14,7 +14,7 @@
 
 import sj.std;
 import sj.builders;
-import sj.datadefs;
+import sj.datadefs.Registration;
 
 import sj.TextureBuilder;
 import sj.SceneBuilder;
@@ -71,6 +71,8 @@ CommandLineArgs ParseCommandLineArgs(std::span<const char*> commandLine)
 
 int main(int argc, const char* argv[])
 {
+    sj::datadefs::RegisterEngineComponentTypes();
+    
     SJ_ENGINE_LOG_INFO("Starting data build.");
     CommandLineArgs args = ParseCommandLineArgs(std::span {argv, static_cast<size_t>(argc)});
     SJ_ENGINE_LOG_INFO("Arguments: {}", *glz::write<glz::opts {.format = glz::JSON}>(args));

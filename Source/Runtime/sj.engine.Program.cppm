@@ -18,7 +18,8 @@ export import sj.engine.config;
 export import sj.std.type_info;
 
 import sj.std;
-import sj.datadefs;
+import sj.datadefs.AssetDB;
+import sj.datadefs.Registration;
 
 import sj.engine.system.threading.ThreadContext;
 import sj.engine.system.memory.MemorySystem;
@@ -34,6 +35,7 @@ public:
     {
         sj::MemorySystem::Init(rootHeapSize);
         sj::ThreadContext::Init(sj::MemorySystem::GetRootMemoryResource(), 256_KiB);
+        sj::datadefs::RegisterEngineComponentTypes();
 
         mConfig = LoadConfig();
         mAssetDB.Load("Data/.AssetDB");
